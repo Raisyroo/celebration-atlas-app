@@ -279,6 +279,9 @@ const styles: Record<string, CSSProperties> = {
     gap: 8,
     overflowX: 'auto',
     scrollbarWidth: 'none',
+    background: 'transparent',
+    backdropFilter: 'none',
+    boxShadow: 'none',
   },
   chip: {
     border: '1px solid rgba(255,227,176,.42)',
