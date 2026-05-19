@@ -10,6 +10,7 @@ export default function AtlasMap() {
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const enterFrameRef = useRef<number | null>(null);
   const [renderedEvent, setRenderedEvent] = useState<(typeof ATLAS_EVENTS)[number] | null>(null);
   const [isCardVisible, setIsCardVisible] = useState(false);
   const q = query.trim().toLowerCase();
@@ -52,9 +53,18 @@ export default function AtlasMap() {
       closeTimerRef.current = null;
     }
 
+    if (enterFrameRef.current) {
+      cancelAnimationFrame(enterFrameRef.current);
+      enterFrameRef.current = null;
+    }
+
     if (selected) {
       setRenderedEvent(selected);
-      requestAnimationFrame(() => setIsCardVisible(true));
+      setIsCardVisible(false);
+      enterFrameRef.current = requestAnimationFrame(() => {
+        setIsCardVisible(true);
+        enterFrameRef.current = null;
+      });
       return;
     }
 
@@ -68,6 +78,7 @@ export default function AtlasMap() {
   useEffect(() => {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
     };
   }, []);
 
@@ -110,7 +121,7 @@ export default function AtlasMap() {
           style={{
             ...styles.card,
             opacity: isCardVisible ? 1 : 0,
-            transform: isCardVisible ? 'translateY(0)' : 'translateY(16px)',
+            transform: isCardVisible ? 'translateY(0)' : 'translateY(36px)',
             pointerEvents: isCardVisible ? 'auto' : 'none',
           }}
         >
