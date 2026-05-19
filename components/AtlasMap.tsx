@@ -30,6 +30,12 @@ export default function AtlasMap() {
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const panOffsetRef = useRef({ x: 0, y: 0 });
+  const zoomRef = useRef(1);
+  const dragVelocityRef = useRef({ x: 0, y: 0 });
+  const lastDragSampleRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const inertiaFrameRef = useRef<number | null>(null);
+  const inertiaStateRef = useRef<{ x: number; y: number; vx: number; vy: number; lastTime: number } | null>(null);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
@@ -97,11 +103,70 @@ export default function AtlasMap() {
   const mapFocusTransform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom.toFixed(4)})`;
 
   const handleResetView = useCallback(() => {
+    if (inertiaFrameRef.current) {
+      cancelAnimationFrame(inertiaFrameRef.current);
+      inertiaFrameRef.current = null;
+      inertiaStateRef.current = null;
+    }
+    dragVelocityRef.current = { x: 0, y: 0 };
+    lastDragSampleRef.current = null;
     setPanOffset({ x: 0, y: 0 });
     setZoom(1);
   }, []);
 
+  const stopInertia = useCallback(() => {
+    if (!inertiaFrameRef.current) return;
+    cancelAnimationFrame(inertiaFrameRef.current);
+    inertiaFrameRef.current = null;
+    inertiaStateRef.current = null;
+  }, []);
+
+  const beginInertia = useCallback(() => {
+    const { x: initialVx, y: initialVy } = dragVelocityRef.current;
+    const velocityMagnitude = Math.hypot(initialVx, initialVy);
+    if (velocityMagnitude < 0.035) return;
+
+    stopInertia();
+    inertiaStateRef.current = {
+      x: panOffsetRef.current.x,
+      y: panOffsetRef.current.y,
+      vx: initialVx,
+      vy: initialVy,
+      lastTime: performance.now(),
+    };
+
+    const step = (now: number) => {
+      const state = inertiaStateRef.current;
+      if (!state) return;
+      const dt = Math.min(34, Math.max(10, now - state.lastTime));
+      const decay = Math.exp(-dt / 230);
+      state.vx *= decay;
+      state.vy *= decay;
+      state.x += state.vx * dt;
+      state.y += state.vy * dt;
+      const constrained = clampPan(state.x, state.y, zoomRef.current);
+      state.x = constrained.x;
+      state.y = constrained.y;
+      setPanOffset(constrained);
+      state.lastTime = now;
+
+      if (Math.hypot(state.vx, state.vy) < 0.01) {
+        inertiaFrameRef.current = null;
+        inertiaStateRef.current = null;
+        return;
+      }
+
+      inertiaFrameRef.current = requestAnimationFrame(step);
+    };
+
+    inertiaFrameRef.current = requestAnimationFrame(step);
+  }, [clampPan, stopInertia]);
+
   const handleMapPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    stopInertia();
+    dragVelocityRef.current = { x: 0, y: 0 };
+    lastDragSampleRef.current = { x: event.clientX, y: event.clientY, t: performance.now() };
+
     if (event.pointerType === 'touch') {
       touchPointsRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     } else if (event.button !== 0 || !event.isPrimary) {
@@ -163,6 +228,7 @@ export default function AtlasMap() {
 
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId) return;
+    const now = performance.now();
 
     const deltaX = event.clientX - dragState.startX;
     const deltaY = event.clientY - dragState.startY;
@@ -173,6 +239,23 @@ export default function AtlasMap() {
     }
 
     setPanOffset(constrained);
+    const sample = lastDragSampleRef.current;
+    if (sample) {
+      const elapsed = now - sample.t;
+      if (elapsed > 0) {
+        const pointerDx = event.clientX - sample.x;
+        const pointerDy = event.clientY - sample.y;
+        const factor = 0.24;
+        const instantVx = (pointerDx * factor) / elapsed;
+        const instantVy = (pointerDy * factor) / elapsed;
+        const blend = 0.28;
+        dragVelocityRef.current = {
+          x: dragVelocityRef.current.x * (1 - blend) + instantVx * blend,
+          y: dragVelocityRef.current.y * (1 - blend) + instantVy * blend,
+        };
+      }
+    }
+    lastDragSampleRef.current = { x: event.clientX, y: event.clientY, t: now };
   };
 
   const handleMapPointerUp = (event: PointerEvent<HTMLDivElement>) => {
@@ -194,6 +277,8 @@ export default function AtlasMap() {
     }
 
     dragStateRef.current = null;
+    lastDragSampleRef.current = null;
+    beginInertia();
   };
 
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
@@ -202,6 +287,7 @@ export default function AtlasMap() {
     const zoomStep = -event.deltaY * 0.0012;
     const nextZoom = clampZoom(zoom + zoomStep);
     if (nextZoom === zoom) return;
+    stopInertia();
     setZoom(nextZoom);
     setPanOffset((prev) => clampPan(prev.x, prev.y, nextZoom));
   };
@@ -275,10 +361,19 @@ export default function AtlasMap() {
   }, [featuredEvents.length]);
 
   useEffect(() => {
+    panOffsetRef.current = panOffset;
+  }, [panOffset]);
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
       if (enterFrameInnerRef.current) cancelAnimationFrame(enterFrameInnerRef.current);
+      if (inertiaFrameRef.current) cancelAnimationFrame(inertiaFrameRef.current);
     };
   }, []);
 
