@@ -8,8 +8,6 @@ export default function AtlasMap() {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
-  const searchDockRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterFrameRef = useRef<number | null>(null);
@@ -17,8 +15,6 @@ export default function AtlasMap() {
   const [renderedEvent, setRenderedEvent] = useState<(typeof ATLAS_EVENTS)[number] | null>(null);
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [mapLift, setMapLift] = useState(0);
   const q = query.trim().toLowerCase();
 
   const highlightedIds = useMemo(() => {
@@ -30,7 +26,6 @@ export default function AtlasMap() {
   }, [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
-  const highlightedEvents = ATLAS_EVENTS.filter((event) => highlightedIds.has(event.id));
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
@@ -87,40 +82,12 @@ export default function AtlasMap() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isSearchFocused || !mapFrameRef.current || !searchDockRef.current) {
-      setMapLift(0);
-      return;
-    }
-
-    const dockRect = searchDockRef.current.getBoundingClientRect();
-    const mapRect = mapFrameRef.current.getBoundingClientRect();
-    const protectedEvents = selected ? [selected] : highlightedEvents;
-
-    if (protectedEvents.length === 0) {
-      setMapLift(0);
-      return;
-    }
-
-    const maxMarkerScreenY = Math.max(...protectedEvents.map((event) => mapRect.top + mapRect.height * (event.y / 100)));
-    const minimumVisibleBottom = Math.min(dockRect.top - 20, window.innerHeight * 0.44);
-
-    if (maxMarkerScreenY <= minimumVisibleBottom) {
-      setMapLift(0);
-      return;
-    }
-
-    setMapLift(Math.min(maxMarkerScreenY - minimumVisibleBottom, 120));
-  }, [highlightedEvents, isSearchFocused, selected, query]);
-
   return (
     <section style={styles.hero} onPointerDown={handleBackdropPointerDown}>
       <div
         ref={mapFrameRef}
         style={{
           ...styles.mapFrame,
-          transform: mapLift > 0 ? `translateY(-${mapLift}px) scale(${isSearchFocused ? 0.985 : 1})` : `translateY(0) scale(${isSearchFocused ? 0.985 : 1})`,
-          filter: isSearchFocused ? 'saturate(0.82) brightness(0.68)' : styles.mapFrame.filter,
         }}
       >
         <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" style={styles.mapImage} />
@@ -184,24 +151,12 @@ export default function AtlasMap() {
         </article>
       ) : null}
 
-      <div
-        ref={searchDockRef}
-        style={{
-          ...styles.searchDock,
-          bottom: isSearchFocused ? '45vh' : 0,
-        }}
-      >
+      <div style={styles.searchDock}>
         <input
-          ref={searchInputRef}
           style={styles.searchInput}
           placeholder="What would you like to discover?"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          onFocus={() => {
-            setIsSearchFocused(true);
-            setSelectedId(null);
-          }}
-          onBlur={() => setIsSearchFocused(false)}
         />
       </div>
 
