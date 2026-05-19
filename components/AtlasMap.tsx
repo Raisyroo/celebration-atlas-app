@@ -23,12 +23,15 @@ export default function AtlasMap() {
   const cardRef = useRef<HTMLElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchFadeDelayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterFrameRef = useRef<number | null>(null);
   const enterFrameInnerRef = useRef<number | null>(null);
   const [renderedEvent, setRenderedEvent] = useState<(typeof ATLAS_EVENTS)[number] | null>(null);
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [searchPulseTick, setSearchPulseTick] = useState(0);
+  const [isSearchFadingOut, setIsSearchFadingOut] = useState(false);
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
@@ -112,9 +115,27 @@ export default function AtlasMap() {
   }, [selected]);
 
   const submitSearch = useCallback(() => {
+    if (searchFadeDelayTimerRef.current) {
+      clearTimeout(searchFadeDelayTimerRef.current);
+      searchFadeDelayTimerRef.current = null;
+    }
+    if (searchClearTimerRef.current) {
+      clearTimeout(searchClearTimerRef.current);
+      searchClearTimerRef.current = null;
+    }
+    setIsSearchFadingOut(false);
     setSubmittedQuery(query);
     setSearchPulseTick((prev) => prev + 1);
     searchInputRef.current?.blur();
+    searchFadeDelayTimerRef.current = setTimeout(() => {
+      setIsSearchFadingOut(true);
+      searchClearTimerRef.current = setTimeout(() => {
+        setQuery('');
+        setIsSearchFadingOut(false);
+        searchClearTimerRef.current = null;
+      }, 320);
+      searchFadeDelayTimerRef.current = null;
+    }, 1500);
   }, [query]);
 
   useEffect(() => {
@@ -146,6 +167,8 @@ export default function AtlasMap() {
   useEffect(() => {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      if (searchFadeDelayTimerRef.current) clearTimeout(searchFadeDelayTimerRef.current);
+      if (searchClearTimerRef.current) clearTimeout(searchClearTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
       if (enterFrameInnerRef.current) cancelAnimationFrame(enterFrameInnerRef.current);
     };
@@ -254,11 +277,24 @@ export default function AtlasMap() {
         </button>
         <input
           ref={searchInputRef}
-          className={`atlas-search-input ${searchPulseTick > 0 ? 'atlas-search-input--pulse' : ''}`}
+          className={`atlas-search-input ${searchPulseTick > 0 ? 'atlas-search-input--pulse' : ''} ${isSearchFadingOut ? 'atlas-search-input--fade' : ''}`}
           style={styles.searchInput}
           placeholder={query ? '' : ATMOSPHERIC_SUGGESTIONS[suggestionIndex]}
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            const nextQuery = event.target.value;
+            if (searchFadeDelayTimerRef.current) {
+              clearTimeout(searchFadeDelayTimerRef.current);
+              searchFadeDelayTimerRef.current = null;
+            }
+            if (searchClearTimerRef.current) {
+              clearTimeout(searchClearTimerRef.current);
+              searchClearTimerRef.current = null;
+            }
+            setIsSearchFadingOut(false);
+            setQuery(nextQuery);
+            if (nextQuery === '') setSubmittedQuery('');
+          }}
           onAnimationEnd={() => {
             setSearchPulseTick(0);
           }}
@@ -278,6 +314,11 @@ export default function AtlasMap() {
 
         .atlas-search-input--pulse {
           animation: searchAcceptPulse 360ms ease-out;
+        }
+
+        .atlas-search-input--fade {
+          opacity: 0;
+          transition: opacity 320ms ease;
         }
 
         .featured-discovery-text {
