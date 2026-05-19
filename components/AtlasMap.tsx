@@ -150,32 +150,42 @@ export default function AtlasMap() {
           const pulseDelay = index * 0.26;
 
           return (
-            <button
-              key={event.id}
-              type="button"
-              className="marker-pulse"
-              aria-label={event.name}
-              onClick={() => setSelectedId(event.id)}
-              style={({
-                ...styles.marker,
-                left: `${event.x}%`,
-                top: `${event.y}%`,
-                opacity: isDimmed ? 0.28 : 1,
-                '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : 1,
-                '--marker-shadow-idle': isHighlighted
-                  ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
-                  : isSelected
-                    ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
-                    : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
-                '--marker-shadow-peak': isHighlighted
-                  ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
-                  : isSelected
-                    ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
-                    : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
-                animationDuration: `${pulseDuration}s`,
-                animationDelay: `${pulseDelay}s`,
-              } as CSSProperties)}
-            />
+            <div key={event.id} style={{ ...styles.markerWrap, left: `${event.x}%`, top: `${event.y}%` }}>
+              <button
+                type="button"
+                className="marker-pulse"
+                aria-label={event.name}
+                onClick={() => setSelectedId(event.id)}
+                style={({
+                  ...styles.marker,
+                  opacity: isDimmed ? 0.28 : 1,
+                  '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : 1,
+                  '--marker-shadow-idle': isHighlighted
+                    ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
+                    : isSelected
+                      ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
+                      : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
+                  '--marker-shadow-peak': isHighlighted
+                    ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
+                    : isSelected
+                      ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
+                      : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
+                  animationDuration: `${pulseDuration}s`,
+                  animationDelay: `${pulseDelay}s`,
+                } as CSSProperties)}
+              />
+              <div
+                aria-hidden="true"
+                style={{
+                  ...styles.markerLabel,
+                  opacity: isHighlighted ? 1 : 0,
+                  transform: isHighlighted ? 'translate(-50%, -122%)' : 'translate(-50%, -116%)',
+                  pointerEvents: 'none',
+                }}
+              >
+                {event.name}
+              </div>
+            </div>
           );
         })}
 
@@ -306,6 +316,8 @@ const styles: Record<string, CSSProperties> = {
   },
   marker: {
     position: 'absolute',
+    left: '50%',
+    top: '50%',
     width: 20,
     height: 20,
     borderRadius: 999,
@@ -314,6 +326,36 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 3,
     cursor: 'pointer',
     touchAction: 'manipulation',
+  },
+  markerWrap: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    zIndex: 3,
+  },
+  markerLabel: {
+    position: 'absolute',
+    left: '50%',
+    top: '-18px',
+    transform: 'translate(-50%, -116%)',
+    padding: '5px 10px',
+    borderRadius: 999,
+    maxWidth: 180,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    fontSize: 11,
+    letterSpacing: 0.28,
+    lineHeight: 1,
+    color: 'rgba(255, 241, 209, 0.86)',
+    border: '1px solid rgba(255, 227, 170, 0.22)',
+    background: 'linear-gradient(180deg, rgba(18, 25, 37, 0.32), rgba(7, 10, 15, 0.22))',
+    textShadow: '0 0 8px rgba(255, 224, 153, 0.2), 0 1px 3px rgba(2, 3, 7, 0.74)',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 239, 205, 0.05), 0 0 16px rgba(251, 203, 110, 0.2)',
+    backdropFilter: 'blur(2px)',
+    WebkitBackdropFilter: 'blur(2px)',
+    transition: 'opacity 380ms ease, transform 420ms cubic-bezier(.22,.61,.36,1)',
+    willChange: 'opacity, transform',
   },
   searchDock: {
     position: 'fixed',
