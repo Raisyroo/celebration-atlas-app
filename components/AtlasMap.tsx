@@ -66,6 +66,9 @@ export default function AtlasMap() {
 
       {selected ? (
         <article style={styles.card}>
+          <button type="button" aria-label="Close event card" onClick={() => setSelectedId(null)} style={styles.closeButton}>
+            ×
+          </button>
           <h3 style={styles.cardTitle}>{selected.name}</h3>
           <p style={styles.cardBody}>{selected.blurb}</p>
         </article>
@@ -113,13 +116,14 @@ const styles: Record<string, CSSProperties> = {
   },
   marker: {
     position: 'absolute',
-    width: 14,
-    height: 14,
+    width: 20,
+    height: 20,
     borderRadius: 999,
     border: '1px solid rgba(255,228,170,.95)',
     background: 'radial-gradient(circle, #ffebba 8%, #f2c66a 55%, rgba(242,198,106,.15) 100%)',
     zIndex: 3,
     cursor: 'pointer',
+    touchAction: 'manipulation',
   },
   searchDock: {
     position: 'fixed',
@@ -146,15 +150,32 @@ const styles: Record<string, CSSProperties> = {
     left: 12,
     right: 12,
     bottom: 86,
-    padding: 14,
+    padding: '14px 14px 16px',
     borderRadius: 18,
     background: 'rgba(9,12,17,.92)',
     border: '1px solid rgba(255,225,160,.28)',
     boxShadow: '0 18px 40px rgba(0,0,0,.45)',
     zIndex: 15,
   },
+  closeButton: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    width: 32,
+    height: 32,
+    borderRadius: '50%',
+    border: '1px solid rgba(255,225,160,.45)',
+    background: 'rgba(22,26,35,.95)',
+    color: '#ffebb9',
+    fontSize: 22,
+    lineHeight: 1,
+    display: 'grid',
+    placeItems: 'center',
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+  },
   cardTitle: {
-    margin: '0 0 6px',
+    margin: '0 40px 6px 0',
     fontSize: 18,
     color: '#ffebb9',
   },
