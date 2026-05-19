@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 
@@ -9,6 +9,9 @@ export default function AtlasMap() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [renderedEvent, setRenderedEvent] = useState<(typeof ATLAS_EVENTS)[number] | null>(null);
+  const [isCardVisible, setIsCardVisible] = useState(false);
   const q = query.trim().toLowerCase();
 
   const highlightedIds = useMemo(() => {
@@ -43,6 +46,31 @@ export default function AtlasMap() {
     }
   };
 
+  useEffect(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    if (selected) {
+      setRenderedEvent(selected);
+      requestAnimationFrame(() => setIsCardVisible(true));
+      return;
+    }
+
+    setIsCardVisible(false);
+    closeTimerRef.current = setTimeout(() => {
+      setRenderedEvent(null);
+      closeTimerRef.current = null;
+    }, 260);
+  }, [selected]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
   return (
     <section style={styles.hero} onPointerDown={handleBackdropPointerDown}>
       <div ref={mapFrameRef} style={{ ...styles.mapFrame, transform: mapTransform }}>
@@ -76,13 +104,21 @@ export default function AtlasMap() {
         <div style={styles.vignette} />
       </div>
 
-      {selected ? (
-        <article ref={cardRef} style={styles.card}>
+      {renderedEvent ? (
+        <article
+          ref={cardRef}
+          style={{
+            ...styles.card,
+            opacity: isCardVisible ? 1 : 0,
+            transform: isCardVisible ? 'translateY(0)' : 'translateY(16px)',
+            pointerEvents: isCardVisible ? 'auto' : 'none',
+          }}
+        >
           <button type="button" aria-label="Close event card" onClick={() => setSelectedId(null)} style={styles.closeButton}>
             ×
           </button>
-          <h3 style={styles.cardTitle}>{selected.name}</h3>
-          <p style={styles.cardBody}>{selected.blurb}</p>
+          <h3 style={styles.cardTitle}>{renderedEvent.name}</h3>
+          <p style={styles.cardBody}>{renderedEvent.blurb}</p>
         </article>
       ) : null}
 
@@ -168,6 +204,8 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid rgba(255,225,160,.28)',
     boxShadow: '0 18px 40px rgba(0,0,0,.45)',
     zIndex: 15,
+    transition: 'opacity 260ms ease, transform 260ms ease',
+    willChange: 'opacity, transform',
   },
   closeButton: {
     position: 'absolute',
