@@ -33,6 +33,8 @@ export default function AtlasMap() {
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [isSearchFadingOut, setIsSearchFadingOut] = useState(false);
   const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [hasSubmittedSearch, setHasSubmittedSearch] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
@@ -125,6 +127,7 @@ export default function AtlasMap() {
     }
     setIsSearchFadingOut(false);
     setSubmittedQuery(query);
+    setHasSubmittedSearch(true);
     setSearchPulseTick((prev) => prev + 1);
     searchInputRef.current?.blur();
     searchFadeDelayTimerRef.current = setTimeout(() => {
@@ -279,7 +282,13 @@ export default function AtlasMap() {
           ref={searchInputRef}
           className={`atlas-search-input ${searchPulseTick > 0 ? 'atlas-search-input--pulse' : ''} ${isSearchFadingOut ? 'atlas-search-input--fade' : ''}`}
           style={styles.searchInput}
-          placeholder={query ? '' : ATMOSPHERIC_SUGGESTIONS[suggestionIndex]}
+          placeholder={
+            query
+              ? ''
+              : hasSubmittedSearch && !isSearchFocused
+                ? ''
+                : ATMOSPHERIC_SUGGESTIONS[suggestionIndex]
+          }
           value={query}
           onChange={(event) => {
             const nextQuery = event.target.value;
@@ -293,11 +302,12 @@ export default function AtlasMap() {
             }
             setIsSearchFadingOut(false);
             setQuery(nextQuery);
-            if (nextQuery === '') setSubmittedQuery('');
           }}
           onAnimationEnd={() => {
             setSearchPulseTick(0);
           }}
+          onFocus={() => setIsSearchFocused(true)}
+          onBlur={() => setIsSearchFocused(false)}
           onKeyDown={(event) => {
             if (event.nativeEvent.isComposing) return;
             if (event.key !== 'Enter') return;
@@ -317,8 +327,10 @@ export default function AtlasMap() {
         }
 
         .atlas-search-input--fade {
-          opacity: 0;
-          transition: opacity 320ms ease;
+          color: transparent;
+          text-shadow: none;
+          caret-color: transparent;
+          transition: color 320ms ease, text-shadow 320ms ease, caret-color 320ms ease;
         }
 
         .featured-discovery-text {
