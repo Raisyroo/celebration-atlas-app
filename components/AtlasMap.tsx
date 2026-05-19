@@ -26,6 +26,7 @@ export default function AtlasMap() {
   const [renderedEvent, setRenderedEvent] = useState<(typeof ATLAS_EVENTS)[number] | null>(null);
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
+  const [searchPulseTick, setSearchPulseTick] = useState(0);
   const q = submittedQuery.trim().toLowerCase();
 
   const highlightedIds = useMemo(() => {
@@ -111,6 +112,7 @@ export default function AtlasMap() {
 
   const submitSearch = useCallback(() => {
     setSubmittedQuery(query);
+    setSearchPulseTick((prev) => prev + 1);
     searchInputRef.current?.blur();
   }, [query]);
 
@@ -202,11 +204,15 @@ export default function AtlasMap() {
       <div style={styles.searchDock}>
         <input
           ref={searchInputRef}
-          className="atlas-search-input"
+          className={`atlas-search-input ${searchPulseTick > 0 ? 'atlas-search-input--pulse' : ''}`}
           style={styles.searchInput}
           placeholder={query ? '' : ATMOSPHERIC_SUGGESTIONS[suggestionIndex]}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          onAnimationEnd={(event) => {
+            if (event.animationName !== 'searchAcceptPulse') return;
+            setSearchPulseTick(0);
+          }}
           onKeyDown={(event) => {
             if (event.nativeEvent.isComposing) return;
             if (event.key !== 'Enter') return;
@@ -221,6 +227,10 @@ export default function AtlasMap() {
           color: rgba(255, 239, 206, 0.62);
         }
 
+        .atlas-search-input--pulse {
+          animation: searchAcceptPulse 360ms ease-out;
+        }
+
         .marker-pulse {
           animation-name: markerPulse;
           animation-timing-function: ease-in-out;
@@ -228,6 +238,21 @@ export default function AtlasMap() {
           animation-fill-mode: both;
           will-change: transform, box-shadow, filter;
           transform-origin: center;
+        }
+
+        @keyframes searchAcceptPulse {
+          0% {
+            box-shadow: inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 0 14px rgba(252, 201, 102, 0.28);
+            filter: brightness(1);
+          }
+          45% {
+            box-shadow: inset 0 0 0 1px rgba(255, 246, 220, 0.2), 0 0 22px rgba(255, 225, 150, 0.52);
+            filter: brightness(1.04);
+          }
+          100% {
+            box-shadow: inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 0 14px rgba(252, 201, 102, 0.28);
+            filter: brightness(1);
+          }
         }
 
         @keyframes markerPulse {
