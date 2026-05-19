@@ -31,13 +31,26 @@ export default function AtlasMap() {
   const highlightedIds = useMemo(() => {
     const ids = new Set<string>();
 
-    if (q) {
-      if (q.includes('romeo') || q.includes('peach')) ids.add('romeo-peach');
-      if (q.includes('music')) {
-        ids.add('electric-forest');
-        ids.add('detroit-jazz');
-      }
-      if (q.includes('fair')) ids.add('armada-fair');
+    if (!q) return ids;
+
+    const addMusicFestivals = () => {
+      ids.add('electric-forest');
+      ids.add('detroit-jazz');
+    };
+
+    if (q.includes('music festival') || q.includes('music festivals')) addMusicFestivals();
+    if (q.includes('music')) addMusicFestivals();
+
+    if (q.includes('county fair') || q.includes('county fairs') || q.includes('fair') || q.includes('fairs')) {
+      ids.add('armada-fair');
+    }
+
+    if (q.includes('peach festival') || q.includes('romeo') || q.includes('peach')) ids.add('romeo-peach');
+    if (q.includes('jazz')) ids.add('detroit-jazz');
+    if (q.includes('forest')) ids.add('electric-forest');
+
+    if (q.includes('cherry') || q.includes('lilac') || q.includes('tulip')) {
+      ids.add('romeo-peach');
     }
 
     return ids;
