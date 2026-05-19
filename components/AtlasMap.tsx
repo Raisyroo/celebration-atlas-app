@@ -11,8 +11,10 @@ export default function AtlasMap() {
   const cardRef = useRef<HTMLElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterFrameRef = useRef<number | null>(null);
+  const enterFrameInnerRef = useRef<number | null>(null);
   const [renderedEvent, setRenderedEvent] = useState<(typeof ATLAS_EVENTS)[number] | null>(null);
   const [isCardVisible, setIsCardVisible] = useState(false);
+  const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const q = query.trim().toLowerCase();
 
   const highlightedIds = useMemo(() => {
@@ -58,16 +60,26 @@ export default function AtlasMap() {
       enterFrameRef.current = null;
     }
 
+    if (enterFrameInnerRef.current) {
+      cancelAnimationFrame(enterFrameInnerRef.current);
+      enterFrameInnerRef.current = null;
+    }
+
     if (selected) {
       setRenderedEvent(selected);
+      setCardEnterOffset(48);
       setIsCardVisible(false);
       enterFrameRef.current = requestAnimationFrame(() => {
-        setIsCardVisible(true);
         enterFrameRef.current = null;
+        enterFrameInnerRef.current = requestAnimationFrame(() => {
+          setIsCardVisible(true);
+          enterFrameInnerRef.current = null;
+        });
       });
       return;
     }
 
+    setCardEnterOffset(36);
     setIsCardVisible(false);
     closeTimerRef.current = setTimeout(() => {
       setRenderedEvent(null);
@@ -79,6 +91,7 @@ export default function AtlasMap() {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
+      if (enterFrameInnerRef.current) cancelAnimationFrame(enterFrameInnerRef.current);
     };
   }, []);
 
@@ -121,8 +134,9 @@ export default function AtlasMap() {
           style={{
             ...styles.card,
             opacity: isCardVisible ? 1 : 0,
-            transform: isCardVisible ? 'translateY(0)' : 'translateY(36px)',
+            transform: isCardVisible ? 'translateY(0)' : `translateY(${cardEnterOffset}px)`,
             pointerEvents: isCardVisible ? 'auto' : 'none',
+            transition: isCardVisible ? 'opacity 360ms ease, transform 360ms ease' : 'opacity 260ms ease, transform 260ms ease',
           }}
         >
           <button type="button" aria-label="Close event card" onClick={() => setSelectedId(null)} style={styles.closeButton}>
@@ -215,7 +229,6 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid rgba(255,225,160,.28)',
     boxShadow: '0 18px 40px rgba(0,0,0,.45)',
     zIndex: 15,
-    transition: 'opacity 260ms ease, transform 260ms ease',
     willChange: 'opacity, transform',
   },
   closeButton: {
