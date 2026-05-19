@@ -27,7 +27,10 @@ export default function AtlasMap() {
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [searchPulseTick, setSearchPulseTick] = useState(0);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
   const q = submittedQuery.trim().toLowerCase();
+  const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
+  const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
 
   const highlightedIds = useMemo(() => {
     const ids = new Set<string>();
@@ -124,6 +127,13 @@ export default function AtlasMap() {
   }, []);
 
   useEffect(() => {
+    const rotateFeaturedId = setInterval(() => {
+      setFeaturedIndex((prev) => (prev + 1) % featuredEvents.length);
+    }, 8200);
+    return () => clearInterval(rotateFeaturedId);
+  }, [featuredEvents.length]);
+
+  useEffect(() => {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
@@ -214,11 +224,13 @@ export default function AtlasMap() {
       <div style={styles.searchDock}>
         <button
           type="button"
-          onClick={() => setSelectedId('romeo-peach')}
+          onClick={() => setSelectedId(featuredEvent.id)}
           style={styles.featuredDiscovery}
-          aria-label="Open featured discovery: Romeo Peach Festival"
+          aria-label={`Open featured discovery: ${featuredEvent.name}`}
         >
-          Featured: Romeo Peach Festival
+          <span key={featuredEvent.id} className="featured-discovery-text">
+            Featured: {featuredEvent.name}
+          </span>
         </button>
         <input
           ref={searchInputRef}
@@ -248,6 +260,12 @@ export default function AtlasMap() {
           animation: searchAcceptPulse 360ms ease-out;
         }
 
+        .featured-discovery-text {
+          display: inline-block;
+          animation: featuredDiscoverySwap 1200ms cubic-bezier(.22,.61,.36,1);
+          will-change: opacity, transform;
+        }
+
         .marker-pulse {
           animation-name: markerPulse;
           animation-timing-function: ease-in-out;
@@ -255,6 +273,19 @@ export default function AtlasMap() {
           animation-fill-mode: both;
           will-change: transform, box-shadow, filter;
           transform-origin: center;
+        }
+
+        @keyframes featuredDiscoverySwap {
+          0% {
+            opacity: 0.42;
+            transform: translateY(4px);
+            filter: blur(1px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+            filter: blur(0);
+          }
         }
 
         @keyframes searchAcceptPulse {
