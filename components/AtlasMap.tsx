@@ -18,7 +18,6 @@ export default function AtlasMap() {
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [mapLift, setMapLift] = useState(0);
   const q = query.trim().toLowerCase();
 
@@ -89,33 +88,6 @@ export default function AtlasMap() {
   }, []);
 
   useEffect(() => {
-    if (!isSearchFocused) {
-      setKeyboardOffset(0);
-      return;
-    }
-
-    const updateViewport = () => {
-      const vv = window.visualViewport;
-      if (!vv) {
-        setKeyboardOffset(0);
-        return;
-      }
-
-      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      setKeyboardOffset(keyboardHeight);
-    };
-
-    updateViewport();
-    window.visualViewport?.addEventListener('resize', updateViewport);
-    window.visualViewport?.addEventListener('scroll', updateViewport);
-
-    return () => {
-      window.visualViewport?.removeEventListener('resize', updateViewport);
-      window.visualViewport?.removeEventListener('scroll', updateViewport);
-    };
-  }, [isSearchFocused]);
-
-  useEffect(() => {
     if (!isSearchFocused || !mapFrameRef.current || !searchDockRef.current) {
       setMapLift(0);
       return;
@@ -131,7 +103,7 @@ export default function AtlasMap() {
     }
 
     const maxMarkerScreenY = Math.max(...protectedEvents.map((event) => mapRect.top + mapRect.height * (event.y / 100)));
-    const minimumVisibleBottom = dockRect.top - 20;
+    const minimumVisibleBottom = Math.min(dockRect.top - 20, window.innerHeight * 0.44);
 
     if (maxMarkerScreenY <= minimumVisibleBottom) {
       setMapLift(0);
@@ -139,7 +111,7 @@ export default function AtlasMap() {
     }
 
     setMapLift(Math.min(maxMarkerScreenY - minimumVisibleBottom, 120));
-  }, [highlightedEvents, isSearchFocused, selected, query, keyboardOffset]);
+  }, [highlightedEvents, isSearchFocused, selected, query]);
 
   return (
     <section style={styles.hero} onPointerDown={handleBackdropPointerDown}>
@@ -147,7 +119,8 @@ export default function AtlasMap() {
         ref={mapFrameRef}
         style={{
           ...styles.mapFrame,
-          transform: mapLift > 0 ? `translateY(-${mapLift}px)` : 'translateY(0)',
+          transform: mapLift > 0 ? `translateY(-${mapLift}px) scale(${isSearchFocused ? 0.985 : 1})` : `translateY(0) scale(${isSearchFocused ? 0.985 : 1})`,
+          filter: isSearchFocused ? 'saturate(0.82) brightness(0.68)' : styles.mapFrame.filter,
         }}
       >
         <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" style={styles.mapImage} />
@@ -215,7 +188,7 @@ export default function AtlasMap() {
         ref={searchDockRef}
         style={{
           ...styles.searchDock,
-          bottom: keyboardOffset,
+          bottom: isSearchFocused ? '45vh' : 0,
         }}
       >
         <input
@@ -224,7 +197,10 @@ export default function AtlasMap() {
           placeholder="What would you like to discover?"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          onFocus={() => setIsSearchFocused(true)}
+          onFocus={() => {
+            setIsSearchFocused(true);
+            setSelectedId(null);
+          }}
           onBlur={() => setIsSearchFocused(false)}
         />
       </div>
@@ -269,7 +245,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     inset: 0,
     transformOrigin: 'center center',
-    transition: 'filter 0.6s ease, transform 280ms ease',
+    transition: 'filter 260ms ease, transform 280ms ease',
     filter: 'saturate(0.9) brightness(0.82)',
   },
   mapImage: {
@@ -305,7 +281,7 @@ const styles: Record<string, CSSProperties> = {
     backdropFilter: 'blur(12px)',
     background: 'linear-gradient(to top, rgba(7,9,13,.95), rgba(7,9,13,.55))',
     zIndex: 20,
-    transition: 'bottom 220ms ease',
+    transition: 'bottom 240ms ease',
   },
   searchInput: {
     width: '100%',
