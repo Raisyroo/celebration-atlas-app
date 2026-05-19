@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 
 export default function AtlasMap() {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const mapFrameRef = useRef<HTMLDivElement | null>(null);
+  const cardRef = useRef<HTMLElement | null>(null);
   const q = query.trim().toLowerCase();
 
   const highlightedIds = useMemo(() => {
@@ -31,9 +33,19 @@ export default function AtlasMap() {
     ? transformById[focusedId] ?? 'scale(1) translate(0,0)'
     : 'scale(1) translate(0,0)';
 
+  const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
+    if (!selectedId) return;
+
+    const target = event.target as Node;
+    if (cardRef.current?.contains(target)) return;
+    if (mapFrameRef.current?.contains(target)) {
+      setSelectedId(null);
+    }
+  };
+
   return (
-    <section style={styles.hero}>
-      <div style={{ ...styles.mapFrame, transform: mapTransform }}>
+    <section style={styles.hero} onPointerDown={handleBackdropPointerDown}>
+      <div ref={mapFrameRef} style={{ ...styles.mapFrame, transform: mapTransform }}>
         <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" style={styles.mapImage} />
 
         {ATLAS_EVENTS.map((event) => {
@@ -65,7 +77,7 @@ export default function AtlasMap() {
       </div>
 
       {selected ? (
-        <article style={styles.card}>
+        <article ref={cardRef} style={styles.card}>
           <button type="button" aria-label="Close event card" onClick={() => setSelectedId(null)} style={styles.closeButton}>
             ×
           </button>
