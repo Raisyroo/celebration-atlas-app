@@ -212,6 +212,14 @@ export default function AtlasMap() {
       ) : null}
 
       <div style={styles.searchDock}>
+        <button
+          type="button"
+          onClick={() => setSelectedId('romeo-peach')}
+          style={styles.featuredDiscovery}
+          aria-label="Open featured discovery: Romeo Peach Festival"
+        >
+          Featured: Romeo Peach Festival
+        </button>
         <input
           ref={searchInputRef}
           className={`atlas-search-input ${searchPulseTick > 0 ? 'atlas-search-input--pulse' : ''}`}
@@ -367,6 +375,24 @@ const styles: Record<string, CSSProperties> = {
     background: 'transparent',
     zIndex: 20,
     transition: 'bottom 240ms ease',
+  },
+  featuredDiscovery: {
+    display: 'block',
+    margin: '0 auto 8px',
+    padding: '4px 10px',
+    borderRadius: 999,
+    border: '1px solid rgba(255, 225, 160, 0.22)',
+    background: 'rgba(7, 10, 15, 0.18)',
+    color: 'rgba(255, 238, 205, 0.76)',
+    fontSize: 11,
+    letterSpacing: 0.24,
+    lineHeight: 1.2,
+    textShadow: '0 1px 3px rgba(2, 3, 7, 0.7)',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 240, 205, 0.04), 0 0 10px rgba(252, 201, 102, 0.12)',
+    backdropFilter: 'blur(2px)',
+    WebkitBackdropFilter: 'blur(2px)',
+    cursor: 'pointer',
+    touchAction: 'manipulation',
   },
   searchInput: {
     width: '100%',
