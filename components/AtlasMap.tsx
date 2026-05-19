@@ -26,19 +26,6 @@ export default function AtlasMap() {
   }, [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
-  const focusedId = highlightedIds.size === 1 ? Array.from(highlightedIds)[0] : selectedId;
-
-  const transformById: Record<string, string> = {
-    'romeo-peach': 'scale(1.32) translate(-8%, -12%)',
-    'armada-fair': 'scale(1.28) translate(-9%, -9%)',
-    'electric-forest': 'scale(1.24) translate(6%, -2%)',
-    'detroit-jazz': 'scale(1.24) translate(-11%, -18%)',
-  };
-
-  const mapTransform = focusedId
-    ? transformById[focusedId] ?? 'scale(1) translate(0,0)'
-    : 'scale(1) translate(0,0)';
-
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
@@ -97,12 +84,12 @@ export default function AtlasMap() {
 
   return (
     <section style={styles.hero} onPointerDown={handleBackdropPointerDown}>
-      <div ref={mapFrameRef} style={{ ...styles.mapFrame, transform: mapTransform }}>
+      <div ref={mapFrameRef} style={styles.mapFrame}>
         <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" style={styles.mapImage} />
 
         {ATLAS_EVENTS.map((event, index) => {
           const isHighlighted = highlightedIds.has(event.id);
-          const isActive = selectedId === event.id || isHighlighted;
+          const isSelected = selectedId === event.id;
           const isDimmed = highlightedIds.size > 0 && !isHighlighted;
           const pulseDuration = 2.4 + (index % 3) * 0.35;
           const pulseDelay = index * 0.26;
@@ -118,12 +105,16 @@ export default function AtlasMap() {
                 ...styles.marker,
                 left: `${event.x}%`,
                 top: `${event.y}%`,
-                opacity: isDimmed ? 0.35 : 1,
-                '--marker-scale-base': isActive ? 1.25 : 1,
-                '--marker-shadow-idle': isActive
+                opacity: isDimmed ? 0.28 : 1,
+                '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : 1,
+                '--marker-shadow-idle': isHighlighted
+                  ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
+                  : isSelected
                   ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
                   : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
-                '--marker-shadow-peak': isActive
+                '--marker-shadow-peak': isHighlighted
+                  ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
+                  : isSelected
                   ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
                   : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
                 animationDuration: `${pulseDuration}s`,
@@ -204,7 +195,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     inset: 0,
     transformOrigin: 'center center',
-    transition: 'transform 0.6s ease, filter 0.6s ease',
+    transition: 'filter 0.6s ease',
     filter: 'saturate(0.9) brightness(0.82)',
   },
   mapImage: {
