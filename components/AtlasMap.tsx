@@ -100,15 +100,18 @@ export default function AtlasMap() {
       <div ref={mapFrameRef} style={{ ...styles.mapFrame, transform: mapTransform }}>
         <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" style={styles.mapImage} />
 
-        {ATLAS_EVENTS.map((event) => {
+        {ATLAS_EVENTS.map((event, index) => {
           const isHighlighted = highlightedIds.has(event.id);
           const isActive = selectedId === event.id || isHighlighted;
           const isDimmed = highlightedIds.size > 0 && !isHighlighted;
+          const pulseDuration = 4 + (index % 3) * 0.35;
+          const pulseDelay = index * 0.26;
 
           return (
             <button
               key={event.id}
               type="button"
+              className="marker-pulse"
               aria-label={event.name}
               onClick={() => setSelectedId(event.id)}
               style={{
@@ -120,6 +123,8 @@ export default function AtlasMap() {
                 boxShadow: isActive
                   ? '0 0 10px #ffe4a6, 0 0 24px rgba(253,208,120,.98)'
                   : '0 0 6px #f2c66a, 0 0 16px rgba(242,198,106,.72)',
+                animationDuration: `${pulseDuration}s`,
+                animationDelay: `${pulseDelay}s`,
               }}
             />
           );
@@ -155,6 +160,27 @@ export default function AtlasMap() {
           onChange={(event) => setQuery(event.target.value)}
         />
       </div>
+
+      <style jsx>{`
+        .marker-pulse {
+          animation-name: markerPulse;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+          animation-fill-mode: both;
+          will-change: filter;
+          transform-origin: center;
+        }
+
+        @keyframes markerPulse {
+          0%,
+          100% {
+            filter: brightness(1) saturate(1);
+          }
+          50% {
+            filter: brightness(1.13) saturate(1.12);
+          }
+        }
+      `}</style>
     </section>
   );
 }
