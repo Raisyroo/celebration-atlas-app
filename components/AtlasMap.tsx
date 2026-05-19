@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
-import { ATLAS_EVENTS } from '../data/events';
+import { ATLAS_EVENTS, type AtlasCategory } from '../data/events';
+
+const CHIP_CATEGORIES: AtlasCategory[] = ['Festivals', 'Music', 'Fairs'];
 
 export default function AtlasMap() {
   const [query, setQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<AtlasCategory | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
@@ -18,12 +21,25 @@ export default function AtlasMap() {
   const q = query.trim().toLowerCase();
 
   const highlightedIds = useMemo(() => {
-    if (!q) return new Set<string>();
-    if (q.includes('romeo') || q.includes('peach')) return new Set(['romeo-peach']);
-    if (q.includes('music')) return new Set(['electric-forest', 'detroit-jazz']);
-    if (q.includes('fair')) return new Set(['armada-fair']);
-    return new Set<string>();
-  }, [q]);
+    const ids = new Set<string>();
+
+    if (q) {
+      if (q.includes('romeo') || q.includes('peach')) ids.add('romeo-peach');
+      if (q.includes('music')) {
+        ids.add('electric-forest');
+        ids.add('detroit-jazz');
+      }
+      if (q.includes('fair')) ids.add('armada-fair');
+    }
+
+    if (activeCategory) {
+      ATLAS_EVENTS.forEach((event) => {
+        if (event.category === activeCategory) ids.add(event.id);
+      });
+    }
+
+    return ids;
+  }, [activeCategory, q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
@@ -115,13 +131,13 @@ export default function AtlasMap() {
                 '--marker-shadow-idle': isHighlighted
                   ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
                   : isSelected
-                  ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
-                  : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
+                    ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
+                    : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
                 '--marker-shadow-peak': isHighlighted
                   ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
                   : isSelected
-                  ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
-                  : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
+                    ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
+                    : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
                 animationDuration: `${pulseDuration}s`,
                 animationDelay: `${pulseDelay}s`,
               } as CSSProperties)}
@@ -152,6 +168,24 @@ export default function AtlasMap() {
       ) : null}
 
       <div style={styles.searchDock}>
+        <div style={styles.chipRow}>
+          {CHIP_CATEGORIES.map((category) => {
+            const isActive = activeCategory === category;
+            return (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setActiveCategory(isActive ? null : category)}
+                style={{
+                  ...styles.chip,
+                  ...(isActive ? styles.chipActive : null),
+                }}
+              >
+                {category}
+              </button>
+            );
+          })}
+        </div>
         <input
           style={styles.searchInput}
           placeholder="What would you like to discover?"
@@ -232,11 +266,37 @@ const styles: Record<string, CSSProperties> = {
     left: 0,
     right: 0,
     bottom: 0,
-    padding: '12px 14px calc(12px + env(safe-area-inset-bottom))',
+    display: 'grid',
+    gap: 10,
+    padding: '10px 14px calc(12px + env(safe-area-inset-bottom))',
     backdropFilter: 'blur(12px)',
     background: 'linear-gradient(to top, rgba(7,9,13,.95), rgba(7,9,13,.55))',
     zIndex: 20,
     transition: 'bottom 240ms ease',
+  },
+  chipRow: {
+    display: 'flex',
+    gap: 8,
+    overflowX: 'auto',
+    scrollbarWidth: 'none',
+  },
+  chip: {
+    border: '1px solid rgba(255,225,160,.2)',
+    borderRadius: 999,
+    background: 'linear-gradient(140deg, rgba(250,220,158,.08), rgba(12,14,20,.78))',
+    color: 'rgba(255,236,193,.84)',
+    fontSize: 12,
+    letterSpacing: '.08em',
+    textTransform: 'uppercase',
+    padding: '8px 12px',
+    whiteSpace: 'nowrap',
+    touchAction: 'manipulation',
+  },
+  chipActive: {
+    border: '1px solid rgba(255,232,178,.6)',
+    color: '#fff4cf',
+    background: 'linear-gradient(140deg, rgba(255,223,145,.3), rgba(31,22,12,.88))',
+    boxShadow: '0 0 22px rgba(253,208,120,.35)',
   },
   searchInput: {
     width: '100%',
@@ -252,7 +312,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'fixed',
     left: 12,
     right: 12,
-    bottom: 86,
+    bottom: 120,
     padding: '14px 14px 16px',
     borderRadius: 18,
     background: 'rgba(9,12,17,.92)',
