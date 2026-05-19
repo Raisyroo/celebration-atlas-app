@@ -28,6 +28,7 @@ export default function AtlasMap() {
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
@@ -61,10 +62,73 @@ export default function AtlasMap() {
   }, [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
+  const dragStateRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    baseX: number;
+    baseY: number;
+    moved: boolean;
+  } | null>(null);
+
+  const clampPan = useCallback((x: number, y: number) => {
+    const maxX = 22;
+    const maxY = 16;
+
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y)),
+    };
+  }, []);
 
   const mapFocusTransform = selected
-    ? `translate(${(50 - selected.x) * 0.12}%, ${(50 - selected.y) * 0.12}%) scale(1.045)`
-    : 'translate(0%, 0%) scale(1)';
+    ? `translate(calc(${(50 - selected.x) * 0.12}% + ${panOffset.x}px), calc(${(50 - selected.y) * 0.12}% + ${panOffset.y}px)) scale(1.045)`
+    : `translate(${panOffset.x}px, ${panOffset.y}px) scale(1)`;
+
+  const handleMapPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || !event.isPrimary) return;
+
+    const target = event.target as HTMLElement;
+    if (target.closest('button, input, textarea, a')) return;
+
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      baseX: panOffset.x,
+      baseY: panOffset.y,
+      moved: false,
+    };
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleMapPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+    const constrained = clampPan(dragState.baseX + deltaX * 0.24, dragState.baseY + deltaY * 0.24);
+
+    if (!dragState.moved && Math.hypot(deltaX, deltaY) > 4) {
+      dragState.moved = true;
+    }
+
+    setPanOffset(constrained);
+  };
+
+  const handleMapPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    dragStateRef.current = null;
+  };
+
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
@@ -145,6 +209,10 @@ export default function AtlasMap() {
     <section style={styles.hero} onPointerDown={handleBackdropPointerDown}>
       <div
         ref={mapFrameRef}
+        onPointerDown={handleMapPointerDown}
+        onPointerMove={handleMapPointerMove}
+        onPointerUp={handleMapPointerUp}
+        onPointerCancel={handleMapPointerUp}
         style={{
           ...styles.mapFrame,
           transform: mapFocusTransform,
@@ -340,7 +408,8 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     inset: 0,
     transformOrigin: 'center center',
-    transition: 'filter 260ms ease, transform 680ms cubic-bezier(.22,.61,.36,1)',
+    transition: 'filter 260ms ease, transform 520ms cubic-bezier(.22,.61,.36,1)',
+    touchAction: 'none',
     filter: 'saturate(0.9) brightness(0.82)',
   },
   mapImage: {
