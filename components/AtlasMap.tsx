@@ -102,18 +102,6 @@ export default function AtlasMap() {
 
   const mapFocusTransform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom.toFixed(4)})`;
 
-  const handleResetView = useCallback(() => {
-    if (inertiaFrameRef.current) {
-      cancelAnimationFrame(inertiaFrameRef.current);
-      inertiaFrameRef.current = null;
-      inertiaStateRef.current = null;
-    }
-    dragVelocityRef.current = { x: 0, y: 0 };
-    lastDragSampleRef.current = null;
-    setPanOffset({ x: 0, y: 0 });
-    setZoom(1);
-  }, []);
-
   const stopInertia = useCallback(() => {
     if (!inertiaFrameRef.current) return;
     cancelAnimationFrame(inertiaFrameRef.current);
@@ -469,9 +457,6 @@ export default function AtlasMap() {
       ) : null}
 
       <div style={styles.searchDock}>
-        <button type="button" onClick={handleResetView} style={styles.resetViewButton} aria-label="Reset map view">
-          Reset View
-        </button>
         <button
           type="button"
           onClick={() => setSelectedId(featuredEvent.id)}
@@ -671,24 +656,6 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.2,
     textShadow: '0 1px 3px rgba(2, 3, 7, 0.7)',
     boxShadow: 'inset 0 0 0 1px rgba(255, 240, 205, 0.04), 0 0 10px rgba(252, 201, 102, 0.12)',
-    backdropFilter: 'blur(2px)',
-    WebkitBackdropFilter: 'blur(2px)',
-    cursor: 'pointer',
-    touchAction: 'manipulation',
-  },
-  resetViewButton: {
-    display: 'block',
-    margin: '0 auto 8px',
-    padding: '5px 12px',
-    borderRadius: 999,
-    border: '1px solid rgba(255, 225, 160, 0.34)',
-    background: 'rgba(8, 12, 18, 0.28)',
-    color: 'rgba(255, 238, 205, 0.84)',
-    fontSize: 12,
-    letterSpacing: 0.26,
-    lineHeight: 1.2,
-    textShadow: '0 1px 3px rgba(2, 3, 7, 0.7)',
-    boxShadow: 'inset 0 0 0 1px rgba(255, 240, 205, 0.06), 0 0 10px rgba(252, 201, 102, 0.14)',
     backdropFilter: 'blur(2px)',
     WebkitBackdropFilter: 'blur(2px)',
     cursor: 'pointer',
