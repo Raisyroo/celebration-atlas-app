@@ -42,6 +42,10 @@ export default function AtlasMap() {
   }, [activeCategory, q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
+
+  const mapFocusTransform = selected
+    ? `translate(${(50 - selected.x) * 0.12}%, ${(50 - selected.y) * 0.12}%) scale(1.045)`
+    : 'translate(0%, 0%) scale(1)';
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
@@ -104,6 +108,7 @@ export default function AtlasMap() {
         ref={mapFrameRef}
         style={{
           ...styles.mapFrame,
+          transform: mapFocusTransform,
         }}
       >
         <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
@@ -242,7 +247,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     inset: 0,
     transformOrigin: 'center center',
-    transition: 'filter 260ms ease, transform 280ms ease',
+    transition: 'filter 260ms ease, transform 680ms cubic-bezier(.22,.61,.36,1)',
     filter: 'saturate(0.9) brightness(0.82)',
   },
   mapImage: {
