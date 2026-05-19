@@ -190,6 +190,7 @@ export default function AtlasMap() {
 
       <div style={styles.searchDock}>
         <input
+          className="atlas-search-input"
           style={styles.searchInput}
           placeholder="What would you like to discover?"
           value={query}
@@ -198,6 +199,10 @@ export default function AtlasMap() {
       </div>
 
       <style jsx>{`
+        .atlas-search-input::placeholder {
+          color: rgba(255, 239, 206, 0.62);
+        }
+
         .marker-pulse {
           animation-name: markerPulse;
           animation-timing-function: ease-in-out;
@@ -281,8 +286,8 @@ const styles: Record<string, CSSProperties> = {
     display: 'grid',
     gap: 10,
     padding: '10px 14px calc(12px + env(safe-area-inset-bottom))',
-    backdropFilter: 'blur(12px)',
-    background: 'linear-gradient(to top, rgba(7,9,13,.95), rgba(7,9,13,.55))',
+    backdropFilter: 'none',
+    background: 'transparent',
     zIndex: 20,
     transition: 'bottom 240ms ease',
   },
@@ -321,11 +326,13 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     padding: '14px 16px',
     borderRadius: 999,
-    border: '1px solid rgba(255,227,170,.35)',
-    background: 'rgba(17,20,27,.85)',
+    border: '1px solid rgba(255, 226, 170, 0.56)',
+    background: 'rgba(7, 10, 15, 0.16)',
     color: '#fff7de',
     fontSize: 16,
     outline: 'none',
+    textShadow: '0 1px 3px rgba(2, 3, 6, 0.85)',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 0 14px rgba(252, 201, 102, 0.28)',
   },
   card: {
     position: 'fixed',
