@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 
@@ -19,6 +19,7 @@ export default function AtlasMap() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterFrameRef = useRef<number | null>(null);
   const enterFrameInnerRef = useRef<number | null>(null);
@@ -94,6 +95,11 @@ export default function AtlasMap() {
       closeTimerRef.current = null;
     }, 260);
   }, [selected]);
+
+  const submitSearch = useCallback(() => {
+    setSubmittedQuery(query);
+    searchInputRef.current?.blur();
+  }, [query]);
 
   useEffect(() => {
     const rotateId = setInterval(() => {
@@ -182,15 +188,17 @@ export default function AtlasMap() {
 
       <div style={styles.searchDock}>
         <input
+          ref={searchInputRef}
           className="atlas-search-input"
           style={styles.searchInput}
           placeholder={query ? '' : ATMOSPHERIC_SUGGESTIONS[suggestionIndex]}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={(event) => {
+            if (event.nativeEvent.isComposing) return;
             if (event.key !== 'Enter') return;
-            setSubmittedQuery(query);
-            event.currentTarget.blur();
+            event.preventDefault();
+            submitSearch();
           }}
         />
       </div>
