@@ -11,6 +11,8 @@ const ATMOSPHERIC_SUGGESTIONS = [
   'Show me county fairs',
   'Find waterfront festivals',
 ];
+const MAP_BLEED_X = 0.12;
+const MAP_BLEED_Y = 0.1;
 
 export default function AtlasMap() {
   const [query, setQuery] = useState('');
@@ -90,9 +92,16 @@ export default function AtlasMap() {
   const clampZoom = useCallback((nextZoom: number) => Math.max(1, Math.min(1.8, nextZoom)), []);
 
   const clampPan = useCallback((x: number, y: number, atZoom: number) => {
+    const frame = mapFrameRef.current;
+    const frameWidth = frame?.clientWidth ?? 0;
+    const frameHeight = frame?.clientHeight ?? 0;
+    const baseBleedX = frameWidth * MAP_BLEED_X * 0.5;
+    const baseBleedY = frameHeight * MAP_BLEED_Y * 0.5;
     const zoomPanFactor = Math.max(0, atZoom - 1);
-    const maxX = 22 + zoomPanFactor * 90;
-    const maxY = 16 + zoomPanFactor * 72;
+    const zoomRangeX = frameWidth * 0.18 * zoomPanFactor;
+    const zoomRangeY = frameHeight * 0.15 * zoomPanFactor;
+    const maxX = baseBleedX + zoomRangeX;
+    const maxY = baseBleedY + zoomRangeY;
 
     return {
       x: Math.max(-maxX, Math.min(maxX, x)),
@@ -357,6 +366,18 @@ export default function AtlasMap() {
   }, [zoom]);
 
   useEffect(() => {
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
@@ -374,67 +395,71 @@ export default function AtlasMap() {
         onPointerUp={handleMapPointerUp}
         onPointerCancel={handleMapPointerUp}
         onWheel={handleWheel}
-        style={{
-          ...styles.mapFrame,
-          transform: mapFocusTransform,
-        }}
+        style={styles.mapFrame}
       >
-        <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
+        <div
+          style={{
+            ...styles.mapContent,
+            transform: mapFocusTransform,
+          }}
+        >
+          <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
 
-        {ATLAS_EVENTS.map((event, index) => {
-          const isHighlighted = highlightedIds.has(event.id);
-          const isSelected = selectedId === event.id;
-          const isDimmed = highlightedIds.size > 0 && !isHighlighted;
-          const isSearchActive = highlightedIds.size > 0;
-          const isFeaturedMarker = !isSearchActive && featuredEvent.id === event.id;
-          const pulseDuration = 2.4 + (index % 3) * 0.35;
-          const pulseDelay = index * 0.26;
+          {ATLAS_EVENTS.map((event, index) => {
+            const isHighlighted = highlightedIds.has(event.id);
+            const isSelected = selectedId === event.id;
+            const isDimmed = highlightedIds.size > 0 && !isHighlighted;
+            const isSearchActive = highlightedIds.size > 0;
+            const isFeaturedMarker = !isSearchActive && featuredEvent.id === event.id;
+            const pulseDuration = 2.4 + (index % 3) * 0.35;
+            const pulseDelay = index * 0.26;
 
-          return (
-            <div key={event.id} style={{ ...styles.markerWrap, left: `${event.x}%`, top: `${event.y}%` }}>
-              <button
-                type="button"
-                className="marker-pulse"
-                aria-label={event.name}
-                onClick={() => setSelectedId(event.id)}
-                style={({
-                  ...styles.marker,
-                  opacity: isDimmed ? 0.28 : 1,
-                  '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : isFeaturedMarker ? 1.08 : 1,
-                  '--marker-shadow-idle': isHighlighted
-                    ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
-                    : isSelected
-                      ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
-                      : isFeaturedMarker
-                        ? '0 0 10px rgba(248,209,124,.9), 0 0 22px rgba(248,209,124,.76)'
-                        : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
-                  '--marker-shadow-peak': isHighlighted
-                    ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
-                    : isSelected
-                      ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
-                      : isFeaturedMarker
-                        ? '0 0 16px rgba(255,233,176,.95), 0 0 33px rgba(253,208,120,.93)'
-                        : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
-                  animationDuration: `${pulseDuration}s`,
-                  animationDelay: `${pulseDelay}s`,
-                } as CSSProperties)}
-              />
-              <div
-                aria-hidden="true"
-                style={{
-                  ...styles.markerLabel,
-                  opacity: isHighlighted ? 1 : 0,
-                  transform: isHighlighted ? 'translate(-50%, -122%)' : 'translate(-50%, -116%)',
-                  pointerEvents: 'none',
-                }}
-              >
-                {event.name}
+            return (
+              <div key={event.id} style={{ ...styles.markerWrap, left: `${event.x}%`, top: `${event.y}%` }}>
+                <button
+                  type="button"
+                  className="marker-pulse"
+                  aria-label={event.name}
+                  onClick={() => setSelectedId(event.id)}
+                  style={({
+                    ...styles.marker,
+                    opacity: isDimmed ? 0.28 : 1,
+                    '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : isFeaturedMarker ? 1.08 : 1,
+                    '--marker-shadow-idle': isHighlighted
+                      ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
+                      : isSelected
+                        ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
+                        : isFeaturedMarker
+                          ? '0 0 10px rgba(248,209,124,.9), 0 0 22px rgba(248,209,124,.76)'
+                          : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
+                    '--marker-shadow-peak': isHighlighted
+                      ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
+                      : isSelected
+                        ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
+                        : isFeaturedMarker
+                          ? '0 0 16px rgba(255,233,176,.95), 0 0 33px rgba(253,208,120,.93)'
+                          : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
+                    animationDuration: `${pulseDuration}s`,
+                    animationDelay: `${pulseDelay}s`,
+                  } as CSSProperties)}
+                />
+                <div
+                  aria-hidden="true"
+                  style={{
+                    ...styles.markerLabel,
+                    opacity: isHighlighted ? 1 : 0,
+                    transform: isHighlighted ? 'translate(-50%, -122%)' : 'translate(-50%, -116%)',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {event.name}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
 
-        <div style={styles.vignette} />
+          <div style={styles.vignette} />
+        </div>
       </div>
 
       {renderedEvent ? (
@@ -568,6 +593,12 @@ const styles: Record<string, CSSProperties> = {
   mapFrame: {
     position: 'absolute',
     inset: 0,
+    overflow: 'hidden',
+    contain: 'layout paint size',
+  },
+  mapContent: {
+    position: 'absolute',
+    inset: `-${MAP_BLEED_Y * 50}% -${MAP_BLEED_X * 50}%`,
     transformOrigin: 'center center',
     transition: 'filter 260ms ease, transform 520ms cubic-bezier(.22,.61,.36,1)',
     touchAction: 'none',
