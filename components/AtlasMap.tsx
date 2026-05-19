@@ -172,27 +172,6 @@ export default function AtlasMap() {
         </article>
       ) : null}
 
-      <div style={styles.chipRail}>
-        <div style={styles.chipRow}>
-          {CHIP_CATEGORIES.map((category) => {
-            const isActive = activeCategory === category;
-            return (
-              <button
-                key={category}
-                type="button"
-                onClick={() => setActiveCategory(isActive ? null : category)}
-                style={{
-                  ...styles.chip,
-                  ...(isActive ? styles.chipActive : null),
-                }}
-              >
-                {category}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       <div style={styles.searchDock}>
         <input
           className="atlas-search-input"
@@ -201,6 +180,26 @@ export default function AtlasMap() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
+        <div style={styles.discoveryDock}>
+          <div style={styles.chipRow}>
+            {CHIP_CATEGORIES.map((category) => {
+              const isActive = activeCategory === category;
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setActiveCategory(isActive ? null : category)}
+                  style={{
+                    ...styles.chip,
+                    ...(isActive ? styles.chipActive : null),
+                  }}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       <style jsx>{`
@@ -277,15 +276,6 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     touchAction: 'manipulation',
   },
-  chipRail: {
-    position: 'fixed',
-    left: 0,
-    right: 0,
-    bottom: 'calc(68px + env(safe-area-inset-bottom))',
-    padding: '0 14px',
-    zIndex: 20,
-    pointerEvents: 'none',
-  },
   searchDock: {
     position: 'fixed',
     left: 0,
@@ -298,6 +288,12 @@ const styles: Record<string, CSSProperties> = {
     background: 'transparent',
     zIndex: 20,
     transition: 'bottom 240ms ease',
+  },
+  discoveryDock: {
+    padding: '6px 2px 2px',
+    borderRadius: 12,
+    background: 'linear-gradient(to bottom, rgba(10,14,20,.18), rgba(10,14,20,.06))',
+    border: '1px solid rgba(255, 226, 170, 0.14)',
   },
   chipRow: {
     display: 'flex',
