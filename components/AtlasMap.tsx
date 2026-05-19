@@ -15,6 +15,7 @@ const MAP_BLEED_Y = 0.1;
 
 export default function AtlasMap() {
   const [query, setQuery] = useState('');
+  const [displayedQuery, setDisplayedQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -22,6 +23,7 @@ export default function AtlasMap() {
   const cardRef = useRef<HTMLElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queryFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterFrameRef = useRef<number | null>(null);
   const enterFrameInnerRef = useRef<number | null>(null);
   const [renderedEvent, setRenderedEvent] = useState<(typeof ATLAS_EVENTS)[number] | null>(null);
@@ -30,6 +32,7 @@ export default function AtlasMap() {
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
@@ -113,9 +116,24 @@ export default function AtlasMap() {
 
   const submitSearch = useCallback(() => {
     const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+
+    if (queryFadeTimerRef.current) {
+      clearTimeout(queryFadeTimerRef.current);
+      queryFadeTimerRef.current = null;
+    }
+
     setSubmittedQuery(trimmedQuery);
+    setDisplayedQuery(trimmedQuery);
+    setIsSubmittedQueryFading(true);
     setSearchPulseTick((prev) => prev + 1);
     searchInputRef.current?.blur();
+    queryFadeTimerRef.current = setTimeout(() => {
+      setDisplayedQuery('');
+      setQuery('');
+      setIsSubmittedQueryFading(false);
+      queryFadeTimerRef.current = null;
+    }, 680);
   }, [query]);
 
   useEffect(() => {
@@ -148,6 +166,7 @@ export default function AtlasMap() {
   useEffect(() => {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      if (queryFadeTimerRef.current) clearTimeout(queryFadeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
       if (enterFrameInnerRef.current) cancelAnimationFrame(enterFrameInnerRef.current);
     };
@@ -256,12 +275,19 @@ export default function AtlasMap() {
         </button>
         <div style={styles.searchInputWrap}>
           <span style={styles.searchPrefix} aria-hidden="true">Search:</span>
+          <span
+            aria-hidden="true"
+            className={`atlas-search-query ${isSubmittedQueryFading ? 'atlas-search-query--fade' : ''}`}
+            style={styles.searchQueryText}
+          >
+            {query || displayedQuery}
+          </span>
           <input
             ref={searchInputRef}
             className={`atlas-search-input ${searchPulseTick > 0 ? 'atlas-search-input--pulse' : ''}`}
             style={styles.searchInput}
             value={query}
-            placeholder={!query.trim() && !isSearchFocused ? ATMOSPHERIC_SUGGESTIONS[suggestionIndex] : ''}
+            placeholder={!query.trim() && !displayedQuery && !isSearchFocused ? ATMOSPHERIC_SUGGESTIONS[suggestionIndex] : ''}
             onChange={(event) => setQuery(event.target.value)}
             onAnimationEnd={() => {
               setSearchPulseTick(0);
@@ -295,6 +321,15 @@ export default function AtlasMap() {
         .atlas-search-suggestion--fade {
           opacity: 0;
           transition: opacity 2s ease;
+        }
+
+        .atlas-search-query {
+          opacity: 1;
+          transition: opacity 640ms ease;
+        }
+
+        .atlas-search-query--fade {
+          opacity: 0;
         }
 
         .featured-discovery-text {
@@ -470,9 +505,16 @@ const styles: Record<string, CSSProperties> = {
     touchAction: 'manipulation',
   },
   searchInputWrap: {
+    position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
+    minHeight: 50,
+    width: '100%',
+    borderRadius: 999,
+    border: '1px solid rgba(255, 226, 170, 0.56)',
+    background: 'rgba(7, 10, 15, 0.16)',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 0 14px rgba(252, 201, 102, 0.28)',
+    padding: '0 14px',
   },
   searchPrefix: {
     flexShrink: 0,
@@ -481,18 +523,31 @@ const styles: Record<string, CSSProperties> = {
     textShadow: '0 1px 3px rgba(2, 3, 6, 0.85)',
     fontSize: 16,
   },
-  searchInput: {
-    flex: 1,
-    width: '100%',
-    padding: '14px 14px',
-    borderRadius: 999,
-    border: '1px solid rgba(255, 226, 170, 0.56)',
-    background: 'rgba(7, 10, 15, 0.16)',
+  searchQueryText: {
+    marginLeft: 8,
     color: 'rgba(255, 239, 206, 0.98)',
+    fontSize: 16,
+    textShadow: '0 1px 3px rgba(2, 3, 6, 0.85)',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    maxWidth: 'calc(100% - 92px)',
+    pointerEvents: 'none',
+  },
+  searchInput: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    padding: '14px 14px 14px 82px',
+    borderRadius: 999,
+    border: 'none',
+    background: 'transparent',
+    color: 'transparent',
+    caretColor: 'rgba(255, 239, 206, 0.98)',
     fontSize: 16,
     outline: 'none',
     textShadow: '0 1px 3px rgba(2, 3, 6, 0.85)',
-    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 0 14px rgba(252, 201, 102, 0.28)',
+    boxShadow: 'none',
   },
   card: {
     position: 'fixed',
