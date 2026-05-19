@@ -251,7 +251,8 @@ export default function AtlasMap() {
 const styles: Record<string, CSSProperties> = {
   hero: {
     position: 'relative',
-    height: '100vh',
+    height: '100dvh',
+    minHeight: '100dvh',
     overflow: 'hidden',
     background: 'radial-gradient(circle at 50% 15%, #172233, #05070c 70%)',
     color: '#f5e8c7',
