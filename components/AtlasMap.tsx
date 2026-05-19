@@ -93,6 +93,7 @@ export default function AtlasMap() {
       y: Math.max(-maxY, Math.min(maxY, y)),
     };
   }, []);
+  const isViewDirty = selectedId !== null || zoom > 1.001 || Math.abs(panOffset.x) > 0.5 || Math.abs(panOffset.y) > 0.5;
 
   const mapFocusScale = selected ? 1.045 : 1;
   const mapFocusTransform = selected
@@ -258,6 +259,12 @@ export default function AtlasMap() {
     searchInputRef.current?.blur();
   }, [query]);
 
+  const resetView = useCallback(() => {
+    setSelectedId(null);
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
+
   useEffect(() => {
     const rotateId = setInterval(() => {
       setSuggestionIndex((prev) => (prev + 1) % ATMOSPHERIC_SUGGESTIONS.length);
@@ -369,6 +376,12 @@ export default function AtlasMap() {
           <h3 style={styles.cardTitle}>{renderedEvent.name}</h3>
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
         </article>
+      ) : null}
+
+      {isViewDirty ? (
+        <button type="button" onClick={resetView} style={styles.resetViewButton} aria-label="Reset map view">
+          Reset View
+        </button>
       ) : null}
 
       <div style={styles.searchDock}>
@@ -619,6 +632,26 @@ const styles: Record<string, CSSProperties> = {
     placeItems: 'center',
     cursor: 'pointer',
     touchAction: 'manipulation',
+  },
+  resetViewButton: {
+    position: 'fixed',
+    top: 'max(14px, calc(8px + env(safe-area-inset-top)))',
+    right: 12,
+    padding: '6px 11px',
+    borderRadius: 999,
+    border: '1px solid rgba(255,225,160,.28)',
+    background: 'rgba(8, 11, 16, 0.24)',
+    color: 'rgba(255, 238, 205, 0.78)',
+    fontSize: 11,
+    letterSpacing: 0.26,
+    lineHeight: 1.1,
+    textShadow: '0 1px 3px rgba(2,3,7,.72)',
+    boxShadow: 'inset 0 0 0 1px rgba(255,240,205,0.04), 0 0 10px rgba(252,201,102,0.1)',
+    backdropFilter: 'blur(2px)',
+    WebkitBackdropFilter: 'blur(2px)',
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+    zIndex: 18,
   },
   cardTitle: {
     margin: '0 40px 6px 0',
