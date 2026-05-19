@@ -156,6 +156,8 @@ export default function AtlasMap() {
           const isHighlighted = highlightedIds.has(event.id);
           const isSelected = selectedId === event.id;
           const isDimmed = highlightedIds.size > 0 && !isHighlighted;
+          const isSearchActive = highlightedIds.size > 0;
+          const isFeaturedMarker = !isSearchActive && featuredEvent.id === event.id;
           const pulseDuration = 2.4 + (index % 3) * 0.35;
           const pulseDelay = index * 0.26;
 
@@ -169,17 +171,21 @@ export default function AtlasMap() {
                 style={({
                   ...styles.marker,
                   opacity: isDimmed ? 0.28 : 1,
-                  '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : 1,
+                  '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : isFeaturedMarker ? 1.08 : 1,
                   '--marker-shadow-idle': isHighlighted
                     ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
                     : isSelected
                       ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
-                      : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
+                      : isFeaturedMarker
+                        ? '0 0 10px rgba(248,209,124,.9), 0 0 22px rgba(248,209,124,.76)'
+                        : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
                   '--marker-shadow-peak': isHighlighted
                     ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
                     : isSelected
                       ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
-                      : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
+                      : isFeaturedMarker
+                        ? '0 0 16px rgba(255,233,176,.95), 0 0 33px rgba(253,208,120,.93)'
+                        : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
                   animationDuration: `${pulseDuration}s`,
                   animationDelay: `${pulseDelay}s`,
                 } as CSSProperties)}
