@@ -7,9 +7,6 @@ import { ATLAS_EVENTS } from '../data/events';
 export default function AtlasMap() {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const mapFrameRef = useRef<HTMLDivElement | null>(null);
-  const searchDockRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterFrameRef = useRef<number | null>(null);
@@ -17,9 +14,6 @@ export default function AtlasMap() {
   const [renderedEvent, setRenderedEvent] = useState<(typeof ATLAS_EVENTS)[number] | null>(null);
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [keyboardOffset, setKeyboardOffset] = useState(0);
-  const [mapLift, setMapLift] = useState(0);
   const q = query.trim().toLowerCase();
 
   const highlightedIds = useMemo(() => {
@@ -31,15 +25,12 @@ export default function AtlasMap() {
   }, [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
-  const highlightedEvents = ATLAS_EVENTS.filter((event) => highlightedIds.has(event.id));
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
     const target = event.target as Node;
     if (cardRef.current?.contains(target)) return;
-    if (mapFrameRef.current?.contains(target)) {
-      setSelectedId(null);
-    }
+    setSelectedId(null);
   };
 
   useEffect(() => {
@@ -88,68 +79,10 @@ export default function AtlasMap() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isSearchFocused) {
-      setKeyboardOffset(0);
-      return;
-    }
-
-    const updateViewport = () => {
-      const vv = window.visualViewport;
-      if (!vv) {
-        setKeyboardOffset(0);
-        return;
-      }
-
-      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      setKeyboardOffset(keyboardHeight);
-    };
-
-    updateViewport();
-    window.visualViewport?.addEventListener('resize', updateViewport);
-    window.visualViewport?.addEventListener('scroll', updateViewport);
-
-    return () => {
-      window.visualViewport?.removeEventListener('resize', updateViewport);
-      window.visualViewport?.removeEventListener('scroll', updateViewport);
-    };
-  }, [isSearchFocused]);
-
-  useEffect(() => {
-    if (!isSearchFocused || !mapFrameRef.current || !searchDockRef.current) {
-      setMapLift(0);
-      return;
-    }
-
-    const dockRect = searchDockRef.current.getBoundingClientRect();
-    const mapRect = mapFrameRef.current.getBoundingClientRect();
-    const protectedEvents = selected ? [selected] : highlightedEvents;
-
-    if (protectedEvents.length === 0) {
-      setMapLift(0);
-      return;
-    }
-
-    const maxMarkerScreenY = Math.max(...protectedEvents.map((event) => mapRect.top + mapRect.height * (event.y / 100)));
-    const minimumVisibleBottom = dockRect.top - 20;
-
-    if (maxMarkerScreenY <= minimumVisibleBottom) {
-      setMapLift(0);
-      return;
-    }
-
-    setMapLift(Math.min(maxMarkerScreenY - minimumVisibleBottom, 120));
-  }, [highlightedEvents, isSearchFocused, selected, query, keyboardOffset]);
 
   return (
     <section style={styles.hero} onPointerDown={handleBackdropPointerDown}>
-      <div
-        ref={mapFrameRef}
-        style={{
-          ...styles.mapFrame,
-          transform: mapLift > 0 ? `translateY(-${mapLift}px)` : 'translateY(0)',
-        }}
-      >
+      <div style={styles.mapFrame}>
         <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" style={styles.mapImage} />
 
         {ATLAS_EVENTS.map((event, index) => {
@@ -211,21 +144,12 @@ export default function AtlasMap() {
         </article>
       ) : null}
 
-      <div
-        ref={searchDockRef}
-        style={{
-          ...styles.searchDock,
-          bottom: keyboardOffset,
-        }}
-      >
+      <div style={styles.searchDock}>
         <input
-          ref={searchInputRef}
           style={styles.searchInput}
           placeholder="What would you like to discover?"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          onFocus={() => setIsSearchFocused(true)}
-          onBlur={() => setIsSearchFocused(false)}
         />
       </div>
 
