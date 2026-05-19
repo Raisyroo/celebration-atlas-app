@@ -167,7 +167,7 @@ export default function AtlasMap() {
         </article>
       ) : null}
 
-      <div style={styles.searchDock}>
+      <div style={styles.chipRail}>
         <div style={styles.chipRow}>
           {CHIP_CATEGORIES.map((category) => {
             const isActive = activeCategory === category;
@@ -186,6 +186,9 @@ export default function AtlasMap() {
             );
           })}
         </div>
+      </div>
+
+      <div style={styles.searchDock}>
         <input
           style={styles.searchInput}
           placeholder="What would you like to discover?"
@@ -261,6 +264,15 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     touchAction: 'manipulation',
   },
+  chipRail: {
+    position: 'fixed',
+    left: 0,
+    right: 0,
+    bottom: 'calc(68px + env(safe-area-inset-bottom))',
+    padding: '0 14px',
+    zIndex: 20,
+    pointerEvents: 'none',
+  },
   searchDock: {
     position: 'fixed',
     left: 0,
@@ -282,25 +294,26 @@ const styles: Record<string, CSSProperties> = {
     background: 'transparent',
     backdropFilter: 'none',
     boxShadow: 'none',
+    pointerEvents: 'auto',
   },
   chip: {
     border: '1px solid rgba(255,227,176,.42)',
     borderRadius: 999,
-    background: 'linear-gradient(140deg, rgba(255,238,198,.08), rgba(9,12,18,.2))',
+    background: 'transparent',
     color: 'rgba(255,241,210,.94)',
     fontSize: 12,
     letterSpacing: '.08em',
     textTransform: 'uppercase',
     padding: '9px 13px',
     whiteSpace: 'nowrap',
-    textShadow: '0 1px 2px rgba(5,7,12,.72)',
-    boxShadow: 'inset 0 0 0 1px rgba(255,236,194,.08), 0 0 14px rgba(6,10,18,.28)',
+    textShadow: '0 0 8px rgba(255,238,198,.35)',
+    boxShadow: '0 0 10px rgba(255,231,178,.2)',
     touchAction: 'manipulation',
   },
   chipActive: {
     border: '1px solid rgba(255,231,178,.78)',
     color: '#fff6d7',
-    background: 'linear-gradient(140deg, rgba(255,226,154,.16), rgba(30,20,9,.24))',
+    background: 'transparent',
     textShadow: '0 1px 3px rgba(10,7,2,.82)',
     boxShadow: 'inset 0 0 0 1px rgba(255,241,203,.2), 0 0 14px rgba(253,208,120,.34), 0 0 28px rgba(252,189,89,.2)',
   },
