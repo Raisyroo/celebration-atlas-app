@@ -5,11 +5,10 @@ import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 
 const ATMOSPHERIC_SUGGESTIONS = [
-  'Show me music festivals',
-  'Find hidden gems',
-  'What is happening this weekend?',
-  'Show me county fairs',
-  'Find waterfront festivals',
+  'music festivals',
+  'county fairs',
+  'waterfront festivals',
+  'hidden gems',
 ];
 const MAP_BLEED_X = 0.12;
 const MAP_BLEED_Y = 0.1;
@@ -33,8 +32,9 @@ export default function AtlasMap() {
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [isSearchFadingOut, setIsSearchFadingOut] = useState(false);
   const [featuredIndex, setFeaturedIndex] = useState(0);
-  const [hasSubmittedSearch, setHasSubmittedSearch] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [submittedDisplayPhrase, setSubmittedDisplayPhrase] = useState('');
+  const [isSubmittedPhraseFading, setIsSubmittedPhraseFading] = useState(false);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
@@ -117,6 +117,8 @@ export default function AtlasMap() {
   }, [selected]);
 
   const submitSearch = useCallback(() => {
+    const trimmedQuery = query.trim();
+
     if (searchFadeDelayTimerRef.current) {
       clearTimeout(searchFadeDelayTimerRef.current);
       searchFadeDelayTimerRef.current = null;
@@ -126,27 +128,34 @@ export default function AtlasMap() {
       searchClearTimerRef.current = null;
     }
     setIsSearchFadingOut(false);
-    setSubmittedQuery(query);
-    setHasSubmittedSearch(true);
+    setIsSubmittedPhraseFading(false);
+    setSubmittedQuery(trimmedQuery);
+    setSubmittedDisplayPhrase(trimmedQuery);
     setSearchPulseTick((prev) => prev + 1);
     searchInputRef.current?.blur();
+
     searchFadeDelayTimerRef.current = setTimeout(() => {
       setIsSearchFadingOut(true);
-      searchClearTimerRef.current = setTimeout(() => {
-        setQuery('');
-        setIsSearchFadingOut(false);
-        searchClearTimerRef.current = null;
-      }, 320);
+      setIsSubmittedPhraseFading(true);
       searchFadeDelayTimerRef.current = null;
-    }, 1500);
+    }, 120);
+
+    searchClearTimerRef.current = setTimeout(() => {
+      setQuery('');
+      setIsSearchFadingOut(false);
+      setIsSubmittedPhraseFading(false);
+      setSubmittedDisplayPhrase('');
+      searchClearTimerRef.current = null;
+    }, 2000);
   }, [query]);
 
   useEffect(() => {
     const rotateId = setInterval(() => {
+      if (submittedDisplayPhrase || isSearchFocused || query.trim()) return;
       setSuggestionIndex((prev) => (prev + 1) % ATMOSPHERIC_SUGGESTIONS.length);
     }, 5400);
     return () => clearInterval(rotateId);
-  }, []);
+  }, [isSearchFocused, query, submittedDisplayPhrase]);
 
   useEffect(() => {
     const rotateFeaturedId = setInterval(() => {
@@ -278,31 +287,34 @@ export default function AtlasMap() {
             Featured: {featuredEvent.name}
           </span>
         </button>
-        <input
-          ref={searchInputRef}
-          className={`atlas-search-input ${searchPulseTick > 0 ? 'atlas-search-input--pulse' : ''} ${isSearchFadingOut ? 'atlas-search-input--fade' : ''}`}
-          style={styles.searchInput}
-          placeholder={
-            query
-              ? ''
-              : hasSubmittedSearch && !isSearchFocused
-                ? ''
-                : ATMOSPHERIC_SUGGESTIONS[suggestionIndex]
-          }
-          value={query}
-          onChange={(event) => {
-            const nextQuery = event.target.value;
-            if (searchFadeDelayTimerRef.current) {
-              clearTimeout(searchFadeDelayTimerRef.current);
-              searchFadeDelayTimerRef.current = null;
-            }
-            if (searchClearTimerRef.current) {
-              clearTimeout(searchClearTimerRef.current);
-              searchClearTimerRef.current = null;
-            }
-            setIsSearchFadingOut(false);
-            setQuery(nextQuery);
-          }}
+        <div style={styles.searchInputWrap}>
+          <div style={styles.searchOverlay} aria-hidden="true">
+            <span style={styles.searchPrefix}>Search:</span>
+            <span className={`atlas-search-suggestion ${isSubmittedPhraseFading ? 'atlas-search-suggestion--fade' : ''}`}>
+              {submittedDisplayPhrase || (!query.trim() && !isSearchFocused ? ATMOSPHERIC_SUGGESTIONS[suggestionIndex] : '')}
+            </span>
+          </div>
+          <input
+            ref={searchInputRef}
+            className={`atlas-search-input ${searchPulseTick > 0 ? 'atlas-search-input--pulse' : ''} ${isSearchFadingOut ? 'atlas-search-input--fade' : ''}`}
+            style={styles.searchInput}
+            value={`Search: ${query}`}
+            onChange={(event) => {
+              const rawValue = event.target.value;
+              const nextQuery = rawValue.startsWith('Search:') ? rawValue.slice(7).trimStart() : rawValue;
+              if (searchFadeDelayTimerRef.current) {
+                clearTimeout(searchFadeDelayTimerRef.current);
+                searchFadeDelayTimerRef.current = null;
+              }
+              if (searchClearTimerRef.current) {
+                clearTimeout(searchClearTimerRef.current);
+                searchClearTimerRef.current = null;
+              }
+              setSubmittedDisplayPhrase('');
+              setIsSubmittedPhraseFading(false);
+              setIsSearchFadingOut(false);
+              setQuery(nextQuery);
+            }}
           onAnimationEnd={() => {
             setSearchPulseTick(0);
           }}
@@ -314,14 +326,11 @@ export default function AtlasMap() {
             event.preventDefault();
             submitSearch();
           }}
-        />
+          />
+        </div>
       </div>
 
       <style jsx>{`
-        .atlas-search-input::placeholder {
-          color: rgba(255, 239, 206, 0.62);
-        }
-
         .atlas-search-input--pulse {
           animation: searchAcceptPulse 360ms ease-out;
         }
@@ -329,8 +338,18 @@ export default function AtlasMap() {
         .atlas-search-input--fade {
           color: transparent;
           text-shadow: none;
-          caret-color: transparent;
-          transition: color 320ms ease, text-shadow 320ms ease, caret-color 320ms ease;
+          transition: color 2s ease, text-shadow 2s ease;
+        }
+
+        .atlas-search-suggestion {
+          display: inline-block;
+          opacity: 0.86;
+          transition: opacity 700ms ease;
+        }
+
+        .atlas-search-suggestion--fade {
+          opacity: 0;
+          transition: opacity 2s ease;
         }
 
         .featured-discovery-text {
@@ -505,13 +524,35 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     touchAction: 'manipulation',
   },
+  searchInputWrap: {
+    position: 'relative',
+  },
+  searchOverlay: {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '14px 16px',
+    pointerEvents: 'none',
+    zIndex: 1,
+    color: 'rgba(255, 239, 206, 0.86)',
+    textShadow: '0 1px 3px rgba(2, 3, 6, 0.85)',
+    fontSize: 16,
+  },
+  searchPrefix: {
+    color: '#fff7de',
+    opacity: 0.95,
+  },
   searchInput: {
+    position: 'relative',
+    zIndex: 2,
     width: '100%',
     padding: '14px 16px',
     borderRadius: 999,
     border: '1px solid rgba(255, 226, 170, 0.56)',
     background: 'rgba(7, 10, 15, 0.16)',
-    color: '#fff7de',
+    color: 'transparent',
     fontSize: 16,
     outline: 'none',
     textShadow: '0 1px 3px rgba(2, 3, 6, 0.85)',
