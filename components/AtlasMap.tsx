@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties, PointerEvent, WheelEvent } from 'react';
+import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 
 const ATMOSPHERIC_SUGGESTIONS = [
@@ -30,14 +30,6 @@ export default function AtlasMap() {
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [featuredIndex, setFeaturedIndex] = useState(0);
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const panOffsetRef = useRef({ x: 0, y: 0 });
-  const zoomRef = useRef(1);
-  const dragVelocityRef = useRef({ x: 0, y: 0 });
-  const lastDragSampleRef = useRef<{ x: number; y: number; t: number } | null>(null);
-  const inertiaFrameRef = useRef<number | null>(null);
-  const inertiaStateRef = useRef<{ x: number; y: number; vx: number; vy: number; lastTime: number } | null>(null);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
@@ -71,224 +63,6 @@ export default function AtlasMap() {
   }, [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
-  const dragStateRef = useRef<{
-    pointerId: number;
-    startX: number;
-    startY: number;
-    baseX: number;
-    baseY: number;
-    moved: boolean;
-  } | null>(null);
-  const touchPointsRef = useRef<Map<number, { x: number; y: number }>>(new Map());
-  const pinchStateRef = useRef<{
-    startDistance: number;
-    startZoom: number;
-    startCenterX: number;
-    startCenterY: number;
-    basePanX: number;
-    basePanY: number;
-  } | null>(null);
-
-  const clampZoom = useCallback((nextZoom: number) => Math.max(1, Math.min(1.8, nextZoom)), []);
-
-  const clampPan = useCallback((x: number, y: number, atZoom: number) => {
-    const frame = mapFrameRef.current;
-    const frameWidth = frame?.clientWidth ?? 0;
-    const frameHeight = frame?.clientHeight ?? 0;
-    const baseBleedX = frameWidth * MAP_BLEED_X * 0.5;
-    const baseBleedY = frameHeight * MAP_BLEED_Y * 0.5;
-    const zoomPanFactor = Math.max(0, atZoom - 1);
-    const zoomRangeX = frameWidth * 0.18 * zoomPanFactor;
-    const zoomRangeY = frameHeight * 0.15 * zoomPanFactor;
-    const maxX = baseBleedX + zoomRangeX;
-    const maxY = baseBleedY + zoomRangeY;
-
-    return {
-      x: Math.max(-maxX, Math.min(maxX, x)),
-      y: Math.max(-maxY, Math.min(maxY, y)),
-    };
-  }, []);
-
-  const mapFocusTransform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom.toFixed(4)})`;
-
-  const stopInertia = useCallback(() => {
-    if (!inertiaFrameRef.current) return;
-    cancelAnimationFrame(inertiaFrameRef.current);
-    inertiaFrameRef.current = null;
-    inertiaStateRef.current = null;
-  }, []);
-
-  const beginInertia = useCallback(() => {
-    const { x: initialVx, y: initialVy } = dragVelocityRef.current;
-    const velocityMagnitude = Math.hypot(initialVx, initialVy);
-    if (velocityMagnitude < 0.035) return;
-
-    stopInertia();
-    inertiaStateRef.current = {
-      x: panOffsetRef.current.x,
-      y: panOffsetRef.current.y,
-      vx: initialVx,
-      vy: initialVy,
-      lastTime: performance.now(),
-    };
-
-    const step = (now: number) => {
-      const state = inertiaStateRef.current;
-      if (!state) return;
-      const dt = Math.min(34, Math.max(10, now - state.lastTime));
-      const decay = Math.exp(-dt / 230);
-      state.vx *= decay;
-      state.vy *= decay;
-      state.x += state.vx * dt;
-      state.y += state.vy * dt;
-      const constrained = clampPan(state.x, state.y, zoomRef.current);
-      state.x = constrained.x;
-      state.y = constrained.y;
-      setPanOffset(constrained);
-      state.lastTime = now;
-
-      if (Math.hypot(state.vx, state.vy) < 0.01) {
-        inertiaFrameRef.current = null;
-        inertiaStateRef.current = null;
-        return;
-      }
-
-      inertiaFrameRef.current = requestAnimationFrame(step);
-    };
-
-    inertiaFrameRef.current = requestAnimationFrame(step);
-  }, [clampPan, stopInertia]);
-
-  const handleMapPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    stopInertia();
-    dragVelocityRef.current = { x: 0, y: 0 };
-    lastDragSampleRef.current = { x: event.clientX, y: event.clientY, t: performance.now() };
-
-    if (event.pointerType === 'touch') {
-      touchPointsRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    } else if (event.button !== 0 || !event.isPrimary) {
-      return;
-    }
-
-    const target = event.target as HTMLElement;
-    const isInteractive = Boolean(target.closest('button, input, textarea, a'));
-    if (isInteractive && event.pointerType !== 'touch') return;
-
-    if (event.pointerType === 'touch' && touchPointsRef.current.size >= 2) {
-      const points = [...touchPointsRef.current.values()];
-      const [pointA, pointB] = points;
-      const centerX = (pointA.x + pointB.x) / 2;
-      const centerY = (pointA.y + pointB.y) / 2;
-      pinchStateRef.current = {
-        startDistance: Math.hypot(pointA.x - pointB.x, pointA.y - pointB.y),
-        startZoom: zoom,
-        startCenterX: centerX,
-        startCenterY: centerY,
-        basePanX: panOffset.x,
-        basePanY: panOffset.y,
-      };
-      dragStateRef.current = null;
-    } else if (!isInteractive) {
-      dragStateRef.current = {
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        baseX: panOffset.x,
-        baseY: panOffset.y,
-        moved: false,
-      };
-    }
-
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const handleMapPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === 'touch') {
-      if (touchPointsRef.current.has(event.pointerId)) {
-        touchPointsRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      }
-      const pinchState = pinchStateRef.current;
-      if (pinchState && touchPointsRef.current.size >= 2) {
-        const points = [...touchPointsRef.current.values()];
-        const [pointA, pointB] = points;
-        const distance = Math.hypot(pointA.x - pointB.x, pointA.y - pointB.y);
-        const centerX = (pointA.x + pointB.x) / 2;
-        const centerY = (pointA.y + pointB.y) / 2;
-        const nextZoom = clampZoom(pinchState.startZoom * (distance / Math.max(1, pinchState.startDistance)));
-        const deltaCenterX = centerX - pinchState.startCenterX;
-        const deltaCenterY = centerY - pinchState.startCenterY;
-        setZoom(nextZoom);
-        setPanOffset(clampPan(pinchState.basePanX + deltaCenterX * 0.2, pinchState.basePanY + deltaCenterY * 0.2, nextZoom));
-        return;
-      }
-    }
-
-    const dragState = dragStateRef.current;
-    if (!dragState || dragState.pointerId !== event.pointerId) return;
-    const now = performance.now();
-
-    const deltaX = event.clientX - dragState.startX;
-    const deltaY = event.clientY - dragState.startY;
-    const constrained = clampPan(dragState.baseX + deltaX * 0.24, dragState.baseY + deltaY * 0.24, zoom);
-
-    if (!dragState.moved && Math.hypot(deltaX, deltaY) > 4) {
-      dragState.moved = true;
-    }
-
-    setPanOffset(constrained);
-    const sample = lastDragSampleRef.current;
-    if (sample) {
-      const elapsed = now - sample.t;
-      if (elapsed > 0) {
-        const pointerDx = event.clientX - sample.x;
-        const pointerDy = event.clientY - sample.y;
-        const factor = 0.24;
-        const instantVx = (pointerDx * factor) / elapsed;
-        const instantVy = (pointerDy * factor) / elapsed;
-        const blend = 0.28;
-        dragVelocityRef.current = {
-          x: dragVelocityRef.current.x * (1 - blend) + instantVx * blend,
-          y: dragVelocityRef.current.y * (1 - blend) + instantVy * blend,
-        };
-      }
-    }
-    lastDragSampleRef.current = { x: event.clientX, y: event.clientY, t: now };
-  };
-
-  const handleMapPointerUp = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === 'touch') {
-      touchPointsRef.current.delete(event.pointerId);
-      if (touchPointsRef.current.size < 2) pinchStateRef.current = null;
-    }
-
-    const dragState = dragStateRef.current;
-    if (!dragState || dragState.pointerId !== event.pointerId) {
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-      return;
-    }
-
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-
-    dragStateRef.current = null;
-    lastDragSampleRef.current = null;
-    beginInertia();
-  };
-
-  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
-    if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) return;
-    event.preventDefault();
-    const zoomStep = -event.deltaY * 0.0012;
-    const nextZoom = clampZoom(zoom + zoomStep);
-    if (nextZoom === zoom) return;
-    stopInertia();
-    setZoom(nextZoom);
-    setPanOffset((prev) => clampPan(prev.x, prev.y, nextZoom));
-  };
-
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
@@ -358,14 +132,6 @@ export default function AtlasMap() {
   }, [featuredEvents.length]);
 
   useEffect(() => {
-    panOffsetRef.current = panOffset;
-  }, [panOffset]);
-
-  useEffect(() => {
-    zoomRef.current = zoom;
-  }, [zoom]);
-
-  useEffect(() => {
     const previousHtmlOverflow = document.documentElement.style.overflow;
     const previousBodyOverflow = document.body.style.overflow;
     document.documentElement.style.overflow = 'hidden';
@@ -382,7 +148,6 @@ export default function AtlasMap() {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
       if (enterFrameInnerRef.current) cancelAnimationFrame(enterFrameInnerRef.current);
-      if (inertiaFrameRef.current) cancelAnimationFrame(inertiaFrameRef.current);
     };
   }, []);
 
@@ -390,17 +155,12 @@ export default function AtlasMap() {
     <section style={styles.hero} onPointerDown={handleBackdropPointerDown}>
       <div
         ref={mapFrameRef}
-        onPointerDown={handleMapPointerDown}
-        onPointerMove={handleMapPointerMove}
-        onPointerUp={handleMapPointerUp}
-        onPointerCancel={handleMapPointerUp}
-        onWheel={handleWheel}
         style={styles.mapFrame}
       >
         <div
           style={{
             ...styles.mapContent,
-            transform: mapFocusTransform,
+            transform: 'scale(1.03)',
           }}
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
@@ -601,7 +361,7 @@ const styles: Record<string, CSSProperties> = {
     inset: `-${MAP_BLEED_Y * 50}% -${MAP_BLEED_X * 50}%`,
     transformOrigin: 'center center',
     transition: 'filter 260ms ease, transform 520ms cubic-bezier(.22,.61,.36,1)',
-    touchAction: 'none',
+    touchAction: 'manipulation',
     filter: 'saturate(0.9) brightness(0.82)',
   },
   mapImage: {
