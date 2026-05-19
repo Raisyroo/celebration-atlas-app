@@ -209,8 +209,7 @@ export default function AtlasMap() {
           placeholder={query ? '' : ATMOSPHERIC_SUGGESTIONS[suggestionIndex]}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          onAnimationEnd={(event) => {
-            if (event.animationName !== 'searchAcceptPulse') return;
+          onAnimationEnd={() => {
             setSearchPulseTick(0);
           }}
           onKeyDown={(event) => {
@@ -246,8 +245,8 @@ export default function AtlasMap() {
             filter: brightness(1);
           }
           45% {
-            box-shadow: inset 0 0 0 1px rgba(255, 246, 220, 0.2), 0 0 22px rgba(255, 225, 150, 0.52);
-            filter: brightness(1.04);
+            box-shadow: inset 0 0 0 1px rgba(255, 246, 220, 0.16), 0 0 20px rgba(255, 220, 142, 0.44);
+            filter: brightness(1.03);
           }
           100% {
             box-shadow: inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 0 14px rgba(252, 201, 102, 0.28);
