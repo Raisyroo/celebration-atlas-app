@@ -183,15 +183,10 @@ export default function AtlasMap() {
         <input
           className="atlas-search-input"
           style={styles.searchInput}
-          placeholder="What would you like to discover?"
+          placeholder={query ? "" : ATMOSPHERIC_SUGGESTIONS[suggestionIndex]}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
-        <div style={styles.discoveryDock}>
-          <p key={suggestionIndex} style={styles.suggestionText} className="suggestion-fade">
-            {ATMOSPHERIC_SUGGESTIONS[suggestionIndex]}
-          </p>
-        </div>
       </div>
 
       <style jsx>{`
@@ -219,21 +214,6 @@ export default function AtlasMap() {
             transform: translate(-50%, -50%) scale(calc(var(--marker-scale-base, 1) * 1.18));
             box-shadow: var(--marker-shadow-peak);
             filter: brightness(1.07) saturate(1.08);
-          }
-        }
-
-        .suggestion-fade {
-          animation: suggestionFade 5.4s ease-in-out both;
-        }
-
-        @keyframes suggestionFade {
-          0%,
-          100% {
-            opacity: 0.26;
-          }
-          22%,
-          72% {
-            opacity: 0.68;
           }
         }
       `}</style>
@@ -288,28 +268,11 @@ const styles: Record<string, CSSProperties> = {
     left: 0,
     right: 0,
     bottom: 0,
-    display: 'grid',
-    gap: 10,
     padding: '10px 14px calc(12px + env(safe-area-inset-bottom))',
     backdropFilter: 'none',
     background: 'transparent',
     zIndex: 20,
     transition: 'bottom 240ms ease',
-  },
-  discoveryDock: {
-    padding: '8px 12px 6px',
-    borderRadius: 12,
-    background: 'linear-gradient(to bottom, rgba(10,14,20,.18), rgba(10,14,20,.06))',
-    border: '1px solid rgba(255, 226, 170, 0.14)',
-  },
-  suggestionText: {
-    margin: 0,
-    minHeight: 18,
-    color: 'rgba(255, 238, 202, 0.58)',
-    fontSize: 12,
-    letterSpacing: '.04em',
-    textShadow: '0 1px 2px rgba(2,3,6,.72), 0 0 8px rgba(255,227,164,.22)',
-    pointerEvents: 'none',
   },
   searchInput: {
     width: '100%',
