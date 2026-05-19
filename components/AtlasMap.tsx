@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties, PointerEvent } from 'react';
+import type { CSSProperties, PointerEvent, WheelEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 
 const ATMOSPHERIC_SUGGESTIONS = [
@@ -29,6 +29,7 @@ export default function AtlasMap() {
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
@@ -70,10 +71,22 @@ export default function AtlasMap() {
     baseY: number;
     moved: boolean;
   } | null>(null);
+  const touchPointsRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStateRef = useRef<{
+    startDistance: number;
+    startZoom: number;
+    startCenterX: number;
+    startCenterY: number;
+    basePanX: number;
+    basePanY: number;
+  } | null>(null);
 
-  const clampPan = useCallback((x: number, y: number) => {
-    const maxX = 22;
-    const maxY = 16;
+  const clampZoom = useCallback((nextZoom: number) => Math.max(1, Math.min(1.8, nextZoom)), []);
+
+  const clampPan = useCallback((x: number, y: number, atZoom: number) => {
+    const zoomPanFactor = Math.max(0, atZoom - 1);
+    const maxX = 22 + zoomPanFactor * 90;
+    const maxY = 16 + zoomPanFactor * 72;
 
     return {
       x: Math.max(-maxX, Math.min(maxX, x)),
@@ -81,35 +94,77 @@ export default function AtlasMap() {
     };
   }, []);
 
+  const mapFocusScale = selected ? 1.045 : 1;
   const mapFocusTransform = selected
-    ? `translate(calc(${(50 - selected.x) * 0.12}% + ${panOffset.x}px), calc(${(50 - selected.y) * 0.12}% + ${panOffset.y}px)) scale(1.045)`
-    : `translate(${panOffset.x}px, ${panOffset.y}px) scale(1)`;
+    ? `translate(calc(${(50 - selected.x) * 0.12}% + ${panOffset.x}px), calc(${(50 - selected.y) * 0.12}% + ${panOffset.y}px)) scale(${(mapFocusScale * zoom).toFixed(4)})`
+    : `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom.toFixed(4)})`;
 
   const handleMapPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || !event.isPrimary) return;
+    if (event.pointerType === 'touch') {
+      touchPointsRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    } else if (event.button !== 0 || !event.isPrimary) {
+      return;
+    }
 
     const target = event.target as HTMLElement;
-    if (target.closest('button, input, textarea, a')) return;
+    const isInteractive = Boolean(target.closest('button, input, textarea, a'));
+    if (isInteractive && event.pointerType !== 'touch') return;
 
-    dragStateRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      baseX: panOffset.x,
-      baseY: panOffset.y,
-      moved: false,
-    };
+    if (event.pointerType === 'touch' && touchPointsRef.current.size >= 2) {
+      const points = [...touchPointsRef.current.values()];
+      const [pointA, pointB] = points;
+      const centerX = (pointA.x + pointB.x) / 2;
+      const centerY = (pointA.y + pointB.y) / 2;
+      pinchStateRef.current = {
+        startDistance: Math.hypot(pointA.x - pointB.x, pointA.y - pointB.y),
+        startZoom: zoom,
+        startCenterX: centerX,
+        startCenterY: centerY,
+        basePanX: panOffset.x,
+        basePanY: panOffset.y,
+      };
+      dragStateRef.current = null;
+    } else if (!isInteractive) {
+      dragStateRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        baseX: panOffset.x,
+        baseY: panOffset.y,
+        moved: false,
+      };
+    }
 
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handleMapPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'touch') {
+      if (touchPointsRef.current.has(event.pointerId)) {
+        touchPointsRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      }
+      const pinchState = pinchStateRef.current;
+      if (pinchState && touchPointsRef.current.size >= 2) {
+        const points = [...touchPointsRef.current.values()];
+        const [pointA, pointB] = points;
+        const distance = Math.hypot(pointA.x - pointB.x, pointA.y - pointB.y);
+        const centerX = (pointA.x + pointB.x) / 2;
+        const centerY = (pointA.y + pointB.y) / 2;
+        const nextZoom = clampZoom(pinchState.startZoom * (distance / Math.max(1, pinchState.startDistance)));
+        const deltaCenterX = centerX - pinchState.startCenterX;
+        const deltaCenterY = centerY - pinchState.startCenterY;
+        setZoom(nextZoom);
+        setPanOffset(clampPan(pinchState.basePanX + deltaCenterX * 0.2, pinchState.basePanY + deltaCenterY * 0.2, nextZoom));
+        return;
+      }
+    }
+
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId) return;
 
     const deltaX = event.clientX - dragState.startX;
     const deltaY = event.clientY - dragState.startY;
-    const constrained = clampPan(dragState.baseX + deltaX * 0.24, dragState.baseY + deltaY * 0.24);
+    const constrained = clampPan(dragState.baseX + deltaX * 0.24, dragState.baseY + deltaY * 0.24, zoom);
 
     if (!dragState.moved && Math.hypot(deltaX, deltaY) > 4) {
       dragState.moved = true;
@@ -119,14 +174,34 @@ export default function AtlasMap() {
   };
 
   const handleMapPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'touch') {
+      touchPointsRef.current.delete(event.pointerId);
+      if (touchPointsRef.current.size < 2) pinchStateRef.current = null;
+    }
+
     const dragState = dragStateRef.current;
-    if (!dragState || dragState.pointerId !== event.pointerId) return;
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      return;
+    }
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
     dragStateRef.current = null;
+  };
+
+  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) return;
+    event.preventDefault();
+    const zoomStep = -event.deltaY * 0.0012;
+    const nextZoom = clampZoom(zoom + zoomStep);
+    if (nextZoom === zoom) return;
+    setZoom(nextZoom);
+    setPanOffset((prev) => clampPan(prev.x, prev.y, nextZoom));
   };
 
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
@@ -213,6 +288,7 @@ export default function AtlasMap() {
         onPointerMove={handleMapPointerMove}
         onPointerUp={handleMapPointerUp}
         onPointerCancel={handleMapPointerUp}
+        onWheel={handleWheel}
         style={{
           ...styles.mapFrame,
           transform: mapFocusTransform,
