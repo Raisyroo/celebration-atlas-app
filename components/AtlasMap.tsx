@@ -11,6 +11,7 @@ export default function AtlasMap() {
   const cardRef = useRef<HTMLElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterFrameRef = useRef<number | null>(null);
+  const enterFrameInnerRef = useRef<number | null>(null);
   const [renderedEvent, setRenderedEvent] = useState<(typeof ATLAS_EVENTS)[number] | null>(null);
   const [isCardVisible, setIsCardVisible] = useState(false);
   const q = query.trim().toLowerCase();
@@ -58,12 +59,20 @@ export default function AtlasMap() {
       enterFrameRef.current = null;
     }
 
+    if (enterFrameInnerRef.current) {
+      cancelAnimationFrame(enterFrameInnerRef.current);
+      enterFrameInnerRef.current = null;
+    }
+
     if (selected) {
       setRenderedEvent(selected);
       setIsCardVisible(false);
       enterFrameRef.current = requestAnimationFrame(() => {
-        setIsCardVisible(true);
         enterFrameRef.current = null;
+        enterFrameInnerRef.current = requestAnimationFrame(() => {
+          setIsCardVisible(true);
+          enterFrameInnerRef.current = null;
+        });
       });
       return;
     }
@@ -79,6 +88,7 @@ export default function AtlasMap() {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
+      if (enterFrameInnerRef.current) cancelAnimationFrame(enterFrameInnerRef.current);
     };
   }, []);
 
