@@ -14,6 +14,7 @@ const ATMOSPHERIC_SUGGESTIONS = [
 
 export default function AtlasMap() {
   const [query, setQuery] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
@@ -24,7 +25,7 @@ export default function AtlasMap() {
   const [renderedEvent, setRenderedEvent] = useState<(typeof ATLAS_EVENTS)[number] | null>(null);
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
-  const q = query.trim().toLowerCase();
+  const q = submittedQuery.trim().toLowerCase();
 
   const highlightedIds = useMemo(() => {
     const ids = new Set<string>();
@@ -183,9 +184,14 @@ export default function AtlasMap() {
         <input
           className="atlas-search-input"
           style={styles.searchInput}
-          placeholder={query ? "" : ATMOSPHERIC_SUGGESTIONS[suggestionIndex]}
+          placeholder={query ? '' : ATMOSPHERIC_SUGGESTIONS[suggestionIndex]}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return;
+            setSubmittedQuery(query);
+            event.currentTarget.blur();
+          }}
         />
       </div>
 
