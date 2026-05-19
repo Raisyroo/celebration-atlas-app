@@ -104,7 +104,7 @@ export default function AtlasMap() {
           const isHighlighted = highlightedIds.has(event.id);
           const isActive = selectedId === event.id || isHighlighted;
           const isDimmed = highlightedIds.size > 0 && !isHighlighted;
-          const pulseDuration = 4 + (index % 3) * 0.35;
+          const pulseDuration = 2.4 + (index % 3) * 0.35;
           const pulseDelay = index * 0.26;
 
           return (
@@ -114,18 +114,21 @@ export default function AtlasMap() {
               className="marker-pulse"
               aria-label={event.name}
               onClick={() => setSelectedId(event.id)}
-              style={{
+              style={({
                 ...styles.marker,
                 left: `${event.x}%`,
                 top: `${event.y}%`,
                 opacity: isDimmed ? 0.35 : 1,
-                transform: isActive ? 'translate(-50%, -50%) scale(1.25)' : 'translate(-50%, -50%)',
-                boxShadow: isActive
-                  ? '0 0 10px #ffe4a6, 0 0 24px rgba(253,208,120,.98)'
-                  : '0 0 6px #f2c66a, 0 0 16px rgba(242,198,106,.72)',
+                '--marker-scale-base': isActive ? 1.25 : 1,
+                '--marker-shadow-idle': isActive
+                  ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
+                  : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
+                '--marker-shadow-peak': isActive
+                  ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
+                  : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
                 animationDuration: `${pulseDuration}s`,
                 animationDelay: `${pulseDelay}s`,
-              }}
+              } as CSSProperties)}
             />
           );
         })}
@@ -167,17 +170,21 @@ export default function AtlasMap() {
           animation-timing-function: ease-in-out;
           animation-iteration-count: infinite;
           animation-fill-mode: both;
-          will-change: filter;
+          will-change: transform, box-shadow, filter;
           transform-origin: center;
         }
 
         @keyframes markerPulse {
           0%,
           100% {
+            transform: translate(-50%, -50%) scale(var(--marker-scale-base, 1));
+            box-shadow: var(--marker-shadow-idle);
             filter: brightness(1) saturate(1);
           }
           50% {
-            filter: brightness(1.13) saturate(1.12);
+            transform: translate(-50%, -50%) scale(calc(var(--marker-scale-base, 1) * 1.18));
+            box-shadow: var(--marker-shadow-peak);
+            filter: brightness(1.07) saturate(1.08);
           }
         }
       `}</style>
