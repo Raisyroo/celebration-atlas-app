@@ -106,7 +106,7 @@ export default function AtlasMap() {
           ...styles.mapFrame,
         }}
       >
-        <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" style={styles.mapImage} />
+        <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
 
         {ATLAS_EVENTS.map((event, index) => {
           const isHighlighted = highlightedIds.has(event.id);
@@ -251,6 +251,9 @@ const styles: Record<string, CSSProperties> = {
     objectFit: 'cover',
     objectPosition: 'center',
     opacity: 0.95,
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
   },
   vignette: {
     position: 'absolute',
