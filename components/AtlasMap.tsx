@@ -2,13 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
-import { ATLAS_EVENTS, type AtlasCategory } from '../data/events';
+import { ATLAS_EVENTS } from '../data/events';
 
-const CHIP_CATEGORIES: AtlasCategory[] = ['Festivals', 'Music', 'Fairs'];
+const ATMOSPHERIC_SUGGESTIONS = [
+  'Show me music festivals',
+  'Find hidden gems',
+  'What is happening this weekend?',
+  'Show me county fairs',
+  'Find waterfront festivals',
+];
 
 export default function AtlasMap() {
   const [query, setQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<AtlasCategory | null>(null);
+  const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
@@ -32,14 +38,8 @@ export default function AtlasMap() {
       if (q.includes('fair')) ids.add('armada-fair');
     }
 
-    if (activeCategory) {
-      ATLAS_EVENTS.forEach((event) => {
-        if (event.category === activeCategory) ids.add(event.id);
-      });
-    }
-
     return ids;
-  }, [activeCategory, q]);
+  }, [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
 
@@ -93,6 +93,13 @@ export default function AtlasMap() {
       closeTimerRef.current = null;
     }, 260);
   }, [selected]);
+
+  useEffect(() => {
+    const rotateId = setInterval(() => {
+      setSuggestionIndex((prev) => (prev + 1) % ATMOSPHERIC_SUGGESTIONS.length);
+    }, 5400);
+    return () => clearInterval(rotateId);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -181,24 +188,9 @@ export default function AtlasMap() {
           onChange={(event) => setQuery(event.target.value)}
         />
         <div style={styles.discoveryDock}>
-          <div style={styles.chipRow}>
-            {CHIP_CATEGORIES.map((category) => {
-              const isActive = activeCategory === category;
-              return (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setActiveCategory(isActive ? null : category)}
-                  style={{
-                    ...styles.chip,
-                    ...(isActive ? styles.chipActive : null),
-                  }}
-                >
-                  {category}
-                </button>
-              );
-            })}
-          </div>
+          <p key={suggestionIndex} style={styles.suggestionText} className="suggestion-fade">
+            {ATMOSPHERIC_SUGGESTIONS[suggestionIndex]}
+          </p>
         </div>
       </div>
 
@@ -227,6 +219,21 @@ export default function AtlasMap() {
             transform: translate(-50%, -50%) scale(calc(var(--marker-scale-base, 1) * 1.18));
             box-shadow: var(--marker-shadow-peak);
             filter: brightness(1.07) saturate(1.08);
+          }
+        }
+
+        .suggestion-fade {
+          animation: suggestionFade 5.4s ease-in-out both;
+        }
+
+        @keyframes suggestionFade {
+          0%,
+          100% {
+            opacity: 0.26;
+          }
+          22%,
+          72% {
+            opacity: 0.68;
           }
         }
       `}</style>
@@ -290,41 +297,19 @@ const styles: Record<string, CSSProperties> = {
     transition: 'bottom 240ms ease',
   },
   discoveryDock: {
-    padding: '6px 2px 2px',
+    padding: '8px 12px 6px',
     borderRadius: 12,
     background: 'linear-gradient(to bottom, rgba(10,14,20,.18), rgba(10,14,20,.06))',
     border: '1px solid rgba(255, 226, 170, 0.14)',
   },
-  chipRow: {
-    display: 'flex',
-    gap: 8,
-    overflowX: 'auto',
-    scrollbarWidth: 'none',
-    background: 'transparent',
-    backdropFilter: 'none',
-    boxShadow: 'none',
-    pointerEvents: 'auto',
-  },
-  chip: {
-    border: '1px solid rgba(255,227,176,.42)',
-    borderRadius: 999,
-    background: 'transparent',
-    color: 'rgba(255,241,210,.94)',
+  suggestionText: {
+    margin: 0,
+    minHeight: 18,
+    color: 'rgba(255, 238, 202, 0.58)',
     fontSize: 12,
-    letterSpacing: '.08em',
-    textTransform: 'uppercase',
-    padding: '9px 13px',
-    whiteSpace: 'nowrap',
-    textShadow: '0 0 8px rgba(255,238,198,.35)',
-    boxShadow: '0 0 10px rgba(255,231,178,.2)',
-    touchAction: 'manipulation',
-  },
-  chipActive: {
-    border: '1px solid rgba(255,231,178,.78)',
-    color: '#fff6d7',
-    background: 'transparent',
-    textShadow: '0 1px 3px rgba(10,7,2,.82)',
-    boxShadow: 'inset 0 0 0 1px rgba(255,241,203,.2), 0 0 14px rgba(253,208,120,.34), 0 0 28px rgba(252,189,89,.2)',
+    letterSpacing: '.04em',
+    textShadow: '0 1px 2px rgba(2,3,6,.72), 0 0 8px rgba(255,227,164,.22)',
+    pointerEvents: 'none',
   },
   searchInput: {
     width: '100%',
