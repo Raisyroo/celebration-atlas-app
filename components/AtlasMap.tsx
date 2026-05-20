@@ -14,18 +14,6 @@ const MAP_BLEED_X = 0.12;
 const MAP_BLEED_Y = 0.1;
 
 const BASE_SCALE = 1.03;
-const MIN_SCALE = 1;
-const MAX_SCALE = 2.35;
-const PAN_SOFTNESS = 0.3;
-const PAN_X_LIMIT_FACTOR = 0.56;
-const PAN_Y_LIMIT_FACTOR = 0.52;
-
-type Viewport = {
-  scale: number;
-  x: number;
-  y: number;
-};
-
 export default function AtlasMap() {
   const [query, setQuery] = useState('');
   const [displayedQuery, setDisplayedQuery] = useState('');
@@ -49,40 +37,6 @@ export default function AtlasMap() {
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
-  const [viewport, setViewport] = useState<Viewport>({ scale: BASE_SCALE, x: 0, y: 0 });
-  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
-  const gestureRef = useRef<{ startDistance: number; startScale: number } | null>(null);
-  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
-
-  const getBounds = useCallback((scale: number) => {
-    const overflowX = Math.max(0, ((1 + MAP_BLEED_X) * scale - 1) * 0.5);
-    const overflowY = Math.max(0, ((1 + MAP_BLEED_Y) * scale - 1) * 0.5);
-    return {
-      maxX: overflowX * PAN_X_LIMIT_FACTOR,
-      maxY: overflowY * PAN_Y_LIMIT_FACTOR,
-    };
-  }, []);
-
-  const clampViewport = useCallback(
-    (next: Viewport, isSoft = false): Viewport => {
-      const boundedScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, next.scale));
-      const { maxX, maxY } = getBounds(boundedScale);
-      if (isSoft) {
-        return {
-          scale: boundedScale,
-          x: Math.max(-maxX * (1 + PAN_SOFTNESS), Math.min(maxX * (1 + PAN_SOFTNESS), next.x)),
-          y: Math.max(-maxY * (1 + PAN_SOFTNESS), Math.min(maxY * (1 + PAN_SOFTNESS), next.y)),
-        };
-      }
-      return {
-        scale: boundedScale,
-        x: Math.max(-maxX, Math.min(maxX, next.x)),
-        y: Math.max(-maxY, Math.min(maxY, next.y)),
-      };
-    },
-    [getBounds],
-  );
-
   const highlightedIds = useMemo(() => {
     const ids = new Set<string>();
 
@@ -215,9 +169,6 @@ export default function AtlasMap() {
       if (queryFadeTimerRef.current) clearTimeout(queryFadeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
       if (enterFrameInnerRef.current) cancelAnimationFrame(enterFrameInnerRef.current);
-      activePointersRef.current.clear();
-      gestureRef.current = null;
-      dragRef.current = null;
     };
   }, []);
 
@@ -226,80 +177,11 @@ export default function AtlasMap() {
       <div
         ref={mapFrameRef}
         style={styles.mapFrame}
-        onPointerDown={(event) => {
-          const target = event.target as HTMLElement;
-          if (target.closest('button, input, article')) return;
-          mapFrameRef.current?.setPointerCapture(event.pointerId);
-          activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-
-          if (activePointersRef.current.size === 1) {
-            dragRef.current = {
-              pointerId: event.pointerId,
-              startX: event.clientX,
-              startY: event.clientY,
-              originX: viewport.x,
-              originY: viewport.y,
-            };
-          } else if (activePointersRef.current.size === 2) {
-            const [a, b] = Array.from(activePointersRef.current.values());
-            gestureRef.current = {
-              startDistance: Math.hypot(b.x - a.x, b.y - a.y),
-              startScale: viewport.scale,
-            };
-            dragRef.current = null;
-          }
-        }}
-        onPointerMove={(event) => {
-          if (!activePointersRef.current.has(event.pointerId)) return;
-          activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-
-          if (activePointersRef.current.size >= 2 && gestureRef.current) {
-            const [a, b] = Array.from(activePointersRef.current.values());
-            const nextDistance = Math.hypot(b.x - a.x, b.y - a.y);
-            const distanceRatio = nextDistance / Math.max(1, gestureRef.current.startDistance);
-            setViewport((prev) => clampViewport({ ...prev, scale: gestureRef.current!.startScale * distanceRatio }, true));
-            return;
-          }
-
-          const dragState = dragRef.current;
-          if (!dragState || dragState.pointerId !== event.pointerId) return;
-          const dx = (event.clientX - dragState.startX) / window.innerWidth;
-          const dy = (event.clientY - dragState.startY) / window.innerHeight;
-          setViewport((prev) =>
-            clampViewport(
-              {
-                ...prev,
-                x: dragState.originX + dx,
-                y: dragState.originY + dy,
-              },
-              true,
-            ),
-          );
-        }}
-        onPointerUp={(event) => {
-          activePointersRef.current.delete(event.pointerId);
-          mapFrameRef.current?.releasePointerCapture(event.pointerId);
-          if (activePointersRef.current.size < 2) gestureRef.current = null;
-          dragRef.current = null;
-          setViewport((prev) => clampViewport(prev));
-        }}
-        onPointerCancel={(event) => {
-          activePointersRef.current.delete(event.pointerId);
-          mapFrameRef.current?.releasePointerCapture(event.pointerId);
-          gestureRef.current = null;
-          dragRef.current = null;
-          setViewport((prev) => clampViewport(prev));
-        }}
-        onWheel={(event) => {
-          event.preventDefault();
-          const delta = -event.deltaY * 0.0012;
-          setViewport((prev) => clampViewport({ ...prev, scale: prev.scale * (1 + delta) }));
-        }}
       >
         <div
           style={{
             ...styles.mapContent,
-            transform: `translate3d(${viewport.x * 100}%, ${viewport.y * 100}%, 0) scale(${viewport.scale})`,
+            transform: `translate3d(0, 0, 0) scale(${BASE_SCALE})`,
           }}
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
