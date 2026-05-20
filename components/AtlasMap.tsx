@@ -455,46 +455,37 @@ export default function AtlasMap() {
 
         @keyframes cloudDriftPrimary {
           0% {
-            transform: translate3d(0, 0, 0) scale(1.01);
+            transform: translate3d(-120vw, 0vh, 0) scale(1.01);
           }
-          12% {
-            transform: translate3d(0, 0, 0) scale(1.01);
-          }
-          82% {
-            transform: translate3d(86vw, 6vh, 0) scale(1.04);
+          50% {
+            transform: translate3d(20vw, 4vh, 0) scale(1.03);
           }
           100% {
-            transform: translate3d(86vw, 6vh, 0) scale(1.04);
+            transform: translate3d(120vw, 6vh, 0) scale(1.04);
           }
         }
 
         @keyframes cloudDriftSecondary {
           0% {
-            transform: translate3d(0, 0, 0) scale(1.02);
+            transform: translate3d(-116vw, 0vh, 0) scale(1.02);
           }
-          10% {
-            transform: translate3d(0, 0, 0) scale(1.02);
-          }
-          84% {
-            transform: translate3d(78vw, -8vh, 0) scale(1.05);
+          50% {
+            transform: translate3d(18vw, -5vh, 0) scale(1.04);
           }
           100% {
-            transform: translate3d(78vw, -8vh, 0) scale(1.05);
+            transform: translate3d(122vw, -8vh, 0) scale(1.05);
           }
         }
 
         @keyframes cloudShadowDrift {
           0% {
-            transform: translate3d(0, 0, 0) scale(1.01);
+            transform: translate3d(-118vw, 0vh, 0) scale(1.01);
           }
-          11% {
-            transform: translate3d(0, 0, 0) scale(1.01);
-          }
-          83% {
-            transform: translate3d(80vw, -2vh, 0) scale(1.03);
+          50% {
+            transform: translate3d(19vw, -1vh, 0) scale(1.02);
           }
           100% {
-            transform: translate3d(80vw, -2vh, 0) scale(1.03);
+            transform: translate3d(121vw, -2vh, 0) scale(1.03);
           }
         }
 
