@@ -34,7 +34,9 @@ export default function AtlasMap() {
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
-  const q = submittedQuery.trim().toLowerCase();
+  const activeSearchTerm = (query.trim() || submittedQuery.trim()).toLowerCase();
+  const hasSearchTerm = activeSearchTerm.length > 0;
+  const q = activeSearchTerm;
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
   const highlightedIds = useMemo(() => {
@@ -64,10 +66,11 @@ export default function AtlasMap() {
 
     return ids;
   }, [q]);
-  const discoveryStatusText =
-    highlightedIds.size > 0
+  const discoveryStatusText = hasSearchTerm
+    ? highlightedIds.size > 0
       ? `${highlightedIds.size} ${highlightedIds.size === 1 ? 'discovery' : 'discoveries'} found`
-      : `${ATLAS_EVENTS.length} discoveries glowing`;
+      : 'No discoveries found'
+    : '';
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
@@ -279,9 +282,11 @@ export default function AtlasMap() {
             Featured: {featuredEvent.name}
           </span>
         </button>
-        <p style={styles.discoveryStatus} aria-live="polite">
-          {discoveryStatusText}
-        </p>
+        {discoveryStatusText ? (
+          <p style={styles.discoveryStatus} aria-live="polite">
+            {discoveryStatusText}
+          </p>
+        ) : null}
         <div style={styles.searchInputWrap}>
           <span style={styles.searchPrefix} aria-hidden="true">Search:</span>
           <span
@@ -297,7 +302,13 @@ export default function AtlasMap() {
             style={styles.searchInput}
             value={query}
             placeholder={!query.trim() && !displayedQuery && !isSearchFocused ? ATMOSPHERIC_SUGGESTIONS[suggestionIndex] : ''}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              const nextValue = event.target.value;
+              setQuery(nextValue);
+              if (!nextValue.trim()) {
+                setSubmittedQuery('');
+              }
+            }}
             onAnimationEnd={() => {
               setSearchPulseTick(0);
             }}
