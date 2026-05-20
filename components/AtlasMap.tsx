@@ -66,6 +66,9 @@ export default function AtlasMap() {
   }, [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
+  const openEventCard = useCallback((eventId: string) => {
+    setSelectedId(eventId);
+  }, []);
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
@@ -201,7 +204,7 @@ export default function AtlasMap() {
                   type="button"
                   className="marker-pulse"
                   aria-label={event.name}
-                  onClick={() => setSelectedId(event.id)}
+                  onClick={() => openEventCard(event.id)}
                   style={({
                     ...styles.marker,
                     opacity: isDimmed ? 0.28 : 1,
@@ -227,7 +230,8 @@ export default function AtlasMap() {
                 <button
                   type="button"
                   aria-label={`Open ${event.name}`}
-                  onClick={() => setSelectedId(event.id)}
+                  onClick={() => openEventCard(event.id)}
+                  onPointerDown={(event) => event.stopPropagation()}
                   style={{
                     ...styles.markerLabel,
                     opacity: isHighlighted ? 1 : 0,
