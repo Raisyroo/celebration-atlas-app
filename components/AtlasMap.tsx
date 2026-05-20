@@ -13,6 +13,19 @@ const ATMOSPHERIC_SUGGESTIONS = [
 const MAP_BLEED_X = 0.12;
 const MAP_BLEED_Y = 0.1;
 
+const BASE_SCALE = 1.03;
+const MIN_SCALE = 1;
+const MAX_SCALE = 2.35;
+const PAN_SOFTNESS = 0.3;
+const PAN_X_LIMIT_FACTOR = 0.56;
+const PAN_Y_LIMIT_FACTOR = 0.52;
+
+type Viewport = {
+  scale: number;
+  x: number;
+  y: number;
+};
+
 export default function AtlasMap() {
   const [query, setQuery] = useState('');
   const [displayedQuery, setDisplayedQuery] = useState('');
@@ -36,6 +49,39 @@ export default function AtlasMap() {
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
+  const [viewport, setViewport] = useState<Viewport>({ scale: BASE_SCALE, x: 0, y: 0 });
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const gestureRef = useRef<{ startDistance: number; startScale: number } | null>(null);
+  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
+
+  const getBounds = useCallback((scale: number) => {
+    const overflowX = Math.max(0, ((1 + MAP_BLEED_X) * scale - 1) * 0.5);
+    const overflowY = Math.max(0, ((1 + MAP_BLEED_Y) * scale - 1) * 0.5);
+    return {
+      maxX: overflowX * PAN_X_LIMIT_FACTOR,
+      maxY: overflowY * PAN_Y_LIMIT_FACTOR,
+    };
+  }, []);
+
+  const clampViewport = useCallback(
+    (next: Viewport, isSoft = false): Viewport => {
+      const boundedScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, next.scale));
+      const { maxX, maxY } = getBounds(boundedScale);
+      if (isSoft) {
+        return {
+          scale: boundedScale,
+          x: Math.max(-maxX * (1 + PAN_SOFTNESS), Math.min(maxX * (1 + PAN_SOFTNESS), next.x)),
+          y: Math.max(-maxY * (1 + PAN_SOFTNESS), Math.min(maxY * (1 + PAN_SOFTNESS), next.y)),
+        };
+      }
+      return {
+        scale: boundedScale,
+        x: Math.max(-maxX, Math.min(maxX, next.x)),
+        y: Math.max(-maxY, Math.min(maxY, next.y)),
+      };
+    },
+    [getBounds],
+  );
 
   const highlightedIds = useMemo(() => {
     const ids = new Set<string>();
@@ -177,11 +223,78 @@ export default function AtlasMap() {
       <div
         ref={mapFrameRef}
         style={styles.mapFrame}
+        onPointerDown={(event) => {
+          const target = event.target as HTMLElement;
+          if (target.closest('button, input, article')) return;
+          mapFrameRef.current?.setPointerCapture(event.pointerId);
+          activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+          if (activePointersRef.current.size === 1) {
+            dragRef.current = {
+              pointerId: event.pointerId,
+              startX: event.clientX,
+              startY: event.clientY,
+              originX: viewport.x,
+              originY: viewport.y,
+            };
+          } else if (activePointersRef.current.size === 2) {
+            const [a, b] = Array.from(activePointersRef.current.values());
+            gestureRef.current = {
+              startDistance: Math.hypot(b.x - a.x, b.y - a.y),
+              startScale: viewport.scale,
+            };
+            dragRef.current = null;
+          }
+        }}
+        onPointerMove={(event) => {
+          if (!activePointersRef.current.has(event.pointerId)) return;
+          activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+          if (activePointersRef.current.size >= 2 && gestureRef.current) {
+            const [a, b] = Array.from(activePointersRef.current.values());
+            const nextDistance = Math.hypot(b.x - a.x, b.y - a.y);
+            const distanceRatio = nextDistance / Math.max(1, gestureRef.current.startDistance);
+            setViewport((prev) => clampViewport({ ...prev, scale: gestureRef.current!.startScale * distanceRatio }, true));
+            return;
+          }
+
+          if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+          const dx = (event.clientX - dragRef.current.startX) / window.innerWidth;
+          const dy = (event.clientY - dragRef.current.startY) / window.innerHeight;
+          setViewport((prev) =>
+            clampViewport(
+              {
+                ...prev,
+                x: dragRef.current!.originX + dx,
+                y: dragRef.current!.originY + dy,
+              },
+              true,
+            ),
+          );
+        }}
+        onPointerUp={(event) => {
+          activePointersRef.current.delete(event.pointerId);
+          mapFrameRef.current?.releasePointerCapture(event.pointerId);
+          if (activePointersRef.current.size < 2) gestureRef.current = null;
+          dragRef.current = null;
+          setViewport((prev) => clampViewport(prev));
+        }}
+        onPointerCancel={(event) => {
+          activePointersRef.current.delete(event.pointerId);
+          gestureRef.current = null;
+          dragRef.current = null;
+          setViewport((prev) => clampViewport(prev));
+        }}
+        onWheel={(event) => {
+          event.preventDefault();
+          const delta = -event.deltaY * 0.0012;
+          setViewport((prev) => clampViewport({ ...prev, scale: prev.scale * (1 + delta) }));
+        }}
       >
         <div
           style={{
             ...styles.mapContent,
-            transform: 'scale(1.03)',
+            transform: `translate3d(${viewport.x * 100}%, ${viewport.y * 100}%, 0) scale(${viewport.scale})`,
           }}
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
@@ -413,7 +526,7 @@ const styles: Record<string, CSSProperties> = {
     inset: `-${MAP_BLEED_Y * 50}% -${MAP_BLEED_X * 50}%`,
     transformOrigin: 'center center',
     transition: 'filter 260ms ease, transform 520ms cubic-bezier(.22,.61,.36,1)',
-    touchAction: 'manipulation',
+    touchAction: 'none',
     filter: 'saturate(0.9) brightness(0.82)',
   },
   mapImage: {
@@ -443,7 +556,7 @@ const styles: Record<string, CSSProperties> = {
     background: 'radial-gradient(circle, #ffebba 8%, #f2c66a 55%, rgba(242,198,106,.15) 100%)',
     zIndex: 3,
     cursor: 'pointer',
-    touchAction: 'manipulation',
+    touchAction: 'none',
   },
   markerWrap: {
     position: 'absolute',
@@ -502,7 +615,7 @@ const styles: Record<string, CSSProperties> = {
     backdropFilter: 'blur(2px)',
     WebkitBackdropFilter: 'blur(2px)',
     cursor: 'pointer',
-    touchAction: 'manipulation',
+    touchAction: 'none',
   },
   searchInputWrap: {
     position: 'relative',
@@ -585,7 +698,7 @@ const styles: Record<string, CSSProperties> = {
     display: 'grid',
     placeItems: 'center',
     cursor: 'pointer',
-    touchAction: 'manipulation',
+    touchAction: 'none',
   },
   cardTitle: {
     margin: '0 40px 6px 0',
