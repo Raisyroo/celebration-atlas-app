@@ -224,17 +224,19 @@ export default function AtlasMap() {
                     animationDelay: `${pulseDelay}s`,
                   } as CSSProperties)}
                 />
-                <div
-                  aria-hidden="true"
+                <button
+                  type="button"
+                  aria-label={`Open ${event.name}`}
+                  onClick={() => setSelectedId(event.id)}
                   style={{
                     ...styles.markerLabel,
                     opacity: isHighlighted ? 1 : 0,
                     transform: isHighlighted ? 'translate(-50%, -122%)' : 'translate(-50%, -116%)',
-                    pointerEvents: 'none',
+                    pointerEvents: isHighlighted ? 'auto' : 'none',
                   }}
                 >
                   {event.name}
-                </div>
+                </button>
               </div>
             );
           })}
@@ -474,6 +476,12 @@ const styles: Record<string, CSSProperties> = {
     WebkitBackdropFilter: 'blur(2px)',
     transition: 'opacity 380ms ease, transform 420ms cubic-bezier(.22,.61,.36,1)',
     willChange: 'opacity, transform',
+    cursor: 'pointer',
+    touchAction: 'none',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    outline: 'none',
+    textAlign: 'center',
   },
   searchDock: {
     position: 'fixed',
