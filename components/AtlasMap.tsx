@@ -64,6 +64,10 @@ export default function AtlasMap() {
 
     return ids;
   }, [q]);
+  const discoveryStatusText =
+    highlightedIds.size > 0
+      ? `${highlightedIds.size} ${highlightedIds.size === 1 ? 'discovery' : 'discoveries'} found`
+      : `${ATLAS_EVENTS.length} discoveries glowing`;
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
@@ -275,6 +279,9 @@ export default function AtlasMap() {
             Featured: {featuredEvent.name}
           </span>
         </button>
+        <p style={styles.discoveryStatus} aria-live="polite">
+          {discoveryStatusText}
+        </p>
         <div style={styles.searchInputWrap}>
           <span style={styles.searchPrefix} aria-hidden="true">Search:</span>
           <span
@@ -523,6 +530,17 @@ const styles: Record<string, CSSProperties> = {
     background: 'rgba(7, 10, 15, 0.16)',
     boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 0 14px rgba(252, 201, 102, 0.28)',
     padding: '0 15px',
+  },
+  discoveryStatus: {
+    margin: '0 auto 8px',
+    width: 'fit-content',
+    color: 'rgba(255, 232, 188, 0.62)',
+    fontSize: 11,
+    letterSpacing: 0.28,
+    lineHeight: 1.2,
+    textShadow: '0 1px 2px rgba(2, 3, 7, 0.55), 0 0 8px rgba(247, 199, 98, 0.16)',
+    opacity: 0.86,
+    pointerEvents: 'none',
   },
   searchPrefix: {
     flexShrink: 0,
