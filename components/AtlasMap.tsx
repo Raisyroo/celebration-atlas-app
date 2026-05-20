@@ -15,9 +15,7 @@ const MAP_BLEED_Y = 0.1;
 
 const BASE_SCALE = 1.03;
 const CLOUD_ASSET_VERSION = '2026-05-20';
-// TEMPORARY TESTING: keep geese flyovers continuous for tuning.
-// Later this should revert to rare flyovers (~once every 8–10 minutes).
-const GEESE_ACTIVE_CYCLE_SECONDS = 48;
+const GEESE_FLYOVER_CYCLE_SECONDS = 120;
 
 
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
@@ -503,15 +501,17 @@ export default function AtlasMap() {
         }
 
         @keyframes geeseFlyover {
-          0% {
+          0%,
+          83% {
             opacity: 0;
             transform: translate3d(-56vw, 122vh, 0) scale(0.86);
           }
-          10% {
+          86% {
             opacity: 0.34;
           }
-          88% {
+          97% {
             opacity: 0.34;
+            transform: translate3d(152vw, -42vh, 0) scale(0.92);
           }
           100% {
             opacity: 0;
@@ -611,7 +611,7 @@ const styles: Record<string, CSSProperties> = {
     opacity: 0.34,
     mixBlendMode: 'screen',
     willChange: 'transform, opacity',
-    animation: `${GEESE_ACTIVE_CYCLE_SECONDS}s geeseFlyover linear infinite`,
+    animation: `${GEESE_FLYOVER_CYCLE_SECONDS}s geeseFlyover linear infinite`,
   },
   vignette: {
     position: 'absolute',
