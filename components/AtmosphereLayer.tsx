@@ -10,7 +10,7 @@ type AtmosphereLayerProps = {
 export default function AtmosphereLayer({ events }: AtmosphereLayerProps) {
   const fireworksPoints = events
     .filter((event) => event.atmosphere?.effects?.includes('fireworks'))
-    .map((event) => ({ id: event.id, x: event.x, y: event.y }));
+    .map((event) => ({ id: event.id, x: event.x, y: event.y, intensity: event.atmosphere?.intensity ?? 'subtle' }));
 
   return (
     <>
