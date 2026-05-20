@@ -17,7 +17,8 @@ const BASE_SCALE = 1.03;
 const CLOUD_ASSET_VERSION = '2026-05-20';
 // TEMPORARY TESTING: keep geese flyovers continuous for size/speed tuning.
 // Later this should revert to rare flyovers (~once every 8–10 minutes).
-const GEESE_ACTIVE_CYCLE_SECONDS = 24;
+// TEMPORARY VISIBILITY TESTING: intentionally slower and larger so geese are easy to debug.
+const GEESE_ACTIVE_CYCLE_SECONDS = 20;
 
 
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
@@ -503,25 +504,18 @@ export default function AtlasMap() {
         }
 
         @keyframes geeseFlyover {
+          /* TEMPORARY VISIBILITY TESTING: keep geese path crossing map center and clearly onscreen. */
           0% {
-            opacity: 0;
-            transform: translate3d(-22vw, 112vh, 0) scale(0.21);
+            opacity: 1;
+            transform: translate3d(-36vw, 116vh, 0) scale(0.92);
           }
-          8% {
-            opacity: 0.08;
-            transform: translate3d(-8vw, 95vh, 0) scale(0.215);
-          }
-          52% {
-            opacity: 0.14;
-            transform: translate3d(48vw, 44vh, 0) scale(0.225);
-          }
-          90% {
-            opacity: 0.09;
-            transform: translate3d(104vw, -8vh, 0) scale(0.235);
+          50% {
+            opacity: 1;
+            transform: translate3d(50vw, 50vh, 0) scale(1);
           }
           100% {
-            opacity: 0;
-            transform: translate3d(122vw, -24vh, 0) scale(0.24);
+            opacity: 1;
+            transform: translate3d(134vw, -30vh, 0) scale(1.08);
           }
         }
 
@@ -600,7 +594,7 @@ const styles: Record<string, CSSProperties> = {
   geeseLayer: {
     position: 'absolute',
     inset: 0,
-    zIndex: 2,
+    zIndex: 4,
     pointerEvents: 'none',
     overflow: 'hidden',
   },
@@ -608,13 +602,13 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 0,
     top: 0,
-    width: 56,
+    width: 'clamp(180px, 52vw, 240px)',
     height: 'auto',
     maxWidth: 'none',
     objectFit: 'contain',
     pointerEvents: 'none',
     userSelect: 'none',
-    opacity: 0,
+    opacity: 1,
     mixBlendMode: 'screen',
     willChange: 'transform, opacity',
     animation: `${GEESE_ACTIVE_CYCLE_SECONDS}s geeseFlyover linear infinite`,
@@ -635,7 +629,7 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 999,
     border: '1px solid rgba(255,228,170,.95)',
     background: 'radial-gradient(circle, #ffebba 8%, #f2c66a 55%, rgba(242,198,106,.15) 100%)',
-    zIndex: 3,
+    zIndex: 5,
     cursor: 'pointer',
     touchAction: 'none',
   },
@@ -643,7 +637,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     width: 1,
     height: 1,
-    zIndex: 3,
+    zIndex: 5,
   },
   markerLabel: {
     position: 'absolute',
