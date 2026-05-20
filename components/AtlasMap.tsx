@@ -221,6 +221,12 @@ export default function AtlasMap() {
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
 
+          <div style={styles.cloudLayer} aria-hidden="true">
+            <img src="/overlays/cloud-drift-1.png" alt="" draggable={false} style={{ ...styles.cloudImage, ...styles.cloudDriftOne }} />
+            <img src="/overlays/cloud-drift-2.png" alt="" draggable={false} style={{ ...styles.cloudImage, ...styles.cloudDriftTwo }} />
+            <img src="/overlays/cloud-shadow-1.png" alt="" draggable={false} style={{ ...styles.cloudImage, ...styles.cloudShadow }} />
+          </div>
+
           {ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
             const isSelected = selectedId === event.id;
@@ -431,6 +437,33 @@ export default function AtlasMap() {
           }
         }
 
+        @keyframes cloudDriftPrimary {
+          0% {
+            transform: translate3d(-6%, -1.5%, 0) scale(1.08);
+          }
+          100% {
+            transform: translate3d(5%, 2%, 0) scale(1.12);
+          }
+        }
+
+        @keyframes cloudDriftSecondary {
+          0% {
+            transform: translate3d(7%, 2.5%, 0) scale(1.1);
+          }
+          100% {
+            transform: translate3d(-6%, -2%, 0) scale(1.07);
+          }
+        }
+
+        @keyframes cloudShadowDrift {
+          0% {
+            transform: translate3d(-4%, 1.5%, 0) scale(1.07);
+          }
+          100% {
+            transform: translate3d(4%, -1%, 0) scale(1.1);
+          }
+        }
+
         @keyframes markerPulse {
           0%,
           100% {
@@ -484,6 +517,38 @@ const styles: Record<string, CSSProperties> = {
     userSelect: 'none',
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
+  },
+  cloudLayer: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 2,
+    pointerEvents: 'none',
+    overflow: 'hidden',
+  },
+  cloudImage: {
+    position: 'absolute',
+    inset: '-8%',
+    width: '116%',
+    height: '116%',
+    objectFit: 'cover',
+    pointerEvents: 'none',
+    userSelect: 'none',
+    willChange: 'transform',
+  },
+  cloudDriftOne: {
+    opacity: 0.12,
+    mixBlendMode: 'screen',
+    animation: 'cloudDriftPrimary 96s linear infinite alternate',
+  },
+  cloudDriftTwo: {
+    opacity: 0.09,
+    mixBlendMode: 'screen',
+    animation: 'cloudDriftSecondary 128s linear infinite alternate',
+  },
+  cloudShadow: {
+    opacity: 0.14,
+    mixBlendMode: 'multiply',
+    animation: 'cloudShadowDrift 140s linear infinite alternate',
   },
   vignette: {
     position: 'absolute',
