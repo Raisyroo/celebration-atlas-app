@@ -64,10 +64,11 @@ export default function AtlasMap() {
 
     return ids;
   }, [q]);
+  const hasActiveSearchQuery = submittedQuery.trim().length > 0 && (query.trim().length > 0 || displayedQuery.trim().length > 0);
   const discoveryStatusText =
     highlightedIds.size > 0
       ? `${highlightedIds.size} ${highlightedIds.size === 1 ? 'discovery' : 'discoveries'} found`
-      : `${ATLAS_EVENTS.length} discoveries glowing`;
+      : 'No discoveries found';
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
@@ -279,9 +280,11 @@ export default function AtlasMap() {
             Featured: {featuredEvent.name}
           </span>
         </button>
-        <p style={styles.discoveryStatus} aria-live="polite">
-          {discoveryStatusText}
-        </p>
+        {hasActiveSearchQuery ? (
+          <p style={styles.discoveryStatus} aria-live="polite">
+            {discoveryStatusText}
+          </p>
+        ) : null}
         <div style={styles.searchInputWrap}>
           <span style={styles.searchPrefix} aria-hidden="true">Search:</span>
           <span
