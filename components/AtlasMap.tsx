@@ -14,6 +14,7 @@ const MAP_BLEED_X = 0.12;
 const MAP_BLEED_Y = 0.1;
 
 const BASE_SCALE = 1.03;
+const CLOUD_ASSET_VERSION = '2026-05-20';
 
 
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
@@ -222,9 +223,24 @@ export default function AtlasMap() {
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
 
           <div style={styles.cloudLayer} aria-hidden="true">
-            <img src="/overlays/cloud-drift-1.png" alt="" draggable={false} style={{ ...styles.cloudImage, ...styles.cloudDriftOne }} />
-            <img src="/overlays/cloud-drift-2.png" alt="" draggable={false} style={{ ...styles.cloudImage, ...styles.cloudDriftTwo }} />
-            <img src="/overlays/cloud-shadow-1.png" alt="" draggable={false} style={{ ...styles.cloudImage, ...styles.cloudShadow }} />
+            <img
+              src={`/overlays/cloud-drift-1.png?v=${CLOUD_ASSET_VERSION}`}
+              alt=""
+              draggable={false}
+              style={{ ...styles.cloudImage, ...styles.cloudDriftOne }}
+            />
+            <img
+              src={`/overlays/cloud-drift-2.png?v=${CLOUD_ASSET_VERSION}`}
+              alt=""
+              draggable={false}
+              style={{ ...styles.cloudImage, ...styles.cloudDriftTwo }}
+            />
+            <img
+              src={`/overlays/cloud-shadow-1.png?v=${CLOUD_ASSET_VERSION}`}
+              alt=""
+              draggable={false}
+              style={{ ...styles.cloudImage, ...styles.cloudShadow }}
+            />
           </div>
 
           {ATLAS_EVENTS.map((event, index) => {
@@ -442,7 +458,7 @@ export default function AtlasMap() {
             transform: translate3d(0, 0, 0) scale(1.02);
           }
           100% {
-            transform: translate3d(24vw, 5vh, 0) scale(1.08);
+            transform: translate3d(52vw, 8vh, 0) scale(1.05);
           }
         }
 
@@ -451,7 +467,7 @@ export default function AtlasMap() {
             transform: translate3d(0, 0, 0) scale(1.01);
           }
           100% {
-            transform: translate3d(-20vw, 6vh, 0) scale(1.06);
+            transform: translate3d(-46vw, -7vh, 0) scale(1.05);
           }
         }
 
@@ -460,7 +476,7 @@ export default function AtlasMap() {
             transform: translate3d(0, 0, 0) scale(1.03);
           }
           100% {
-            transform: translate3d(22vw, -4vh, 0) scale(1.08);
+            transform: translate3d(48vw, -6vh, 0) scale(1.04);
           }
         }
 
@@ -535,34 +551,29 @@ const styles: Record<string, CSSProperties> = {
     willChange: 'transform',
   },
   cloudDriftOne: {
-    width: '56vw',
-    minWidth: 520,
-    maxWidth: '65vw',
-    left: '-32vw',
-    top: '-8vh',
-    opacity: 0.08,
+    width: 380,
+    left: '-26%',
+    top: '4%',
+    opacity: 0.24,
     mixBlendMode: 'screen',
-    animation: 'cloudDriftPrimary 74s linear infinite alternate',
+    // Temporary cloud animation test speed for obvious motion during QA.
+    animation: 'cloudDriftPrimary 9s linear infinite alternate',
   },
   cloudDriftTwo: {
-    width: '44vw',
-    minWidth: 420,
-    maxWidth: '55vw',
-    right: '-26vw',
-    top: '16vh',
-    opacity: 0.065,
+    width: 320,
+    right: '-22%',
+    top: '30%',
+    opacity: 0.22,
     mixBlendMode: 'screen',
-    animation: 'cloudDriftSecondary 82s linear infinite alternate',
+    animation: 'cloudDriftSecondary 11s linear infinite alternate',
   },
   cloudShadow: {
-    width: '58vw',
-    minWidth: 540,
-    maxWidth: '70vw',
-    left: '-30vw',
-    top: '44vh',
-    opacity: 0.075,
+    width: 420,
+    left: '-18%',
+    top: '58%',
+    opacity: 0.2,
     mixBlendMode: 'multiply',
-    animation: 'cloudShadowDrift 88s linear infinite alternate',
+    animation: 'cloudShadowDrift 10s linear infinite alternate',
   },
   vignette: {
     position: 'absolute',
