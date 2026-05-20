@@ -220,7 +220,6 @@ export default function AtlasMap() {
           }}
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
-          <div className="atlas-cloud-shadow-layer" style={styles.cloudShadowLayer} aria-hidden="true" />
 
           {ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
@@ -404,17 +403,6 @@ export default function AtlasMap() {
           transform-origin: center;
         }
 
-        .atlas-cloud-shadow-layer {
-          animation: atlasCloudShadowDrift 32s linear infinite alternate;
-          will-change: transform, opacity;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .atlas-cloud-shadow-layer {
-            animation-duration: 40s;
-          }
-        }
-
         @keyframes featuredDiscoverySwap {
           0% {
             opacity: 0.42;
@@ -457,24 +445,6 @@ export default function AtlasMap() {
           }
         }
 
-        @keyframes atlasCloudShadowDrift {
-          0% {
-            transform: translate3d(-10%, -3%, 0) scale(1.08);
-            opacity: 0.28;
-          }
-          34% {
-            transform: translate3d(-3%, -1%, 0) scale(1.1);
-            opacity: 0.36;
-          }
-          66% {
-            transform: translate3d(4%, 1%, 0) scale(1.12);
-            opacity: 0.31;
-          }
-          100% {
-            transform: translate3d(11%, 3%, 0) scale(1.09);
-            opacity: 0.35;
-          }
-        }
       `}</style>
     </section>
   );
@@ -514,21 +484,6 @@ const styles: Record<string, CSSProperties> = {
     userSelect: 'none',
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
-  },
-  cloudShadowLayer: {
-    position: 'absolute',
-    inset: '-20%',
-    zIndex: 2,
-    pointerEvents: 'none',
-    opacity: 0.34,
-    filter: 'blur(42px)',
-    mixBlendMode: 'multiply',
-    background: [
-      'radial-gradient(56% 48% at 14% 26%, rgba(5, 8, 14, 0.18) 0%, rgba(5, 8, 14, 0.12) 34%, rgba(5, 8, 14, 0) 76%)',
-      'radial-gradient(52% 46% at 42% 58%, rgba(4, 7, 12, 0.2) 0%, rgba(4, 7, 12, 0.14) 36%, rgba(4, 7, 12, 0) 78%)',
-      'radial-gradient(60% 54% at 76% 34%, rgba(5, 8, 15, 0.16) 0%, rgba(5, 8, 15, 0.1) 32%, rgba(5, 8, 15, 0) 74%)',
-      'linear-gradient(112deg, rgba(6, 10, 17, 0.05) 0%, rgba(6, 10, 17, 0.15) 45%, rgba(6, 10, 17, 0.03) 100%)',
-    ].join(','),
   },
   vignette: {
     position: 'absolute',
