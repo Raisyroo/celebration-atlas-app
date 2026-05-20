@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
+import AtmosphereLayer from './AtmosphereLayer';
 
 const ATMOSPHERIC_SUGGESTIONS = [
   'music festivals',
@@ -14,8 +15,6 @@ const MAP_BLEED_X = 0.12;
 const MAP_BLEED_Y = 0.1;
 
 const BASE_SCALE = 1.03;
-const CLOUD_ASSET_VERSION = '2026-05-20';
-const GEESE_FLYOVER_CYCLE_SECONDS = 120;
 
 
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
@@ -223,24 +222,7 @@ export default function AtlasMap() {
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
 
-          <div style={styles.cloudLayer} aria-hidden="true">
-            <img
-              src={`/overlays/cloud-drift-1.png?v=${CLOUD_ASSET_VERSION}`}
-              alt=""
-              draggable={false}
-              style={{ ...styles.cloudImage, ...styles.cloudDriftUpper }}
-            />
-            <img
-              src={`/overlays/cloud-drift-1.png?v=${CLOUD_ASSET_VERSION}`}
-              alt=""
-              draggable={false}
-              style={{ ...styles.cloudImage, ...styles.cloudDriftLower }}
-            />
-          </div>
-
-          <div style={styles.geeseLayer} aria-hidden="true">
-            <img src="/overlays/geese.png" alt="" draggable={false} style={styles.geeseImage} />
-          </div>
+          <AtmosphereLayer />
 
           {ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
@@ -452,36 +434,6 @@ export default function AtlasMap() {
           }
         }
 
-        @keyframes cloudDriftPrimary {
-          0% {
-            opacity: 0.16;
-            transform: translate3d(-128vw, 0vh, 0) scale(1.01);
-          }
-          93% {
-            opacity: 0.16;
-            transform: translate3d(146vw, 7vh, 0) scale(1.04);
-          }
-          100% {
-            opacity: 0;
-            transform: translate3d(146vw, 7vh, 0) scale(1.04);
-          }
-        }
-
-        @keyframes cloudDriftSecondary {
-          0% {
-            opacity: 0.13;
-            transform: translate3d(-124vw, 0vh, 0) scale(1.02);
-          }
-          92% {
-            opacity: 0.13;
-            transform: translate3d(144vw, -9vh, 0) scale(1.05);
-          }
-          100% {
-            opacity: 0;
-            transform: translate3d(144vw, -9vh, 0) scale(1.05);
-          }
-        }
-
         @keyframes markerPulse {
           0%,
           100% {
@@ -493,25 +445,6 @@ export default function AtlasMap() {
             transform: translate(-50%, -50%) scale(calc(var(--marker-scale-base, 1) * 1.18));
             box-shadow: var(--marker-shadow-peak);
             filter: brightness(1.07) saturate(1.08);
-          }
-        }
-
-        @keyframes geeseFlyover {
-          0%,
-          84% {
-            opacity: 0;
-            transform: translate3d(-66vw, 132vh, 0) scale(0.86);
-          }
-          87% {
-            opacity: 0.34;
-          }
-          96% {
-            opacity: 0.34;
-            transform: translate3d(164vw, -54vh, 0) scale(0.92);
-          }
-          100% {
-            opacity: 0;
-            transform: translate3d(164vw, -54vh, 0) scale(0.92);
           }
         }
 
@@ -554,60 +487,6 @@ const styles: Record<string, CSSProperties> = {
     userSelect: 'none',
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
-  },
-  cloudLayer: {
-    position: 'absolute',
-    inset: 0,
-    zIndex: 2,
-    pointerEvents: 'none',
-    overflow: 'hidden',
-  },
-  cloudImage: {
-    position: 'absolute',
-    height: 'auto',
-    maxWidth: 'none',
-    objectFit: 'contain',
-    pointerEvents: 'none',
-    userSelect: 'none',
-    willChange: 'transform',
-  },
-  cloudDriftUpper: {
-    width: 360,
-    left: '-34%',
-    top: '10%',
-    opacity: 0.16,
-    mixBlendMode: 'screen',
-    animation: 'cloudDriftPrimary 84s linear infinite',
-  },
-  cloudDriftLower: {
-    width: 330,
-    left: '-30%',
-    top: '56%',
-    opacity: 0.13,
-    mixBlendMode: 'screen',
-    animation: 'cloudDriftSecondary 76s linear infinite',
-  },
-  geeseLayer: {
-    position: 'absolute',
-    inset: 0,
-    zIndex: 4,
-    pointerEvents: 'none',
-    overflow: 'hidden',
-  },
-  geeseImage: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    width: 'clamp(88px, 18vw, 128px)',
-    height: 'auto',
-    maxWidth: 'none',
-    objectFit: 'contain',
-    pointerEvents: 'none',
-    userSelect: 'none',
-    opacity: 0.34,
-    mixBlendMode: 'screen',
-    willChange: 'transform, opacity',
-    animation: `${GEESE_FLYOVER_CYCLE_SECONDS}s geeseFlyover linear infinite`,
   },
   vignette: {
     position: 'absolute',
