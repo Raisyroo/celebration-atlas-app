@@ -455,34 +455,30 @@ export default function AtlasMap() {
         @keyframes cloudDriftPrimary {
           0% {
             opacity: 0.16;
-            transform: translate3d(-120vw, 0vh, 0) scale(1.01);
+            transform: translate3d(-128vw, 0vh, 0) scale(1.01);
           }
-          84% {
+          93% {
             opacity: 0.16;
-          }
-          96% {
-            opacity: 0.12;
+            transform: translate3d(146vw, 7vh, 0) scale(1.04);
           }
           100% {
             opacity: 0;
-            transform: translate3d(138vw, 7vh, 0) scale(1.04);
+            transform: translate3d(146vw, 7vh, 0) scale(1.04);
           }
         }
 
         @keyframes cloudDriftSecondary {
           0% {
             opacity: 0.13;
-            transform: translate3d(-116vw, 0vh, 0) scale(1.02);
+            transform: translate3d(-124vw, 0vh, 0) scale(1.02);
           }
-          82% {
+          92% {
             opacity: 0.13;
-          }
-          95% {
-            opacity: 0.1;
+            transform: translate3d(144vw, -9vh, 0) scale(1.05);
           }
           100% {
             opacity: 0;
-            transform: translate3d(136vw, -9vh, 0) scale(1.05);
+            transform: translate3d(144vw, -9vh, 0) scale(1.05);
           }
         }
 
@@ -502,20 +498,20 @@ export default function AtlasMap() {
 
         @keyframes geeseFlyover {
           0%,
-          83% {
+          84% {
             opacity: 0;
-            transform: translate3d(-56vw, 122vh, 0) scale(0.86);
+            transform: translate3d(-66vw, 132vh, 0) scale(0.86);
           }
-          86% {
+          87% {
             opacity: 0.34;
           }
-          97% {
+          96% {
             opacity: 0.34;
-            transform: translate3d(152vw, -42vh, 0) scale(0.92);
+            transform: translate3d(164vw, -54vh, 0) scale(0.92);
           }
           100% {
             opacity: 0;
-            transform: translate3d(152vw, -42vh, 0) scale(0.92);
+            transform: translate3d(164vw, -54vh, 0) scale(0.92);
           }
         }
 
