@@ -15,6 +15,10 @@ const MAP_BLEED_Y = 0.1;
 
 const BASE_SCALE = 1.03;
 const CLOUD_ASSET_VERSION = '2026-05-20';
+const GEESE_FLYOVER_CYCLE_SECONDS = 540; // Default: ~9 minutes (rare appearance every 8–10 minutes).
+// TEMP TEST OPTION: set to true for a much faster cycle while validating motion/placement locally.
+const GEESE_FAST_TEST_MODE = false;
+const GEESE_ACTIVE_CYCLE_SECONDS = GEESE_FAST_TEST_MODE ? 40 : GEESE_FLYOVER_CYCLE_SECONDS;
 
 
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
@@ -235,6 +239,10 @@ export default function AtlasMap() {
               draggable={false}
               style={{ ...styles.cloudImage, ...styles.cloudDriftLower }}
             />
+          </div>
+
+          <div style={styles.geeseLayer} aria-hidden="true">
+            <img src="/overlays/geese.png" alt="" draggable={false} style={styles.geeseImage} />
           </div>
 
           {ATLAS_EVENTS.map((event, index) => {
@@ -495,6 +503,31 @@ export default function AtlasMap() {
           }
         }
 
+        @keyframes geeseFlyover {
+          0%,
+          95%,
+          100% {
+            opacity: 0;
+            transform: translate3d(-24vw, 108vh, 0) scale(0.22);
+          }
+          96% {
+            opacity: 0.07;
+            transform: translate3d(-18vw, 96vh, 0) scale(0.22);
+          }
+          97.5% {
+            opacity: 0.12;
+            transform: translate3d(26vw, 62vh, 0) scale(0.23);
+          }
+          99% {
+            opacity: 0.1;
+            transform: translate3d(86vw, 10vh, 0) scale(0.24);
+          }
+          99.8% {
+            opacity: 0;
+            transform: translate3d(124vw, -24vh, 0) scale(0.24);
+          }
+        }
+
       `}</style>
     </section>
   );
@@ -566,6 +599,28 @@ const styles: Record<string, CSSProperties> = {
     opacity: 0.13,
     mixBlendMode: 'screen',
     animation: 'cloudDriftSecondary 76s linear infinite',
+  },
+  geeseLayer: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 2,
+    pointerEvents: 'none',
+    overflow: 'hidden',
+  },
+  geeseImage: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: 56,
+    height: 'auto',
+    maxWidth: 'none',
+    objectFit: 'contain',
+    pointerEvents: 'none',
+    userSelect: 'none',
+    opacity: 0,
+    mixBlendMode: 'screen',
+    willChange: 'transform, opacity',
+    animation: `${GEESE_ACTIVE_CYCLE_SECONDS}s geeseFlyover linear infinite`,
   },
   vignette: {
     position: 'absolute',
