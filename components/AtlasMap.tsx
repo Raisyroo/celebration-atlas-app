@@ -15,10 +15,9 @@ const MAP_BLEED_Y = 0.1;
 
 const BASE_SCALE = 1.03;
 const CLOUD_ASSET_VERSION = '2026-05-20';
-// TEMPORARY TESTING: keep geese flyovers continuous for size/speed tuning.
+// TEMPORARY TESTING: keep geese flyovers continuous for tuning.
 // Later this should revert to rare flyovers (~once every 8–10 minutes).
-// TEMPORARY VISIBILITY TESTING: intentionally slower and larger so geese are easy to debug.
-const GEESE_ACTIVE_CYCLE_SECONDS = 20;
+const GEESE_ACTIVE_CYCLE_SECONDS = 48;
 
 
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
@@ -504,18 +503,19 @@ export default function AtlasMap() {
         }
 
         @keyframes geeseFlyover {
-          /* TEMPORARY VISIBILITY TESTING: keep geese path crossing map center and clearly onscreen. */
           0% {
-            opacity: 1;
-            transform: translate3d(-36vw, 116vh, 0) scale(0.92);
+            opacity: 0;
+            transform: translate3d(-56vw, 122vh, 0) scale(0.86);
           }
-          50% {
-            opacity: 1;
-            transform: translate3d(50vw, 50vh, 0) scale(1);
+          10% {
+            opacity: 0.34;
+          }
+          88% {
+            opacity: 0.34;
           }
           100% {
-            opacity: 1;
-            transform: translate3d(134vw, -30vh, 0) scale(1.08);
+            opacity: 0;
+            transform: translate3d(152vw, -42vh, 0) scale(0.92);
           }
         }
 
@@ -602,13 +602,13 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 0,
     top: 0,
-    width: 'clamp(180px, 52vw, 240px)',
+    width: 'clamp(88px, 18vw, 128px)',
     height: 'auto',
     maxWidth: 'none',
     objectFit: 'contain',
     pointerEvents: 'none',
     userSelect: 'none',
-    opacity: 1,
+    opacity: 0.34,
     mixBlendMode: 'screen',
     willChange: 'transform, opacity',
     animation: `${GEESE_ACTIVE_CYCLE_SECONDS}s geeseFlyover linear infinite`,
