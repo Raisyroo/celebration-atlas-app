@@ -471,7 +471,7 @@ const styles: Record<string, CSSProperties> = {
     transformOrigin: 'center center',
     transition: 'filter 260ms ease, transform 520ms cubic-bezier(.22,.61,.36,1)',
     touchAction: 'none',
-    filter: 'saturate(0.9) brightness(0.82)',
+    filter: 'saturate(0.74) brightness(0.62) contrast(1.08)',
   },
   mapImage: {
     position: 'relative',
@@ -480,7 +480,7 @@ const styles: Record<string, CSSProperties> = {
     height: '100%',
     objectFit: 'cover',
     objectPosition: 'center',
-    opacity: 0.95,
+    opacity: 0.88,
     userSelect: 'none',
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
@@ -488,7 +488,8 @@ const styles: Record<string, CSSProperties> = {
   vignette: {
     position: 'absolute',
     inset: 0,
-    background: 'linear-gradient(to bottom, rgba(3,4,7,.25), rgba(3,4,7,.6) 65%, rgba(3,4,7,.88))',
+    background:
+      'radial-gradient(circle at 50% 42%, rgba(7,10,16,0) 34%, rgba(4,6,10,.44) 68%, rgba(3,5,8,.78) 100%), linear-gradient(to bottom, rgba(3,4,7,.44), rgba(3,4,7,.72) 64%, rgba(2,3,6,.94))',
     pointerEvents: 'none',
   },
   marker: {
