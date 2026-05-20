@@ -30,7 +30,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 67,
     y: 39,
     atmosphere: {
-      effects: ['balloons'],
+      // Temporary debug only: force fireworks on a visible event to verify map-layer rendering.
+      effects: ['balloons', 'fireworks'],
       intensity: 'subtle',
     },
   },
