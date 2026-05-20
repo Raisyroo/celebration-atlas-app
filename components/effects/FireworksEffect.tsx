@@ -61,26 +61,27 @@ const styles: Record<string, CSSProperties> = {
 };
 
 const INTENSITY_PROFILE: Record<FireworkPoint['intensity'], IntensityProfile> = {
+  // Temporary debug tuning: increase cadence/visibility so fireworks are easier to observe during QA.
   subtle: {
-    cycleBase: 17,
-    cycleVariance: 8,
+    cycleBase: 4.2,
+    cycleVariance: 3,
     launchLift: 11,
-    burstScale: 1,
-    bloomOpacity: 1,
+    burstScale: 1.08,
+    bloomOpacity: 1.1,
   },
   medium: {
-    cycleBase: 15,
-    cycleVariance: 7,
+    cycleBase: 4.8,
+    cycleVariance: 3,
     launchLift: 12,
-    burstScale: 1.08,
-    bloomOpacity: 1.08,
-  },
-  signature: {
-    cycleBase: 13,
-    cycleVariance: 6,
-    launchLift: 13,
     burstScale: 1.16,
     bloomOpacity: 1.18,
+  },
+  signature: {
+    cycleBase: 5.4,
+    cycleVariance: 3,
+    launchLift: 13,
+    burstScale: 1.24,
+    bloomOpacity: 1.26,
   },
 };
 
@@ -125,7 +126,7 @@ export default function FireworksEffect({ points }: FireworksEffectProps) {
           const profile = INTENSITY_PROFILE[point.intensity];
           const tone = FIREWORK_TONES[seed % FIREWORK_TONES.length];
 
-          const cycleSeconds = profile.cycleBase + (seed % profile.cycleVariance) + index * 0.55;
+          const cycleSeconds = profile.cycleBase + (seed % profile.cycleVariance) + index * 0.15;
           const delaySeconds = -((seed % 11) + index * 1.6);
           const driftX = (seed % 9) - 4;
           const driftY = ((seed >> 3) % 7) - 3;
