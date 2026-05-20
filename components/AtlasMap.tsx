@@ -215,6 +215,9 @@ export default function AtlasMap() {
       if (queryFadeTimerRef.current) clearTimeout(queryFadeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
       if (enterFrameInnerRef.current) cancelAnimationFrame(enterFrameInnerRef.current);
+      activePointersRef.current.clear();
+      gestureRef.current = null;
+      dragRef.current = null;
     };
   }, []);
 
@@ -258,15 +261,16 @@ export default function AtlasMap() {
             return;
           }
 
-          if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
-          const dx = (event.clientX - dragRef.current.startX) / window.innerWidth;
-          const dy = (event.clientY - dragRef.current.startY) / window.innerHeight;
+          const dragState = dragRef.current;
+          if (!dragState || dragState.pointerId !== event.pointerId) return;
+          const dx = (event.clientX - dragState.startX) / window.innerWidth;
+          const dy = (event.clientY - dragState.startY) / window.innerHeight;
           setViewport((prev) =>
             clampViewport(
               {
                 ...prev,
-                x: dragRef.current!.originX + dx,
-                y: dragRef.current!.originY + dy,
+                x: dragState.originX + dx,
+                y: dragState.originY + dy,
               },
               true,
             ),
@@ -281,6 +285,7 @@ export default function AtlasMap() {
         }}
         onPointerCancel={(event) => {
           activePointersRef.current.delete(event.pointerId);
+          mapFrameRef.current?.releasePointerCapture(event.pointerId);
           gestureRef.current = null;
           dragRef.current = null;
           setViewport((prev) => clampViewport(prev));
