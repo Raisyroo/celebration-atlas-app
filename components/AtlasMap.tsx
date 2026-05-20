@@ -449,25 +449,35 @@ export default function AtlasMap() {
 
         @keyframes cloudDriftPrimary {
           0% {
+            opacity: 0.16;
             transform: translate3d(-120vw, 0vh, 0) scale(1.01);
           }
-          50% {
-            transform: translate3d(20vw, 4vh, 0) scale(1.03);
+          84% {
+            opacity: 0.16;
+          }
+          96% {
+            opacity: 0.12;
           }
           100% {
-            transform: translate3d(120vw, 6vh, 0) scale(1.04);
+            opacity: 0;
+            transform: translate3d(138vw, 7vh, 0) scale(1.04);
           }
         }
 
         @keyframes cloudDriftSecondary {
           0% {
+            opacity: 0.13;
             transform: translate3d(-116vw, 0vh, 0) scale(1.02);
           }
-          50% {
-            transform: translate3d(18vw, -5vh, 0) scale(1.04);
+          82% {
+            opacity: 0.13;
+          }
+          95% {
+            opacity: 0.1;
           }
           100% {
-            transform: translate3d(122vw, -8vh, 0) scale(1.05);
+            opacity: 0;
+            transform: translate3d(136vw, -9vh, 0) scale(1.05);
           }
         }
 
