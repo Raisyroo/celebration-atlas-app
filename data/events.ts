@@ -1,5 +1,13 @@
 export type AtlasCategory = 'Festivals' | 'Music' | 'Fairs';
 
+export type AtmosphereEffect =
+  | 'geese'
+  | 'fireworks'
+  | 'fog'
+  | 'snow'
+  | 'balloons'
+  | 'ferrisGlow';
+
 export type AtlasEvent = {
   id: string;
   name: string;
@@ -7,6 +15,10 @@ export type AtlasEvent = {
   category: AtlasCategory;
   x: number;
   y: number;
+  atmosphere?: {
+    effects?: AtmosphereEffect[];
+    intensity?: 'subtle' | 'medium' | 'signature';
+  };
 };
 
 export const ATLAS_EVENTS: AtlasEvent[] = [
@@ -17,6 +29,10 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Festivals',
     x: 67,
     y: 39,
+    atmosphere: {
+      effects: ['balloons'],
+      intensity: 'subtle',
+    },
   },
   {
     id: 'detroit-jazz',
@@ -25,6 +41,10 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Music',
     x: 73,
     y: 43,
+    atmosphere: {
+      effects: ['fog'],
+      intensity: 'medium',
+    },
   },
   {
     id: 'armada-fair',
@@ -33,6 +53,10 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Fairs',
     x: 69,
     y: 36,
+    atmosphere: {
+      effects: ['ferrisGlow'],
+      intensity: 'medium',
+    },
   },
   {
     id: 'electric-forest',
@@ -41,5 +65,9 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Music',
     x: 34,
     y: 42,
+    atmosphere: {
+      effects: ['fog', 'fireworks'],
+      intensity: 'signature',
+    },
   },
 ];
