@@ -235,12 +235,6 @@ export default function AtlasMap() {
               draggable={false}
               style={{ ...styles.cloudImage, ...styles.cloudDriftLower }}
             />
-            <img
-              src={`/overlays/cloud-shadow-1.png?v=${CLOUD_ASSET_VERSION}`}
-              alt=""
-              draggable={false}
-              style={{ ...styles.cloudImage, ...styles.cloudShadow }}
-            />
           </div>
 
           {ATLAS_EVENTS.map((event, index) => {
@@ -477,18 +471,6 @@ export default function AtlasMap() {
           }
         }
 
-        @keyframes cloudShadowDrift {
-          0% {
-            transform: translate3d(-118vw, 0vh, 0) scale(1.01);
-          }
-          50% {
-            transform: translate3d(19vw, -1vh, 0) scale(1.02);
-          }
-          100% {
-            transform: translate3d(121vw, -2vh, 0) scale(1.03);
-          }
-        }
-
         @keyframes markerPulse {
           0%,
           100% {
@@ -563,26 +545,17 @@ const styles: Record<string, CSSProperties> = {
     width: 360,
     left: '-34%',
     top: '10%',
-    opacity: 0.2,
+    opacity: 0.16,
     mixBlendMode: 'screen',
-    animation: 'cloudDriftPrimary 21s linear infinite',
+    animation: 'cloudDriftPrimary 84s linear infinite',
   },
   cloudDriftLower: {
     width: 330,
     left: '-30%',
     top: '56%',
-    opacity: 0.17,
+    opacity: 0.13,
     mixBlendMode: 'screen',
-    animation: 'cloudDriftSecondary 19s linear infinite',
-  },
-  cloudShadow: {
-    width: 380,
-    left: '-28%',
-    top: '60%',
-    opacity: 0.3,
-    mixBlendMode: 'multiply',
-    filter: 'blur(0.6px)',
-    animation: 'cloudShadowDrift 19s linear infinite',
+    animation: 'cloudDriftSecondary 76s linear infinite',
   },
   vignette: {
     position: 'absolute',
