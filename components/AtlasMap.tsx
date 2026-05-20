@@ -15,10 +15,9 @@ const MAP_BLEED_Y = 0.1;
 
 const BASE_SCALE = 1.03;
 const CLOUD_ASSET_VERSION = '2026-05-20';
-const GEESE_FLYOVER_CYCLE_SECONDS = 540; // Default: ~9 minutes (rare appearance every 8–10 minutes).
-// TEMP TEST OPTION: set to true for a much faster cycle while validating motion/placement locally.
-const GEESE_FAST_TEST_MODE = false;
-const GEESE_ACTIVE_CYCLE_SECONDS = GEESE_FAST_TEST_MODE ? 40 : GEESE_FLYOVER_CYCLE_SECONDS;
+// TEMPORARY TESTING: keep geese flyovers continuous for size/speed tuning.
+// Later this should revert to rare flyovers (~once every 8–10 minutes).
+const GEESE_ACTIVE_CYCLE_SECONDS = 24;
 
 
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
@@ -504,27 +503,25 @@ export default function AtlasMap() {
         }
 
         @keyframes geeseFlyover {
-          0%,
-          95%,
+          0% {
+            opacity: 0;
+            transform: translate3d(-22vw, 112vh, 0) scale(0.21);
+          }
+          8% {
+            opacity: 0.08;
+            transform: translate3d(-8vw, 95vh, 0) scale(0.215);
+          }
+          52% {
+            opacity: 0.14;
+            transform: translate3d(48vw, 44vh, 0) scale(0.225);
+          }
+          90% {
+            opacity: 0.09;
+            transform: translate3d(104vw, -8vh, 0) scale(0.235);
+          }
           100% {
             opacity: 0;
-            transform: translate3d(-24vw, 108vh, 0) scale(0.22);
-          }
-          96% {
-            opacity: 0.07;
-            transform: translate3d(-18vw, 96vh, 0) scale(0.22);
-          }
-          97.5% {
-            opacity: 0.12;
-            transform: translate3d(26vw, 62vh, 0) scale(0.23);
-          }
-          99% {
-            opacity: 0.1;
-            transform: translate3d(86vw, 10vh, 0) scale(0.24);
-          }
-          99.8% {
-            opacity: 0;
-            transform: translate3d(124vw, -24vh, 0) scale(0.24);
+            transform: translate3d(122vw, -24vh, 0) scale(0.24);
           }
         }
 
