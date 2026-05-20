@@ -439,28 +439,28 @@ export default function AtlasMap() {
 
         @keyframes cloudDriftPrimary {
           0% {
-            transform: translate3d(-6%, -1.5%, 0) scale(1.08);
+            transform: translate3d(0, 0, 0) scale(1.02);
           }
           100% {
-            transform: translate3d(5%, 2%, 0) scale(1.12);
+            transform: translate3d(24vw, 5vh, 0) scale(1.08);
           }
         }
 
         @keyframes cloudDriftSecondary {
           0% {
-            transform: translate3d(7%, 2.5%, 0) scale(1.1);
+            transform: translate3d(0, 0, 0) scale(1.01);
           }
           100% {
-            transform: translate3d(-6%, -2%, 0) scale(1.07);
+            transform: translate3d(-20vw, 6vh, 0) scale(1.06);
           }
         }
 
         @keyframes cloudShadowDrift {
           0% {
-            transform: translate3d(-4%, 1.5%, 0) scale(1.07);
+            transform: translate3d(0, 0, 0) scale(1.03);
           }
           100% {
-            transform: translate3d(4%, -1%, 0) scale(1.1);
+            transform: translate3d(22vw, -4vh, 0) scale(1.08);
           }
         }
 
@@ -527,28 +527,42 @@ const styles: Record<string, CSSProperties> = {
   },
   cloudImage: {
     position: 'absolute',
-    inset: '-8%',
-    width: '116%',
-    height: '116%',
-    objectFit: 'cover',
+    height: 'auto',
+    maxWidth: 'none',
+    objectFit: 'contain',
     pointerEvents: 'none',
     userSelect: 'none',
     willChange: 'transform',
   },
   cloudDriftOne: {
-    opacity: 0.12,
+    width: '56vw',
+    minWidth: 520,
+    maxWidth: '65vw',
+    left: '-32vw',
+    top: '-8vh',
+    opacity: 0.08,
     mixBlendMode: 'screen',
-    animation: 'cloudDriftPrimary 96s linear infinite alternate',
+    animation: 'cloudDriftPrimary 74s linear infinite alternate',
   },
   cloudDriftTwo: {
-    opacity: 0.09,
+    width: '44vw',
+    minWidth: 420,
+    maxWidth: '55vw',
+    right: '-26vw',
+    top: '16vh',
+    opacity: 0.065,
     mixBlendMode: 'screen',
-    animation: 'cloudDriftSecondary 128s linear infinite alternate',
+    animation: 'cloudDriftSecondary 82s linear infinite alternate',
   },
   cloudShadow: {
-    opacity: 0.14,
+    width: '58vw',
+    minWidth: 540,
+    maxWidth: '70vw',
+    left: '-30vw',
+    top: '44vh',
+    opacity: 0.075,
     mixBlendMode: 'multiply',
-    animation: 'cloudShadowDrift 140s linear infinite alternate',
+    animation: 'cloudShadowDrift 88s linear infinite alternate',
   },
   vignette: {
     position: 'absolute',
