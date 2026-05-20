@@ -258,31 +258,38 @@ export default function AtlasMap() {
             return;
           }
 
-          if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
-          const dx = (event.clientX - dragRef.current.startX) / window.innerWidth;
-          const dy = (event.clientY - dragRef.current.startY) / window.innerHeight;
+          const dragState = dragRef.current;
+          if (!dragState || dragState.pointerId !== event.pointerId) return;
+          const dx = (event.clientX - dragState.startX) / window.innerWidth;
+          const dy = (event.clientY - dragState.startY) / window.innerHeight;
           setViewport((prev) =>
             clampViewport(
               {
                 ...prev,
-                x: dragRef.current!.originX + dx,
-                y: dragRef.current!.originY + dy,
+                x: dragState.originX + dx,
+                y: dragState.originY + dy,
               },
               true,
             ),
           );
         }}
         onPointerUp={(event) => {
+          const dragState = dragRef.current;
           activePointersRef.current.delete(event.pointerId);
           mapFrameRef.current?.releasePointerCapture(event.pointerId);
           if (activePointersRef.current.size < 2) gestureRef.current = null;
-          dragRef.current = null;
+          if (dragState?.pointerId === event.pointerId || activePointersRef.current.size === 0) {
+            dragRef.current = null;
+          }
           setViewport((prev) => clampViewport(prev));
         }}
         onPointerCancel={(event) => {
+          const dragState = dragRef.current;
           activePointersRef.current.delete(event.pointerId);
           gestureRef.current = null;
-          dragRef.current = null;
+          if (dragState?.pointerId === event.pointerId || activePointersRef.current.size === 0) {
+            dragRef.current = null;
+          }
           setViewport((prev) => clampViewport(prev));
         }}
         onWheel={(event) => {
