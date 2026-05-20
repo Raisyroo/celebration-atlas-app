@@ -220,6 +220,7 @@ export default function AtlasMap() {
           }}
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
+          <div className="atlas-sunlight-layer" style={styles.sunlightLayer} aria-hidden="true" />
 
           {ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
@@ -403,6 +404,17 @@ export default function AtlasMap() {
           transform-origin: center;
         }
 
+        .atlas-sunlight-layer {
+          animation: atlasSunlightDrift 24s ease-in-out infinite alternate;
+          will-change: transform, opacity;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .atlas-sunlight-layer {
+            animation-duration: 30s;
+          }
+        }
+
         @keyframes featuredDiscoverySwap {
           0% {
             opacity: 0.42;
@@ -444,6 +456,25 @@ export default function AtlasMap() {
             filter: brightness(1.07) saturate(1.08);
           }
         }
+
+        @keyframes atlasSunlightDrift {
+          0% {
+            transform: translate3d(-6%, -2%, 0) scale(1.03);
+            opacity: 0.2;
+          }
+          38% {
+            transform: translate3d(2%, -4%, 0) scale(1.07);
+            opacity: 0.28;
+          }
+          72% {
+            transform: translate3d(7%, 3%, 0) scale(1.05);
+            opacity: 0.16;
+          }
+          100% {
+            transform: translate3d(12%, 1%, 0) scale(1.08);
+            opacity: 0.24;
+          }
+        }
       `}</style>
     </section>
   );
@@ -473,6 +504,8 @@ const styles: Record<string, CSSProperties> = {
     filter: 'saturate(0.9) brightness(0.82)',
   },
   mapImage: {
+    position: 'relative',
+    zIndex: 1,
     width: '100%',
     height: '100%',
     objectFit: 'cover',
@@ -481,6 +514,20 @@ const styles: Record<string, CSSProperties> = {
     userSelect: 'none',
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
+  },
+  sunlightLayer: {
+    position: 'absolute',
+    inset: '-16%',
+    zIndex: 2,
+    pointerEvents: 'none',
+    opacity: 0.24,
+    filter: 'blur(28px)',
+    mixBlendMode: 'screen',
+    background: [
+      'radial-gradient(46% 40% at 18% 22%, rgba(255, 223, 152, 0.34) 0%, rgba(255, 223, 152, 0.14) 36%, rgba(255, 223, 152, 0) 78%)',
+      'radial-gradient(34% 32% at 58% 26%, rgba(255, 236, 186, 0.22) 0%, rgba(255, 236, 186, 0.08) 42%, rgba(255, 236, 186, 0) 82%)',
+      'radial-gradient(52% 50% at 72% 66%, rgba(255, 214, 132, 0.2) 0%, rgba(255, 214, 132, 0.05) 38%, rgba(255, 214, 132, 0) 82%)',
+    ].join(','),
   },
   vignette: {
     position: 'absolute',
