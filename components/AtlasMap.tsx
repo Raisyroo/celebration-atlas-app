@@ -220,7 +220,7 @@ export default function AtlasMap() {
           }}
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
-          <div className="atlas-sunlight-layer" style={styles.sunlightLayer} aria-hidden="true" />
+          <div className="atlas-cloud-shadow-layer" style={styles.cloudShadowLayer} aria-hidden="true" />
 
           {ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
@@ -404,14 +404,14 @@ export default function AtlasMap() {
           transform-origin: center;
         }
 
-        .atlas-sunlight-layer {
-          animation: atlasSunlightDrift 24s ease-in-out infinite alternate;
+        .atlas-cloud-shadow-layer {
+          animation: atlasCloudShadowDrift 32s linear infinite alternate;
           will-change: transform, opacity;
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .atlas-sunlight-layer {
-            animation-duration: 30s;
+          .atlas-cloud-shadow-layer {
+            animation-duration: 40s;
           }
         }
 
@@ -457,22 +457,22 @@ export default function AtlasMap() {
           }
         }
 
-        @keyframes atlasSunlightDrift {
+        @keyframes atlasCloudShadowDrift {
           0% {
-            transform: translate3d(-6%, -2%, 0) scale(1.03);
-            opacity: 0.2;
-          }
-          38% {
-            transform: translate3d(2%, -4%, 0) scale(1.07);
+            transform: translate3d(-10%, -3%, 0) scale(1.08);
             opacity: 0.28;
           }
-          72% {
-            transform: translate3d(7%, 3%, 0) scale(1.05);
-            opacity: 0.16;
+          34% {
+            transform: translate3d(-3%, -1%, 0) scale(1.1);
+            opacity: 0.36;
+          }
+          66% {
+            transform: translate3d(4%, 1%, 0) scale(1.12);
+            opacity: 0.31;
           }
           100% {
-            transform: translate3d(12%, 1%, 0) scale(1.08);
-            opacity: 0.24;
+            transform: translate3d(11%, 3%, 0) scale(1.09);
+            opacity: 0.35;
           }
         }
       `}</style>
@@ -515,18 +515,19 @@ const styles: Record<string, CSSProperties> = {
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
   },
-  sunlightLayer: {
+  cloudShadowLayer: {
     position: 'absolute',
-    inset: '-16%',
+    inset: '-20%',
     zIndex: 2,
     pointerEvents: 'none',
-    opacity: 0.24,
-    filter: 'blur(28px)',
-    mixBlendMode: 'screen',
+    opacity: 0.34,
+    filter: 'blur(42px)',
+    mixBlendMode: 'multiply',
     background: [
-      'radial-gradient(46% 40% at 18% 22%, rgba(255, 223, 152, 0.34) 0%, rgba(255, 223, 152, 0.14) 36%, rgba(255, 223, 152, 0) 78%)',
-      'radial-gradient(34% 32% at 58% 26%, rgba(255, 236, 186, 0.22) 0%, rgba(255, 236, 186, 0.08) 42%, rgba(255, 236, 186, 0) 82%)',
-      'radial-gradient(52% 50% at 72% 66%, rgba(255, 214, 132, 0.2) 0%, rgba(255, 214, 132, 0.05) 38%, rgba(255, 214, 132, 0) 82%)',
+      'radial-gradient(56% 48% at 14% 26%, rgba(5, 8, 14, 0.18) 0%, rgba(5, 8, 14, 0.12) 34%, rgba(5, 8, 14, 0) 76%)',
+      'radial-gradient(52% 46% at 42% 58%, rgba(4, 7, 12, 0.2) 0%, rgba(4, 7, 12, 0.14) 36%, rgba(4, 7, 12, 0) 78%)',
+      'radial-gradient(60% 54% at 76% 34%, rgba(5, 8, 15, 0.16) 0%, rgba(5, 8, 15, 0.1) 32%, rgba(5, 8, 15, 0) 74%)',
+      'linear-gradient(112deg, rgba(6, 10, 17, 0.05) 0%, rgba(6, 10, 17, 0.15) 45%, rgba(6, 10, 17, 0.03) 100%)',
     ].join(','),
   },
   vignette: {
