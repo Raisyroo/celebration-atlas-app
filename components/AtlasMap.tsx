@@ -15,6 +15,10 @@ const MAP_BLEED_Y = 0.1;
 
 const BASE_SCALE = 1.03;
 
+
+const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
+
+const isResetSearchCommand = (queryText: string) => RESET_SEARCH_COMMANDS.has(queryText.trim().toLowerCase());
 const getHighlightedIdsFromQuery = (queryText: string) => {
   const ids = new Set<string>();
   const normalizedQuery = queryText.trim().toLowerCase();
@@ -135,7 +139,20 @@ export default function AtlasMap() {
       queryFadeTimerRef.current = null;
     }
 
-    setSubmittedQuery(trimmedQuery);
+    const isResetCommand = isResetSearchCommand(trimmedQuery);
+
+    setSubmittedQuery(isResetCommand ? '' : trimmedQuery);
+
+    if (isResetCommand) {
+      setDiscoveryStatusText(null);
+      setDisplayedQuery('');
+      setQuery('');
+      setIsSubmittedQueryFading(false);
+      setSearchPulseTick((prev) => prev + 1);
+      searchInputRef.current?.blur();
+      return;
+    }
+
     const nextHighlightedIds = getHighlightedIdsFromQuery(trimmedQuery);
     setDiscoveryStatusText(
       nextHighlightedIds.size > 0
