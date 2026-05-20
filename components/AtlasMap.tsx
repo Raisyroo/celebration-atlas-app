@@ -227,13 +227,13 @@ export default function AtlasMap() {
               src={`/overlays/cloud-drift-1.png?v=${CLOUD_ASSET_VERSION}`}
               alt=""
               draggable={false}
-              style={{ ...styles.cloudImage, ...styles.cloudDriftOne }}
+              style={{ ...styles.cloudImage, ...styles.cloudDriftUpper }}
             />
             <img
-              src={`/overlays/cloud-drift-2.png?v=${CLOUD_ASSET_VERSION}`}
+              src={`/overlays/cloud-drift-1.png?v=${CLOUD_ASSET_VERSION}`}
               alt=""
               draggable={false}
-              style={{ ...styles.cloudImage, ...styles.cloudDriftTwo }}
+              style={{ ...styles.cloudImage, ...styles.cloudDriftLower }}
             />
             <img
               src={`/overlays/cloud-shadow-1.png?v=${CLOUD_ASSET_VERSION}`}
@@ -455,28 +455,46 @@ export default function AtlasMap() {
 
         @keyframes cloudDriftPrimary {
           0% {
-            transform: translate3d(0, 0, 0) scale(1.02);
+            transform: translate3d(0, 0, 0) scale(1.01);
+          }
+          12% {
+            transform: translate3d(0, 0, 0) scale(1.01);
+          }
+          82% {
+            transform: translate3d(86vw, 6vh, 0) scale(1.04);
           }
           100% {
-            transform: translate3d(52vw, 8vh, 0) scale(1.05);
+            transform: translate3d(86vw, 6vh, 0) scale(1.04);
           }
         }
 
         @keyframes cloudDriftSecondary {
           0% {
-            transform: translate3d(0, 0, 0) scale(1.01);
+            transform: translate3d(0, 0, 0) scale(1.02);
+          }
+          10% {
+            transform: translate3d(0, 0, 0) scale(1.02);
+          }
+          84% {
+            transform: translate3d(78vw, -8vh, 0) scale(1.05);
           }
           100% {
-            transform: translate3d(-46vw, -7vh, 0) scale(1.05);
+            transform: translate3d(78vw, -8vh, 0) scale(1.05);
           }
         }
 
         @keyframes cloudShadowDrift {
           0% {
-            transform: translate3d(0, 0, 0) scale(1.03);
+            transform: translate3d(0, 0, 0) scale(1.01);
+          }
+          11% {
+            transform: translate3d(0, 0, 0) scale(1.01);
+          }
+          83% {
+            transform: translate3d(80vw, -2vh, 0) scale(1.03);
           }
           100% {
-            transform: translate3d(48vw, -6vh, 0) scale(1.04);
+            transform: translate3d(80vw, -2vh, 0) scale(1.03);
           }
         }
 
@@ -550,30 +568,30 @@ const styles: Record<string, CSSProperties> = {
     userSelect: 'none',
     willChange: 'transform',
   },
-  cloudDriftOne: {
-    width: 380,
-    left: '-26%',
-    top: '4%',
-    opacity: 0.24,
+  cloudDriftUpper: {
+    width: 360,
+    left: '-34%',
+    top: '10%',
+    opacity: 0.2,
     mixBlendMode: 'screen',
-    // Temporary cloud animation test speed for obvious motion during QA.
-    animation: 'cloudDriftPrimary 9s linear infinite alternate',
+    animation: 'cloudDriftPrimary 21s linear infinite',
   },
-  cloudDriftTwo: {
-    width: 320,
-    right: '-22%',
-    top: '30%',
-    opacity: 0.22,
+  cloudDriftLower: {
+    width: 330,
+    left: '-30%',
+    top: '56%',
+    opacity: 0.17,
     mixBlendMode: 'screen',
-    animation: 'cloudDriftSecondary 11s linear infinite alternate',
+    animation: 'cloudDriftSecondary 19s linear infinite',
   },
   cloudShadow: {
-    width: 420,
-    left: '-18%',
-    top: '58%',
-    opacity: 0.2,
+    width: 380,
+    left: '-28%',
+    top: '60%',
+    opacity: 0.3,
     mixBlendMode: 'multiply',
-    animation: 'cloudShadowDrift 10s linear infinite alternate',
+    filter: 'blur(0.6px)',
+    animation: 'cloudShadowDrift 19s linear infinite',
   },
   vignette: {
     position: 'absolute',
