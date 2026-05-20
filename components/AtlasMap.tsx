@@ -14,6 +14,43 @@ const MAP_BLEED_X = 0.12;
 const MAP_BLEED_Y = 0.1;
 
 const BASE_SCALE = 1.03;
+
+const getHighlightedIdsFromQuery = (queryText: string) => {
+  const ids = new Set<string>();
+  const normalizedQuery = queryText.trim().toLowerCase();
+
+  if (!normalizedQuery) return ids;
+
+  const addMusicFestivals = () => {
+    ids.add('electric-forest');
+    ids.add('detroit-jazz');
+  };
+
+  if (normalizedQuery.includes('music festival') || normalizedQuery.includes('music festivals')) addMusicFestivals();
+  if (normalizedQuery.includes('music')) addMusicFestivals();
+
+  if (
+    normalizedQuery.includes('county fair') ||
+    normalizedQuery.includes('county fairs') ||
+    normalizedQuery.includes('fair') ||
+    normalizedQuery.includes('fairs')
+  ) {
+    ids.add('armada-fair');
+  }
+
+  if (normalizedQuery.includes('peach festival') || normalizedQuery.includes('romeo') || normalizedQuery.includes('peach')) {
+    ids.add('romeo-peach');
+  }
+  if (normalizedQuery.includes('jazz')) ids.add('detroit-jazz');
+  if (normalizedQuery.includes('forest')) ids.add('electric-forest');
+
+  if (normalizedQuery.includes('cherry') || normalizedQuery.includes('lilac') || normalizedQuery.includes('tulip')) {
+    ids.add('romeo-peach');
+  }
+
+  return ids;
+};
+
 export default function AtlasMap() {
   const [query, setQuery] = useState('');
   const [displayedQuery, setDisplayedQuery] = useState('');
@@ -34,41 +71,11 @@ export default function AtlasMap() {
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
+  const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(null);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
-  const highlightedIds = useMemo(() => {
-    const ids = new Set<string>();
-
-    if (!q) return ids;
-
-    const addMusicFestivals = () => {
-      ids.add('electric-forest');
-      ids.add('detroit-jazz');
-    };
-
-    if (q.includes('music festival') || q.includes('music festivals')) addMusicFestivals();
-    if (q.includes('music')) addMusicFestivals();
-
-    if (q.includes('county fair') || q.includes('county fairs') || q.includes('fair') || q.includes('fairs')) {
-      ids.add('armada-fair');
-    }
-
-    if (q.includes('peach festival') || q.includes('romeo') || q.includes('peach')) ids.add('romeo-peach');
-    if (q.includes('jazz')) ids.add('detroit-jazz');
-    if (q.includes('forest')) ids.add('electric-forest');
-
-    if (q.includes('cherry') || q.includes('lilac') || q.includes('tulip')) {
-      ids.add('romeo-peach');
-    }
-
-    return ids;
-  }, [q]);
-  const hasActiveSearchQuery = submittedQuery.trim().length > 0 && (query.trim().length > 0 || displayedQuery.trim().length > 0);
-  const discoveryStatusText =
-    highlightedIds.size > 0
-      ? `${highlightedIds.size} ${highlightedIds.size === 1 ? 'discovery' : 'discoveries'} found`
-      : 'No discoveries found';
+  const highlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
@@ -129,6 +136,12 @@ export default function AtlasMap() {
     }
 
     setSubmittedQuery(trimmedQuery);
+    const nextHighlightedIds = getHighlightedIdsFromQuery(trimmedQuery);
+    setDiscoveryStatusText(
+      nextHighlightedIds.size > 0
+        ? `${nextHighlightedIds.size} ${nextHighlightedIds.size === 1 ? 'discovery' : 'discoveries'} found`
+        : 'No discoveries found',
+    );
     setDisplayedQuery(trimmedQuery);
     setIsSubmittedQueryFading(true);
     setSearchPulseTick((prev) => prev + 1);
@@ -280,7 +293,7 @@ export default function AtlasMap() {
             Featured: {featuredEvent.name}
           </span>
         </button>
-        {hasActiveSearchQuery ? (
+        {discoveryStatusText ? (
           <p style={styles.discoveryStatus} aria-live="polite">
             {discoveryStatusText}
           </p>
@@ -300,7 +313,21 @@ export default function AtlasMap() {
             style={styles.searchInput}
             value={query}
             placeholder={!query.trim() && !displayedQuery && !isSearchFocused ? ATMOSPHERIC_SUGGESTIONS[suggestionIndex] : ''}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              const nextQuery = event.target.value;
+              setQuery(nextQuery);
+
+              if (nextQuery.trim().length === 0) {
+                if (queryFadeTimerRef.current) {
+                  clearTimeout(queryFadeTimerRef.current);
+                  queryFadeTimerRef.current = null;
+                }
+                setDisplayedQuery('');
+                setSubmittedQuery('');
+                setIsSubmittedQueryFading(false);
+                setDiscoveryStatusText(null);
+              }
+            }}
             onAnimationEnd={() => {
               setSearchPulseTick(0);
             }}
