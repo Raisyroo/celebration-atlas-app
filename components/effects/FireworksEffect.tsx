@@ -116,20 +116,28 @@ const hashSeed = (value: string) => {
 };
 
 export default function FireworksEffect({ points }: FireworksEffectProps) {
-  if (points.length === 0) return null;
+  // Temporary debug only: always include one center-screen firework to verify rendering quickly.
+  const debugPoints: FireworkPoint[] = [
+    ...points,
+    { id: 'debug-center-firework', x: 50, y: 45, intensity: 'signature' },
+  ];
+
+  if (debugPoints.length === 0) return null;
 
   return (
     <>
       <div style={styles.fireworksLayer} aria-hidden="true">
-        {points.map((point, index) => {
+        {debugPoints.map((point, index) => {
           const seed = hashSeed(point.id);
           const profile = INTENSITY_PROFILE[point.intensity];
           const tone = FIREWORK_TONES[seed % FIREWORK_TONES.length];
 
           const cycleSeconds = profile.cycleBase + (seed % profile.cycleVariance) + index * 0.15;
           const delaySeconds = -((seed % 11) + index * 1.6);
-          const driftX = (seed % 9) - 4;
-          const driftY = ((seed >> 3) % 7) - 3;
+          // Temporary debug only: pin the test firework in place at center coordinates for deterministic visibility.
+          const isDebugPoint = point.id === 'debug-center-firework';
+          const driftX = isDebugPoint ? 0 : (seed % 9) - 4;
+          const driftY = isDebugPoint ? 0 : ((seed >> 3) % 7) - 3;
 
           return (
             <div
@@ -140,9 +148,10 @@ export default function FireworksEffect({ points }: FireworksEffectProps) {
                 top: `calc(${point.y}% + ${driftY}px)`,
                 animation: `fireworkCycle ${cycleSeconds}s linear infinite`,
                 animationDelay: `${delaySeconds}s`,
-                ['--firework-launch-lift' as string]: `${profile.launchLift}px`,
-                ['--firework-burst-scale' as string]: `${profile.burstScale}`,
-                ['--firework-bloom-opacity' as string]: `${profile.bloomOpacity}`,
+                // Temporary debug only: boost test firework visibility for quick QA confirmation.
+                ['--firework-launch-lift' as string]: `${isDebugPoint ? 28 : profile.launchLift}px`,
+                ['--firework-burst-scale' as string]: `${isDebugPoint ? 2.6 : profile.burstScale}`,
+                ['--firework-bloom-opacity' as string]: `${isDebugPoint ? 3 : profile.bloomOpacity}`,
               }}
             >
               <span

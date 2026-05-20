@@ -15,6 +15,7 @@ export default function AtmosphereLayer({ events }: AtmosphereLayerProps) {
   return (
     <>
       <CloudEffect />
+      {/* Temporary debug only: fireworks should sit above map/clouds while staying below markers/cards/search UI. */}
       <FireworksEffect points={fireworksPoints} />
       <GeeseEffect />
     </>
