@@ -65,6 +65,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 66,
     y: 40,
     atmosphere: atmosphere(['balloons'], 'subtle'),
+    regionAtmosphere: 'harvest',
     cardMedia: {
       mediaType: 'video',
       mediaSrc: '/event-media/romeo-peach-loop.mp4',
@@ -98,6 +99,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 70,
     y: 35,
     atmosphere: atmosphere(['ferrisGlow'], 'medium'),
+    regionAtmosphere: 'harvest',
   },
 
   {
@@ -151,6 +153,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Festivals',
     x: 30,
     y: 28,
+    regionAtmosphere: 'lakeshore',
   },
   {
     id: 'west-michigan-coast-guard',
@@ -162,6 +165,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 24,
     y: 44,
     atmosphere: atmosphere(['fireworks'], 'medium'),
+    regionAtmosphere: 'lakeshore',
   },
   {
     id: 'holland-tulip-time',
@@ -172,6 +176,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Festivals',
     x: 30,
     y: 49,
+    regionAtmosphere: 'lakeshore',
   },
   {
     id: 'alpena-brown-trout',
@@ -183,6 +188,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 58,
     y: 21,
     atmosphere: atmosphere(['ferrisGlow'], 'subtle'),
+    regionAtmosphere: 'lakeshore',
   },
   {
     id: 'charlevoix-venetian',
@@ -206,6 +212,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 50,
     y: 16,
     atmosphere: atmosphere(['fireworks'], 'signature'),
+    regionAtmosphere: 'lakeshore',
   },
   {
     id: 'muskegon-summer-celebration',
@@ -228,6 +235,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Music',
     x: 56,
     y: 57,
+    regionAtmosphere: 'urban',
   },
   {
     id: 'common-ground-lansing',
@@ -238,6 +246,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Music',
     x: 47,
     y: 50,
+    regionAtmosphere: 'urban',
   },
   {
     id: 'allendale-ballon-fest',
@@ -249,6 +258,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 27,
     y: 46,
     atmosphere: atmosphere(['balloons'], 'medium'),
+    regionAtmosphere: 'lakeshore',
   },
   {
     id: 'shiawassee-fair',
@@ -272,5 +282,6 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 34,
     y: 8,
     atmosphere: atmosphere(['ferrisGlow'], 'medium'),
+    regionAtmosphere: 'northwoods',
   },
 ];
