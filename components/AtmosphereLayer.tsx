@@ -4,6 +4,7 @@ import CloudEffect from './effects/CloudEffect';
 import FogEffect from './effects/FogEffect';
 import FireworksEffect from './effects/FireworksEffect';
 import GeeseEffect from './effects/GeeseEffect';
+import FerrisGlowEffect from './effects/FerrisGlowEffect';
 
 type AtmosphereLayerProps = {
   events: AtlasEvent[];
@@ -17,6 +18,10 @@ export default function AtmosphereLayer({ events }: AtmosphereLayerProps) {
     .filter((event) => event.atmosphere?.effects?.includes('fireworks'))
     .map((event) => ({ id: event.id, x: event.x, y: event.y, intensity: event.atmosphere?.intensity ?? 'subtle' }));
 
+  const ferrisGlowPoints = events
+    .filter((event) => event.atmosphere?.effects?.includes('ferrisGlow'))
+    .map((event) => ({ id: event.id, x: event.x, y: event.y }));
+
   const effectRegistry: Record<EffectName, ReactNode | null> = {
     geese: <GeeseEffect key="geese" />,
     clouds: <CloudEffect key="clouds" />,
@@ -24,10 +29,10 @@ export default function AtmosphereLayer({ events }: AtmosphereLayerProps) {
     fog: <FogEffect key="fog" enabled={hasFog} />,
     snow: null,
     balloons: null,
-    ferrisGlow: null,
+    ferrisGlow: <FerrisGlowEffect key="ferrisGlow" points={ferrisGlowPoints} />,
   };
 
-  const implementedEffects: EffectName[] = ['clouds', 'fog', 'fireworks', 'geese'];
+  const implementedEffects: EffectName[] = ['clouds', 'fog', 'fireworks', 'ferrisGlow', 'geese'];
 
   return <>{implementedEffects.map((effectName) => effectRegistry[effectName])}</>;
 }
