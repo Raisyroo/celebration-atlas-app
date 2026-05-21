@@ -14,7 +14,8 @@ const ATMOSPHERIC_SUGGESTIONS = [
 const MAP_BLEED_X = 0.12;
 const MAP_BLEED_Y = 0.1;
 const ROMEO_MEDIA_REVEAL_DELAY_MS = 900;
-const ROMEO_MEDIA_FADE_MS = 800;
+const ROMEO_MEDIA_FADE_MS = 1300;
+const ROMEO_MEDIA_PLAY_START_OFFSET_MS = 180;
 
 // Current interaction policy:
 // - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
@@ -187,10 +188,16 @@ export default function AtlasMap() {
     if (!isRomeoCard || !isCardVisible || !isRomeoMediaVisible) return;
     const video = romeoVideoRef.current;
     if (!video) return;
-    video.currentTime = 0;
-    video.play().catch(() => {
-      setShowRomeoVideoFallback(true);
-    });
+    const playbackStartTimer = setTimeout(() => {
+      video.currentTime = 0;
+      video.play().catch(() => {
+        setShowRomeoVideoFallback(true);
+      });
+    }, ROMEO_MEDIA_PLAY_START_OFFSET_MS);
+
+    return () => {
+      clearTimeout(playbackStartTimer);
+    };
   }, [isRomeoCard, isCardVisible, isRomeoMediaVisible, romeoVideoKey]);
 
   const submitSearch = useCallback(() => {
@@ -777,7 +784,7 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    objectPosition: '48% 18%',
+    objectPosition: '43% 18%',
     transition: 'opacity 260ms ease',
   },
   closeButton: {
