@@ -15,6 +15,10 @@ export default async function EventDetailPage({
     notFound();
   }
 
+  const storyBlocks = event.detailPage.storySections?.length
+    ? [event.detailPage.detailIntro, ...event.detailPage.storySections].filter(Boolean)
+    : [event.detailPage.shortStory];
+
   return (
     <main style={styles.page}>
       <section style={styles.hero}>
@@ -33,7 +37,13 @@ export default async function EventDetailPage({
 
       <section style={styles.storySection}>
         <h2 style={styles.storyHeading}>Story</h2>
-        <p style={styles.storyBody}>{event.detailPage.shortStory}</p>
+        {storyBlocks.map((storyBlock, index) => (
+          <p key={`${event.id}-story-${index}`} style={styles.storyBody}>
+            {storyBlock}
+          </p>
+        ))}
+        {event.detailPage.archivalNote ? <p style={styles.metaLine}>Archival note: {event.detailPage.archivalNote}</p> : null}
+        {event.detailPage.visitorMood ? <p style={styles.metaLine}>Visitor mood: {event.detailPage.visitorMood}</p> : null}
       </section>
 
       <Link href="/" style={styles.backLink}>
@@ -82,6 +92,7 @@ const styles: Record<string, CSSProperties> = {
   },
   storyHeading: { margin: 0, fontSize: '0.9rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255, 213, 142, 0.88)' },
   storyBody: { margin: '0.75rem 0 0', lineHeight: 1.7, color: 'rgba(245, 231, 200, 0.94)' },
+  metaLine: { margin: '0.7rem 0 0', lineHeight: 1.5, color: 'rgba(255, 220, 171, 0.84)', fontSize: '0.92rem' },
   backLink: {
     marginTop: '0.35rem',
     color: 'rgba(255, 214, 145, 0.9)',
