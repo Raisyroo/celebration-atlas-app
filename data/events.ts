@@ -63,7 +63,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Music',
     x: 75,
     y: 44,
-    atmosphere: atmosphere(['fog'], 'medium'),
+    atmosphere: atmosphere([], 'medium'),
   },
   {
     id: 'armada-fair',
@@ -86,7 +86,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Festivals',
     x: 49,
     y: 14,
-    atmosphere: atmosphere(['fog'], 'subtle'),
+    atmosphere: atmosphere([], 'subtle'),
   },
   {
     id: 'electric-forest',
@@ -97,7 +97,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Music',
     x: 34,
     y: 42,
-    atmosphere: atmosphere(['fog', 'fireworks'], 'signature'),
+    atmosphere: atmosphere(['fireworks'], 'signature'),
   },
 
   {
@@ -119,7 +119,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Festivals',
     x: 24,
     y: 44,
-    atmosphere: atmosphere(['fog', 'fireworks'], 'medium'),
+    atmosphere: atmosphere(['fireworks'], 'medium'),
   },
   {
     id: 'holland-tulip-time',
@@ -151,7 +151,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Festivals',
     x: 40,
     y: 22,
-    atmosphere: atmosphere(['fog'], 'subtle'),
+    atmosphere: atmosphere([], 'subtle'),
   },
   {
     id: 'cheboygan-4th-fireworks',
@@ -173,7 +173,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Music',
     x: 24,
     y: 42,
-    atmosphere: atmosphere(['fog'], 'medium'),
+    atmosphere: atmosphere([], 'medium'),
   },
   {
     id: 'faster-horses',
