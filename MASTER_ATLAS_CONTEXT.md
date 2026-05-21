@@ -1,0 +1,191 @@
+# MASTER ATLAS CONTEXT — Celebration Atlas
+
+## 1. Project Vision
+Celebration Atlas is a **living, emotional geography** of Michigan celebrations. It is not just a directory of events; it is a discoverable map experience where each marker, glow, card, and ambient cue helps users *feel* a place before they choose it.
+
+Core intent:
+- Preserve a cinematic, contemplative pace over fast/flashy UI.
+- Make discovery feel guided but open-ended.
+- Treat atmosphere as meaning, not decoration.
+- Build toward a long-term living-atlas system where regional identity and event mood are first-class data.
+
+## 2. Storybook Americana Art Direction
+The visual language blends:
+- Storybook warmth (soft gradients, nostalgic glow).
+- Americana festival energy (fairs, parades, fireworks, harbor nights).
+- Subtle cinematic restraint (low-opacity overlays, slow drift, gentle shimmer).
+
+Implementation cues currently reinforce this direction:
+- Warm/cool category and regional theme blending for event cards.
+- Layered map lighting with selective animated effects.
+- Soft, non-harsh contrast in atmospheric effects.
+
+The style should feel handcrafted and place-rooted, not generic “travel app.”
+
+## 3. Cinematic Map Philosophy
+The map is the stage; interface elements should support it, not overpower it.
+
+Current interaction policy (intentional):
+- Fixed-scale atlas rendering (no custom pinch/drag gesture system yet).
+- Tap reliability prioritized over interaction complexity.
+- Discovery through marker selection, featured prompts, and search highlighting.
+
+Layering contract (must remain clear):
+- Map art at base.
+- Decorative atmosphere above map art.
+- Interactive markers above atmosphere.
+- Event card above markers.
+- Search + featured discovery dock above card.
+
+This hierarchy preserves legibility and cinematic depth.
+
+## 4. Event Card Philosophy
+The event card is an **atmospheric reveal**, not a dense info panel.
+
+Current behavior pattern:
+- Smooth staged entrance/exit timing.
+- Theme color blended from event category + regional atmosphere.
+- Atmosphere line (“atmosphere title/label”) treated as emotional headline.
+- Media reveal delayed/faded to avoid abrupt visual jump.
+
+Card content should stay concise and evocative. Avoid turning cards into heavy metadata tables.
+
+## 5. Ambient Atmosphere System
+Atmosphere is event-driven and region-aware:
+- Event data can specify `atmosphere.effects` and intensity.
+- Selected event can add a regional tonal wash (`regionAtmosphere`) over the map.
+- Effects are decorative-only (`pointerEvents: none`) and must never block interaction.
+
+Important principle:
+- Atmosphere should be cumulative but restrained.
+- Subtle motion + low opacity is preferred over frequent or high-amplitude animation.
+
+## 6. Clouds / Geese / Fireworks Rules
+Current rules in practice:
+
+- **Clouds**
+  - Decorative drift layer below markers.
+  - Very low opacity, long-cycle movement.
+  - Screen blend and slow traversal to maintain calm pacing.
+
+- **Geese**
+  - Periodic long-flight pass with low-opacity sprite.
+  - Fixed cadence (currently 30s cycle) and non-interactive overlay.
+
+- **Fireworks**
+  - Spawned from event atmosphere data only.
+  - Intensity profiles (`subtle`, `medium`, `signature`) change cadence/lift/bloom.
+  - Short burst windows in long cycles to avoid constant visual noise.
+
+Global rule: these effects should support emotional geography and seasonality, never compete with marker clarity.
+
+## 7. Media Card System
+The card media system is already reusable and event-driven.
+
+Current architecture:
+- Media configuration lives in `ATLAS_EVENTS` (`cardMedia` block).
+- Supports image/video-oriented settings (`mediaType`, `mediaSrc`, `posterSrc`).
+- Supports atmospheric tuning (`mediaPosition`, `mediaScale`, mask profiles, delay, fade duration).
+- Video handling includes:
+  - key-based remount on selection changes,
+  - delayed play start,
+  - playback failure fallback.
+
+This system should remain data-first so new events can adopt media behavior without custom component branching.
+
+## 8. Mobile UX Principles
+Mobile is the primary reliability target.
+
+Current mobile-oriented constraints:
+- `touch-action: manipulation` and overscroll suppression.
+- Hidden browser scrollbars and fixed viewport framing.
+- Interaction model avoids fragile gesture complexity for now.
+
+Principles:
+- Preserve tap confidence over feature novelty.
+- Keep motion soft and battery-conscious.
+- Test every UI/animation change mobile-first before desktop polish.
+
+## 9. Performance Constraints
+Atmospheric performance standards:
+- Prefer transform/opacity animation, avoid layout-thrashing properties.
+- Keep effects low-count and deterministic where possible (seeded variation).
+- Use subtle blur and blending sparingly.
+- Keep decorative layers non-interactive and visually light.
+
+Card/media constraints:
+- Delay/fade media reveal to reduce abrupt paints.
+- Gracefully fallback when video playback fails.
+
+No feature should reduce responsiveness of marker interaction.
+
+## 10. Regional Atmosphere System
+Regional atmosphere is currently a core emotional-geometry mechanism.
+
+Defined region tones:
+- `lakeshore`
+- `northwoods`
+- `urban`
+- `harvest`
+- `winter`
+
+Current behavior:
+- Selection of an event can apply a region-specific radial tonal field.
+- Region choice also influences card-edge/glow/wash blending.
+
+Direction:
+- Continue modeling regions as reusable atmosphere primitives.
+- Keep region signatures distinct but understated.
+
+## 11. Future Direction
+Near-term direction should preserve cinematic clarity while expanding depth:
+- Evolve from static event list into living atlas storytelling.
+- Add richer region-specific ambience variation using the same data-driven architecture.
+- Grow discovery modes (featured rotations, semantic search cues) without cluttering the screen.
+
+## 12. Things To Avoid
+Avoid changes that break the atlas tone:
+- Overly saturated, high-frequency, or constant-on effects.
+- UI density that crowds map art.
+- Gesture systems that compromise tap reliability.
+- Hard, abrupt transitions that feel app-like instead of cinematic.
+- One-off effect logic that bypasses event data architecture.
+
+Atmosphere should **never become visually noisy**.
+
+## 13. Current Technical Architecture
+Project currently follows a **no-`src/` architecture** with top-level domains:
+- `app/` for Next App Router entrypoints and global styles.
+- `components/` for map composition and effects.
+- `data/` for canonical event + atmosphere configuration.
+- `public/` for map/image/video assets.
+
+Runtime flow:
+- `app/page.tsx` renders `AtlasMap`.
+- `AtlasMap` owns selection/search/discovery/card/media state.
+- `AtmosphereLayer` derives ambient overlays from event data and selection.
+- Effect components render decorative layers with strict z-index roles.
+
+## 14. Known Working Behaviors
+Verified current behaviors to preserve:
+- Search terms map to highlighted event IDs; reset commands clear highlight context.
+- Featured discovery rotates through prioritized events.
+- Selecting a marker opens animated event card.
+- Card media reveals with delay/fade and supports video fallback behavior.
+- Region atmosphere overlays animate per selected region tone.
+- Fireworks/ferris glow activation is event-data-driven.
+- Clouds and geese remain ambient-only and non-interactive.
+
+## 15. Future Ambitions
+Long-horizon ambition:
+- Transition to a true “living atlas” where events, regional moods, and seasonal atmosphere co-evolve.
+- Implement the documented zoom/clustering roadmap in a data-driven way:
+  - far view: regional glow clusters,
+  - mid view: grouped category lights,
+  - close view: individual event markers.
+- Expand reusable media modules (image loops, short motion postcards, regional sound-ready hooks) while preserving the current event-driven card architecture.
+
+Operational standards for continuity:
+- Keep no-`src/` structure unless architecture strategy intentionally changes.
+- Use the webpack dev workflow when running local development (`next dev --webpack`) to stay aligned with current team expectation.
+- Require mobile-first testing for all interaction/atmosphere changes.
