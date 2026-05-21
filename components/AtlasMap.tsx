@@ -46,6 +46,25 @@ const CARD_THEME_BY_CATEGORY: Record<(typeof ATLAS_EVENTS)[number]['category'], 
   Fairs: { edge: 'rgba(255,203,170,.54)', glow: 'rgba(255,151,106,.24)', wash: 'rgba(255,168,122,.14)' },
 };
 
+
+const CARD_THEME_BY_REGION: Record<NonNullable<(typeof ATLAS_EVENTS)[number]['regionAtmosphere']>, { edge: string; glow: string; wash: string }> = {
+  lakeshore: { edge: 'rgba(156,202,255,.24)', glow: 'rgba(108,168,246,.11)', wash: 'rgba(98,146,226,.06)' },
+  northwoods: { edge: 'rgba(123,176,172,.23)', glow: 'rgba(66,128,144,.1)', wash: 'rgba(58,102,124,.065)' },
+  urban: { edge: 'rgba(255,196,132,.24)', glow: 'rgba(231,152,84,.1)', wash: 'rgba(206,130,74,.06)' },
+  harvest: { edge: 'rgba(255,199,132,.24)', glow: 'rgba(236,168,90,.1)', wash: 'rgba(224,150,74,.06)' },
+  winter: { edge: 'rgba(170,210,255,.24)', glow: 'rgba(124,179,246,.1)', wash: 'rgba(104,144,226,.06)' },
+};
+
+const blendCardTheme = (base: { edge: string; glow: string; wash: string }, regionAtmosphere?: (typeof ATLAS_EVENTS)[number]['regionAtmosphere']) => {
+  if (!regionAtmosphere) return base;
+  const region = CARD_THEME_BY_REGION[regionAtmosphere];
+  return {
+    edge: `color-mix(in srgb, ${base.edge} 84%, ${region.edge})`,
+    glow: `color-mix(in srgb, ${base.glow} 80%, ${region.glow})`,
+    wash: `color-mix(in srgb, ${base.wash} 78%, ${region.wash})`,
+  };
+};
+
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
 
 const isResetSearchCommand = (queryText: string) => RESET_SEARCH_COMMANDS.has(queryText.trim().toLowerCase());
@@ -124,7 +143,8 @@ export default function AtlasMap() {
   const mediaFadeDurationMs = selectedMedia?.mediaFadeDurationMs ?? 1300;
   const mediaDelayMs = selectedMedia?.mediaDelayMs ?? 0;
   const mediaMask = selectedMedia?.mediaMaskProfile ? MEDIA_MASKS[selectedMedia.mediaMaskProfile] : undefined;
-  const cardTheme = renderedEvent ? CARD_THEME_BY_CATEGORY[renderedEvent.category] : CARD_THEME_BY_CATEGORY.Festivals;
+  const cardBaseTheme = renderedEvent ? CARD_THEME_BY_CATEGORY[renderedEvent.category] : CARD_THEME_BY_CATEGORY.Festivals;
+  const cardTheme = blendCardTheme(cardBaseTheme, renderedEvent?.regionAtmosphere);
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
