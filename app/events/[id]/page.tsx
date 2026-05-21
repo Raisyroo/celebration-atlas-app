@@ -29,10 +29,18 @@ export default async function EventDetailPage({
       </section>
 
       <section style={styles.mediaSection} aria-label="Event poster and media">
-        {event.detailPage.mediaType === 'video' && event.detailPage.mediaSrc ? (
-          <video src={event.detailPage.mediaSrc} muted autoPlay loop playsInline style={styles.media} />
-        ) : null}
-        {event.detailPage.posterSrc ? <img src={event.detailPage.posterSrc} alt={`${event.name} poster`} style={styles.media} /> : null}
+        <div style={styles.mediaFrame}>
+          {event.detailPage.mediaType === 'video' && event.detailPage.mediaSrc ? (
+            <video src={event.detailPage.mediaSrc} muted autoPlay loop playsInline style={styles.media} />
+          ) : null}
+          {event.detailPage.posterSrc ? <img src={event.detailPage.posterSrc} alt={`${event.name} poster`} style={styles.media} /> : null}
+          <div style={styles.mediaVignette} aria-hidden="true" />
+          <div style={styles.mediaGlow} aria-hidden="true" />
+        </div>
+        <div style={styles.mediaCaptionRow}>
+          <p style={styles.mediaEyebrow}>Cinematic archive</p>
+          <p style={styles.mediaMeta}>{event.detailPage.atmosphereLine ?? event.atmosphereLabel}</p>
+        </div>
       </section>
 
       <section style={styles.storySection}>
@@ -76,13 +84,50 @@ const styles: Record<string, CSSProperties> = {
   atmosphere: { margin: '0.75rem 0 0', fontSize: '1.02rem', color: 'rgba(246, 226, 188, 0.92)' },
   mediaSection: {
     width: 'min(100%, 58rem)',
-    border: '1px solid rgba(255, 214, 152, 0.32)',
-    borderRadius: '1rem',
+    border: '1px solid rgba(255, 214, 152, 0.3)',
+    borderRadius: '1.2rem',
+    background: 'linear-gradient(150deg, rgba(18, 24, 36, 0.75), rgba(11, 16, 27, 0.63))',
+    boxShadow: '0 22px 44px rgba(0,0,0,.42)',
+    backdropFilter: 'blur(5px)',
+    padding: '0.75rem',
+  },
+  mediaFrame: {
+    position: 'relative',
+    borderRadius: '0.9rem',
     overflow: 'hidden',
-    background: 'rgba(15, 20, 31, 0.6)',
-    boxShadow: '0 20px 38px rgba(0,0,0,.35)',
+    border: '1px solid rgba(255, 224, 172, 0.24)',
+    background: 'rgba(7, 10, 16, 0.72)',
   },
   media: { display: 'block', width: '100%', aspectRatio: '16 / 9', objectFit: 'cover' },
+  mediaVignette: {
+    position: 'absolute',
+    inset: 0,
+    background:
+      'radial-gradient(circle at 50% 45%, rgba(0,0,0,0) 42%, rgba(0,0,0,0.34) 100%), linear-gradient(180deg, rgba(8, 11, 18, 0.05), rgba(7, 10, 16, 0.42))',
+    pointerEvents: 'none',
+  },
+  mediaGlow: {
+    position: 'absolute',
+    inset: 0,
+    boxShadow: 'inset 0 0 0 1px rgba(255, 221, 171, 0.24), inset 0 -70px 90px rgba(0, 0, 0, 0.35)',
+    pointerEvents: 'none',
+  },
+  mediaCaptionRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '0.8rem',
+    flexWrap: 'wrap',
+    padding: '0.72rem 0.35rem 0.2rem',
+  },
+  mediaEyebrow: {
+    margin: 0,
+    fontSize: '0.72rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.14em',
+    color: 'rgba(255, 217, 151, 0.76)',
+  },
+  mediaMeta: { margin: 0, fontSize: '0.88rem', color: 'rgba(248, 230, 191, 0.84)' },
   storySection: {
     width: 'min(100%, 58rem)',
     background: 'linear-gradient(160deg, rgba(16,22,33,.72), rgba(11,16,25,.56))',
