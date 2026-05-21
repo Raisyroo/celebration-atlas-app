@@ -32,7 +32,8 @@ body {
   height: 100%;
   min-height: 100dvh;
   overflow: hidden;
-  overscroll-behavior-y: none;
+  touch-action: manipulation;
+  overscroll-behavior: none;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }

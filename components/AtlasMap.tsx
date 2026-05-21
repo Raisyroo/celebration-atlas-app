@@ -563,6 +563,8 @@ const styles: Record<string, CSSProperties> = {
     height: '100dvh',
     minHeight: '100dvh',
     overflow: 'hidden',
+    touchAction: 'manipulation',
+    overscrollBehavior: 'none',
     background: 'radial-gradient(circle at 50% 15%, #172233, #05070c 70%)',
     color: '#f5e8c7',
   },
@@ -591,6 +593,7 @@ const styles: Record<string, CSSProperties> = {
     userSelect: 'none',
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
+    pointerEvents: 'none',
   },
   vignette: {
     position: 'absolute',
@@ -598,6 +601,9 @@ const styles: Record<string, CSSProperties> = {
     background:
       'radial-gradient(circle at 50% 42%, rgba(7,10,16,0) 34%, rgba(4,6,10,.44) 68%, rgba(3,5,8,.78) 100%), linear-gradient(to bottom, rgba(3,4,7,.44), rgba(3,4,7,.72) 64%, rgba(2,3,6,.94))',
     pointerEvents: 'none',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
   },
   marker: {
     position: 'absolute',
@@ -699,6 +705,9 @@ const styles: Record<string, CSSProperties> = {
     textShadow: '0 1px 2px rgba(2, 3, 7, 0.55), 0 0 8px rgba(247, 199, 98, 0.16)',
     opacity: 0.86,
     pointerEvents: 'none',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
   },
   searchPrefix: {
     flexShrink: 0,
@@ -725,6 +734,9 @@ const styles: Record<string, CSSProperties> = {
     textOverflow: 'ellipsis',
     maxWidth: 'calc(100% - 92px)',
     pointerEvents: 'none',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
   },
   searchInput: {
     position: 'absolute',
@@ -767,6 +779,9 @@ const styles: Record<string, CSSProperties> = {
     width: '57%',
     height: '90%',
     pointerEvents: 'none',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
     overflow: 'hidden',
     opacity: 0,
     transition: `opacity ${ROMEO_MEDIA_FADE_MS}ms ease`,
@@ -854,5 +869,8 @@ const styles: Record<string, CSSProperties> = {
     background: 'rgba(255,232,188,.84)',
     opacity: 0.9,
     pointerEvents: 'none',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
   },
 };
