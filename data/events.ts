@@ -18,6 +18,7 @@ export type AtlasEvent = {
   category: AtlasCategory;
   x: number;
   y: number;
+  atlasNotes?: string[];
   atmosphere?: {
     effects?: AtmosphereEffect[];
     intensity?: 'subtle' | 'medium' | 'signature';
@@ -92,6 +93,10 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       archivalNote: 'Early programs framed the festival as a harvest-homecoming for orchard families across northern Macomb County.',
       visitorMood: 'Nostalgic and warm, with a lingering late-summer sweetness.',
     },
+    atlasNotes: [
+      'Field recordings from the late 1970s describe a brass cadence that started at Main and drifted toward the old depot as evening booths lit up.',
+      'Longtime volunteers still refer to the peach pie stand line as the unofficial clock of the festival—when it doubles, dusk has arrived.',
+    ],
   },
   {
     id: 'detroit-jazz',
@@ -147,6 +152,10 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
         'The festival emerged from earlier Rothbury-era gatherings and is now known for its hybrid of curated electronic music and interactive woodland art.',
       visitorMood: 'Euphoric, curious, and connected—like staying awake inside a neon fairytale.',
     },
+    atlasNotes: [
+      'Early crowd journals mention that the first full dark hour, not the headliner slot, is when the forest atmosphere fully “switches on.”',
+      'Returning attendees map favorite pathways by light texture—neon canopies, lantern corridors, and the quieter amber edges near camp.',
+    ],
   },
   { id: 'traverse-city-cherry', name: 'National Cherry Festival', location: 'Traverse City, MI', atmosphereLabel: 'Bayfront summer glow', blurb: 'A week of cherry treats, parades, and bayfront gatherings in Traverse City each summer.', category: 'Festivals', iconType: 'food', x: 30, y: 28, regionAtmosphere: 'lakeshore' },
   { id: 'west-michigan-coast-guard', name: 'Coast Guard Festival', location: 'Grand Haven, MI', atmosphereLabel: 'Shoreline honor lights', blurb: 'Grand Haven hosts ship tours, concerts, and shoreline fireworks honoring Coast Guard heritage.', category: 'Festivals', iconType: 'heritage', x: 24, y: 44, atmosphere: atmosphere(['fireworks'], 'medium'), regionAtmosphere: 'lakeshore' },
