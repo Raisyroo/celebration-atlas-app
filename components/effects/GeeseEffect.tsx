@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-const GEESE_FLYOVER_CYCLE_SECONDS = 20;
+const GEESE_FLYOVER_CYCLE_SECONDS = 120;
 const Z_INDEX_GEESE = 4; // Decorative layer; always below marker/card/search interactivity.
 
 const styles: Record<string, CSSProperties> = {
@@ -15,7 +15,6 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 0,
     top: 0,
-    // temporary geese visibility debug
     width: 'clamp(220px, 34vw, 380px)',
     height: 'auto',
     maxWidth: 'none',

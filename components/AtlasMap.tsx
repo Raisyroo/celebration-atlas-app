@@ -14,6 +14,17 @@ const ATMOSPHERIC_SUGGESTIONS = [
 const MAP_BLEED_X = 0.12;
 const MAP_BLEED_Y = 0.1;
 
+// Current interaction policy:
+// - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
+// - This intentionally avoids mobile gesture edge-cases to preserve tap reliability.
+//
+// Future zoom + clustering roadmap (documentation only, no behavior changes yet):
+// 1) Far view    -> render regional glow clusters for broad geographic discovery.
+// 2) Mid view    -> transition into grouped category lights per nearby region.
+// 3) Close view  -> resolve to individual event markers/icons for precise selection.
+//
+// When this roadmap is implemented, keep the tier transitions data-driven so the
+// clustering thresholds can be tuned without rewriting marker rendering logic.
 const BASE_SCALE = 1.03;
 
 // Layer order contract (low -> high): map art (1), decorative atmosphere (2-4 in effects),
