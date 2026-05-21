@@ -1,5 +1,6 @@
 import type { AtlasEvent } from '../data/events';
 import CloudEffect from './effects/CloudEffect';
+import FogEffect from './effects/FogEffect';
 import FireworksEffect from './effects/FireworksEffect';
 import GeeseEffect from './effects/GeeseEffect';
 
@@ -8,6 +9,7 @@ type AtmosphereLayerProps = {
 };
 
 export default function AtmosphereLayer({ events }: AtmosphereLayerProps) {
+  const hasFog = events.some((event) => event.atmosphere?.effects?.includes('fog'));
   const fireworksPoints = events
     .filter((event) => event.atmosphere?.effects?.includes('fireworks'))
     .map((event) => ({ id: event.id, x: event.x, y: event.y, intensity: event.atmosphere?.intensity ?? 'subtle' }));
@@ -15,7 +17,7 @@ export default function AtmosphereLayer({ events }: AtmosphereLayerProps) {
   return (
     <>
       <CloudEffect />
-      {/* Temporary debug only: fireworks should sit above map/clouds while staying below markers/cards/search UI. */}
+      <FogEffect enabled={hasFog} />
       <FireworksEffect points={fireworksPoints} />
       <GeeseEffect />
     </>
