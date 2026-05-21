@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 
-const GEESE_FLYOVER_CYCLE_SECONDS = 120;
+// Temporary 30s cadence until ambient timing is finalized.
+const GEESE_FLYOVER_CYCLE_SECONDS = 30;
 const Z_INDEX_GEESE = 4;
 
 const styles: Record<string, CSSProperties> = {
