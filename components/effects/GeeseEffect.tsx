@@ -39,15 +39,11 @@ export default function GeeseEffect() {
 
       <style jsx>{`
         @keyframes geeseFlyover {
-          0%,
-          80% {
-            opacity: 0;
+          0% {
+            opacity: 0.28;
             transform: translate3d(-72vw, 136vh, 0) scale(0.6);
           }
-          86% {
-            opacity: 0.28;
-          }
-          99% {
+          92% {
             opacity: 0.28;
             transform: translate3d(172vw, -58vh, 0) scale(0.66);
           }
