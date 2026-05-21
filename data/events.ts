@@ -109,6 +109,13 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 49,
     y: 14,
     atmosphere: atmosphere([], 'subtle'),
+    cardMedia: {
+      atmosphereTitle: 'Harbor bloom breeze',
+      mediaPosition: '50% 32%',
+      mediaScale: 1.03,
+      mediaDelayMs: 1100,
+      mediaFadeDurationMs: 1400,
+    },
   },
   {
     id: 'electric-forest',
