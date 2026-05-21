@@ -301,7 +301,7 @@ export default function AtlasMap() {
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
 
-          <AtmosphereLayer events={ATLAS_EVENTS} />
+          <AtmosphereLayer events={ATLAS_EVENTS} selectedEvent={selected} />
 
           {ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
