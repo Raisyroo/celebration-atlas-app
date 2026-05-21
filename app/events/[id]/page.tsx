@@ -190,6 +190,17 @@ export default function EventDetailPage() {
         {event.detailPage.visitorMood ? <p style={{ ...styles.metaLine, color: tone.metaColor }}>Visitor mood: {event.detailPage.visitorMood}</p> : null}
       </section>
 
+      {event.atlasNotes?.length ? (
+        <section style={{ ...styles.notesSection, border: tone.storyBorder, background: tone.storyBackground }} aria-label="Atlas notes">
+          <h2 style={{ ...styles.storyHeading, color: tone.headingColor }}>Atlas Notes</h2>
+          {event.atlasNotes.map((note, index) => (
+            <p key={`${event.id}-atlas-note-${index}`} style={{ ...styles.notesBody, color: tone.metaColor }}>
+              {note}
+            </p>
+          ))}
+        </section>
+      ) : null}
+
       <section style={styles.shareSection} aria-label="Share discovery">
         <button type="button" onClick={handleShare} style={styles.shareButton}>
           Share this discovery
@@ -340,6 +351,19 @@ const styles: Record<string, CSSProperties> = {
     width: 'min(100%, 58rem)',
     borderRadius: '1rem',
     padding: '1rem 1.2rem',
+  },
+  notesSection: {
+    width: 'min(100%, 58rem)',
+    borderRadius: '1rem',
+    padding: '0.95rem 1.2rem',
+  },
+  notesBody: {
+    margin: '0.68rem 0 0',
+    lineHeight: 1.62,
+    fontSize: '0.9rem',
+    fontStyle: 'italic',
+    letterSpacing: '0.01em',
+    opacity: 0.92,
   },
   relatedGrid: {
     display: 'grid',
