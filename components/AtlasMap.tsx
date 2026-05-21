@@ -101,12 +101,16 @@ export default function AtlasMap() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(null);
+  const [romeoVideoKey, setRomeoVideoKey] = useState(0);
+  const [showRomeoVideoFallback, setShowRomeoVideoFallback] = useState(false);
+  const romeoVideoRef = useRef<HTMLVideoElement | null>(null);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
   const highlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
+  const isRomeoCard = renderedEvent?.id === 'romeo-peach';
   const cardTheme = renderedEvent ? CARD_THEME_BY_CATEGORY[renderedEvent.category] : CARD_THEME_BY_CATEGORY.Festivals;
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
@@ -155,6 +159,12 @@ export default function AtlasMap() {
       closeTimerRef.current = null;
     }, 260);
   }, [selected]);
+
+  useEffect(() => {
+    if (selectedId !== 'romeo-peach') return;
+    setRomeoVideoKey((prev) => prev + 1);
+    setShowRomeoVideoFallback(false);
+  }, [selectedId]);
 
   const submitSearch = useCallback(() => {
     const trimmedQuery = query.trim();
@@ -326,6 +336,49 @@ export default function AtlasMap() {
             ×
           </button>
           <h3 style={styles.cardTitle}>{renderedEvent.name}</h3>
+          {isRomeoCard ? (
+            <div style={styles.romeoMediaWrap} aria-hidden="true">
+              <video
+                key={romeoVideoKey}
+                ref={romeoVideoRef}
+                style={{ ...styles.romeoMediaLayer, opacity: showRomeoVideoFallback ? 0 : 1 }}
+                src="/event-media/romeo-peach-loop.mp4"
+                poster="/event-media/romeo-peach-poster.jpg"
+                muted
+                autoPlay
+                playsInline
+                controls={false}
+                preload="metadata"
+                onLoadedMetadata={(event) => {
+                  const element = event.currentTarget;
+                  const cap = 3;
+                  if (Number.isFinite(element.duration) && element.duration > cap) {
+                    element.currentTime = Math.max(0, element.duration - cap);
+                  } else {
+                    element.currentTime = 0;
+                  }
+                }}
+                onCanPlay={(event) => {
+                  event.currentTarget.play().catch(() => {
+                    setShowRomeoVideoFallback(true);
+                  });
+                }}
+                onEnded={(event) => {
+                  const element = event.currentTarget;
+                  element.pause();
+                  if (Number.isFinite(element.duration) && element.duration > 0) {
+                    element.currentTime = element.duration;
+                  }
+                }}
+                onError={() => setShowRomeoVideoFallback(true)}
+              />
+              <img
+                src="/event-media/romeo-peach-poster.jpg"
+                alt=""
+                style={{ ...styles.romeoMediaLayer, opacity: showRomeoVideoFallback ? 1 : 0 }}
+              />
+            </div>
+          ) : null}
           <p style={styles.cardLocation}>{renderedEvent.location}</p>
           <p style={styles.cardAtmosphere}>{renderedEvent.atmosphereLabel}</p>
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
@@ -685,6 +738,30 @@ const styles: Record<string, CSSProperties> = {
     WebkitBackdropFilter: 'blur(4px) saturate(1.05)',
     zIndex: Z_INDEX.card,
     willChange: 'opacity, transform',
+    overflow: 'hidden',
+  },
+  romeoMediaWrap: {
+    position: 'absolute',
+    right: -20,
+    top: -22,
+    width: 176,
+    height: 176,
+    pointerEvents: 'none',
+    borderRadius: '44% 56% 58% 42% / 45% 41% 59% 55%',
+    overflow: 'hidden',
+    maskImage: 'radial-gradient(circle at 44% 42%, rgba(0,0,0,1) 0 56%, rgba(0,0,0,.76) 76%, rgba(0,0,0,0) 100%)',
+    WebkitMaskImage: 'radial-gradient(circle at 44% 42%, rgba(0,0,0,1) 0 56%, rgba(0,0,0,.76) 76%, rgba(0,0,0,0) 100%)',
+    opacity: 0.52,
+    filter: 'saturate(1.08) contrast(1.04) brightness(.86)',
+    zIndex: 0,
+  },
+  romeoMediaLayer: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    transition: 'opacity 200ms ease',
   },
   closeButton: {
     position: 'absolute',
@@ -704,6 +781,8 @@ const styles: Record<string, CSSProperties> = {
     touchAction: 'none',
   },
   cardTitle: {
+    position: 'relative',
+    zIndex: 1,
     margin: '0 40px 4px 0',
     fontSize: 22,
     lineHeight: 1.12,
@@ -713,6 +792,8 @@ const styles: Record<string, CSSProperties> = {
     textShadow: '0 1px 3px rgba(2,3,6,.9), 0 0 14px rgba(255,229,173,.28)',
   },
   cardLocation: {
+    position: 'relative',
+    zIndex: 1,
     margin: '0 0 8px',
     fontSize: 12,
     letterSpacing: 0.9,
@@ -721,6 +802,8 @@ const styles: Record<string, CSSProperties> = {
     textShadow: '0 1px 2px rgba(3,4,8,.8)',
   },
   cardAtmosphere: {
+    position: 'relative',
+    zIndex: 1,
     margin: '0 0 10px',
     fontSize: 14,
     fontWeight: 600,
@@ -729,6 +812,8 @@ const styles: Record<string, CSSProperties> = {
     textShadow: '0 1px 2px rgba(2,3,7,.7), 0 0 10px rgba(255,219,156,.22)',
   },
   cardBody: {
+    position: 'relative',
+    zIndex: 1,
     margin: 0,
     color: '#f0e2c3',
     fontSize: 14,
