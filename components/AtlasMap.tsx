@@ -103,7 +103,9 @@ export default function AtlasMap() {
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(null);
   const [romeoVideoKey, setRomeoVideoKey] = useState(0);
   const [showRomeoVideoFallback, setShowRomeoVideoFallback] = useState(false);
+  const [isRomeoMediaVisible, setIsRomeoMediaVisible] = useState(false);
   const romeoVideoRef = useRef<HTMLVideoElement | null>(null);
+  const romeoMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
@@ -161,6 +163,11 @@ export default function AtlasMap() {
   }, [selected]);
 
   useEffect(() => {
+    if (romeoMediaFadeTimerRef.current) {
+      clearTimeout(romeoMediaFadeTimerRef.current);
+      romeoMediaFadeTimerRef.current = null;
+    }
+    setIsRomeoMediaVisible(false);
     if (selectedId !== 'romeo-peach') return;
     setRomeoVideoKey((prev) => prev + 1);
     setShowRomeoVideoFallback(false);
@@ -168,13 +175,21 @@ export default function AtlasMap() {
 
   useEffect(() => {
     if (!isRomeoCard || !isCardVisible) return;
+    romeoMediaFadeTimerRef.current = setTimeout(() => {
+      setIsRomeoMediaVisible(true);
+      romeoMediaFadeTimerRef.current = null;
+    }, 160);
+  }, [isRomeoCard, isCardVisible]);
+
+  useEffect(() => {
+    if (!isRomeoCard || !isCardVisible || !isRomeoMediaVisible) return;
     const video = romeoVideoRef.current;
     if (!video) return;
     video.currentTime = 0;
     video.play().catch(() => {
       setShowRomeoVideoFallback(true);
     });
-  }, [isRomeoCard, isCardVisible, romeoVideoKey]);
+  }, [isRomeoCard, isCardVisible, isRomeoMediaVisible, romeoVideoKey]);
 
   const submitSearch = useCallback(() => {
     const trimmedQuery = query.trim();
@@ -248,6 +263,7 @@ export default function AtlasMap() {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       if (queryFadeTimerRef.current) clearTimeout(queryFadeTimerRef.current);
+      if (romeoMediaFadeTimerRef.current) clearTimeout(romeoMediaFadeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
       if (enterFrameInnerRef.current) cancelAnimationFrame(enterFrameInnerRef.current);
     };
@@ -347,7 +363,7 @@ export default function AtlasMap() {
           </button>
           <h3 style={styles.cardTitle}>{renderedEvent.name}</h3>
           {isRomeoCard ? (
-            <div style={styles.romeoMediaWrap} aria-hidden="true">
+            <div style={{ ...styles.romeoMediaWrap, opacity: isRomeoMediaVisible ? 1 : 0 }} aria-hidden="true">
               <video
                 key={romeoVideoKey}
                 ref={romeoVideoRef}
@@ -355,15 +371,9 @@ export default function AtlasMap() {
                 src="/event-media/romeo-peach-loop.mp4"
                 poster="/event-media/romeo-peach-poster.jpg"
                 muted
-                autoPlay
                 playsInline
                 controls={false}
                 preload="metadata"
-                onCanPlay={(event) => {
-                  event.currentTarget.play().catch(() => {
-                    setShowRomeoVideoFallback(true);
-                  });
-                }}
                 onEnded={(event) => {
                   const element = event.currentTarget;
                   element.pause();
@@ -744,11 +754,13 @@ const styles: Record<string, CSSProperties> = {
   romeoMediaWrap: {
     position: 'absolute',
     right: 0,
-    top: '14%',
-    width: '48%',
-    height: '82%',
+    top: '6%',
+    width: '57%',
+    height: '90%',
     pointerEvents: 'none',
     overflow: 'hidden',
+    opacity: 0,
+    transition: 'opacity 320ms ease',
     maskImage:
       'linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.42) 22%, rgba(0,0,0,.84) 42%, rgba(0,0,0,.98) 60%, rgba(0,0,0,1) 100%), linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.52) 8%, rgba(0,0,0,.9) 16%, rgba(0,0,0,1) 26%, rgba(0,0,0,1) 100%), linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.5) 14%, rgba(0,0,0,.9) 30%, rgba(0,0,0,1) 44%, rgba(0,0,0,1) 100%), linear-gradient(270deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.96) 6%, rgba(0,0,0,1) 14%, rgba(0,0,0,1) 100%)',
     WebkitMaskImage:
@@ -763,8 +775,8 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    objectPosition: '50% 28%',
-    transition: 'opacity 200ms ease',
+    objectPosition: '48% 18%',
+    transition: 'opacity 260ms ease',
   },
   closeButton: {
     position: 'absolute',
