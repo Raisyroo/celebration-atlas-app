@@ -468,7 +468,7 @@ export default function AtlasMap() {
           {cardCue ? <p style={styles.cardIconCue}>{`${cardCue.sigil} ${cardCue.label}`}</p> : null}
           <p style={styles.cardAtmosphere}>{selectedMedia?.atmosphereTitle ?? renderedEvent.atmosphereLabel}</p>
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
-          {renderedEvent.id === 'romeo-peach' ? (
+          {renderedEvent.id === 'romeo-peach' || renderedEvent.id === 'electric-forest' ? (
             <Link href={`/events/${renderedEvent.id}`} style={styles.enterEventLink}>
               Enter Event
             </Link>
