@@ -61,27 +61,26 @@ const styles: Record<string, CSSProperties> = {
 };
 
 const INTENSITY_PROFILE: Record<FireworkPoint['intensity'], IntensityProfile> = {
-  // Temporary debug tuning: increase cadence/visibility so fireworks are easier to observe during QA.
   subtle: {
-    cycleBase: 4.2,
-    cycleVariance: 3,
-    launchLift: 11,
-    burstScale: 1.08,
-    bloomOpacity: 1.1,
+    cycleBase: 28,
+    cycleVariance: 24,
+    launchLift: 9,
+    burstScale: 0.9,
+    bloomOpacity: 0.82,
   },
   medium: {
-    cycleBase: 4.8,
-    cycleVariance: 3,
-    launchLift: 12,
-    burstScale: 1.16,
-    bloomOpacity: 1.18,
+    cycleBase: 24,
+    cycleVariance: 28,
+    launchLift: 10,
+    burstScale: 0.96,
+    bloomOpacity: 0.88,
   },
   signature: {
-    cycleBase: 5.4,
-    cycleVariance: 3,
-    launchLift: 13,
-    burstScale: 1.24,
-    bloomOpacity: 1.26,
+    cycleBase: 20,
+    cycleVariance: 32,
+    launchLift: 11,
+    burstScale: 1.04,
+    bloomOpacity: 0.94,
   },
 };
 
@@ -116,28 +115,20 @@ const hashSeed = (value: string) => {
 };
 
 export default function FireworksEffect({ points }: FireworksEffectProps) {
-  // Temporary debug only: always include one center-screen firework to verify rendering quickly.
-  const debugPoints: FireworkPoint[] = [
-    ...points,
-    { id: 'debug-center-firework', x: 50, y: 45, intensity: 'signature' },
-  ];
-
-  if (debugPoints.length === 0) return null;
+  if (points.length === 0) return null;
 
   return (
     <>
       <div style={styles.fireworksLayer} aria-hidden="true">
-        {debugPoints.map((point, index) => {
+        {points.map((point, index) => {
           const seed = hashSeed(point.id);
           const profile = INTENSITY_PROFILE[point.intensity];
           const tone = FIREWORK_TONES[seed % FIREWORK_TONES.length];
 
           const cycleSeconds = profile.cycleBase + (seed % profile.cycleVariance) + index * 0.15;
           const delaySeconds = -((seed % 11) + index * 1.6);
-          // Temporary debug only: pin the test firework in place at center coordinates for deterministic visibility.
-          const isDebugPoint = point.id === 'debug-center-firework';
-          const driftX = isDebugPoint ? 0 : (seed % 9) - 4;
-          const driftY = isDebugPoint ? 0 : ((seed >> 3) % 7) - 3;
+          const driftX = (seed % 9) - 4;
+          const driftY = ((seed >> 3) % 7) - 3;
 
           return (
             <div
@@ -148,10 +139,9 @@ export default function FireworksEffect({ points }: FireworksEffectProps) {
                 top: `calc(${point.y}% + ${driftY}px)`,
                 animation: `fireworkCycle ${cycleSeconds}s linear infinite`,
                 animationDelay: `${delaySeconds}s`,
-                // Temporary debug only: boost test firework visibility for quick QA confirmation.
-                ['--firework-launch-lift' as string]: `${isDebugPoint ? 28 : profile.launchLift}px`,
-                ['--firework-burst-scale' as string]: `${isDebugPoint ? 2.6 : profile.burstScale}`,
-                ['--firework-bloom-opacity' as string]: `${isDebugPoint ? 3 : profile.bloomOpacity}`,
+                ['--firework-launch-lift' as string]: `${profile.launchLift}px`,
+                ['--firework-burst-scale' as string]: `${profile.burstScale}`,
+                ['--firework-bloom-opacity' as string]: `${profile.bloomOpacity}`,
               }}
             >
               <span
