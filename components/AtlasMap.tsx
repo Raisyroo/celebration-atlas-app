@@ -106,11 +106,11 @@ export default function AtlasMap() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(null);
-  const [romeoVideoKey, setRomeoVideoKey] = useState(0);
-  const [showRomeoVideoFallback, setShowRomeoVideoFallback] = useState(false);
-  const [isRomeoMediaVisible, setIsRomeoMediaVisible] = useState(false);
-  const romeoVideoRef = useRef<HTMLVideoElement | null>(null);
-  const romeoMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [cardMediaVideoKey, setCardMediaVideoKey] = useState(0);
+  const [showCardMediaVideoFallback, setShowCardMediaVideoFallback] = useState(false);
+  const [isCardMediaVisible, setIsCardMediaVisible] = useState(false);
+  const cardMediaVideoRef = useRef<HTMLVideoElement | null>(null);
+  const cardMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
@@ -118,8 +118,9 @@ export default function AtlasMap() {
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
   const selectedMedia = renderedEvent?.cardMedia;
-  const hasCardMedia = Boolean(selectedMedia?.mediaSrc);
-  const isVideoMedia = selectedMedia?.mediaType === 'video';
+  const hasCardMedia = Boolean(selectedMedia);
+  const hasCardMediaSource = Boolean(selectedMedia?.mediaSrc || selectedMedia?.posterSrc);
+  const isVideoMedia = selectedMedia?.mediaType === 'video' && Boolean(selectedMedia?.mediaSrc);
   const mediaFadeDurationMs = selectedMedia?.mediaFadeDurationMs ?? 1300;
   const mediaDelayMs = selectedMedia?.mediaDelayMs ?? 0;
   const mediaMask = selectedMedia?.mediaMaskProfile ? MEDIA_MASKS[selectedMedia.mediaMaskProfile] : undefined;
@@ -173,40 +174,40 @@ export default function AtlasMap() {
   }, [selected]);
 
   useEffect(() => {
-    if (romeoMediaFadeTimerRef.current) {
-      clearTimeout(romeoMediaFadeTimerRef.current);
-      romeoMediaFadeTimerRef.current = null;
+    if (cardMediaFadeTimerRef.current) {
+      clearTimeout(cardMediaFadeTimerRef.current);
+      cardMediaFadeTimerRef.current = null;
     }
-    setIsRomeoMediaVisible(false);
+    setIsCardMediaVisible(false);
     const selectedEvent = ATLAS_EVENTS.find((event) => event.id === selectedId);
     if (!selectedEvent?.cardMedia?.mediaSrc) return;
-    setRomeoVideoKey((prev) => prev + 1);
-    setShowRomeoVideoFallback(false);
+    setCardMediaVideoKey((prev) => prev + 1);
+    setShowCardMediaVideoFallback(false);
   }, [selectedId]);
 
   useEffect(() => {
     if (!hasCardMedia || !isCardVisible) return;
-    romeoMediaFadeTimerRef.current = setTimeout(() => {
-      setIsRomeoMediaVisible(true);
-      romeoMediaFadeTimerRef.current = null;
+    cardMediaFadeTimerRef.current = setTimeout(() => {
+      setIsCardMediaVisible(true);
+      cardMediaFadeTimerRef.current = null;
     }, mediaDelayMs);
   }, [hasCardMedia, isCardVisible, mediaDelayMs]);
 
   useEffect(() => {
-    if (!isVideoMedia || !isCardVisible || !isRomeoMediaVisible) return;
-    const video = romeoVideoRef.current;
+    if (!isVideoMedia || !isCardVisible || !isCardMediaVisible) return;
+    const video = cardMediaVideoRef.current;
     if (!video) return;
     const playbackStartTimer = setTimeout(() => {
       video.currentTime = 0;
       video.play().catch(() => {
-        setShowRomeoVideoFallback(true);
+        setShowCardMediaVideoFallback(true);
       });
     }, DEFAULT_MEDIA_PLAY_START_OFFSET_MS);
 
     return () => {
       clearTimeout(playbackStartTimer);
     };
-  }, [isVideoMedia, isCardVisible, isRomeoMediaVisible, romeoVideoKey]);
+  }, [isVideoMedia, isCardVisible, isCardMediaVisible, cardMediaVideoKey]);
 
   const submitSearch = useCallback(() => {
     const trimmedQuery = query.trim();
@@ -280,7 +281,7 @@ export default function AtlasMap() {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       if (queryFadeTimerRef.current) clearTimeout(queryFadeTimerRef.current);
-      if (romeoMediaFadeTimerRef.current) clearTimeout(romeoMediaFadeTimerRef.current);
+      if (cardMediaFadeTimerRef.current) clearTimeout(cardMediaFadeTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
       if (enterFrameInnerRef.current) cancelAnimationFrame(enterFrameInnerRef.current);
     };
@@ -379,11 +380,11 @@ export default function AtlasMap() {
             ×
           </button>
           <h3 style={styles.cardTitle}>{renderedEvent.name}</h3>
-          {hasCardMedia ? (
+          {hasCardMedia && hasCardMediaSource ? (
             <div
               style={{
-                ...styles.romeoMediaWrap,
-                opacity: isRomeoMediaVisible ? 1 : 0,
+                ...styles.cardMediaWrap,
+                opacity: isCardMediaVisible ? 1 : 0,
                 transitionDuration: `${mediaFadeDurationMs}ms`,
                 maskImage: mediaMask,
                 WebkitMaskImage: mediaMask,
@@ -392,16 +393,16 @@ export default function AtlasMap() {
             >
               {isVideoMedia ? (
                 <video
-                  key={romeoVideoKey}
-                  ref={romeoVideoRef}
+                  key={cardMediaVideoKey}
+                  ref={cardMediaVideoRef}
                   style={{
-                    ...styles.romeoMediaLayer,
-                    opacity: showRomeoVideoFallback ? 0 : 1,
-                    objectPosition: selectedMedia?.mediaPosition ?? styles.romeoMediaLayer.objectPosition,
+                    ...styles.cardMediaLayer,
+                    opacity: showCardMediaVideoFallback ? 0 : 1,
+                    objectPosition: selectedMedia?.mediaPosition ?? styles.cardMediaLayer.objectPosition,
                     transform: `scale(${selectedMedia?.mediaScale ?? 1})`,
                   }}
                   src={selectedMedia?.mediaSrc}
-                  poster={selectedMedia?.posterSrc}
+                  poster={selectedMedia?.posterSrc || undefined}
                   muted
                   playsInline
                   controls={false}
@@ -413,16 +414,16 @@ export default function AtlasMap() {
                       element.currentTime = element.duration;
                     }
                   }}
-                  onError={() => setShowRomeoVideoFallback(true)}
+                  onError={() => setShowCardMediaVideoFallback(true)}
                 />
               ) : null}
               <img
                 src={selectedMedia?.posterSrc ?? selectedMedia?.mediaSrc}
                 alt=""
                 style={{
-                  ...styles.romeoMediaLayer,
-                  opacity: isVideoMedia ? (showRomeoVideoFallback ? 1 : 0) : 1,
-                  objectPosition: selectedMedia?.mediaPosition ?? styles.romeoMediaLayer.objectPosition,
+                  ...styles.cardMediaLayer,
+                  opacity: isVideoMedia ? (showCardMediaVideoFallback ? 1 : 0) : 1,
+                  objectPosition: selectedMedia?.mediaPosition ?? styles.cardMediaLayer.objectPosition,
                   transform: `scale(${selectedMedia?.mediaScale ?? 1})`,
                 }}
               />
@@ -801,7 +802,7 @@ const styles: Record<string, CSSProperties> = {
     willChange: 'opacity, transform',
     overflow: 'hidden',
   },
-  romeoMediaWrap: {
+  cardMediaWrap: {
     position: 'absolute',
     right: 0,
     top: '6%',
@@ -820,7 +821,7 @@ const styles: Record<string, CSSProperties> = {
     WebkitMaskComposite: 'source-in',
     zIndex: 0,
   },
-  romeoMediaLayer: {
+  cardMediaLayer: {
     position: 'absolute',
     inset: 0,
     width: '100%',
