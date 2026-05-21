@@ -59,6 +59,19 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       intensity: 'medium',
     },
   },
+
+  {
+    id: 'mackinac-lilac',
+    name: 'Mackinac Island Lilac Festival',
+    blurb: 'Historic waterfront streets and harbor breezes framed by lilac blooms and island traditions.',
+    category: 'Festivals',
+    x: 49,
+    y: 14,
+    atmosphere: {
+      effects: ['fog'],
+      intensity: 'subtle',
+    },
+  },
   {
     id: 'electric-forest',
     name: 'Electric Forest',
