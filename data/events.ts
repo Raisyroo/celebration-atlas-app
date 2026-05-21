@@ -21,6 +21,7 @@ export type AtlasEvent = {
     effects?: AtmosphereEffect[];
     intensity?: 'subtle' | 'medium' | 'signature';
   };
+  regionAtmosphere?: 'lakeshore' | 'northwoods' | 'urban' | 'harvest' | 'winter';
   cardMedia?: {
     mediaType?: 'image' | 'video';
     mediaSrc?: string;
@@ -85,6 +86,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 75,
     y: 44,
     atmosphere: atmosphere([], 'medium'),
+    regionAtmosphere: 'urban',
   },
   {
     id: 'armada-fair',
@@ -108,6 +110,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 49,
     y: 14,
     atmosphere: atmosphere([], 'subtle'),
+    regionAtmosphere: 'lakeshore',
     cardMedia: {
       atmosphereTitle: 'Harbor bloom breeze',
       mediaPosition: '50% 32%',
@@ -126,6 +129,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 34,
     y: 42,
     atmosphere: atmosphere(['fireworks'], 'signature'),
+    regionAtmosphere: 'northwoods',
     cardMedia: {
       mediaType: 'video',
       mediaSrc: '/event-media/electric-forest-loop.mp4',
@@ -190,6 +194,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 40,
     y: 22,
     atmosphere: atmosphere([], 'subtle'),
+    regionAtmosphere: 'lakeshore',
   },
   {
     id: 'cheboygan-4th-fireworks',
@@ -212,6 +217,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 24,
     y: 42,
     atmosphere: atmosphere([], 'medium'),
+    regionAtmosphere: 'lakeshore',
   },
   {
     id: 'faster-horses',
@@ -254,6 +260,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 54,
     y: 49,
     atmosphere: atmosphere(['ferrisGlow'], 'medium'),
+    regionAtmosphere: 'harvest',
   },
   {
     id: 'upper-peninsula-state-fair',
