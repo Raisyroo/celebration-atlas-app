@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
 const GEESE_FLYOVER_CYCLE_SECONDS = 120;
-const Z_INDEX_GEESE = 4; // Decorative layer; always below marker/card/search interactivity.
+const Z_INDEX_GEESE = 4;
 
 const styles: Record<string, CSSProperties> = {
   geeseLayer: {
@@ -15,13 +15,13 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 0,
     top: 0,
-    width: 'clamp(220px, 34vw, 380px)',
+    width: 'clamp(104px, 16vw, 168px)',
     height: 'auto',
     maxWidth: 'none',
     objectFit: 'contain',
     pointerEvents: 'none',
     userSelect: 'none',
-    opacity: 1,
+    opacity: 0.28,
     mixBlendMode: 'screen',
     willChange: 'transform, opacity',
     transform: 'translateZ(0)',
@@ -39,20 +39,20 @@ export default function GeeseEffect() {
       <style jsx>{`
         @keyframes geeseFlyover {
           0%,
-          84% {
+          80% {
             opacity: 0;
-            transform: translate3d(-66vw, 132vh, 0) scale(0.86);
+            transform: translate3d(-72vw, 136vh, 0) scale(0.6);
           }
-          87% {
-            opacity: 1;
+          86% {
+            opacity: 0.28;
           }
-          96% {
-            opacity: 1;
-            transform: translate3d(164vw, -54vh, 0) scale(0.92);
+          99% {
+            opacity: 0.28;
+            transform: translate3d(172vw, -58vh, 0) scale(0.66);
           }
           100% {
             opacity: 0;
-            transform: translate3d(164vw, -54vh, 0) scale(0.92);
+            transform: translate3d(172vw, -58vh, 0) scale(0.66);
           }
         }
       `}</style>
