@@ -65,6 +65,19 @@ const blendCardTheme = (base: { edge: string; glow: string; wash: string }, regi
   };
 };
 
+const CARD_CUE_BY_ICON_TYPE: Record<NonNullable<(typeof ATLAS_EVENTS)[number]['iconType']>, { sigil: string; label: string }> = {
+  music: { sigil: '◦', label: 'Sound' },
+  fair: { sigil: '◦', label: 'Midway' },
+  food: { sigil: '◦', label: 'Seasonal' },
+  fireworks: { sigil: '◦', label: 'Night sky' },
+  flower: { sigil: '◦', label: 'Bloom' },
+  harvest: { sigil: '◦', label: 'Harvest' },
+  waterfront: { sigil: '◦', label: 'Waterfront' },
+  winter: { sigil: '◦', label: 'Winter' },
+  art: { sigil: '◦', label: 'Immersive' },
+  heritage: { sigil: '◦', label: 'Heritage' },
+};
+
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
 
 const isResetSearchCommand = (queryText: string) => RESET_SEARCH_COMMANDS.has(queryText.trim().toLowerCase());
@@ -145,6 +158,7 @@ export default function AtlasMap() {
   const mediaMask = selectedMedia?.mediaMaskProfile ? MEDIA_MASKS[selectedMedia.mediaMaskProfile] : undefined;
   const cardBaseTheme = renderedEvent ? CARD_THEME_BY_CATEGORY[renderedEvent.category] : CARD_THEME_BY_CATEGORY.Festivals;
   const cardTheme = blendCardTheme(cardBaseTheme, renderedEvent?.regionAtmosphere);
+  const cardCue = renderedEvent?.iconType ? CARD_CUE_BY_ICON_TYPE[renderedEvent.iconType] : null;
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
@@ -450,6 +464,7 @@ export default function AtlasMap() {
             </div>
           ) : null}
           <p style={styles.cardLocation}>{renderedEvent.location}</p>
+          {cardCue ? <p style={styles.cardIconCue}>{`${cardCue.sigil} ${cardCue.label}`}</p> : null}
           <p style={styles.cardAtmosphere}>{selectedMedia?.atmosphereTitle ?? renderedEvent.atmosphereLabel}</p>
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
           <span style={{ ...styles.cardAtmosphereOrb, boxShadow: `0 0 26px ${cardTheme.glow}, 0 0 50px ${cardTheme.wash}` }} aria-hidden="true" />
@@ -887,6 +902,17 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     color: 'rgba(255,238,203,.88)',
     textShadow: '0 1px 2px rgba(3,4,8,.8)',
+  },
+  cardIconCue: {
+    position: 'relative',
+    zIndex: 1,
+    margin: '0 0 8px',
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: 'rgba(255,236,200,.58)',
+    textShadow: '0 1px 2px rgba(3,4,8,.72)',
+    opacity: 0.82,
   },
   cardAtmosphere: {
     position: 'relative',
