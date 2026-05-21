@@ -4,11 +4,13 @@ type FogEffectProps = {
   enabled?: boolean;
 };
 
+const Z_INDEX_FOG = 3; // Decorative only; must not intercept taps.
+
 const styles: Record<string, CSSProperties> = {
   fogLayer: {
     position: 'absolute',
     inset: 0,
-    zIndex: 3,
+    zIndex: Z_INDEX_FOG,
     overflow: 'hidden',
     pointerEvents: 'none',
   },
@@ -17,6 +19,7 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: '50%',
     filter: 'blur(22px)',
     willChange: 'transform, opacity',
+    transform: 'translateZ(0)',
     pointerEvents: 'none',
     mixBlendMode: 'screen',
   },
