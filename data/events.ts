@@ -127,6 +127,17 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 34,
     y: 42,
     atmosphere: atmosphere(['fireworks'], 'signature'),
+    cardMedia: {
+      mediaType: 'video',
+      mediaSrc: '/event-media/electric-forest-loop.mp4',
+      posterSrc: '/event-media/electric-forest-poster.jpg',
+      atmosphereTitle: 'Neon woodland pulse',
+      mediaPosition: '56% 36%',
+      mediaScale: 1.04,
+      mediaMaskProfile: 'romeoPeach',
+      mediaDelayMs: 980,
+      mediaFadeDurationMs: 1450,
+    },
   },
 
   {
