@@ -11,6 +11,8 @@ export type AtmosphereEffect =
 export type AtlasEvent = {
   id: string;
   name: string;
+  location: string;
+  atmosphereLabel: string;
   blurb: string;
   category: AtlasCategory;
   x: number;
@@ -44,6 +46,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'romeo-peach',
     name: 'Romeo Peach Festival',
+    location: 'Romeo, MI',
+    atmosphereLabel: 'Orchard glow',
     blurb: 'A hometown peach celebration with orchard charm, live performances, and summer food traditions.',
     category: 'Festivals',
     x: 66,
@@ -53,6 +57,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'detroit-jazz',
     name: 'Detroit Jazz Weekend',
+    location: 'Detroit, MI',
+    atmosphereLabel: 'Midnight jazz haze',
     blurb: 'Open-air stages and night sets bring Michigan jazz scenes together near downtown Detroit.',
     category: 'Music',
     x: 75,
@@ -62,6 +68,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'armada-fair',
     name: 'Armada Fair',
+    location: 'Armada, MI',
+    atmosphereLabel: 'Midway lights',
     blurb: 'Classic fair rides, livestock showcases, and local midway favorites in late summer.',
     category: 'Fairs',
     x: 70,
@@ -72,6 +80,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'mackinac-lilac',
     name: 'Mackinac Island Lilac Festival',
+    location: 'Mackinac Island, MI',
+    atmosphereLabel: 'Harbor bloom breeze',
     blurb: 'Historic waterfront streets and harbor breezes framed by lilac blooms and island traditions.',
     category: 'Festivals',
     x: 49,
@@ -81,6 +91,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'electric-forest',
     name: 'Electric Forest',
+    location: 'Rothbury, MI',
+    atmosphereLabel: 'Neon woodland pulse',
     blurb: 'A glowing woodland music gathering with immersive art and all-night festival energy.',
     category: 'Music',
     x: 34,
@@ -91,6 +103,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'traverse-city-cherry',
     name: 'National Cherry Festival',
+    location: 'Traverse City, MI',
+    atmosphereLabel: 'Bayfront summer glow',
     blurb: 'A week of cherry treats, parades, and bayfront gatherings in Traverse City each summer.',
     category: 'Festivals',
     x: 30,
@@ -99,6 +113,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'west-michigan-coast-guard',
     name: 'Coast Guard Festival',
+    location: 'Grand Haven, MI',
+    atmosphereLabel: 'Shoreline honor lights',
     blurb: 'Grand Haven hosts ship tours, concerts, and shoreline fireworks honoring Coast Guard heritage.',
     category: 'Festivals',
     x: 24,
@@ -108,6 +124,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'holland-tulip-time',
     name: 'Tulip Time Festival',
+    location: 'Holland, MI',
+    atmosphereLabel: 'Spring street color',
     blurb: 'Spring blooms, Dutch dance, and family street events color downtown Holland.',
     category: 'Festivals',
     x: 30,
@@ -116,6 +134,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'alpena-brown-trout',
     name: 'Brown Trout Festival',
+    location: 'Alpena, MI',
+    atmosphereLabel: 'Riverfront carnival dusk',
     blurb: 'A Northeast Michigan tradition with carnival rides, food booths, and riverfront festivities.',
     category: 'Festivals',
     x: 58,
@@ -125,6 +145,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'charlevoix-venetian',
     name: 'Charlevoix Venetian Festival',
+    location: 'Charlevoix, MI',
+    atmosphereLabel: 'Marina twilight rhythm',
     blurb: 'A harbor-centered summer celebration featuring waterfront music and a boat parade.',
     category: 'Festivals',
     x: 40,
@@ -134,6 +156,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'cheboygan-4th-fireworks',
     name: 'Cheboygan Independence Day Festival',
+    location: 'Cheboygan, MI',
+    atmosphereLabel: 'Patriotic night burst',
     blurb: 'Holiday crowds gather for parades, family activities, and fireworks by the water.',
     category: 'Festivals',
     x: 50,
@@ -143,6 +167,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'muskegon-summer-celebration',
     name: 'Muskegon Summer Celebration',
+    location: 'Muskegon, MI',
+    atmosphereLabel: 'Lakefront stage energy',
     blurb: 'Lakefront performances and food vendors keep this multi-day event lively into the night.',
     category: 'Music',
     x: 24,
@@ -152,6 +178,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'faster-horses',
     name: 'Faster Horses Festival',
+    location: 'Brooklyn, MI',
+    atmosphereLabel: 'Speedway campfire chorus',
     blurb: 'A major country music weekend at Michigan International Speedway with camping crowds.',
     category: 'Music',
     x: 56,
@@ -160,6 +188,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'common-ground-lansing',
     name: 'Common Ground Music Festival',
+    location: 'Lansing, MI',
+    atmosphereLabel: 'Capital city night sets',
     blurb: 'Downtown Lansing welcomes national acts and local favorites in a summer concert series.',
     category: 'Music',
     x: 47,
@@ -168,6 +198,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'allendale-ballon-fest',
     name: 'Allendale Balloon Festival',
+    location: 'Allendale, MI',
+    atmosphereLabel: 'Sky lantern uplift',
     blurb: 'Colorful hot-air balloons, evening glows, and family food stands fill open summer skies.',
     category: 'Festivals',
     x: 27,
@@ -177,6 +209,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'shiawassee-fair',
     name: 'Shiawassee County Fair',
+    location: 'Corunna, MI',
+    atmosphereLabel: 'County fair nostalgia',
     blurb: 'A classic county fair with agricultural exhibits, midway rides, and grandstand entertainment.',
     category: 'Fairs',
     x: 54,
@@ -186,6 +220,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'upper-peninsula-state-fair',
     name: 'Upper Peninsula State Fair',
+    location: 'Escanaba, MI',
+    atmosphereLabel: 'Northern midway glow',
     blurb: 'Escanaba hosts livestock shows, rides, and regional food traditions each August.',
     category: 'Fairs',
     x: 34,

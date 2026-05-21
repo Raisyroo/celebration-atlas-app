@@ -35,6 +35,11 @@ const Z_INDEX = {
   card: 15,
   searchDock: 20,
 } as const;
+const CARD_THEME_BY_CATEGORY: Record<(typeof ATLAS_EVENTS)[number]['category'], { edge: string; glow: string; wash: string }> = {
+  Festivals: { edge: 'rgba(255,228,166,.52)', glow: 'rgba(255,202,102,.24)', wash: 'rgba(255,194,112,.14)' },
+  Music: { edge: 'rgba(186,208,255,.55)', glow: 'rgba(120,175,255,.24)', wash: 'rgba(132,152,245,.14)' },
+  Fairs: { edge: 'rgba(255,203,170,.54)', glow: 'rgba(255,151,106,.24)', wash: 'rgba(255,168,122,.14)' },
+};
 
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
 
@@ -102,6 +107,7 @@ export default function AtlasMap() {
   const highlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
+  const cardTheme = renderedEvent ? CARD_THEME_BY_CATEGORY[renderedEvent.category] : CARD_THEME_BY_CATEGORY.Festivals;
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
@@ -307,6 +313,9 @@ export default function AtlasMap() {
           ref={cardRef}
           style={{
             ...styles.card,
+            borderColor: cardTheme.edge,
+            boxShadow: `inset 0 0 0 1px rgba(255,241,203,.08), 0 0 18px ${cardTheme.glow}, 0 16px 36px rgba(0,0,0,.32)`,
+            background: `linear-gradient(160deg, rgba(16,21,30,.34), rgba(9,12,18,.2) 58%, rgba(7,10,15,.3)), radial-gradient(circle at 82% 12%, ${cardTheme.wash}, rgba(7,10,15,0) 52%)`,
             opacity: isCardVisible ? 1 : 0,
             transform: isCardVisible ? 'translateY(0)' : `translateY(${cardEnterOffset}px)`,
             pointerEvents: isCardVisible ? 'auto' : 'none',
@@ -317,7 +326,10 @@ export default function AtlasMap() {
             ×
           </button>
           <h3 style={styles.cardTitle}>{renderedEvent.name}</h3>
+          <p style={styles.cardLocation}>{renderedEvent.location}</p>
+          <p style={styles.cardAtmosphere}>{renderedEvent.atmosphereLabel}</p>
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
+          <span style={{ ...styles.cardAtmosphereOrb, boxShadow: `0 0 26px ${cardTheme.glow}, 0 0 50px ${cardTheme.wash}` }} aria-hidden="true" />
         </article>
       ) : null}
 
@@ -692,10 +704,29 @@ const styles: Record<string, CSSProperties> = {
     touchAction: 'none',
   },
   cardTitle: {
-    margin: '0 40px 6px 0',
-    fontSize: 18,
+    margin: '0 40px 4px 0',
+    fontSize: 22,
+    lineHeight: 1.12,
+    fontWeight: 700,
+    letterSpacing: 0.2,
     color: '#ffebb9',
-    textShadow: '0 1px 3px rgba(2,3,6,.9), 0 0 8px rgba(255,229,173,.24)',
+    textShadow: '0 1px 3px rgba(2,3,6,.9), 0 0 14px rgba(255,229,173,.28)',
+  },
+  cardLocation: {
+    margin: '0 0 8px',
+    fontSize: 12,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+    color: 'rgba(255,238,203,.88)',
+    textShadow: '0 1px 2px rgba(3,4,8,.8)',
+  },
+  cardAtmosphere: {
+    margin: '0 0 10px',
+    fontSize: 14,
+    fontWeight: 600,
+    color: 'rgba(255,233,191,.95)',
+    letterSpacing: 0.28,
+    textShadow: '0 1px 2px rgba(2,3,7,.7), 0 0 10px rgba(255,219,156,.22)',
   },
   cardBody: {
     margin: 0,
@@ -703,5 +734,16 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 14,
     lineHeight: 1.35,
     textShadow: '0 1px 3px rgba(2,3,6,.86)',
+  },
+  cardAtmosphereOrb: {
+    position: 'absolute',
+    right: 18,
+    top: 52,
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+    background: 'rgba(255,232,188,.84)',
+    opacity: 0.9,
+    pointerEvents: 'none',
   },
 };
