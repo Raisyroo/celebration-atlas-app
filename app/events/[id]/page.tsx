@@ -1,6 +1,8 @@
-import type { CSSProperties } from 'react';
+'use client';
+
+import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
 
 type PageTone = {
@@ -115,16 +117,20 @@ function getRelatedEvents(event: AtlasEvent): AtlasEvent[] {
     .slice(0, 2);
 }
 
-export default async function EventDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+export default function EventDetailPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const event = ATLAS_EVENTS.find((entry) => entry.id === id);
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   if (!event || !event.detailPage) {
-    notFound();
+    return (
+      <main style={styles.notFoundPage}>
+        <Link href="/" style={styles.notFoundLink}>
+          ← Back to Atlas
+        </Link>
+      </main>
+    );
   }
 
   const tone = getPageTone(event.regionAtmosphere, event.iconType);
@@ -133,6 +139,21 @@ export default async function EventDetailPage({
   const storyBlocks = event.detailPage.storySections?.length
     ? [event.detailPage.detailIntro, ...event.detailPage.storySections].filter(Boolean)
     : [event.detailPage.shortStory];
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareStatus('copied');
+    } catch {
+      setShareStatus('failed');
+    }
+  };
+
+  useEffect(() => {
+    if (shareStatus === 'idle') return;
+    const timeout = window.setTimeout(() => setShareStatus('idle'), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [shareStatus]);
 
   return (
     <main style={{ ...styles.page, color: tone.pageColor, background: tone.pageBackground }}>
@@ -167,6 +188,14 @@ export default async function EventDetailPage({
         ))}
         {event.detailPage.archivalNote ? <p style={{ ...styles.metaLine, color: tone.metaColor }}>Archival note: {event.detailPage.archivalNote}</p> : null}
         {event.detailPage.visitorMood ? <p style={{ ...styles.metaLine, color: tone.metaColor }}>Visitor mood: {event.detailPage.visitorMood}</p> : null}
+      </section>
+
+      <section style={styles.shareSection} aria-label="Share discovery">
+        <button type="button" onClick={handleShare} style={styles.shareButton}>
+          Share this discovery
+        </button>
+        {shareStatus === 'copied' ? <p style={styles.shareStatus}>Link copied.</p> : null}
+        {shareStatus === 'failed' ? <p style={styles.shareStatus}>Unable to copy link.</p> : null}
       </section>
 
       {relatedEvents.length ? (
@@ -205,6 +234,19 @@ export default async function EventDetailPage({
 }
 
 const styles: Record<string, CSSProperties> = {
+  notFoundPage: {
+    minHeight: '100vh',
+    display: 'grid',
+    placeItems: 'center',
+    background: 'linear-gradient(180deg, #090d15 0%, #131a25 100%)',
+  },
+  notFoundLink: {
+    color: 'rgba(245, 219, 170, 0.92)',
+    textDecoration: 'none',
+    letterSpacing: '0.05em',
+    borderBottom: '1px solid rgba(245, 219, 170, 0.45)',
+    paddingBottom: '0.15rem',
+  },
   page: {
     minHeight: '100vh',
     padding: 'clamp(1.5rem, 3.5vw, 3rem)',
@@ -271,6 +313,29 @@ const styles: Record<string, CSSProperties> = {
   storyHeading: { margin: 0, fontSize: '0.9rem', letterSpacing: '0.08em', textTransform: 'uppercase' },
   storyBody: { margin: '0.75rem 0 0', lineHeight: 1.7, color: 'rgba(245, 231, 200, 0.94)' },
   metaLine: { margin: '0.7rem 0 0', lineHeight: 1.5, fontSize: '0.92rem' },
+  shareSection: {
+    display: 'grid',
+    gap: '0.35rem',
+    width: 'fit-content',
+  },
+  shareButton: {
+    appearance: 'none',
+    border: '1px solid rgba(248, 223, 178, 0.28)',
+    background: 'linear-gradient(145deg, rgba(27, 33, 49, 0.62), rgba(14, 18, 28, 0.42))',
+    color: 'rgba(244, 221, 184, 0.9)',
+    borderRadius: '999px',
+    padding: '0.32rem 0.78rem',
+    fontSize: '0.76rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+  },
+  shareStatus: {
+    margin: 0,
+    fontSize: '0.74rem',
+    color: 'rgba(244, 221, 184, 0.75)',
+    letterSpacing: '0.02em',
+  },
   relatedSection: {
     width: 'min(100%, 58rem)',
     borderRadius: '1rem',
