@@ -11,7 +11,7 @@ export default async function EventDetailPage({
   const { id } = await params;
   const event = ATLAS_EVENTS.find((entry) => entry.id === id);
 
-  if (!event || event.id !== 'romeo-peach' || !event.detailPage) {
+  if (!event || !event.detailPage) {
     notFound();
   }
 

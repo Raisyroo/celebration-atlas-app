@@ -109,7 +109,45 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'armada-fair', name: 'Armada Fair', location: 'Armada, MI', atmosphereLabel: 'Midway lights', blurb: 'Classic fair rides, livestock showcases, and local midway favorites in late summer.', category: 'Fairs', iconType: 'fair', x: 70, y: 35, atmosphere: atmosphere(['ferrisGlow'], 'medium'), regionAtmosphere: 'harvest' },
   { id: 'mackinac-lilac', name: 'Mackinac Island Lilac Festival', location: 'Mackinac Island, MI', atmosphereLabel: 'Harbor bloom breeze', blurb: 'Historic waterfront streets and harbor breezes framed by lilac blooms and island traditions.', category: 'Festivals', iconType: 'flower', x: 49, y: 14, atmosphere: atmosphere([], 'subtle'), regionAtmosphere: 'lakeshore', cardMedia: { atmosphereTitle: 'Harbor bloom breeze', mediaPosition: '50% 32%', mediaScale: 1.03, mediaDelayMs: 1100, mediaFadeDurationMs: 1400 } },
-  { id: 'electric-forest', name: 'Electric Forest', location: 'Rothbury, MI', atmosphereLabel: 'Neon woodland pulse', blurb: 'A glowing woodland music gathering with immersive art and all-night festival energy.', category: 'Music', iconType: 'art', x: 34, y: 42, atmosphere: atmosphere(['fireworks'], 'signature'), regionAtmosphere: 'northwoods', cardMedia: { mediaType: 'video', mediaSrc: '/event-media/electric-forest-loop.mp4', atmosphereTitle: 'Neon woodland pulse', mediaPosition: '56% 36%', mediaScale: 1.04, mediaMaskProfile: 'romeoPeach', mediaDelayMs: 980, mediaFadeDurationMs: 1450 } },
+  {
+    id: 'electric-forest',
+    name: 'Electric Forest',
+    location: 'Rothbury, MI',
+    atmosphereLabel: 'Neon woodland pulse',
+    blurb: 'A glowing woodland music gathering with immersive art and all-night festival energy.',
+    category: 'Music',
+    iconType: 'art',
+    x: 34,
+    y: 42,
+    atmosphere: atmosphere(['fireworks'], 'signature'),
+    regionAtmosphere: 'northwoods',
+    cardMedia: {
+      mediaType: 'video',
+      mediaSrc: '/event-media/electric-forest-loop.mp4',
+      atmosphereTitle: 'Neon woodland pulse',
+      mediaPosition: '56% 36%',
+      mediaScale: 1.04,
+      mediaMaskProfile: 'romeoPeach',
+      mediaDelayMs: 980,
+      mediaFadeDurationMs: 1450,
+    },
+    detailPage: {
+      atmosphereLine: 'Pine-shadow pathways, basslines between trees, and kaleidoscopic light after dusk.',
+      mediaType: 'video',
+      mediaSrc: '/event-media/electric-forest-loop.mp4',
+      shortStory:
+        'As day fades in Rothbury, the forest turns into a living gallery of lantern canopies, projection art, and stages hidden among the pines. Electric Forest blends major electronic acts with wandering discovery—one path leads to a surprise set, another to an installation that feels like a dreamscape. Camp neighbors trade bracelets, stories, and directions to their favorite corners, and the entire weekend feels like a shared nighttime city built from music, light, and imagination.',
+      detailIntro:
+        'As day fades in Rothbury, the forest turns into a living gallery of lantern canopies, projection art, and stages hidden among the pines.',
+      storySections: [
+        'Electric Forest blends major electronic acts with wandering discovery—one path leads to a surprise set, another to an installation that feels like a dreamscape.',
+        'Camp neighbors trade bracelets, stories, and directions to their favorite corners, and the entire weekend feels like a shared nighttime city built from music, light, and imagination.',
+      ],
+      archivalNote:
+        'The festival emerged from earlier Rothbury-era gatherings and is now known for its hybrid of curated electronic music and interactive woodland art.',
+      visitorMood: 'Euphoric, curious, and connected—like staying awake inside a neon fairytale.',
+    },
+  },
   { id: 'traverse-city-cherry', name: 'National Cherry Festival', location: 'Traverse City, MI', atmosphereLabel: 'Bayfront summer glow', blurb: 'A week of cherry treats, parades, and bayfront gatherings in Traverse City each summer.', category: 'Festivals', iconType: 'food', x: 30, y: 28, regionAtmosphere: 'lakeshore' },
   { id: 'west-michigan-coast-guard', name: 'Coast Guard Festival', location: 'Grand Haven, MI', atmosphereLabel: 'Shoreline honor lights', blurb: 'Grand Haven hosts ship tours, concerts, and shoreline fireworks honoring Coast Guard heritage.', category: 'Festivals', iconType: 'heritage', x: 24, y: 44, atmosphere: atmosphere(['fireworks'], 'medium'), regionAtmosphere: 'lakeshore' },
   { id: 'holland-tulip-time', name: 'Tulip Time Festival', location: 'Holland, MI', atmosphereLabel: 'Spring street color', blurb: 'Spring blooms, Dutch dance, and family street events color downtown Holland.', category: 'Festivals', iconType: 'food', x: 30, y: 49, regionAtmosphere: 'lakeshore' },
