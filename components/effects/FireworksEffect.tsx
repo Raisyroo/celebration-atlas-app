@@ -25,11 +25,13 @@ type IntensityProfile = {
   bloomOpacity: number;
 };
 
+const Z_INDEX_FIREWORKS = 3; // Decorative layer above map art, below markers.
+
 const styles: Record<string, CSSProperties> = {
   fireworksLayer: {
     position: 'absolute',
     inset: 0,
-    zIndex: 3,
+    zIndex: Z_INDEX_FIREWORKS,
     pointerEvents: 'none',
     overflow: 'hidden',
   },
@@ -39,6 +41,7 @@ const styles: Record<string, CSSProperties> = {
     height: 1,
     pointerEvents: 'none',
     filter: 'blur(.08px)',
+    transform: 'translateZ(0)',
   },
   streak: {
     position: 'absolute',

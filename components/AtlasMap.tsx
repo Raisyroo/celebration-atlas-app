@@ -16,6 +16,14 @@ const MAP_BLEED_Y = 0.1;
 
 const BASE_SCALE = 1.03;
 
+// Layer order contract (low -> high): map art (1), decorative atmosphere (2-4 in effects),
+// interactive markers (5), event card (15), search + featured discovery dock (20).
+const Z_INDEX = {
+  mapImage: 1,
+  markers: 5,
+  card: 15,
+  searchDock: 20,
+} as const;
 
 const RESET_SEARCH_COMMANDS = new Set(['all', 'everything', 'show all', 'reset', 'clear']);
 
@@ -478,7 +486,7 @@ const styles: Record<string, CSSProperties> = {
   },
   mapImage: {
     position: 'relative',
-    zIndex: 1,
+    zIndex: Z_INDEX.mapImage,
     width: '100%',
     height: '100%',
     objectFit: 'cover',
@@ -504,7 +512,7 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 999,
     border: '1px solid rgba(255,228,170,.95)',
     background: 'radial-gradient(circle, #ffebba 8%, #f2c66a 55%, rgba(242,198,106,.15) 100%)',
-    zIndex: 5,
+    zIndex: Z_INDEX.markers,
     cursor: 'pointer',
     touchAction: 'none',
   },
@@ -512,7 +520,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     width: 1,
     height: 1,
-    zIndex: 5,
+    zIndex: Z_INDEX.markers,
   },
   markerLabel: {
     position: 'absolute',
@@ -552,7 +560,7 @@ const styles: Record<string, CSSProperties> = {
     padding: '12px 14px calc(14px + env(safe-area-inset-bottom))',
     backdropFilter: 'none',
     background: 'transparent',
-    zIndex: 20,
+    zIndex: Z_INDEX.searchDock,
     transition: 'bottom 240ms ease',
   },
   featuredDiscovery: {
@@ -652,7 +660,7 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: 'inset 0 0 0 1px rgba(255,241,203,.08), 0 0 18px rgba(252,201,102,.24), 0 16px 36px rgba(0,0,0,.32)',
     backdropFilter: 'blur(4px) saturate(1.05)',
     WebkitBackdropFilter: 'blur(4px) saturate(1.05)',
-    zIndex: 15,
+    zIndex: Z_INDEX.card,
     willChange: 'opacity, transform',
   },
   closeButton: {

@@ -1,12 +1,13 @@
 import type { CSSProperties } from 'react';
 
 const GEESE_FLYOVER_CYCLE_SECONDS = 120;
+const Z_INDEX_GEESE = 4; // Decorative layer; always below marker/card/search interactivity.
 
 const styles: Record<string, CSSProperties> = {
   geeseLayer: {
     position: 'absolute',
     inset: 0,
-    zIndex: 4,
+    zIndex: Z_INDEX_GEESE,
     pointerEvents: 'none',
     overflow: 'hidden',
   },
@@ -23,6 +24,7 @@ const styles: Record<string, CSSProperties> = {
     opacity: 0.34,
     mixBlendMode: 'screen',
     willChange: 'transform, opacity',
+    transform: 'translateZ(0)',
     animation: `${GEESE_FLYOVER_CYCLE_SECONDS}s geeseFlyover linear infinite`,
   },
 };

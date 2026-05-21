@@ -1,12 +1,13 @@
 import type { CSSProperties } from 'react';
 
 const CLOUD_ASSET_VERSION = '2026-05-20';
+const Z_INDEX_CLOUDS = 2; // Decorative only; must stay below interactive markers.
 
 const styles: Record<string, CSSProperties> = {
   cloudLayer: {
     position: 'absolute',
     inset: 0,
-    zIndex: 2,
+    zIndex: Z_INDEX_CLOUDS,
     pointerEvents: 'none',
     overflow: 'hidden',
   },
@@ -18,6 +19,7 @@ const styles: Record<string, CSSProperties> = {
     pointerEvents: 'none',
     userSelect: 'none',
     willChange: 'transform',
+    transform: 'translateZ(0)',
   },
   cloudDriftUpper: {
     width: 360,
