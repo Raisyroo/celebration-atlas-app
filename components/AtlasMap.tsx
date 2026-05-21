@@ -166,6 +166,16 @@ export default function AtlasMap() {
     setShowRomeoVideoFallback(false);
   }, [selectedId]);
 
+  useEffect(() => {
+    if (!isRomeoCard || !isCardVisible) return;
+    const video = romeoVideoRef.current;
+    if (!video) return;
+    video.currentTime = 0;
+    video.play().catch(() => {
+      setShowRomeoVideoFallback(true);
+    });
+  }, [isRomeoCard, isCardVisible, romeoVideoKey]);
+
   const submitSearch = useCallback(() => {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) return;
@@ -349,15 +359,6 @@ export default function AtlasMap() {
                 playsInline
                 controls={false}
                 preload="metadata"
-                onLoadedMetadata={(event) => {
-                  const element = event.currentTarget;
-                  const cap = 3;
-                  if (Number.isFinite(element.duration) && element.duration > cap) {
-                    element.currentTime = Math.max(0, element.duration - cap);
-                  } else {
-                    element.currentTime = 0;
-                  }
-                }}
                 onCanPlay={(event) => {
                   event.currentTarget.play().catch(() => {
                     setShowRomeoVideoFallback(true);
@@ -743,16 +744,16 @@ const styles: Record<string, CSSProperties> = {
   romeoMediaWrap: {
     position: 'absolute',
     right: -30,
-    top: 46,
-    width: 192,
-    height: 220,
+    top: 38,
+    width: 196,
+    height: 228,
     pointerEvents: 'none',
     overflow: 'hidden',
     maskImage:
-      'radial-gradient(122% 132% at 92% 58%, rgba(0,0,0,.9) 0%, rgba(0,0,0,.84) 34%, rgba(0,0,0,.48) 64%, rgba(0,0,0,.16) 82%, rgba(0,0,0,0) 100%), linear-gradient(270deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.68) 34%, rgba(0,0,0,.3) 62%, rgba(0,0,0,0) 100%), linear-gradient(180deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.74) 52%, rgba(0,0,0,.32) 78%, rgba(0,0,0,0) 100%)',
+      'radial-gradient(124% 136% at 93% 54%, rgba(0,0,0,.96) 0%, rgba(0,0,0,.92) 30%, rgba(0,0,0,.68) 56%, rgba(0,0,0,.34) 74%, rgba(0,0,0,.08) 88%, rgba(0,0,0,0) 100%), linear-gradient(270deg, rgba(0,0,0,.96) 0%, rgba(0,0,0,.76) 32%, rgba(0,0,0,.34) 62%, rgba(0,0,0,0) 86%), linear-gradient(0deg, rgba(0,0,0,.95) 0%, rgba(0,0,0,.6) 34%, rgba(0,0,0,.18) 72%, rgba(0,0,0,0) 100%), linear-gradient(180deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.58) 34%, rgba(0,0,0,.16) 72%, rgba(0,0,0,0) 100%)',
     WebkitMaskImage:
-      'radial-gradient(122% 132% at 92% 58%, rgba(0,0,0,.9) 0%, rgba(0,0,0,.84) 34%, rgba(0,0,0,.48) 64%, rgba(0,0,0,.16) 82%, rgba(0,0,0,0) 100%), linear-gradient(270deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.68) 34%, rgba(0,0,0,.3) 62%, rgba(0,0,0,0) 100%), linear-gradient(180deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.74) 52%, rgba(0,0,0,.32) 78%, rgba(0,0,0,0) 100%)',
-    opacity: 0.4,
+      'radial-gradient(124% 136% at 93% 54%, rgba(0,0,0,.96) 0%, rgba(0,0,0,.92) 30%, rgba(0,0,0,.68) 56%, rgba(0,0,0,.34) 74%, rgba(0,0,0,.08) 88%, rgba(0,0,0,0) 100%), linear-gradient(270deg, rgba(0,0,0,.96) 0%, rgba(0,0,0,.76) 32%, rgba(0,0,0,.34) 62%, rgba(0,0,0,0) 86%), linear-gradient(0deg, rgba(0,0,0,.95) 0%, rgba(0,0,0,.6) 34%, rgba(0,0,0,.18) 72%, rgba(0,0,0,0) 100%), linear-gradient(180deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.58) 34%, rgba(0,0,0,.16) 72%, rgba(0,0,0,0) 100%)',
+    opacity: 0.46,
     filter: 'saturate(1.02) contrast(1.02) brightness(.82)',
     zIndex: 0,
   },
