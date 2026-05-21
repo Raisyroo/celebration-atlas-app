@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-const GEESE_FLYOVER_CYCLE_SECONDS = 120;
+const GEESE_FLYOVER_CYCLE_SECONDS = 20;
 const Z_INDEX_GEESE = 4; // Decorative layer; always below marker/card/search interactivity.
 
 const styles: Record<string, CSSProperties> = {
@@ -15,13 +15,14 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 0,
     top: 0,
-    width: 'clamp(88px, 18vw, 128px)',
+    // temporary geese visibility debug
+    width: 'clamp(220px, 34vw, 380px)',
     height: 'auto',
     maxWidth: 'none',
     objectFit: 'contain',
     pointerEvents: 'none',
     userSelect: 'none',
-    opacity: 0.34,
+    opacity: 1,
     mixBlendMode: 'screen',
     willChange: 'transform, opacity',
     transform: 'translateZ(0)',
@@ -44,10 +45,10 @@ export default function GeeseEffect() {
             transform: translate3d(-66vw, 132vh, 0) scale(0.86);
           }
           87% {
-            opacity: 0.34;
+            opacity: 1;
           }
           96% {
-            opacity: 0.34;
+            opacity: 1;
             transform: translate3d(164vw, -54vh, 0) scale(0.92);
           }
           100% {
