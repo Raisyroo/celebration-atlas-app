@@ -13,9 +13,11 @@ const ATMOSPHERIC_SUGGESTIONS = [
 ];
 const MAP_BLEED_X = 0.12;
 const MAP_BLEED_Y = 0.1;
-const ROMEO_MEDIA_REVEAL_DELAY_MS = 900;
-const ROMEO_MEDIA_FADE_MS = 1300;
-const ROMEO_MEDIA_PLAY_START_OFFSET_MS = 180;
+const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
+const MEDIA_MASKS: Record<'romeoPeach', string> = {
+  romeoPeach:
+    'linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.42) 22%, rgba(0,0,0,.84) 42%, rgba(0,0,0,.98) 60%, rgba(0,0,0,1) 100%), linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.52) 8%, rgba(0,0,0,.9) 16%, rgba(0,0,0,1) 26%, rgba(0,0,0,1) 100%), linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.5) 14%, rgba(0,0,0,.9) 30%, rgba(0,0,0,1) 44%, rgba(0,0,0,1) 100%), linear-gradient(270deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.96) 6%, rgba(0,0,0,1) 14%, rgba(0,0,0,1) 100%)',
+};
 
 // Current interaction policy:
 // - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
@@ -115,7 +117,12 @@ export default function AtlasMap() {
   const highlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
-  const isRomeoCard = renderedEvent?.id === 'romeo-peach';
+  const selectedMedia = renderedEvent?.cardMedia;
+  const hasCardMedia = Boolean(selectedMedia?.mediaSrc);
+  const isVideoMedia = selectedMedia?.mediaType === 'video';
+  const mediaFadeDurationMs = selectedMedia?.mediaFadeDurationMs ?? 1300;
+  const mediaDelayMs = selectedMedia?.mediaDelayMs ?? 0;
+  const mediaMask = selectedMedia?.mediaMaskProfile ? MEDIA_MASKS[selectedMedia.mediaMaskProfile] : undefined;
   const cardTheme = renderedEvent ? CARD_THEME_BY_CATEGORY[renderedEvent.category] : CARD_THEME_BY_CATEGORY.Festivals;
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
@@ -171,21 +178,22 @@ export default function AtlasMap() {
       romeoMediaFadeTimerRef.current = null;
     }
     setIsRomeoMediaVisible(false);
-    if (selectedId !== 'romeo-peach') return;
+    const selectedEvent = ATLAS_EVENTS.find((event) => event.id === selectedId);
+    if (!selectedEvent?.cardMedia?.mediaSrc) return;
     setRomeoVideoKey((prev) => prev + 1);
     setShowRomeoVideoFallback(false);
   }, [selectedId]);
 
   useEffect(() => {
-    if (!isRomeoCard || !isCardVisible) return;
+    if (!hasCardMedia || !isCardVisible) return;
     romeoMediaFadeTimerRef.current = setTimeout(() => {
       setIsRomeoMediaVisible(true);
       romeoMediaFadeTimerRef.current = null;
-    }, ROMEO_MEDIA_REVEAL_DELAY_MS);
-  }, [isRomeoCard, isCardVisible]);
+    }, mediaDelayMs);
+  }, [hasCardMedia, isCardVisible, mediaDelayMs]);
 
   useEffect(() => {
-    if (!isRomeoCard || !isCardVisible || !isRomeoMediaVisible) return;
+    if (!isVideoMedia || !isCardVisible || !isRomeoMediaVisible) return;
     const video = romeoVideoRef.current;
     if (!video) return;
     const playbackStartTimer = setTimeout(() => {
@@ -193,12 +201,12 @@ export default function AtlasMap() {
       video.play().catch(() => {
         setShowRomeoVideoFallback(true);
       });
-    }, ROMEO_MEDIA_PLAY_START_OFFSET_MS);
+    }, DEFAULT_MEDIA_PLAY_START_OFFSET_MS);
 
     return () => {
       clearTimeout(playbackStartTimer);
     };
-  }, [isRomeoCard, isCardVisible, isRomeoMediaVisible, romeoVideoKey]);
+  }, [isVideoMedia, isCardVisible, isRomeoMediaVisible, romeoVideoKey]);
 
   const submitSearch = useCallback(() => {
     const trimmedQuery = query.trim();
@@ -371,36 +379,57 @@ export default function AtlasMap() {
             ×
           </button>
           <h3 style={styles.cardTitle}>{renderedEvent.name}</h3>
-          {isRomeoCard ? (
-            <div style={{ ...styles.romeoMediaWrap, opacity: isRomeoMediaVisible ? 1 : 0 }} aria-hidden="true">
-              <video
-                key={romeoVideoKey}
-                ref={romeoVideoRef}
-                style={{ ...styles.romeoMediaLayer, opacity: showRomeoVideoFallback ? 0 : 1 }}
-                src="/event-media/romeo-peach-loop.mp4"
-                poster="/event-media/romeo-peach-poster.jpg"
-                muted
-                playsInline
-                controls={false}
-                preload="metadata"
-                onEnded={(event) => {
-                  const element = event.currentTarget;
-                  element.pause();
-                  if (Number.isFinite(element.duration) && element.duration > 0) {
-                    element.currentTime = element.duration;
-                  }
-                }}
-                onError={() => setShowRomeoVideoFallback(true)}
-              />
+          {hasCardMedia ? (
+            <div
+              style={{
+                ...styles.romeoMediaWrap,
+                opacity: isRomeoMediaVisible ? 1 : 0,
+                transitionDuration: `${mediaFadeDurationMs}ms`,
+                maskImage: mediaMask,
+                WebkitMaskImage: mediaMask,
+              }}
+              aria-hidden="true"
+            >
+              {isVideoMedia ? (
+                <video
+                  key={romeoVideoKey}
+                  ref={romeoVideoRef}
+                  style={{
+                    ...styles.romeoMediaLayer,
+                    opacity: showRomeoVideoFallback ? 0 : 1,
+                    objectPosition: selectedMedia?.mediaPosition ?? styles.romeoMediaLayer.objectPosition,
+                    transform: `scale(${selectedMedia?.mediaScale ?? 1})`,
+                  }}
+                  src={selectedMedia?.mediaSrc}
+                  poster={selectedMedia?.posterSrc}
+                  muted
+                  playsInline
+                  controls={false}
+                  preload="metadata"
+                  onEnded={(event) => {
+                    const element = event.currentTarget;
+                    element.pause();
+                    if (Number.isFinite(element.duration) && element.duration > 0) {
+                      element.currentTime = element.duration;
+                    }
+                  }}
+                  onError={() => setShowRomeoVideoFallback(true)}
+                />
+              ) : null}
               <img
-                src="/event-media/romeo-peach-poster.jpg"
+                src={selectedMedia?.posterSrc ?? selectedMedia?.mediaSrc}
                 alt=""
-                style={{ ...styles.romeoMediaLayer, opacity: showRomeoVideoFallback ? 1 : 0 }}
+                style={{
+                  ...styles.romeoMediaLayer,
+                  opacity: isVideoMedia ? (showRomeoVideoFallback ? 1 : 0) : 1,
+                  objectPosition: selectedMedia?.mediaPosition ?? styles.romeoMediaLayer.objectPosition,
+                  transform: `scale(${selectedMedia?.mediaScale ?? 1})`,
+                }}
               />
             </div>
           ) : null}
           <p style={styles.cardLocation}>{renderedEvent.location}</p>
-          <p style={styles.cardAtmosphere}>{renderedEvent.atmosphereLabel}</p>
+          <p style={styles.cardAtmosphere}>{selectedMedia?.atmosphereTitle ?? renderedEvent.atmosphereLabel}</p>
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
           <span style={{ ...styles.cardAtmosphereOrb, boxShadow: `0 0 26px ${cardTheme.glow}, 0 0 50px ${cardTheme.wash}` }} aria-hidden="true" />
         </article>
@@ -784,11 +813,9 @@ const styles: Record<string, CSSProperties> = {
     WebkitTouchCallout: 'none',
     overflow: 'hidden',
     opacity: 0,
-    transition: `opacity ${ROMEO_MEDIA_FADE_MS}ms ease`,
-    maskImage:
-      'linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.42) 22%, rgba(0,0,0,.84) 42%, rgba(0,0,0,.98) 60%, rgba(0,0,0,1) 100%), linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.52) 8%, rgba(0,0,0,.9) 16%, rgba(0,0,0,1) 26%, rgba(0,0,0,1) 100%), linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.5) 14%, rgba(0,0,0,.9) 30%, rgba(0,0,0,1) 44%, rgba(0,0,0,1) 100%), linear-gradient(270deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.96) 6%, rgba(0,0,0,1) 14%, rgba(0,0,0,1) 100%)',
-    WebkitMaskImage:
-      'linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.42) 22%, rgba(0,0,0,.84) 42%, rgba(0,0,0,.98) 60%, rgba(0,0,0,1) 100%), linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.52) 8%, rgba(0,0,0,.9) 16%, rgba(0,0,0,1) 26%, rgba(0,0,0,1) 100%), linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.5) 14%, rgba(0,0,0,.9) 30%, rgba(0,0,0,1) 44%, rgba(0,0,0,1) 100%), linear-gradient(270deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.96) 6%, rgba(0,0,0,1) 14%, rgba(0,0,0,1) 100%)',
+    transition: 'opacity 1300ms ease',
+    maskImage: MEDIA_MASKS.romeoPeach,
+    WebkitMaskImage: MEDIA_MASKS.romeoPeach,
     maskComposite: 'intersect',
     WebkitMaskComposite: 'source-in',
     zIndex: 0,
