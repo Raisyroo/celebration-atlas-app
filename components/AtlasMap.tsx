@@ -742,17 +742,18 @@ const styles: Record<string, CSSProperties> = {
   },
   romeoMediaWrap: {
     position: 'absolute',
-    right: -20,
-    top: -22,
-    width: 176,
-    height: 176,
+    right: -30,
+    top: 46,
+    width: 192,
+    height: 220,
     pointerEvents: 'none',
-    borderRadius: '44% 56% 58% 42% / 45% 41% 59% 55%',
     overflow: 'hidden',
-    maskImage: 'radial-gradient(circle at 44% 42%, rgba(0,0,0,1) 0 56%, rgba(0,0,0,.76) 76%, rgba(0,0,0,0) 100%)',
-    WebkitMaskImage: 'radial-gradient(circle at 44% 42%, rgba(0,0,0,1) 0 56%, rgba(0,0,0,.76) 76%, rgba(0,0,0,0) 100%)',
-    opacity: 0.52,
-    filter: 'saturate(1.08) contrast(1.04) brightness(.86)',
+    maskImage:
+      'radial-gradient(122% 132% at 92% 58%, rgba(0,0,0,.9) 0%, rgba(0,0,0,.84) 34%, rgba(0,0,0,.48) 64%, rgba(0,0,0,.16) 82%, rgba(0,0,0,0) 100%), linear-gradient(270deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.68) 34%, rgba(0,0,0,.3) 62%, rgba(0,0,0,0) 100%), linear-gradient(180deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.74) 52%, rgba(0,0,0,.32) 78%, rgba(0,0,0,0) 100%)',
+    WebkitMaskImage:
+      'radial-gradient(122% 132% at 92% 58%, rgba(0,0,0,.9) 0%, rgba(0,0,0,.84) 34%, rgba(0,0,0,.48) 64%, rgba(0,0,0,.16) 82%, rgba(0,0,0,0) 100%), linear-gradient(270deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.68) 34%, rgba(0,0,0,.3) 62%, rgba(0,0,0,0) 100%), linear-gradient(180deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.74) 52%, rgba(0,0,0,.32) 78%, rgba(0,0,0,0) 100%)',
+    opacity: 0.4,
+    filter: 'saturate(1.02) contrast(1.02) brightness(.82)',
     zIndex: 0,
   },
   romeoMediaLayer: {
