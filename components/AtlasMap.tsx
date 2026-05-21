@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 import AtmosphereLayer from './AtmosphereLayer';
@@ -124,6 +125,9 @@ export default function AtlasMap() {
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const initialEventParamHandledRef = useRef(false);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -284,6 +288,19 @@ export default function AtlasMap() {
       queryFadeTimerRef.current = null;
     }, 680);
   }, [query]);
+
+
+  useEffect(() => {
+    if (initialEventParamHandledRef.current) return;
+    const requestedEventId = searchParams.get('event');
+    initialEventParamHandledRef.current = true;
+    if (!requestedEventId) return;
+
+    const matchingEvent = ATLAS_EVENTS.find((event) => event.id === requestedEventId);
+    if (!matchingEvent) return;
+
+    setSelectedId(matchingEvent.id);
+  }, [searchParams]);
 
   useEffect(() => {
     const rotateId = setInterval(() => {

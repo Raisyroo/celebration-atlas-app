@@ -197,7 +197,7 @@ export default async function EventDetailPage({
         </section>
       ) : null}
 
-      <Link href="/" style={{ ...styles.backLink, color: tone.backLinkColor, borderBottom: `1px solid ${tone.backLinkColor.replace('0.9', '0.45')}` }}>
+      <Link href={`/?event=${event.id}`} style={{ ...styles.backLink, color: tone.backLinkColor, borderBottom: `1px solid ${tone.backLinkColor.replace('0.9', '0.45')}` }}>
         ← Back to Atlas
       </Link>
     </main>
