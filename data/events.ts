@@ -58,7 +58,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     id: 'romeo-peach',
     name: 'Romeo Peach Festival',
     location: 'Romeo, MI',
-    atmosphereLabel: 'Orchard glow',
+    atmosphereLabel: 'First Peach Queen',
     blurb: 'A hometown peach celebration with orchard charm, live performances, and summer food traditions.',
     category: 'Festivals',
     x: 66,
