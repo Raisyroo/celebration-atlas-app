@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ATLAS_EVENTS } from '../../../data/events';
+import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
 
 type PageTone = {
   pageBackground: string;
@@ -99,6 +99,22 @@ function getPageTone(regionAtmosphere?: string, iconType?: string): PageTone {
   return TONES.harvest;
 }
 
+function getRelatedEvents(event: AtlasEvent): AtlasEvent[] {
+  return ATLAS_EVENTS.filter((entry) => entry.id !== event.id)
+    .map((entry) => {
+      let score = 0;
+      if (entry.category === event.category) score += 3;
+      if (entry.iconType && event.iconType && entry.iconType === event.iconType) score += 2;
+      if (entry.regionAtmosphere && event.regionAtmosphere && entry.regionAtmosphere === event.regionAtmosphere) score += 2;
+      return { entry, score };
+    })
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map(({ entry }) => entry)
+    .slice(0, 2);
+}
+
 export default async function EventDetailPage({
   params,
 }: {
@@ -112,6 +128,7 @@ export default async function EventDetailPage({
   }
 
   const tone = getPageTone(event.regionAtmosphere, event.iconType);
+  const relatedEvents = getRelatedEvents(event);
 
   const storyBlocks = event.detailPage.storySections?.length
     ? [event.detailPage.detailIntro, ...event.detailPage.storySections].filter(Boolean)
@@ -151,6 +168,34 @@ export default async function EventDetailPage({
         {event.detailPage.archivalNote ? <p style={{ ...styles.metaLine, color: tone.metaColor }}>Archival note: {event.detailPage.archivalNote}</p> : null}
         {event.detailPage.visitorMood ? <p style={{ ...styles.metaLine, color: tone.metaColor }}>Visitor mood: {event.detailPage.visitorMood}</p> : null}
       </section>
+
+      {relatedEvents.length ? (
+        <section style={{ ...styles.relatedSection, border: tone.storyBorder, background: tone.storyBackground }} aria-label="Related discoveries">
+          <h2 style={{ ...styles.storyHeading, color: tone.headingColor }}>Related discoveries</h2>
+          <div style={styles.relatedGrid}>
+            {relatedEvents.map((relatedEvent) => {
+              const hasDetail = Boolean(relatedEvent.detailPage);
+              const card = (
+                <article style={styles.relatedCard}>
+                  <p style={styles.relatedCategory}>{relatedEvent.category}</p>
+                  <h3 style={styles.relatedTitle}>{relatedEvent.name}</h3>
+                  <p style={styles.relatedLocation}>{relatedEvent.location}</p>
+                </article>
+              );
+
+              return hasDetail ? (
+                <Link key={relatedEvent.id} href={`/events/${relatedEvent.id}`} style={styles.relatedLink}>
+                  {card}
+                </Link>
+              ) : (
+                <div key={relatedEvent.id} style={styles.relatedStatic}>
+                  {card}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       <Link href="/" style={{ ...styles.backLink, color: tone.backLinkColor, borderBottom: `1px solid ${tone.backLinkColor.replace('0.9', '0.45')}` }}>
         ← Back to Atlas
@@ -226,6 +271,33 @@ const styles: Record<string, CSSProperties> = {
   storyHeading: { margin: 0, fontSize: '0.9rem', letterSpacing: '0.08em', textTransform: 'uppercase' },
   storyBody: { margin: '0.75rem 0 0', lineHeight: 1.7, color: 'rgba(245, 231, 200, 0.94)' },
   metaLine: { margin: '0.7rem 0 0', lineHeight: 1.5, fontSize: '0.92rem' },
+  relatedSection: {
+    width: 'min(100%, 58rem)',
+    borderRadius: '1rem',
+    padding: '1rem 1.2rem',
+  },
+  relatedGrid: {
+    display: 'grid',
+    gap: '0.7rem',
+    marginTop: '0.75rem',
+  },
+  relatedLink: { textDecoration: 'none' },
+  relatedStatic: { opacity: 0.9 },
+  relatedCard: {
+    borderRadius: '0.8rem',
+    border: '1px solid rgba(255, 222, 168, 0.16)',
+    background: 'linear-gradient(160deg, rgba(19,24,37,.46), rgba(12,16,25,.28))',
+    padding: '0.72rem 0.82rem',
+  },
+  relatedCategory: {
+    margin: 0,
+    fontSize: '0.68rem',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: 'rgba(241, 217, 176, 0.72)',
+  },
+  relatedTitle: { margin: '0.22rem 0 0', fontSize: '0.96rem', color: 'rgba(248, 233, 207, 0.95)' },
+  relatedLocation: { margin: '0.28rem 0 0', fontSize: '0.84rem', color: 'rgba(234, 213, 177, 0.78)' },
   backLink: {
     marginTop: '0.35rem',
     textDecoration: 'none',
