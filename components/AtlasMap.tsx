@@ -744,9 +744,9 @@ const styles: Record<string, CSSProperties> = {
   romeoMediaWrap: {
     position: 'absolute',
     right: 0,
-    top: '18%',
+    top: '14%',
     width: '48%',
-    height: '78%',
+    height: '82%',
     pointerEvents: 'none',
     overflow: 'hidden',
     maskImage:
@@ -763,7 +763,7 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    objectPosition: 'center center',
+    objectPosition: '50% 28%',
     transition: 'opacity 200ms ease',
   },
   closeButton: {
