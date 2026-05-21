@@ -136,6 +136,16 @@ export default function EventDetailPage() {
   const tone = getPageTone(event.regionAtmosphere, event.iconType);
   const relatedEvents = getRelatedEvents(event);
 
+  const eventSnapshot = event.detailPage.eventSnapshot;
+  const snapshotRows = eventSnapshot
+    ? [
+        { label: 'Typical month', value: eventSnapshot.typicalMonth },
+        { label: 'Setting', value: eventSnapshot.setting },
+        { label: 'Best for', value: eventSnapshot.bestFor },
+        { label: 'Signature moment', value: eventSnapshot.signatureMoment },
+      ].filter((row): row is { label: string; value: string } => Boolean(row.value))
+    : [];
+
   const storyBlocks = event.detailPage.storySections?.length
     ? [event.detailPage.detailIntro, ...event.detailPage.storySections].filter(Boolean)
     : [event.detailPage.shortStory];
@@ -178,6 +188,21 @@ export default function EventDetailPage() {
           <p style={styles.mediaMeta}>{event.detailPage.atmosphereLine ?? event.atmosphereLabel}</p>
         </div>
       </section>
+
+
+      {snapshotRows.length ? (
+        <section style={{ ...styles.snapshotSection, border: tone.storyBorder, background: tone.storyBackground }} aria-label="Event snapshot">
+          <p style={styles.snapshotEyebrow}>Event snapshot</p>
+          <dl style={styles.snapshotGrid}>
+            {snapshotRows.map((row) => (
+              <div key={`${event.id}-${row.label}`} style={styles.snapshotRow}>
+                <dt style={{ ...styles.snapshotLabel, color: tone.metaColor }}>{row.label}</dt>
+                <dd style={styles.snapshotValue}>{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
 
       <section style={{ ...styles.storySection, background: tone.storyBackground, border: tone.storyBorder }}>
         <h2 style={{ ...styles.storyHeading, color: tone.headingColor }}>Story</h2>
@@ -316,6 +341,40 @@ const styles: Record<string, CSSProperties> = {
     color: 'rgba(255, 217, 151, 0.76)',
   },
   mediaMeta: { margin: 0, fontSize: '0.88rem', color: 'rgba(248, 230, 191, 0.84)' },
+
+  snapshotSection: {
+    width: 'min(100%, 58rem)',
+    borderRadius: '0.96rem',
+    padding: '0.9rem 1.08rem',
+  },
+  snapshotEyebrow: {
+    margin: 0,
+    fontSize: '0.68rem',
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase',
+    color: 'rgba(240, 218, 182, 0.68)',
+  },
+  snapshotGrid: {
+    margin: '0.52rem 0 0',
+    display: 'grid',
+    gap: '0.55rem',
+  },
+  snapshotRow: {
+    display: 'grid',
+    gap: '0.18rem',
+  },
+  snapshotLabel: {
+    margin: 0,
+    fontSize: '0.68rem',
+    letterSpacing: '0.09em',
+    textTransform: 'uppercase',
+  },
+  snapshotValue: {
+    margin: 0,
+    lineHeight: 1.5,
+    fontSize: '0.88rem',
+    color: 'rgba(247, 233, 207, 0.92)',
+  },
   storySection: {
     width: 'min(100%, 58rem)',
     borderRadius: '1rem',
