@@ -13,6 +13,8 @@ const ATMOSPHERIC_SUGGESTIONS = [
 ];
 const MAP_BLEED_X = 0.12;
 const MAP_BLEED_Y = 0.1;
+const ROMEO_MEDIA_REVEAL_DELAY_MS = 900;
+const ROMEO_MEDIA_FADE_MS = 800;
 
 // Current interaction policy:
 // - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
@@ -178,7 +180,7 @@ export default function AtlasMap() {
     romeoMediaFadeTimerRef.current = setTimeout(() => {
       setIsRomeoMediaVisible(true);
       romeoMediaFadeTimerRef.current = null;
-    }, 160);
+    }, ROMEO_MEDIA_REVEAL_DELAY_MS);
   }, [isRomeoCard, isCardVisible]);
 
   useEffect(() => {
@@ -760,7 +762,7 @@ const styles: Record<string, CSSProperties> = {
     pointerEvents: 'none',
     overflow: 'hidden',
     opacity: 0,
-    transition: 'opacity 320ms ease',
+    transition: `opacity ${ROMEO_MEDIA_FADE_MS}ms ease`,
     maskImage:
       'linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.42) 22%, rgba(0,0,0,.84) 42%, rgba(0,0,0,.98) 60%, rgba(0,0,0,1) 100%), linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.52) 8%, rgba(0,0,0,.9) 16%, rgba(0,0,0,1) 26%, rgba(0,0,0,1) 100%), linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.5) 14%, rgba(0,0,0,.9) 30%, rgba(0,0,0,1) 44%, rgba(0,0,0,1) 100%), linear-gradient(270deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.96) 6%, rgba(0,0,0,1) 14%, rgba(0,0,0,1) 100%)',
     WebkitMaskImage:
