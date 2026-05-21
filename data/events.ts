@@ -40,6 +40,10 @@ export type AtlasEvent = {
     posterSrc?: string;
     mediaType?: 'image' | 'video';
     mediaSrc?: string;
+    detailIntro?: string;
+    storySections?: string[];
+    archivalNote?: string;
+    visitorMood?: string;
   };
 };
 
@@ -79,6 +83,14 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       mediaSrc: '/event-media/romeo-peach-loop.mp4',
       shortStory:
         'Every September, downtown Romeo shifts into a slower rhythm: parade footsteps, porch conversations, and the glow of longtime family traditions. The Peach Festival started as a harvest celebration and still feels deeply local—neighbors running booths, students carrying banners, and generations trading stories under the same trees. It is less about spectacle and more about memory: the familiar scent of peach pie, the first evening lights, and a town gathering for one more summer chapter.',
+      detailIntro:
+        'Every September, downtown Romeo shifts into a slower rhythm: parade footsteps, porch conversations, and the glow of longtime family traditions.',
+      storySections: [
+        'The Peach Festival started as a harvest celebration and still feels deeply local—neighbors running booths, students carrying banners, and generations trading stories under the same trees.',
+        'It is less about spectacle and more about memory: the familiar scent of peach pie, the first evening lights, and a town gathering for one more summer chapter.',
+      ],
+      archivalNote: 'Early programs framed the festival as a harvest-homecoming for orchard families across northern Macomb County.',
+      visitorMood: 'Nostalgic and warm, with a lingering late-summer sweetness.',
     },
   },
   {
