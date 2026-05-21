@@ -67,7 +67,6 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     cardMedia: {
       mediaType: 'video',
       mediaSrc: '/event-media/romeo-peach-loop.mp4',
-      posterSrc: '/event-media/romeo-peach-poster.jpg',
       atmosphereTitle: 'Orchard glow',
       mediaPosition: '43% 18%',
       mediaScale: 1,
@@ -130,7 +129,6 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     cardMedia: {
       mediaType: 'video',
       mediaSrc: '/event-media/electric-forest-loop.mp4',
-      posterSrc: '/event-media/electric-forest-poster.jpg',
       atmosphereTitle: 'Neon woodland pulse',
       mediaPosition: '56% 36%',
       mediaScale: 1.04,
