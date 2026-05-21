@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
@@ -467,6 +468,11 @@ export default function AtlasMap() {
           {cardCue ? <p style={styles.cardIconCue}>{`${cardCue.sigil} ${cardCue.label}`}</p> : null}
           <p style={styles.cardAtmosphere}>{selectedMedia?.atmosphereTitle ?? renderedEvent.atmosphereLabel}</p>
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
+          {renderedEvent.id === 'romeo-peach' ? (
+            <Link href={`/events/${renderedEvent.id}`} style={styles.enterEventLink}>
+              Enter Event
+            </Link>
+          ) : null}
           <span style={{ ...styles.cardAtmosphereOrb, boxShadow: `0 0 26px ${cardTheme.glow}, 0 0 50px ${cardTheme.wash}` }} aria-hidden="true" />
         </article>
       ) : null}
@@ -932,6 +938,19 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 14,
     lineHeight: 1.35,
     textShadow: '0 1px 3px rgba(2,3,6,.86)',
+  },
+  enterEventLink: {
+    display: 'inline-flex',
+    marginTop: '0.55rem',
+    color: 'rgba(255, 224, 162, 0.88)',
+    fontSize: '0.78rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    textDecoration: 'none',
+    borderBottom: '1px solid rgba(255, 214, 148, 0.45)',
+    paddingBottom: '0.1rem',
+    opacity: 0.86,
+    transition: 'opacity 180ms ease, border-color 180ms ease',
   },
   cardAtmosphereOrb: {
     position: 'absolute',
