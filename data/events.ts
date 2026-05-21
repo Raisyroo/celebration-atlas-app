@@ -21,6 +21,17 @@ export type AtlasEvent = {
     effects?: AtmosphereEffect[];
     intensity?: 'subtle' | 'medium' | 'signature';
   };
+  cardMedia?: {
+    mediaType?: 'image' | 'video';
+    mediaSrc?: string;
+    posterSrc?: string;
+    atmosphereTitle?: string;
+    mediaPosition?: string;
+    mediaScale?: number;
+    mediaMaskProfile?: 'romeoPeach';
+    mediaDelayMs?: number;
+    mediaFadeDurationMs?: number;
+  };
 };
 
 /**
@@ -53,6 +64,17 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     x: 66,
     y: 40,
     atmosphere: atmosphere(['balloons'], 'subtle'),
+    cardMedia: {
+      mediaType: 'video',
+      mediaSrc: '/event-media/romeo-peach-loop.mp4',
+      posterSrc: '/event-media/romeo-peach-poster.jpg',
+      atmosphereTitle: 'Orchard glow',
+      mediaPosition: '43% 18%',
+      mediaScale: 1,
+      mediaMaskProfile: 'romeoPeach',
+      mediaDelayMs: 900,
+      mediaFadeDurationMs: 1300,
+    },
   },
   {
     id: 'detroit-jazz',
