@@ -21,6 +21,25 @@ export type AtlasEvent = {
   };
 };
 
+/**
+ * Lightweight atmosphere helper for event authoring.
+ *
+ * Effect guidance/examples:
+ * - fireworks: major fireworks events
+ * - fog: waterfront/island/lake events
+ * - ferrisGlow: fairs/carnivals
+ * - balloons: balloon festivals
+ * - snow: winter/holiday events
+ *
+ * Note: this only helps with data assignment; it does not add or enable new visual effects.
+ */
+function atmosphere(
+  effects: AtmosphereEffect[],
+  intensity: NonNullable<AtlasEvent['atmosphere']>['intensity'] = 'subtle'
+): AtlasEvent['atmosphere'] {
+  return { effects, intensity };
+}
+
 export const ATLAS_EVENTS: AtlasEvent[] = [
   {
     id: 'romeo-peach',
@@ -29,10 +48,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Festivals',
     x: 67,
     y: 39,
-    atmosphere: {
-      effects: ['balloons'],
-      intensity: 'subtle',
-    },
+    atmosphere: atmosphere(['balloons'], 'subtle'),
   },
   {
     id: 'detroit-jazz',
@@ -41,10 +57,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Music',
     x: 73,
     y: 43,
-    atmosphere: {
-      effects: ['fog'],
-      intensity: 'medium',
-    },
+    atmosphere: atmosphere(['fog'], 'medium'),
   },
   {
     id: 'armada-fair',
@@ -53,10 +66,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Fairs',
     x: 69,
     y: 36,
-    atmosphere: {
-      effects: ['ferrisGlow'],
-      intensity: 'medium',
-    },
+    atmosphere: atmosphere(['ferrisGlow'], 'medium'),
   },
 
   {
@@ -66,10 +76,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Festivals',
     x: 49,
     y: 14,
-    atmosphere: {
-      effects: ['fog'],
-      intensity: 'subtle',
-    },
+    atmosphere: atmosphere(['fog'], 'subtle'),
   },
   {
     id: 'electric-forest',
@@ -78,9 +85,6 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     category: 'Music',
     x: 34,
     y: 42,
-    atmosphere: {
-      effects: ['fog', 'fireworks'],
-      intensity: 'signature',
-    },
+    atmosphere: atmosphere(['fog', 'fireworks'], 'signature'),
   },
 ];
