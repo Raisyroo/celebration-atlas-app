@@ -45,6 +45,12 @@ export type AtlasEvent = {
     storySections?: string[];
     archivalNote?: string;
     visitorMood?: string;
+    eventSnapshot?: {
+      typicalMonth?: string;
+      setting?: string;
+      bestFor?: string;
+      signatureMoment?: string;
+    };
   };
 };
 
@@ -92,6 +98,12 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       ],
       archivalNote: 'Early programs framed the festival as a harvest-homecoming for orchard families across northern Macomb County.',
       visitorMood: 'Nostalgic and warm, with a lingering late-summer sweetness.',
+      eventSnapshot: {
+        typicalMonth: 'September',
+        setting: 'Historic downtown streets near orchard country',
+        bestFor: 'Families, local-history lovers, and late-summer day trips',
+        signatureMoment: 'Evening parade glow followed by warm peach pie lines at dusk',
+      },
     },
     atlasNotes: [
       'Field recordings from the late 1970s describe a brass cadence that started at Main and drifted toward the old depot as evening booths lit up.',
@@ -151,6 +163,12 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       archivalNote:
         'The festival emerged from earlier Rothbury-era gatherings and is now known for its hybrid of curated electronic music and interactive woodland art.',
       visitorMood: 'Euphoric, curious, and connected—like staying awake inside a neon fairytale.',
+      eventSnapshot: {
+        typicalMonth: 'June',
+        setting: 'Woodland venue with immersive art paths and multi-stage clearings',
+        bestFor: 'Night owls, electronic music fans, and experiential festival explorers',
+        signatureMoment: 'First full-dark hour when lantern canopies and basslines take over the forest',
+      },
     },
     atlasNotes: [
       'Early crowd journals mention that the first full dark hour, not the headliner slot, is when the forest atmosphere fully “switches on.”',
