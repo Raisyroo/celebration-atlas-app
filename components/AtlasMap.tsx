@@ -341,9 +341,10 @@ export default function AtlasMap() {
   }, []);
 
   return (
-    <section style={styles.hero} onPointerDown={handleBackdropPointerDown}>
+    <section className="atlas-hero" style={styles.hero} onPointerDown={handleBackdropPointerDown}>
       <div
         ref={mapFrameRef}
+        className="atlas-map-frame"
         style={styles.mapFrame}
       >
         <div
@@ -418,6 +419,7 @@ export default function AtlasMap() {
       {renderedEvent ? (
         <article
           ref={cardRef}
+          className="atlas-card"
           style={{
             ...styles.card,
             borderColor: cardTheme.edge,
@@ -496,7 +498,7 @@ export default function AtlasMap() {
         </article>
       ) : null}
 
-      <div style={styles.searchDock}>
+      <div className="atlas-search-dock" style={styles.searchDock}>
         <button
           type="button"
           onClick={() => setSelectedId(featuredEvent.id)}
