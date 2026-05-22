@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
 
 type PageTone = {
@@ -119,11 +119,13 @@ function getRelatedEvents(event: AtlasEvent): AtlasEvent[] {
 
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const id = params?.id;
   const event = ATLAS_EVENTS.find((entry) => entry.id === id);
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
   const [memoryIndex, setMemoryIndex] = useState(0);
   const [memoryOpacity, setMemoryOpacity] = useState(1);
+  const [isPageVisible, setIsPageVisible] = useState(false);
 
   if (!event || !event.detailPage) {
     return (
@@ -166,6 +168,13 @@ export default function EventDetailPage() {
 
 
   useEffect(() => {
+    const isCinematicEntry = searchParams.get('intro') === 'cinematic';
+    const revealDelay = isCinematicEntry ? 180 : 30;
+    const timer = window.setTimeout(() => setIsPageVisible(true), revealDelay);
+    return () => window.clearTimeout(timer);
+  }, [searchParams]);
+
+  useEffect(() => {
     document.documentElement.classList.add('event-detail-scroll');
     document.body.classList.add('event-detail-scroll');
 
@@ -195,7 +204,15 @@ export default function EventDetailPage() {
   }, [atlasMemories.length, memoryIndex]);
 
   return (
-    <main style={{ ...styles.page, color: tone.pageColor, background: tone.pageBackground }}>
+    <main
+      style={{
+        ...styles.page,
+        color: tone.pageColor,
+        background: tone.pageBackground,
+        opacity: isPageVisible ? 1 : 0,
+        transition: 'opacity 680ms ease',
+      }}
+    >
       <section style={styles.hero}>
         <p style={{ ...styles.kicker, color: tone.kickerColor }}>Event Atlas</p>
         <h1 style={styles.title}>{event.name}</h1>

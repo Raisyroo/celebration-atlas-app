@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 import AtmosphereLayer from './AtmosphereLayer';
@@ -120,6 +121,7 @@ const getHighlightedIdsFromQuery = (queryText: string) => {
 };
 
 export default function AtlasMap() {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [displayedQuery, setDisplayedQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
@@ -147,6 +149,14 @@ export default function AtlasMap() {
   const [cardMediaVideoKey, setCardMediaVideoKey] = useState(0);
   const [showCardMediaVideoFallback, setShowCardMediaVideoFallback] = useState(false);
   const [isCardMediaVisible, setIsCardMediaVisible] = useState(false);
+  const [isCinematicActive, setIsCinematicActive] = useState(false);
+  const [isCinematicVisible, setIsCinematicVisible] = useState(false);
+  const [isCinematicHoldingFrame, setIsCinematicHoldingFrame] = useState(false);
+  const [cinematicTargetHref, setCinematicTargetHref] = useState<string | null>(null);
+  const [cinematicFadeOutPending, setCinematicFadeOutPending] = useState(false);
+  const cinematicVideoRef = useRef<HTMLVideoElement | null>(null);
+  const cinematicHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cinematicNavigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cardMediaVideoRef = useRef<HTMLVideoElement | null>(null);
   const cardMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const q = submittedQuery.trim().toLowerCase();
@@ -155,6 +165,22 @@ export default function AtlasMap() {
   const highlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
+  const startElectricForestTransition = useCallback((eventId: string) => {
+    const targetHref = `/events/${eventId}?intro=cinematic`;
+    setCinematicTargetHref(targetHref);
+    setIsCinematicActive(true);
+    setCinematicFadeOutPending(false);
+    setIsCinematicHoldingFrame(false);
+    requestAnimationFrame(() => setIsCinematicVisible(true));
+  }, []);
+
+  const navigateFromCinematic = useCallback(() => {
+    if (!cinematicTargetHref) return;
+    setCinematicFadeOutPending(true);
+    cinematicNavigateTimerRef.current = setTimeout(() => {
+      router.push(cinematicTargetHref);
+    }, 300);
+  }, [cinematicTargetHref, router]);
   const selectedMedia = renderedEvent?.cardMedia;
   const hasCardMedia = Boolean(selectedMedia);
   const hasCardMediaSource = Boolean(selectedMedia?.mediaSrc || selectedMedia?.posterSrc);
@@ -233,6 +259,13 @@ export default function AtlasMap() {
       cardMediaFadeTimerRef.current = null;
     }, mediaDelayMs);
   }, [hasCardMedia, isCardVisible, mediaDelayMs]);
+
+  useEffect(() => {
+    return () => {
+      if (cinematicHoldTimerRef.current) clearTimeout(cinematicHoldTimerRef.current);
+      if (cinematicNavigateTimerRef.current) clearTimeout(cinematicNavigateTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isVideoMedia || !isCardVisible || !isCardMediaVisible) return;
@@ -514,9 +547,19 @@ export default function AtlasMap() {
           {cardMemoryExcerpt ? <p style={styles.cardMemoryExcerpt}>Field note: {cardMemoryExcerpt}</p> : null}
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
           {renderedEvent.id === 'romeo-peach' || renderedEvent.id === 'electric-forest' ? (
-            <Link href={`/events/${renderedEvent.id}`} style={styles.enterEventLink}>
-              Enter Event
-            </Link>
+            renderedEvent.id === 'electric-forest' ? (
+              <button
+                type="button"
+                style={styles.enterEventButton}
+                onClick={() => startElectricForestTransition(renderedEvent.id)}
+              >
+                Enter Event
+              </button>
+            ) : (
+              <Link href={`/events/${renderedEvent.id}`} style={styles.enterEventLink}>
+                Enter Event
+              </Link>
+            )
           ) : null}
           <span style={{ ...styles.cardAtmosphereOrb, boxShadow: `0 0 26px ${cardTheme.glow}, 0 0 50px ${cardTheme.wash}` }} aria-hidden="true" />
         </article>
@@ -585,8 +628,65 @@ export default function AtlasMap() {
           />
         </div>
       </div>
+      {isCinematicActive ? (
+        <div className={`cinematic-intro-overlay ${isCinematicVisible ? 'cinematic-intro-overlay--visible' : ''} ${cinematicFadeOutPending ? 'cinematic-intro-overlay--fade-out' : ''}`}>
+          <video
+            ref={cinematicVideoRef}
+            className={`cinematic-intro-video ${isCinematicHoldingFrame ? 'cinematic-intro-video--hold' : ''}`}
+            src="/event-media/electric-forest-intro.mp4"
+            muted
+            autoPlay
+            playsInline
+            controls={false}
+            preload="auto"
+            onEnded={(event) => {
+              event.currentTarget.pause();
+              if (Number.isFinite(event.currentTarget.duration) && event.currentTarget.duration > 0) {
+                event.currentTarget.currentTime = event.currentTarget.duration;
+              }
+              setIsCinematicHoldingFrame(true);
+              cinematicHoldTimerRef.current = setTimeout(() => {
+                navigateFromCinematic();
+              }, 520);
+            }}
+          />
+        </div>
+      ) : null}
 
       <style jsx>{`
+        .cinematic-intro-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 200;
+          background: #040507;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 540ms ease;
+        }
+
+        .cinematic-intro-overlay--visible {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .cinematic-intro-overlay--fade-out {
+          opacity: 0;
+          transition-duration: 320ms;
+        }
+
+        .cinematic-intro-video {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          filter: saturate(1.08) contrast(1.04);
+          opacity: 1;
+          transition: opacity 420ms ease;
+        }
+
+        .cinematic-intro-video--hold {
+          opacity: .98;
+        }
+
         .atlas-search-input--pulse {
           animation: searchAcceptPulse 360ms ease-out;
         }
@@ -1026,6 +1126,23 @@ const styles: Record<string, CSSProperties> = {
     paddingBottom: '0.1rem',
     opacity: 0.86,
     transition: 'opacity 180ms ease, border-color 180ms ease',
+  },
+  enterEventButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '10px 16px',
+    marginTop: 2,
+    borderRadius: 999,
+    border: '1px solid rgba(255,230,183,.56)',
+    color: 'rgba(255,242,215,.96)',
+    background: 'linear-gradient(180deg, rgba(255,206,124,.26), rgba(255,192,90,.14))',
+    letterSpacing: '0.13em',
+    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: 600,
+    textDecoration: 'none',
+    boxShadow: '0 0 18px rgba(255,194,104,.24)',
   },
 
   desktopIntroPanel: {
