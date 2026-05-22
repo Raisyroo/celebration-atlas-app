@@ -41,3 +41,17 @@ body {
 body::-webkit-scrollbar {
   display: none;
 }
+
+
+html.event-detail-scroll,
+body.event-detail-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  -ms-overflow-style: auto;
+  scrollbar-width: auto;
+}
+
+body.event-detail-scroll::-webkit-scrollbar {
+  display: block;
+}

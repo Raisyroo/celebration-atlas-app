@@ -164,6 +164,17 @@ export default function EventDetailPage() {
     }
   };
 
+
+  useEffect(() => {
+    document.documentElement.classList.add('event-detail-scroll');
+    document.body.classList.add('event-detail-scroll');
+
+    return () => {
+      document.documentElement.classList.remove('event-detail-scroll');
+      document.body.classList.remove('event-detail-scroll');
+    };
+  }, []);
+
   useEffect(() => {
     if (shareStatus === 'idle') return;
     const timeout = window.setTimeout(() => setShareStatus('idle'), 1800);
