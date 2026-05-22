@@ -153,6 +153,8 @@ export default function EventDetailPage() {
     : [event.detailPage.shortStory];
   const atlasMemories = event.atlasMemories ?? [];
 
+  const localFlavorItems = (event.localFlavor ?? []).filter(Boolean).slice(0, 4);
+
   const handleShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -230,6 +232,20 @@ export default function EventDetailPage() {
         {event.detailPage.archivalNote ? <p style={{ ...styles.metaLine, color: tone.metaColor }}>Archival note: {event.detailPage.archivalNote}</p> : null}
         {event.detailPage.visitorMood ? <p style={{ ...styles.metaLine, color: tone.metaColor }}>Visitor mood: {event.detailPage.visitorMood}</p> : null}
       </section>
+
+
+      {localFlavorItems.length ? (
+        <section style={{ ...styles.localFlavorSection, border: tone.storyBorder, background: tone.storyBackground }} aria-label="Local flavor">
+          <h2 style={{ ...styles.storyHeading, color: tone.headingColor }}>Local Flavor</h2>
+          <ul style={styles.localFlavorList}>
+            {localFlavorItems.map((item, index) => (
+              <li key={`${event.id}-local-flavor-${index}`} style={{ ...styles.localFlavorItem, color: tone.metaColor }}>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {event.atlasNotes?.length ? (
         <section style={{ ...styles.notesSection, border: tone.storyBorder, background: tone.storyBackground }} aria-label="Atlas notes">
@@ -433,6 +449,22 @@ const styles: Record<string, CSSProperties> = {
     width: 'min(100%, 58rem)',
     borderRadius: '1rem',
     padding: '1rem 1.2rem',
+  },
+  localFlavorSection: {
+    width: 'min(100%, 58rem)',
+    borderRadius: '1rem',
+    padding: '0.95rem 1.2rem',
+  },
+  localFlavorList: {
+    margin: '0.72rem 0 0',
+    padding: '0 0 0 1.1rem',
+    display: 'grid',
+    gap: '0.45rem',
+  },
+  localFlavorItem: {
+    lineHeight: 1.6,
+    fontSize: '0.9rem',
+    letterSpacing: '0.01em',
   },
   notesSection: {
     width: 'min(100%, 58rem)',
