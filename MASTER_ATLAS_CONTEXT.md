@@ -1,13 +1,13 @@
 # MASTER ATLAS CONTEXT — Celebration Atlas
 
 ## 1. Project Vision
-Celebration Atlas is a **living, emotional geography** of Michigan celebrations. It is not just a directory of events; it is a discoverable map experience where each marker, glow, card, and ambient cue helps users *feel* a place before they choose it.
+Celebration Atlas is a **living experiential intelligence platform** for celebration discovery and memory. It is not just a directory of events; it is a discoverable emotional map where each marker, glow, card, and conversational cue helps people *feel* a place before they choose it.
 
 Core intent:
 - Preserve a cinematic, contemplative pace over fast/flashy UI.
 - Make discovery feel guided but open-ended.
 - Treat atmosphere as meaning, not decoration.
-- Build toward a long-term living-atlas system where regional identity and event mood are first-class data.
+- Build toward a long-term living-atlas system where regional identity, event mood, and community memory are first-class data.
 
 ## 2. Storybook Americana Art Direction
 The visual language blends:
@@ -137,23 +137,84 @@ Direction:
 - Continue modeling regions as reusable atmosphere primitives.
 - Keep region signatures distinct but understated.
 
-## 11. Future Direction
-Near-term direction should preserve cinematic clarity while expanding depth:
-- Evolve from static event list into living atlas storytelling.
-- Add richer region-specific ambience variation using the same data-driven architecture.
-- Grow discovery modes (featured rotations, semantic search cues) without cluttering the screen.
+## 11. Strategic Direction (Expanded)
+Celebration Atlas is evolving into a living operational system for celebration intelligence, not a static browse app.
 
-## 12. Things To Avoid
-Avoid changes that break the atlas tone:
-- Overly saturated, high-frequency, or constant-on effects.
-- UI density that crowds map art.
-- Gesture systems that compromise tap reliability.
-- Hard, abrupt transitions that feel app-like instead of cinematic.
-- One-off effect logic that bypasses event data architecture.
+### 11.1 AI-First Conversational Interaction
+- Primary interface direction: **conversation over menus**.
+- Discovery, refinement, and confidence-building should happen through natural language prompts and responses.
+- UI controls should support conversation, not replace it.
+- Structured filters should stay available but secondary, lightweight, and atmosphere-safe.
 
-Atmosphere should **never become visually noisy**.
+### 11.2 Companion + Guide Systems
+- The atlas should behave like an adaptive companion/guide, not a passive listing tool.
+- Guide behavior should combine:
+  - location + season context,
+  - event energy and pacing,
+  - audience intent (family day, date night, spontaneous local wander, etc.).
+- Recommendations should feel situated, time-aware, and emotionally coherent.
 
-## 13. Current Technical Architecture
+### 11.3 Experienced Friend Mode
+- Introduce an “experienced friend” mode as a tone and intelligence standard.
+- Voice should feel local, confident, and warm rather than transactional.
+- Guidance should include practical realism (parking, weather shift, crowd timing) without collapsing into dashboard-style overload.
+
+### 11.4 Survival Guide / Event Intelligence Direction
+- Extend from discovery into practical event intelligence:
+  - what to expect,
+  - what can go wrong,
+  - how to adjust in real time,
+  - where to pivot nearby.
+- This should function as a lightweight survival layer that increases trust and actionability.
+- Intelligence should stay contextual and conversational, never presented as dense control panels.
+
+### 11.5 Emotional Geography as Core Data
+- Emotional geography remains a core product differentiator.
+- Model places by felt character, social rhythm, and seasonal mood—not only taxonomy.
+- Region + event emotional signatures should inform map atmosphere, card framing, and guide responses.
+
+### 11.6 Memory + Archive Systems
+- Build toward an archive of celebration memory over time.
+- Future data primitives should support:
+  - recurring event memory,
+  - seasonal deltas,
+  - notable atmosphere snapshots,
+  - community recollection threads.
+- Archive systems should make the atlas feel alive across years, not reset every season.
+
+### 11.7 Operational-System Philosophy
+- Celebration Atlas should become an operational intelligence layer for real-world celebration movement.
+- Prioritize systems that can continuously ingest, interpret, and guide.
+- Keep architecture composable and data-first so experience intelligence can scale without UI bloat.
+
+## 12. Deployment + Delivery Workflow
+Operational workflow should support fast iteration with safe presentation quality.
+
+- **GitHub as source of truth**
+  - Feature work and context updates land via commits on tracked branches.
+  - Collaboration and review happen through pull requests.
+
+- **Codex PR workflow**
+  - Codex-driven changes should include clear scope, test/build evidence, and atmosphere-impact notes when relevant.
+  - Pull request descriptions should explain both technical changes and experiential intent.
+
+- **Vercel preview deployments**
+  - Every PR should produce a preview environment for quick experiential validation.
+  - Preview review should explicitly check cinematic quality, emotional immersion, and mobile interaction reliability.
+
+- **Production deployment flow**
+  - Merge reviewed PRs to the production branch.
+  - Validate build health and preview confidence before production promotion.
+  - Treat production release as atmosphere-critical: no release should degrade map calmness, immersion, or interaction trust.
+
+## 13. Experience Guardrails (Non-Negotiable)
+- Avoid dashboard clutter.
+- Preserve cinematic atmosphere.
+- Preserve emotional immersion.
+- Prefer conversation over deep menu trees.
+- Add intelligence depth in behavior/data, not through control-surface sprawl.
+
+## 14. Current Technical Architecture
 Project currently follows a **no-`src/` architecture** with top-level domains:
 - `app/` for Next App Router entrypoints and global styles.
 - `components/` for map composition and effects.
@@ -166,7 +227,7 @@ Runtime flow:
 - `AtmosphereLayer` derives ambient overlays from event data and selection.
 - Effect components render decorative layers with strict z-index roles.
 
-## 14. Known Working Behaviors
+## 15. Known Working Behaviors
 Verified current behaviors to preserve:
 - Search terms map to highlighted event IDs; reset commands clear highlight context.
 - Featured discovery rotates through prioritized events.
@@ -176,14 +237,46 @@ Verified current behaviors to preserve:
 - Fireworks/ferris glow activation is event-data-driven.
 - Clouds and geese remain ambient-only and non-interactive.
 
-## 15. Future Ambitions
+## 16. Future System Vision
+Celebration Atlas should mature into a multi-layer experiential operating system:
+
+- **Layer 1 — Living Atlas Surface**
+  - Cinematic map + atmosphere + emotionally readable discovery.
+
+- **Layer 2 — Conversational Intelligence**
+  - AI-first companion that interprets intent and context in plain language.
+
+- **Layer 3 — Field-Ready Guidance**
+  - Survival-guide decision support for real-time celebration conditions.
+
+- **Layer 4 — Memory + Archive Engine**
+  - Longitudinal celebration memory that improves guidance quality over time.
+
+- **Layer 5 — Operational Continuity**
+  - Reliable deployment, preview validation, and production discipline that preserve atmosphere integrity release to release.
+
+Success condition: the product should feel like a trusted local guide with cinematic emotional depth—never like a cluttered dashboard.
+
+## 17. Things To Avoid
+Avoid changes that break the atlas tone:
+- Overly saturated, high-frequency, or constant-on effects.
+- UI density that crowds map art.
+- Gesture systems that compromise tap reliability.
+- Hard, abrupt transitions that feel app-like instead of cinematic.
+- One-off effect logic that bypasses event data architecture.
+- Menu-heavy control paradigms that displace conversational guidance.
+
+Atmosphere should **never become visually noisy**.
+
+## 18. Future Ambitions
 Long-horizon ambition:
-- Transition to a true “living atlas” where events, regional moods, and seasonal atmosphere co-evolve.
+- Transition to a true “living atlas” where events, regional moods, seasonal atmosphere, and community memory co-evolve.
 - Implement the documented zoom/clustering roadmap in a data-driven way:
   - far view: regional glow clusters,
   - mid view: grouped category lights,
   - close view: individual event markers.
 - Expand reusable media modules (image loops, short motion postcards, regional sound-ready hooks) while preserving the current event-driven card architecture.
+- Add companion-grade conversation loops that reduce friction from idea to action.
 
 Operational standards for continuity:
 - Keep no-`src/` structure unless architecture strategy intentionally changes.
