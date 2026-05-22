@@ -164,6 +164,7 @@ export default function AtlasMap() {
   const cardBaseTheme = renderedEvent ? CARD_THEME_BY_CATEGORY[renderedEvent.category] : CARD_THEME_BY_CATEGORY.Festivals;
   const cardTheme = blendCardTheme(cardBaseTheme, renderedEvent?.regionAtmosphere);
   const cardCue = renderedEvent?.iconType ? CARD_CUE_BY_ICON_TYPE[renderedEvent.iconType] : null;
+  const cardMemoryExcerpt = renderedEvent?.atlasMemories?.[0]?.trim();
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
@@ -484,6 +485,7 @@ export default function AtlasMap() {
           <p style={styles.cardLocation}>{renderedEvent.location}</p>
           {cardCue ? <p style={styles.cardIconCue}>{`${cardCue.sigil} ${cardCue.label}`}</p> : null}
           <p style={styles.cardAtmosphere}>{selectedMedia?.atmosphereTitle ?? renderedEvent.atmosphereLabel}</p>
+          {cardMemoryExcerpt ? <p style={styles.cardMemoryExcerpt}>Field note: {cardMemoryExcerpt}</p> : null}
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
           {renderedEvent.id === 'romeo-peach' || renderedEvent.id === 'electric-forest' ? (
             <Link href={`/events/${renderedEvent.id}`} style={styles.enterEventLink}>
@@ -955,6 +957,17 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 14,
     lineHeight: 1.35,
     textShadow: '0 1px 3px rgba(2,3,6,.86)',
+  },
+  cardMemoryExcerpt: {
+    position: 'relative',
+    zIndex: 1,
+    margin: '0 0 8px',
+    fontSize: 10,
+    letterSpacing: 1.05,
+    textTransform: 'uppercase',
+    color: 'rgba(216,196,158,.72)',
+    lineHeight: 1.45,
+    textShadow: '0 1px 2px rgba(2,3,6,.6)',
   },
   enterEventLink: {
     display: 'inline-flex',
