@@ -20,6 +20,7 @@ export type AtlasEvent = {
   y: number;
   atlasNotes?: string[];
   atlasMemories?: string[];
+  localFlavor?: string[];
   atmosphere?: {
     effects?: AtmosphereEffect[];
     intensity?: 'subtle' | 'medium' | 'signature';
@@ -115,6 +116,11 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       'Peach crates stacked behind the grandstand.',
       'The music carried through the trees after midnight.',
     ],
+    localFlavor: [
+      'Warm hand pies dusted with cinnamon sugar from church-bake tables.',
+      'Parade marshals handing orchard ribbons to kids along Main Street.',
+      'Late-evening porch bands drifting over peach crate stalls.',
+    ],
   },
   {
     id: 'detroit-jazz',
@@ -179,6 +185,12 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     atlasNotes: [
       'Early crowd journals mention that the first full dark hour, not the headliner slot, is when the forest atmosphere fully “switches on.”',
       'Returning attendees map favorite pathways by light texture—neon canopies, lantern corridors, and the quieter amber edges near camp.',
+    ],
+    localFlavor: [
+      'Pine air mixed with kettle corn and campfire coffee at midnight.',
+      'Tiny trinket swaps and kandi bracelets traded between strangers.',
+      'Whispered route tips to hidden art paths just after dusk.',
+      'Barefoot hammock circles humming with distant basslines.',
     ],
   },
   { id: 'traverse-city-cherry', name: 'National Cherry Festival', location: 'Traverse City, MI', atmosphereLabel: 'Bayfront summer glow', blurb: 'A week of cherry treats, parades, and bayfront gatherings in Traverse City each summer.', category: 'Festivals', iconType: 'food', x: 30, y: 28, regionAtmosphere: 'lakeshore' },
