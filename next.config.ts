@@ -1,6 +1,3 @@
-const nextConfig = {
-  allowedDevOrigins: ['10.0.0.185'],
-  devIndicators: false,
-};
+const nextConfig = {};
 
 export default nextConfig;
