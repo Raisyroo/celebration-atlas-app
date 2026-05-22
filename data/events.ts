@@ -19,6 +19,7 @@ export type AtlasEvent = {
   x: number;
   y: number;
   atlasNotes?: string[];
+  atlasMemories?: string[];
   atmosphere?: {
     effects?: AtmosphereEffect[];
     intensity?: 'subtle' | 'medium' | 'signature';
@@ -108,6 +109,11 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     atlasNotes: [
       'Field recordings from the late 1970s describe a brass cadence that started at Main and drifted toward the old depot as evening booths lit up.',
       'Longtime volunteers still refer to the peach pie stand line as the unofficial clock of the festival—when it doubles, dusk has arrived.',
+    ],
+    atlasMemories: [
+      'The midway lights reflected in the rain.',
+      'Peach crates stacked behind the grandstand.',
+      'The music carried through the trees after midnight.',
     ],
   },
   {

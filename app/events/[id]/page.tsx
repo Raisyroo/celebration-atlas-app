@@ -122,6 +122,8 @@ export default function EventDetailPage() {
   const id = params?.id;
   const event = ATLAS_EVENTS.find((entry) => entry.id === id);
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [memoryIndex, setMemoryIndex] = useState(0);
+  const [memoryOpacity, setMemoryOpacity] = useState(1);
 
   if (!event || !event.detailPage) {
     return (
@@ -149,6 +151,7 @@ export default function EventDetailPage() {
   const storyBlocks = event.detailPage.storySections?.length
     ? [event.detailPage.detailIntro, ...event.detailPage.storySections].filter(Boolean)
     : [event.detailPage.shortStory];
+  const atlasMemories = event.atlasMemories ?? [];
 
   const handleShare = async () => {
     try {
@@ -164,6 +167,19 @@ export default function EventDetailPage() {
     const timeout = window.setTimeout(() => setShareStatus('idle'), 1800);
     return () => window.clearTimeout(timeout);
   }, [shareStatus]);
+
+  useEffect(() => {
+    if (atlasMemories.length < 2) return;
+    const rotationDelayMs = 8000 + Math.floor(Math.random() * 4001);
+    const timeout = window.setTimeout(() => {
+      setMemoryOpacity(0);
+      window.setTimeout(() => {
+        setMemoryIndex((current) => (current + 1) % atlasMemories.length);
+        setMemoryOpacity(1);
+      }, 380);
+    }, rotationDelayMs);
+    return () => window.clearTimeout(timeout);
+  }, [atlasMemories.length, memoryIndex]);
 
   return (
     <main style={{ ...styles.page, color: tone.pageColor, background: tone.pageBackground }}>
@@ -223,6 +239,13 @@ export default function EventDetailPage() {
               {note}
             </p>
           ))}
+        </section>
+      ) : null}
+
+      {atlasMemories.length ? (
+        <section style={{ ...styles.memorySection, border: tone.storyBorder, background: tone.storyBackground }} aria-label="Atlas memory">
+          <p style={styles.memoryEyebrow}>Atlas Memory</p>
+          <p style={{ ...styles.memoryExcerpt, opacity: memoryOpacity }}>{atlasMemories[memoryIndex]}</p>
         </section>
       ) : null}
 
@@ -415,6 +438,28 @@ const styles: Record<string, CSSProperties> = {
     width: 'min(100%, 58rem)',
     borderRadius: '1rem',
     padding: '0.95rem 1.2rem',
+  },
+  memorySection: {
+    width: 'min(100%, 58rem)',
+    borderRadius: '1rem',
+    padding: '0.9rem 1.2rem',
+  },
+  memoryEyebrow: {
+    margin: 0,
+    fontSize: '0.68rem',
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase',
+    color: 'rgba(240, 218, 182, 0.68)',
+  },
+  memoryExcerpt: {
+    margin: '0.58rem 0 0',
+    lineHeight: 1.62,
+    fontSize: '0.96rem',
+    fontStyle: 'italic',
+    color: 'rgba(245, 231, 200, 0.94)',
+    letterSpacing: '0.01em',
+    transition: 'opacity 380ms ease',
+    minHeight: '3.2rem',
   },
   notesBody: {
     margin: '0.68rem 0 0',
