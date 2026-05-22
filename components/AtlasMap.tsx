@@ -125,6 +125,7 @@ export default function AtlasMap() {
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const searchParams = useSearchParams();
   const initialEventParamHandledRef = useRef(false);
@@ -319,6 +320,17 @@ export default function AtlasMap() {
   }, [featuredEvents.length]);
 
   useEffect(() => {
+    const desktopQuery = window.matchMedia('(min-width: 1024px)');
+    const syncDesktopState = () => setIsDesktop(desktopQuery.matches);
+    syncDesktopState();
+    desktopQuery.addEventListener('change', syncDesktopState);
+
+    return () => {
+      desktopQuery.removeEventListener('change', syncDesktopState);
+    };
+  }, []);
+
+  useEffect(() => {
     const previousHtmlOverflow = document.documentElement.style.overflow;
     const previousBodyOverflow = document.body.style.overflow;
     document.documentElement.style.overflow = 'hidden';
@@ -345,7 +357,7 @@ export default function AtlasMap() {
       <div
         ref={mapFrameRef}
         className="atlas-map-frame"
-        style={styles.mapFrame}
+        style={{ ...styles.mapFrame, ...(isDesktop ? styles.mapFrameDesktop : null) }}
       >
         <div
           style={{
@@ -415,6 +427,18 @@ export default function AtlasMap() {
           <div style={styles.vignette} />
         </div>
       </div>
+
+      {isDesktop ? (
+        <aside style={styles.desktopIntroPanel} aria-label="Atlas desktop introduction">
+          <p style={styles.desktopKicker}>Atlas Preview</p>
+          <h1 style={styles.desktopTitle}>A cinematic entry to Michigan&apos;s celebration atlas.</h1>
+          <p style={styles.desktopBody}>
+            Explore the map&apos;s pulse on mobile, and use this desktop landing view as a calm overview before diving into each event story.
+          </p>
+          <p style={styles.desktopHint}>Select a glowing marker to open details.</p>
+        </aside>
+      ) : null}
+
 
       {renderedEvent ? (
         <article
@@ -498,7 +522,7 @@ export default function AtlasMap() {
         </article>
       ) : null}
 
-      <div className="atlas-search-dock" style={styles.searchDock}>
+      <div className="atlas-search-dock" style={{ ...styles.searchDock, ...(isDesktop ? styles.searchDockDesktop : null) }}>
         <button
           type="button"
           onClick={() => setSelectedId(featuredEvent.id)}
@@ -666,6 +690,13 @@ const styles: Record<string, CSSProperties> = {
     overflow: 'hidden',
     contain: 'layout paint size',
   },
+  mapFrameDesktop: {
+    inset: '8vh auto 13vh 6vw',
+    width: 'min(62vw, 980px)',
+    borderRadius: 30,
+    border: '1px solid rgba(255, 227, 170, 0.24)',
+    boxShadow: '0 24px 90px rgba(0, 0, 0, 0.56), inset 0 0 0 1px rgba(255, 241, 210, 0.06)',
+  },
   mapContent: {
     position: 'absolute',
     inset: `-${MAP_BLEED_Y * 50}% -${MAP_BLEED_X * 50}%`,
@@ -756,6 +787,12 @@ const styles: Record<string, CSSProperties> = {
     background: 'transparent',
     zIndex: Z_INDEX.searchDock,
     transition: 'bottom 240ms ease',
+  },
+  searchDockDesktop: {
+    left: '6vw',
+    right: 'auto',
+    width: 'min(62vw, 980px)',
+    padding: '0 0 2.5vh',
   },
   featuredDiscovery: {
     display: 'block',
@@ -863,6 +900,12 @@ const styles: Record<string, CSSProperties> = {
     zIndex: Z_INDEX.card,
     willChange: 'opacity, transform',
     overflow: 'hidden',
+  },
+  cardDesktop: {
+    left: '6vw',
+    right: 'auto',
+    width: 'min(56vw, 820px)',
+    bottom: '18vh',
   },
   cardMediaWrap: {
     position: 'absolute',
@@ -983,6 +1026,46 @@ const styles: Record<string, CSSProperties> = {
     paddingBottom: '0.1rem',
     opacity: 0.86,
     transition: 'opacity 180ms ease, border-color 180ms ease',
+  },
+
+  desktopIntroPanel: {
+    position: 'fixed',
+    right: '5.4vw',
+    top: '15vh',
+    width: 'min(31vw, 440px)',
+    padding: '22px 24px',
+    borderRadius: 22,
+    border: '1px solid rgba(255, 226, 171, 0.26)',
+    background: 'linear-gradient(160deg, rgba(18, 24, 34, 0.62), rgba(10, 14, 20, 0.32))',
+    boxShadow: '0 20px 48px rgba(0,0,0,.36)',
+    backdropFilter: 'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)',
+    zIndex: 14,
+  },
+  desktopKicker: {
+    margin: '0 0 10px',
+    fontSize: 11,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    color: 'rgba(255,232,188,.72)',
+  },
+  desktopTitle: {
+    margin: '0 0 12px',
+    fontSize: 30,
+    lineHeight: 1.15,
+    color: '#ffebb9',
+  },
+  desktopBody: {
+    margin: '0 0 12px',
+    fontSize: 15,
+    lineHeight: 1.45,
+    color: 'rgba(243,231,202,.9)',
+  },
+  desktopHint: {
+    margin: 0,
+    fontSize: 12,
+    letterSpacing: 0.4,
+    color: 'rgba(255,230,182,.68)',
   },
   cardAtmosphereOrb: {
     position: 'absolute',
