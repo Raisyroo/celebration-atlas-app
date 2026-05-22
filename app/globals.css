@@ -55,3 +55,38 @@ body.event-detail-scroll {
 body.event-detail-scroll::-webkit-scrollbar {
   display: block;
 }
+
+/* Responsive atlas framing (tablet/desktop only; mobile remains unchanged) */
+@media (min-width: 768px) {
+  .atlas-hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+  }
+
+  .atlas-map-frame {
+    position: relative !important;
+    inset: auto !important;
+    width: min(100%, 1120px);
+    height: min(100%, 980px);
+    border-radius: 28px;
+    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.48), inset 0 0 0 1px rgba(255, 236, 196, 0.06);
+    overflow: hidden;
+  }
+
+  .atlas-card {
+    left: 50% !important;
+    right: auto !important;
+    width: min(520px, calc(100vw - 72px));
+    transform: translateX(-50%);
+  }
+
+  .atlas-search-dock {
+    left: 50% !important;
+    right: auto !important;
+    width: min(720px, calc(100vw - 84px));
+    transform: translateX(-50%);
+    bottom: 14px !important;
+  }
+}
