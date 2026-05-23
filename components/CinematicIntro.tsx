@@ -9,7 +9,7 @@ type CinematicIntroProps = {
 };
 
 const INTRO_DURATION_MS = 4200;
-const MOBILE_DIAGNOSTIC_DURATION_MS = 4000;
+const MOBILE_DIAGNOSTIC_DURATION_MS = 2200;
 const REDUCED_MOTION_DURATION_MS = 900;
 
 export default function CinematicIntro({ children }: CinematicIntroProps) {
@@ -59,19 +59,28 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
       {children}
       {shouldRenderOverlay ? (
         isMobile ? (
-          <div
+          <button
+            aria-label="Skip intro"
+            onClick={finishIntro}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') finishIntro();
+            }}
             style={{
+              border: 'none',
+              background: '#000',
               position: 'fixed',
               inset: 0,
               width: '100vw',
               height: '100dvh',
+              padding: 0,
+              margin: 0,
+              zIndex: 2147483647,
               display: 'grid',
               placeItems: 'center',
-              background: '#000',
-              zIndex: 2147483647,
+              cursor: 'pointer',
             }}
           >
-            <div style={{ textAlign: 'center' }}>
+            <div className="atlas-intro-mobile" aria-hidden="true" style={{ textAlign: 'center' }}>
               <img
                 src="/branding/celebration-atlas-logo.png"
                 alt="Celebration Atlas"
@@ -97,7 +106,7 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
                 Celebration Atlas
               </p>
             </div>
-          </div>
+          </button>
         ) : (
           <button
             aria-label="Skip intro"
@@ -188,6 +197,26 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
         @media (prefers-reduced-motion: reduce) {
           .atlas-intro__logo-wrap {
             animation-timing-function: linear;
+          }
+        }
+
+        .atlas-intro-mobile {
+          opacity: 0;
+          animation: mobileLogoFade ${introDurationMs}ms ease-in-out forwards;
+        }
+
+        @keyframes mobileLogoFade {
+          0% {
+            opacity: 0;
+          }
+          25% {
+            opacity: 1;
+          }
+          75% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 0;
           }
         }
       `}</style>
