@@ -157,8 +157,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       mediaPosition: '56% 36%',
       mediaScale: 1.04,
       mediaMaskProfile: 'romeoPeach',
-      mediaDelayMs: 980,
-      mediaFadeDurationMs: 1450,
+      mediaDelayMs: 0,
+      mediaFadeDurationMs: 900,
     },
     detailPage: {
       atmosphereLine: 'Pine-shadow pathways, basslines between trees, and kaleidoscopic light after dusk.',
