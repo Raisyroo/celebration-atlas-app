@@ -126,6 +126,8 @@ export default function EventDetailPage() {
   const [memoryIndex, setMemoryIndex] = useState(0);
   const [memoryOpacity, setMemoryOpacity] = useState(1);
   const [isPageVisible, setIsPageVisible] = useState(false);
+  const [isIntroVisible, setIsIntroVisible] = useState(false);
+  const [introVideoSrc, setIntroVideoSrc] = useState('/event-media/electric-forest-intro.mp4');
 
   if (!event || !event.detailPage) {
     return (
@@ -154,6 +156,7 @@ export default function EventDetailPage() {
     ? [event.detailPage.detailIntro, ...event.detailPage.storySections].filter(Boolean)
     : [event.detailPage.shortStory];
   const atlasMemories = event.atlasMemories ?? [];
+  const isElectricForestCinematicEntry = event.id === 'electric-forest' && searchParams.get('intro') === 'cinematic';
 
   const localFlavorItems = (event.localFlavor ?? []).filter(Boolean).slice(0, 4);
 
@@ -168,11 +171,14 @@ export default function EventDetailPage() {
 
 
   useEffect(() => {
-    const isCinematicEntry = searchParams.get('intro') === 'cinematic';
-    const revealDelay = isCinematicEntry ? 180 : 30;
+    const revealDelay = isElectricForestCinematicEntry ? 180 : 30;
     const timer = window.setTimeout(() => setIsPageVisible(true), revealDelay);
     return () => window.clearTimeout(timer);
-  }, [searchParams]);
+  }, [isElectricForestCinematicEntry]);
+
+  useEffect(() => {
+    setIsIntroVisible(isElectricForestCinematicEntry);
+  }, [isElectricForestCinematicEntry]);
 
   useEffect(() => {
     document.documentElement.classList.add('event-detail-scroll');
@@ -204,7 +210,29 @@ export default function EventDetailPage() {
   }, [atlasMemories.length, memoryIndex]);
 
   return (
-    <main
+    <>
+      {isIntroVisible ? (
+        <div style={styles.introOverlay}>
+          <video
+            src={introVideoSrc}
+            muted
+            autoPlay
+            playsInline
+            controls={false}
+            preload="auto"
+            style={styles.introVideo}
+            onError={() => {
+              if (introVideoSrc !== '/event-media/electric-forest-loop.mp4') {
+                setIntroVideoSrc('/event-media/electric-forest-loop.mp4');
+              }
+            }}
+            onEnded={() => {
+              setIsIntroVisible(false);
+            }}
+          />
+        </div>
+      ) : null}
+      <main
       style={{
         ...styles.page,
         color: tone.pageColor,
@@ -212,7 +240,7 @@ export default function EventDetailPage() {
         opacity: isPageVisible ? 1 : 0,
         transition: 'opacity 680ms ease',
       }}
-    >
+      >
       <section style={styles.hero}>
         <p style={{ ...styles.kicker, color: tone.kickerColor }}>Event Atlas</p>
         <h1 style={styles.title}>{event.name}</h1>
@@ -332,11 +360,24 @@ export default function EventDetailPage() {
       <Link href={`/?event=${event.id}`} style={{ ...styles.backLink, color: tone.backLinkColor, borderBottom: `1px solid ${tone.backLinkColor.replace('0.9', '0.45')}` }}>
         ← Back to Atlas
       </Link>
-    </main>
+      </main>
+    </>
   );
 }
 
 const styles: Record<string, CSSProperties> = {
+  introOverlay: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 250,
+    background: '#040507',
+  },
+  introVideo: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    filter: 'saturate(1.08) contrast(1.04)',
+  },
   notFoundPage: {
     minHeight: '100vh',
     display: 'grid',
