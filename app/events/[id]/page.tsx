@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
@@ -157,8 +157,6 @@ export default function EventDetailPage() {
   const atlasMemories = event.atlasMemories ?? [];
   const isElectricForestCinematicEntry = event.id === 'electric-forest' && searchParams.get('intro') === 'cinematic';
   const introVideoSrc = useMemo(() => event.detailPage?.introVideoSrc ?? '', [event.detailPage?.introVideoSrc]);
-  const [renderedIntroVideoSrc, setRenderedIntroVideoSrc] = useState('');
-  const introVideoRef = useRef<HTMLVideoElement | null>(null);
   const [isIntroFallbackVisible, setIsIntroFallbackVisible] = useState(false);
 
   const localFlavorItems = (event.localFlavor ?? []).filter(Boolean).slice(0, 4);
@@ -184,7 +182,6 @@ export default function EventDetailPage() {
   }, [isElectricForestCinematicEntry]);
 
   useEffect(() => {
-    setRenderedIntroVideoSrc('');
     setIsIntroFallbackVisible(false);
   }, [introVideoSrc, event.id]);
 
@@ -217,23 +214,12 @@ export default function EventDetailPage() {
     return () => window.clearTimeout(timeout);
   }, [atlasMemories.length, memoryIndex]);
 
-  useEffect(() => {
-    if (event.id !== 'electric-forest') return;
-    console.log('[ElectricForest intro diagnostics]', {
-      eventId: event.id,
-      cardMediaMediaSrc: event.cardMedia?.mediaSrc ?? '(none)',
-      introVideoSrc: introVideoSrc ?? '(none)',
-      renderedIntroVideoSrc: renderedIntroVideoSrc || '(not yet resolved)',
-      introFallbackVisible: isIntroFallbackVisible,
-    });
-  }, [event.id, event.cardMedia?.mediaSrc, introVideoSrc, renderedIntroVideoSrc, isIntroFallbackVisible]);
 
   return (
     <>
       {isIntroVisible && introVideoSrc && !isIntroFallbackVisible ? (
         <div style={styles.introOverlay}>
           <video
-            ref={introVideoRef}
             src={introVideoSrc}
             muted
             autoPlay
@@ -241,11 +227,7 @@ export default function EventDetailPage() {
             controls={false}
             preload="auto"
             style={styles.introVideo}
-            onLoadedMetadata={(event) => {
-              setRenderedIntroVideoSrc(event.currentTarget.currentSrc || event.currentTarget.src || '');
-            }}
             onError={() => {
-              setRenderedIntroVideoSrc('(failed to load)');
               setIsIntroFallbackVisible(true);
             }}
             onEnded={() => {
@@ -257,15 +239,6 @@ export default function EventDetailPage() {
       {isIntroVisible && isIntroFallbackVisible ? (
         <div style={styles.introOverlay}>
           <p style={styles.introFallbackText}>Entering event...</p>
-        </div>
-      ) : null}
-      {event.id === 'electric-forest' ? (
-        <div style={styles.debugOverlay} aria-live="polite">
-          <p style={styles.debugOverlayLine}>event.id: {event.id}</p>
-          <p style={styles.debugOverlayLine}>cardMedia.mediaSrc: {event.cardMedia?.mediaSrc ?? '(none)'}</p>
-          <p style={styles.debugOverlayLine}>introVideoSrc: {introVideoSrc ?? '(none)'}</p>
-          <p style={styles.debugOverlayLine}>rendered intro src: {renderedIntroVideoSrc || '(not yet resolved)'}</p>
-          <p style={styles.debugOverlayLine}>intro fallback visible: {isIntroFallbackVisible ? 'yes' : 'no'}</p>
         </div>
       ) : null}
       <main
@@ -426,26 +399,6 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 500,
     textShadow: '0 1px 4px rgba(0,0,0,0.45)',
     fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-  },
-  debugOverlay: {
-    position: 'fixed',
-    right: 12,
-    bottom: 12,
-    zIndex: 3000,
-    maxWidth: 'min(88vw, 580px)',
-    background: 'rgba(10, 12, 18, 0.88)',
-    color: '#f4f7ff',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
-    borderRadius: 8,
-    padding: '10px 12px',
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-    fontSize: 12,
-    lineHeight: 1.4,
-    pointerEvents: 'none',
-  },
-  debugOverlayLine: {
-    margin: 0,
-    overflowWrap: 'anywhere',
   },
   notFoundPage: {
     minHeight: '100vh',
