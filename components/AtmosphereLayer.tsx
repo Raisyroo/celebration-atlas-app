@@ -8,11 +8,20 @@ import FerrisGlowEffect from './effects/FerrisGlowEffect';
 type AtmosphereLayerProps = {
   events: AtlasEvent[];
   selectedEvent: AtlasEvent | null;
+  depthOffsetX?: number;
+  depthOffsetY?: number;
+  prefersReducedMotion?: boolean;
 };
 
 type EffectName = 'geese' | 'clouds' | 'fireworks' | 'snow' | 'balloons' | 'ferrisGlow';
 
-export default function AtmosphereLayer({ events, selectedEvent }: AtmosphereLayerProps) {
+export default function AtmosphereLayer({
+  events,
+  selectedEvent,
+  depthOffsetX = 0,
+  depthOffsetY = 0,
+  prefersReducedMotion = false,
+}: AtmosphereLayerProps) {
   const fireworksPoints = events
     .filter((event) => event.atmosphere?.effects?.includes('fireworks'))
     .map((event) => ({ id: event.id, x: event.x, y: event.y, intensity: event.atmosphere?.intensity ?? 'subtle' }));
@@ -41,8 +50,23 @@ export default function AtmosphereLayer({ events, selectedEvent }: AtmosphereLay
     winter: 'radial-gradient(circle at 50% 34%, rgba(198, 226, 255, 0.1), rgba(198, 226, 255, 0) 62%)',
   };
 
+  const atmosphereDepthTransform = prefersReducedMotion
+    ? 'translate3d(0, 0, 0)'
+    : `translate3d(${depthOffsetX * 0.7}px, ${depthOffsetY * 0.7}px, 0)`;
+
   return (
-    <>
+    <div
+      aria-hidden
+      style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 3,
+        pointerEvents: 'none',
+        transform: atmosphereDepthTransform,
+        transition: prefersReducedMotion ? undefined : 'transform 480ms cubic-bezier(.22,.61,.36,1)',
+        willChange: prefersReducedMotion ? undefined : 'transform',
+      }}
+    >
       {implementedEffects.map((effectName) => effectRegistry[effectName])}
       {regionAtmosphere ? (
         <div
@@ -84,6 +108,6 @@ export default function AtmosphereLayer({ events, selectedEvent }: AtmosphereLay
           70% { opacity: 0.7; }
         }
       `}</style>
-    </>
+    </div>
   );
 }
