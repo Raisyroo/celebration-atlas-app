@@ -9,6 +9,7 @@ type CinematicIntroProps = {
 };
 
 const INTRO_DURATION_MS = 4200;
+const REDUCED_MOTION_DURATION_MS = 900;
 
 export default function CinematicIntro({ children }: CinematicIntroProps) {
   const [isActive, setIsActive] = useState(false);
@@ -19,19 +20,20 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
     const syncMotion = () => setIsReducedMotion(mediaQuery.matches);
 
     syncMotion();
-    setIsActive(!mediaQuery.matches);
+    setIsActive(true);
     mediaQuery.addEventListener('change', syncMotion);
 
     return () => mediaQuery.removeEventListener('change', syncMotion);
   }, []);
 
-  const shouldRenderOverlay = isActive && !isReducedMotion;
+  const shouldRenderOverlay = isActive;
+  const introDurationMs = isReducedMotion ? REDUCED_MOTION_DURATION_MS : INTRO_DURATION_MS;
 
   useEffect(() => {
     if (!shouldRenderOverlay) return;
-    const timer = window.setTimeout(() => setIsActive(false), INTRO_DURATION_MS);
+    const timer = window.setTimeout(() => setIsActive(false), introDurationMs);
     return () => window.clearTimeout(timer);
-  }, [shouldRenderOverlay]);
+  }, [introDurationMs, shouldRenderOverlay]);
 
   const finishIntro = () => setIsActive(false);
 
@@ -52,9 +54,10 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
             background: 'transparent',
             position: 'fixed',
             inset: 0,
-            width: '100%',
+            width: '100vw',
+            height: '100dvh',
             padding: 0,
-            zIndex: 40,
+            zIndex: 2147483000,
             cursor: 'pointer',
           }}
         >
@@ -75,13 +78,16 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
       ) : null}
       <style jsx>{`
         .atlas-intro {
-          position: absolute;
+          position: fixed;
           inset: 0;
+          width: 100vw;
+          height: 100dvh;
           display: grid;
           place-items: center;
           background: #000;
           overflow: hidden;
-          animation: introBackdrop ${INTRO_DURATION_MS}ms ease forwards;
+          z-index: 2147483001;
+          animation: introBackdrop ${introDurationMs}ms ease forwards;
         }
 
         .atlas-intro__veil {
@@ -90,7 +96,7 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
           background:
             radial-gradient(circle at center, rgba(16, 20, 34, 0.34) 0%, rgba(0, 0, 0, 0.88) 58%, rgba(0, 0, 0, 1) 100%),
             linear-gradient(180deg, rgba(0, 0, 0, 0.74) 0%, rgba(0, 0, 0, 0.92) 100%);
-          animation: veilLift ${INTRO_DURATION_MS}ms ease forwards;
+          animation: veilLift ${introDurationMs}ms ease forwards;
         }
 
         .atlas-intro__logo-wrap {
@@ -99,7 +105,7 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
           opacity: 0;
           transform: scale(0.976);
           filter: brightness(0.84);
-          animation: logoReveal ${INTRO_DURATION_MS}ms cubic-bezier(0.2, 0.7, 0.16, 1) forwards;
+          animation: logoReveal ${introDurationMs}ms cubic-bezier(0.2, 0.7, 0.16, 1) forwards;
         }
 
         :global(.atlas-intro__logo) {
@@ -158,6 +164,53 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
           }
           100% {
             opacity: 0;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .atlas-intro__logo-wrap {
+            animation-timing-function: ease-out;
+          }
+
+          @keyframes logoReveal {
+            0% {
+              opacity: 0;
+              transform: scale(0.992);
+              filter: brightness(0.9);
+            }
+            30% {
+              opacity: 0.95;
+              transform: scale(1);
+            }
+            100% {
+              opacity: 0;
+              transform: scale(1);
+              filter: brightness(1);
+            }
+          }
+
+          @keyframes introBackdrop {
+            0% {
+              background: rgba(0, 0, 0, 1);
+              opacity: 1;
+            }
+            70% {
+              background: rgba(0, 0, 0, 0.86);
+              opacity: 1;
+            }
+            100% {
+              background: rgba(0, 0, 0, 0);
+              opacity: 0;
+            }
+          }
+
+          @keyframes veilLift {
+            0% {
+              opacity: 0.92;
+            }
+            100% {
+              opacity: 0;
+            }
           }
         }
       `}</style>
