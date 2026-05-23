@@ -9,25 +9,40 @@ type CinematicIntroProps = {
 };
 
 const INTRO_DURATION_MS = 4200;
+const MOBILE_DIAGNOSTIC_DURATION_MS = 4000;
 const REDUCED_MOTION_DURATION_MS = 900;
 
 export default function CinematicIntro({ children }: CinematicIntroProps) {
   const [isActive, setIsActive] = useState(false);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const syncMotion = () => setIsReducedMotion(mediaQuery.matches);
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mobileQuery = window.matchMedia('(max-width: 767px)');
+
+    const syncMotion = () => setIsReducedMotion(reducedMotionQuery.matches);
+    const syncMobile = () => setIsMobile(mobileQuery.matches);
 
     syncMotion();
+    syncMobile();
     setIsActive(true);
-    mediaQuery.addEventListener('change', syncMotion);
 
-    return () => mediaQuery.removeEventListener('change', syncMotion);
+    reducedMotionQuery.addEventListener('change', syncMotion);
+    mobileQuery.addEventListener('change', syncMobile);
+
+    return () => {
+      reducedMotionQuery.removeEventListener('change', syncMotion);
+      mobileQuery.removeEventListener('change', syncMobile);
+    };
   }, []);
 
   const shouldRenderOverlay = isActive;
-  const introDurationMs = isReducedMotion ? REDUCED_MOTION_DURATION_MS : INTRO_DURATION_MS;
+  const introDurationMs = isMobile
+    ? MOBILE_DIAGNOSTIC_DURATION_MS
+    : isReducedMotion
+      ? REDUCED_MOTION_DURATION_MS
+      : INTRO_DURATION_MS;
 
   useEffect(() => {
     if (!shouldRenderOverlay) return;
@@ -43,37 +58,79 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
     <div style={{ position: 'relative', minHeight: '100dvh' }}>
       {children}
       {shouldRenderOverlay ? (
-        <button
-          aria-label="Skip intro"
-          onClick={finishIntro}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') finishIntro();
-          }}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            position: 'fixed',
-            inset: 0,
-            width: '100vw',
-            height: '100dvh',
-            padding: 0,
-            zIndex: 2147483647,
-            cursor: 'pointer',
-          }}
-        >
-          <span className={`atlas-intro ${introTimingClass}`}>
-            <span className="atlas-intro__logo-wrap" aria-hidden="true">
-              <Image
+        isMobile ? (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              width: '100vw',
+              height: '100dvh',
+              display: 'grid',
+              placeItems: 'center',
+              background: '#000',
+              zIndex: 2147483647,
+            }}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <img
                 src="/branding/celebration-atlas-logo.png"
-                alt=""
-                width={820}
-                height={820}
-                priority
-                className="atlas-intro__logo"
+                alt="Celebration Atlas"
+                style={{
+                  width: '78vw',
+                  maxWidth: '360px',
+                  height: 'auto',
+                  display: 'block',
+                  position: 'relative',
+                  zIndex: 2147483647,
+                  margin: '0 auto',
+                }}
               />
+              <p
+                style={{
+                  color: '#fff',
+                  marginTop: '12px',
+                  fontSize: '1rem',
+                  lineHeight: 1.4,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                Celebration Atlas
+              </p>
+            </div>
+          </div>
+        ) : (
+          <button
+            aria-label="Skip intro"
+            onClick={finishIntro}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') finishIntro();
+            }}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              position: 'fixed',
+              inset: 0,
+              width: '100vw',
+              height: '100dvh',
+              padding: 0,
+              zIndex: 2147483647,
+              cursor: 'pointer',
+            }}
+          >
+            <span className={`atlas-intro ${introTimingClass}`}>
+              <span className="atlas-intro__logo-wrap" aria-hidden="true">
+                <Image
+                  src="/branding/celebration-atlas-logo.png"
+                  alt=""
+                  width={820}
+                  height={820}
+                  priority
+                  className="atlas-intro__logo"
+                />
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+        )
       ) : null}
       <style jsx>{`
         .atlas-intro {
