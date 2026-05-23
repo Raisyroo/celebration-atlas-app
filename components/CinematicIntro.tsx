@@ -14,6 +14,7 @@ const REDUCED_MOTION_DURATION_MS = 900;
 export default function CinematicIntro({ children }: CinematicIntroProps) {
   const [isActive, setIsActive] = useState(false);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const [showMobileDebugIntro, setShowMobileDebugIntro] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -24,6 +25,15 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
     mediaQuery.addEventListener('change', syncMotion);
 
     return () => mediaQuery.removeEventListener('change', syncMotion);
+  }, []);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia('(max-width: 767px)');
+    if (!mobileQuery.matches) return;
+
+    setShowMobileDebugIntro(true);
+    const timer = window.setTimeout(() => setShowMobileDebugIntro(false), 2000);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const shouldRenderOverlay = isActive;
@@ -42,6 +52,26 @@ export default function CinematicIntro({ children }: CinematicIntroProps) {
   return (
     <div style={{ position: 'relative', minHeight: '100dvh' }}>
       {children}
+      {showMobileDebugIntro ? (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            width: '100vw',
+            height: '100dvh',
+            zIndex: 2147483647,
+            background: '#000',
+            color: '#fff',
+            display: 'grid',
+            placeItems: 'center',
+            fontSize: '1.5rem',
+            letterSpacing: '0.08em',
+            fontWeight: 700,
+          }}
+        >
+          INTRO TEST
+        </div>
+      ) : null}
       {shouldRenderOverlay ? (
         <button
           aria-label="Skip intro"
