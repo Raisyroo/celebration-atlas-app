@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
@@ -158,6 +158,9 @@ export default function EventDetailPage() {
   const isElectricForestCinematicEntry = event.id === 'electric-forest' && searchParams.get('intro') === 'cinematic';
   const introVideoSrc = useMemo(() => event.detailPage?.introVideoSrc ?? '', [event.detailPage?.introVideoSrc]);
   const [isIntroFallbackVisible, setIsIntroFallbackVisible] = useState(false);
+  const [isIntroMuted, setIsIntroMuted] = useState(false);
+  const [showIntroUnmuteAffordance, setShowIntroUnmuteAffordance] = useState(false);
+  const introVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const localFlavorItems = (event.localFlavor ?? []).filter(Boolean).slice(0, 4);
 
@@ -183,7 +186,43 @@ export default function EventDetailPage() {
 
   useEffect(() => {
     setIsIntroFallbackVisible(false);
+    setIsIntroMuted(false);
+    setShowIntroUnmuteAffordance(false);
   }, [introVideoSrc, event.id]);
+
+  useEffect(() => {
+    if (!isIntroVisible || !introVideoSrc) return;
+    const introVideo = introVideoRef.current;
+    if (!introVideo) return;
+
+    introVideo.muted = false;
+    const playAttempt = introVideo.play();
+    if (!playAttempt) return;
+
+    playAttempt.catch(() => {
+      const fallbackVideo = introVideoRef.current;
+      if (!fallbackVideo) return;
+      fallbackVideo.muted = true;
+      setIsIntroMuted(true);
+      setShowIntroUnmuteAffordance(true);
+      fallbackVideo.play().catch(() => {
+        setIsIntroFallbackVisible(true);
+      });
+    });
+  }, [isIntroVisible, introVideoSrc]);
+
+  const handleIntroUnmute = () => {
+    const introVideo = introVideoRef.current;
+    if (!introVideo) return;
+    introVideo.muted = false;
+    setIsIntroMuted(false);
+    setShowIntroUnmuteAffordance(false);
+    introVideo.play().catch(() => {
+      introVideo.muted = true;
+      setIsIntroMuted(true);
+      setShowIntroUnmuteAffordance(true);
+    });
+  };
 
   useEffect(() => {
     document.documentElement.classList.add('event-detail-scroll');
@@ -220,8 +259,9 @@ export default function EventDetailPage() {
       {isIntroVisible && introVideoSrc && !isIntroFallbackVisible ? (
         <div style={styles.introOverlay}>
           <video
+            ref={introVideoRef}
             src={introVideoSrc}
-            muted
+            muted={isIntroMuted}
             autoPlay
             playsInline
             controls={false}
@@ -234,6 +274,11 @@ export default function EventDetailPage() {
               setIsIntroVisible(false);
             }}
           />
+          {showIntroUnmuteAffordance ? (
+            <button type="button" style={styles.introUnmuteButton} onClick={handleIntroUnmute}>
+              Tap for sound
+            </button>
+          ) : null}
         </div>
       ) : null}
       {isIntroVisible && isIntroFallbackVisible ? (
@@ -399,6 +444,20 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 500,
     textShadow: '0 1px 4px rgba(0,0,0,0.45)',
     fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+  },
+  introUnmuteButton: {
+    position: 'absolute',
+    right: '1rem',
+    bottom: '1rem',
+    border: '1px solid rgba(237, 245, 255, 0.48)',
+    background: 'rgba(8, 12, 19, 0.42)',
+    color: 'rgba(242, 248, 255, 0.92)',
+    borderRadius: '999px',
+    padding: '0.38rem 0.74rem',
+    fontSize: '0.74rem',
+    letterSpacing: '0.04em',
+    cursor: 'pointer',
+    backdropFilter: 'blur(4px)',
   },
   notFoundPage: {
     minHeight: '100vh',
