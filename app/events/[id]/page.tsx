@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
@@ -127,7 +127,6 @@ export default function EventDetailPage() {
   const [memoryOpacity, setMemoryOpacity] = useState(1);
   const [isPageVisible, setIsPageVisible] = useState(false);
   const [isIntroVisible, setIsIntroVisible] = useState(false);
-  const [introVideoSrc, setIntroVideoSrc] = useState('/event-media/electric-forest-intro.mp4');
 
   if (!event || !event.detailPage) {
     return (
@@ -157,6 +156,17 @@ export default function EventDetailPage() {
     : [event.detailPage.shortStory];
   const atlasMemories = event.atlasMemories ?? [];
   const isElectricForestCinematicEntry = event.id === 'electric-forest' && searchParams.get('intro') === 'cinematic';
+  const introVideoSourceCandidates = useMemo(
+    () =>
+      [
+        event.detailPage?.introVideoSrc,
+        event.detailPage?.mediaType === 'video' ? event.detailPage?.mediaSrc : undefined,
+        event.cardMedia?.mediaType === 'video' ? event.cardMedia?.mediaSrc : undefined,
+      ].filter((src): src is string => Boolean(src)),
+    [event],
+  );
+  const [introVideoSourceIndex, setIntroVideoSourceIndex] = useState(0);
+  const introVideoSrc = introVideoSourceCandidates[introVideoSourceIndex];
 
   const localFlavorItems = (event.localFlavor ?? []).filter(Boolean).slice(0, 4);
 
@@ -179,6 +189,10 @@ export default function EventDetailPage() {
   useEffect(() => {
     setIsIntroVisible(isElectricForestCinematicEntry);
   }, [isElectricForestCinematicEntry]);
+
+  useEffect(() => {
+    setIntroVideoSourceIndex(0);
+  }, [event.id]);
 
   useEffect(() => {
     document.documentElement.classList.add('event-detail-scroll');
@@ -211,7 +225,7 @@ export default function EventDetailPage() {
 
   return (
     <>
-      {isIntroVisible ? (
+      {isIntroVisible && introVideoSrc ? (
         <div style={styles.introOverlay}>
           <video
             src={introVideoSrc}
@@ -222,8 +236,11 @@ export default function EventDetailPage() {
             preload="auto"
             style={styles.introVideo}
             onError={() => {
-              if (introVideoSrc !== '/event-media/electric-forest-loop.mp4') {
-                setIntroVideoSrc('/event-media/electric-forest-loop.mp4');
+              const nextSourceIndex = introVideoSourceIndex + 1;
+              if (nextSourceIndex < introVideoSourceCandidates.length) {
+                setIntroVideoSourceIndex(nextSourceIndex);
+              } else {
+                setIsIntroVisible(false);
               }
             }}
             onEnded={() => {

@@ -43,6 +43,7 @@ export type AtlasEvent = {
     posterSrc?: string;
     mediaType?: 'image' | 'video';
     mediaSrc?: string;
+    introVideoSrc?: string;
     detailIntro?: string;
     storySections?: string[];
     archivalNote?: string;
@@ -164,6 +165,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       atmosphereLine: 'Pine-shadow pathways, basslines between trees, and kaleidoscopic light after dusk.',
       mediaType: 'video',
       mediaSrc: '/event-media/electric-forest-loop.mp4',
+      introVideoSrc: '/event-media/electric-forest-intro.mp4',
       shortStory:
         'As day fades in Rothbury, the forest turns into a living gallery of lantern canopies, projection art, and stages hidden among the pines. Electric Forest blends major electronic acts with wandering discovery—one path leads to a surprise set, another to an installation that feels like a dreamscape. Camp neighbors trade bracelets, stories, and directions to their favorite corners, and the entire weekend feels like a shared nighttime city built from music, light, and imagination.',
       detailIntro:
