@@ -39,6 +39,9 @@ const BASE_SCALE = 1.03;
 // interactive markers (5), event card (15), search + featured discovery dock (20).
 const Z_INDEX = {
   mapImage: 1,
+  atmosphere: 3,
+  depthVeil: 4,
+  particles: 4,
   markers: 5,
   card: 15,
   searchDock: 20,
@@ -128,6 +131,8 @@ export default function AtlasMap() {
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [parallaxOffset, setParallaxOffset] = useState({ x: 0, y: 0 });
 
   const searchParams = useSearchParams();
   const initialEventParamHandledRef = useRef(false);
@@ -192,6 +197,30 @@ export default function AtlasMap() {
   const cardTheme = blendCardTheme(cardBaseTheme, renderedEvent?.regionAtmosphere);
   const cardCue = renderedEvent?.iconType ? CARD_CUE_BY_ICON_TYPE[renderedEvent.iconType] : null;
   const cardMemoryExcerpt = renderedEvent?.atlasMemories?.[0]?.trim();
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => setPrefersReducedMotion(mediaQuery.matches);
+    sync();
+    mediaQuery.addEventListener('change', sync);
+    return () => mediaQuery.removeEventListener('change', sync);
+  }, []);
+
+  const handleDepthPointerMove = useCallback((event: PointerEvent<HTMLElement>) => {
+    if (!isDesktop || prefersReducedMotion) return;
+    const frame = mapFrameRef.current;
+    if (!frame) return;
+    const rect = frame.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width;
+    const py = (event.clientY - rect.top) / rect.height;
+    const nextX = (px - 0.5) * 6;
+    const nextY = (py - 0.5) * 4;
+    setParallaxOffset({ x: nextX, y: nextY });
+  }, [isDesktop, prefersReducedMotion]);
+
+  const handleDepthPointerLeave = useCallback(() => {
+    setParallaxOffset({ x: 0, y: 0 });
+  }, []);
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
 
@@ -391,16 +420,34 @@ export default function AtlasMap() {
         ref={mapFrameRef}
         className="atlas-map-frame"
         style={{ ...styles.mapFrame, ...(isDesktop ? styles.mapFrameDesktop : null) }}
+        onPointerMove={handleDepthPointerMove}
+        onPointerLeave={handleDepthPointerLeave}
       >
         <div
           style={{
             ...styles.mapContent,
-            transform: `translate3d(0, 0, 0) scale(${BASE_SCALE})`,
+            transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.55}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.55}px, 0) scale(${BASE_SCALE})`,
           }}
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
 
-          <AtmosphereLayer events={ATLAS_EVENTS} selectedEvent={selected} />
+          <div style={{ ...styles.baseMapGrade, transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.28}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.28}px, 0)` }} />
+
+          <AtmosphereLayer
+            events={ATLAS_EVENTS}
+            selectedEvent={selected}
+            depthOffsetX={parallaxOffset.x}
+            depthOffsetY={parallaxOffset.y}
+            prefersReducedMotion={prefersReducedMotion}
+          />
+
+          <div
+            aria-hidden
+            style={{
+              ...styles.particleDepthVeil,
+              transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.9}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.9}px, 0)`,
+            }}
+          />
 
           {ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
@@ -754,6 +801,18 @@ export default function AtlasMap() {
           }
         }
 
+        @media (prefers-reduced-motion: reduce) {
+          .marker-pulse,
+          .featured-discovery-text,
+          .atlas-search-input--pulse,
+          .atlas-search-query,
+          .cinematic-intro-overlay,
+          .cinematic-intro-video {
+            animation: none !important;
+            transition-duration: 1ms !important;
+          }
+        }
+
         @keyframes markerPulse {
           0%,
           100% {
@@ -817,6 +876,29 @@ const styles: Record<string, CSSProperties> = {
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
     pointerEvents: 'none',
+  },
+
+  baseMapGrade: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: Z_INDEX.depthVeil,
+    pointerEvents: 'none',
+    background:
+      'linear-gradient(180deg, rgba(9,12,18,.05), rgba(9,12,18,.11) 68%, rgba(9,12,18,.19)), radial-gradient(circle at 52% 40%, rgba(255,232,186,.04), rgba(255,232,186,0) 58%)',
+    mixBlendMode: 'screen',
+    transition: 'transform 520ms cubic-bezier(.22,.61,.36,1)',
+    willChange: 'transform',
+  },
+  particleDepthVeil: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: Z_INDEX.particles,
+    pointerEvents: 'none',
+    background:
+      'radial-gradient(circle at 18% 28%, rgba(255,248,228,.055), rgba(255,248,228,0) 36%), radial-gradient(circle at 74% 42%, rgba(236,221,188,.04), rgba(236,221,188,0) 30%), radial-gradient(circle at 45% 76%, rgba(255,236,188,.03), rgba(255,236,188,0) 34%)',
+    filter: 'blur(.2px)',
+    transition: 'transform 600ms cubic-bezier(.22,.61,.36,1)',
+    willChange: 'transform',
   },
   vignette: {
     position: 'absolute',
