@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
+import EventAIResult from './EventAIResult';
 
 type SuggestedChip = { id: string; label: string };
 
@@ -56,12 +57,16 @@ export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVide
           ))}
         </div>
       </div>
+
+      <section style={styles.resultSection}>
+        <EventAIResult eventName={eventName} />
+      </section>
     </main>
   );
 }
 
 const styles: Record<string, CSSProperties> = {
-  page: { minHeight: '100vh', background: '#08090c', display: 'grid', placeItems: 'start center', padding: '0 0 2rem' },
+  page: { minHeight: '100vh', background: '#08090c', display: 'grid', placeItems: 'start center', padding: '0 0 2rem', gap: '1.2rem' },
   artworkShell: { position: 'relative', width: '100%', maxWidth: '760px' },
   artworkImage: { display: 'block', width: '100%', height: 'auto' },
   videoRegion: { position: 'absolute', left: '8.5%', top: '17.4%', width: '82.8%', height: '20.4%', overflow: 'hidden', borderRadius: '1.2%' },
@@ -71,4 +76,5 @@ const styles: Record<string, CSSProperties> = {
   askInput: { position: 'absolute', left: '10.1%', top: '71.2%', width: '79.4%', height: '5.4%', borderRadius: '999px', background: 'transparent', color: 'transparent' },
   chipsArea: { position: 'absolute', left: '8.8%', top: '79.1%', width: '82.4%', display: 'grid', gridTemplateColumns: '1fr', gap: '2.1%' },
   chip: { minHeight: '6.1%', border: 'none', background: 'transparent', color: 'transparent', cursor: 'pointer' },
+  resultSection: { width: '100%', maxWidth: '760px', padding: '0 0.8rem' },
 };

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
 import InteractiveArtworkPage from '../../../components/InteractiveArtworkPage';
+import EventAIResult from '../../../components/EventAIResult';
 
 type PageTone = {
   pageBackground: string;
@@ -349,6 +350,8 @@ export default function EventDetailPage() {
           </dl>
         </section>
       ) : null}
+
+      <EventAIResult eventName={event.name} />
 
       <section style={{ ...styles.storySection, background: tone.storyBackground, border: tone.storyBorder }}>
         <h2 style={{ ...styles.storyHeading, color: tone.headingColor }}>Story</h2>
