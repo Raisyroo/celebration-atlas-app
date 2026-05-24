@@ -29,7 +29,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
   return (
     <main style={styles.page}>
-      <section style={styles.heroSection} aria-label={`${eventName} memory collage`}>
+      <section style={styles.parchmentColumn} aria-label={`${eventName} memory collage`}>
         <div style={styles.artworkShell}>
           <img src={artworkSrc} alt={`${eventName} scrapbook artwork`} style={styles.artworkImage} />
 
@@ -75,27 +75,37 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: '100vh',
-    background: '#1c120c',
+    background:
+      'radial-gradient(circle at 20% 10%, rgba(83, 53, 34, 0.34), transparent 32%), radial-gradient(circle at 80% 30%, rgba(67, 43, 28, 0.32), transparent 28%), linear-gradient(180deg, #1f130d 0%, #2b1a11 55%, #1a100b 100%)',
     color: '#3b2818',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '1rem',
-    padding: '0 0 6rem',
+    padding: '0 1rem 6rem',
   },
-  heroSection: { width: '100%', display: 'grid', justifyItems: 'center', alignContent: 'start', position: 'relative', zIndex: 0, gap: '1.25rem' },
-  artworkShell: { position: 'relative', width: '100%', maxWidth: '760px' },
+  parchmentColumn: {
+    width: 'min(100%, 760px)',
+    background: 'linear-gradient(180deg, rgba(248, 232, 198, 0.98), rgba(236, 210, 170, 0.97))',
+    border: '1px solid rgba(150, 116, 75, 0.52)',
+    borderTop: 'none',
+    borderBottomLeftRadius: '0.8rem',
+    borderBottomRightRadius: '0.8rem',
+    boxShadow: '0 20px 35px rgba(13, 6, 4, 0.46)',
+    display: 'grid',
+    justifyItems: 'center',
+    alignContent: 'start',
+    position: 'relative',
+    zIndex: 0,
+    overflow: 'hidden',
+    gap: '0',
+  },
+  artworkShell: { position: 'relative', width: '100%' },
   artworkImage: { display: 'block', width: '100%', height: 'auto' },
   videoRegion: { position: 'absolute', left: '8.5%', top: '17.4%', width: '82.8%', height: '20.4%', overflow: 'hidden', borderRadius: '1.2%' },
   video: { width: '100%', height: '100%', objectFit: 'cover' },
   guideSection: {
-    width: 'min(86%, 640px)',
-    padding: '1rem',
-    marginTop: '0.4rem',
-    borderRadius: '0.85rem',
-    border: '1px solid rgba(142, 107, 71, 0.55)',
-    background: 'linear-gradient(165deg, rgba(248, 231, 196, 0.93), rgba(232, 206, 167, 0.9))',
-    boxShadow: '0 16px 30px rgba(22, 11, 7, 0.42)',
+    width: '100%',
+    padding: '0.9rem 0.85rem 1.6rem',
     display: 'grid',
     gap: '0.9rem',
   },
