@@ -45,9 +45,13 @@ body::-webkit-scrollbar {
 
 html.event-detail-scroll,
 body.event-detail-scroll {
+  height: auto;
+  min-height: 100dvh;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: auto;
+  touch-action: auto;
+  -webkit-overflow-scrolling: touch;
   -ms-overflow-style: auto;
   scrollbar-width: auto;
 }
