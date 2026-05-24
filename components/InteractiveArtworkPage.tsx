@@ -138,10 +138,8 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid rgba(165, 126, 86, 0.4)',
     borderRadius: '1rem',
     padding: '0.78rem 0.7rem',
-    background: 'rgba(246, 236, 216, 0.4)',
-    boxShadow: '0 14px 28px rgba(53, 31, 16, 0.24)',
-    backdropFilter: 'blur(10px) saturate(108%)',
-    WebkitBackdropFilter: 'blur(10px) saturate(108%)',
+    background: 'rgba(245, 219, 166, 0.55)',
+    boxShadow: '0 10px 18px rgba(53, 31, 16, 0.18)',
   },
   resultsSection: {
     width: '100%',
