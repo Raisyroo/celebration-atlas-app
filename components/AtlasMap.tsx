@@ -574,7 +574,7 @@ export default function AtlasMap() {
           <p style={styles.cardAtmosphere}>{selectedMedia?.atmosphereTitle ?? renderedEvent.atmosphereLabel}</p>
           {cardMemoryExcerpt ? <p style={styles.cardMemoryExcerpt}>Field note: {cardMemoryExcerpt}</p> : null}
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
-          {renderedEvent.id === 'romeo-peach' || renderedEvent.id === 'electric-forest' ? (
+          {renderedEvent.id === 'romeo-peach' || renderedEvent.id === 'electric-forest' || renderedEvent.id === 'goodells-fair' ? (
             renderedEvent.id === 'electric-forest' ? (
               <button
                 type="button"
