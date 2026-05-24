@@ -205,6 +205,26 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   { id: 'faster-horses', name: 'Faster Horses Festival', location: 'Brooklyn, MI', atmosphereLabel: 'Speedway campfire chorus', blurb: 'A major country music weekend at Michigan International Speedway with camping crowds.', category: 'Music', iconType: 'music', x: 56, y: 57, regionAtmosphere: 'urban' },
   { id: 'common-ground-lansing', name: 'Common Ground Music Festival', location: 'Lansing, MI', atmosphereLabel: 'Capital city night sets', blurb: 'Downtown Lansing welcomes national acts and local favorites in a summer concert series.', category: 'Music', iconType: 'music', x: 47, y: 50, regionAtmosphere: 'urban' },
   { id: 'allendale-balloon-fest', name: 'Allendale Balloon Festival', location: 'Allendale, MI', atmosphereLabel: 'Sky lantern uplift', blurb: 'Colorful hot-air balloons, evening glows, and family food stands fill open summer skies.', category: 'Festivals', iconType: 'fair', x: 27, y: 46, atmosphere: atmosphere(['balloons'], 'medium'), regionAtmosphere: 'lakeshore' },
+
+  {
+    id: 'goodells-fair',
+    name: 'Goodells Fair',
+    location: 'Goodells, MI',
+    atmosphereLabel: 'Sunset midway glow',
+    blurb: 'A St. Clair County fair tradition with livestock shows, grandstand nights, and local midway classics.',
+    category: 'Fairs',
+    iconType: 'fair',
+    x: 79,
+    y: 37,
+    atmosphere: atmosphere(['ferrisGlow'], 'medium'),
+    regionAtmosphere: 'harvest',
+    detailPage: {
+      shortStory: 'Interactive artwork experience.',
+      atmosphereLine: 'Interactive artwork page grounded in the original Goodells fair illustration.',
+      mediaType: 'video',
+      mediaSrc: '/event-media/goodells-fair-intro.mp4',
+    },
+  },
   { id: 'shiawassee-fair', name: 'Shiawassee County Fair', location: 'Corunna, MI', atmosphereLabel: 'County fair nostalgia', blurb: 'A classic county fair with agricultural exhibits, midway rides, and grandstand entertainment.', category: 'Fairs', iconType: 'fair', x: 54, y: 49, atmosphere: atmosphere(['ferrisGlow'], 'medium'), regionAtmosphere: 'harvest' },
   { id: 'upper-peninsula-state-fair', name: 'Upper Peninsula State Fair', location: 'Escanaba, MI', atmosphereLabel: 'Northern midway glow', blurb: 'Escanaba hosts livestock shows, rides, and regional food traditions each August.', category: 'Fairs', iconType: 'fair', x: 34, y: 8, atmosphere: atmosphere(['ferrisGlow'], 'medium'), regionAtmosphere: 'northwoods' },
 ];
