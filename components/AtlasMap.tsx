@@ -120,6 +120,15 @@ const getHighlightedIdsFromQuery = (queryText: string) => {
     ids.add('romeo-peach');
   }
 
+  for (const event of ATLAS_EVENTS) {
+    const searchableTerms = [event.name, event.location, ...(event.searchAliases ?? [])]
+      .filter(Boolean)
+      .map((term) => term.toLowerCase());
+    if (searchableTerms.some((term) => normalizedQuery.includes(term) || term.includes(normalizedQuery))) {
+      ids.add(event.id);
+    }
+  }
+
   return ids;
 };
 
