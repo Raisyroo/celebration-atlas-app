@@ -42,7 +42,6 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
         </div>
 
         <section style={styles.guideSection} aria-label={`${eventName} AI guide`}>
-          <h2 style={styles.guideHeading}>Ask the Fair Guide</h2>
           <AtlasAIResponseDemo
             eventId={eventId}
             eventName={eventName}
@@ -103,15 +102,8 @@ const styles: Record<string, CSSProperties> = {
   },
   guideSection: {
     width: '100%',
-    padding: '0.9rem 0.75rem 1.6rem',
+    padding: '1rem 0.75rem 1.8rem',
     display: 'grid',
-    gap: '0.6rem',
-  },
-  guideHeading: {
-    margin: 0,
-    fontSize: 'clamp(1rem, 3.8vw, 1.25rem)',
-    lineHeight: 1.25,
-    color: '#412917',
-    letterSpacing: '0.01em',
+    gap: '0.2rem',
   },
 };
