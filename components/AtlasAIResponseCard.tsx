@@ -45,15 +45,15 @@ export default function AtlasAIResponseCard({ card }: AtlasAIResponseCardProps) 
 
 const styles: Record<string, CSSProperties> = {
   card: {
-    border: '1px solid rgba(190, 218, 255, 0.28)',
-    background: 'linear-gradient(170deg, rgba(14, 22, 36, 0.9), rgba(7, 12, 22, 0.84))',
-    borderRadius: '1rem',
+    border: '1px solid rgba(132, 98, 67, 0.36)',
+    background: 'rgba(255, 247, 227, 0.72)',
+    borderRadius: '0.48rem',
     padding: '0.9rem',
-    boxShadow: 'inset 0 0 0 1px rgba(163, 201, 252, 0.08), 0 14px 30px rgba(0, 0, 0, 0.26)',
+    boxShadow: '0 1px 2px rgba(74, 48, 28, 0.12)',
   },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' },
-  title: { margin: 0, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.09em', color: 'rgba(185, 219, 255, 0.94)', fontWeight: 700 },
-  badge: { fontSize: '0.72rem', color: 'rgba(225, 239, 255, 0.94)', border: '1px solid rgba(175, 210, 255, 0.35)', borderRadius: '999px', padding: '0.18rem 0.55rem' },
+  title: { margin: 0, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.09em', color: '#5c3c24', fontWeight: 700 },
+  badge: { fontSize: '0.72rem', color: '#5b3c22', border: '1px solid rgba(134, 103, 69, 0.45)', borderRadius: '0.35rem', padding: '0.18rem 0.55rem', background: 'rgba(243, 226, 190, 0.9)' },
   body: { display: 'grid', gap: '0.42rem', marginTop: '0.5rem' },
-  line: { margin: 0, fontSize: '0.95rem', lineHeight: 1.5, color: 'rgba(235, 244, 255, 0.93)' },
+  line: { margin: 0, fontSize: '0.95rem', lineHeight: 1.5, color: '#3c2716' },
 };
