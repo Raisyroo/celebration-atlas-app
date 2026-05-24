@@ -12,11 +12,10 @@ type InteractiveArtworkPageProps = {
   artworkSrc: string;
   heroVideoSrc: string;
   backHref: string;
-  shareUrl?: string;
   chips: SuggestedChip[];
 };
 
-export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref, shareUrl, chips }: InteractiveArtworkPageProps) {
+export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref, chips }: InteractiveArtworkPageProps) {
   useEffect(() => {
     document.documentElement.classList.add('event-detail-scroll');
     document.body.classList.add('event-detail-scroll');
@@ -36,35 +35,19 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
           <div style={styles.videoRegion} aria-label="Hero video region">
             <video src={heroVideoSrc} muted autoPlay loop playsInline controls style={styles.video} />
           </div>
+
+          <Link href={backHref} style={styles.topBackLink}>
+            ← Back to Atlas
+          </Link>
         </div>
 
         <section style={styles.guideSection} aria-label={`${eventName} AI guide`}>
-          <div style={styles.actionRow}>
-            <Link href={backHref} style={styles.backButton}>
-              ← Back to Atlas
-            </Link>
-
-            <button
-              type="button"
-              style={styles.shareButton}
-              onClick={() => {
-                const target = shareUrl ?? (typeof window !== 'undefined' ? window.location.href : '');
-                if (navigator.share) {
-                  navigator.share({ title: eventName, url: target }).catch(() => {});
-                  return;
-                }
-                navigator.clipboard.writeText(target).catch(() => {});
-              }}
-            >
-              Share memory
-            </button>
-          </div>
-
+          <h2 style={styles.guideHeading}>Ask the Fair Guide</h2>
           <AtlasAIResponseDemo
             eventId={eventId}
             eventName={eventName}
             chips={chips}
-            title={`Atlas field guide for ${eventName}`}
+            title={`Ask the Fair Guide`}
           />
         </section>
       </section>
@@ -103,33 +86,32 @@ const styles: Record<string, CSSProperties> = {
   artworkImage: { display: 'block', width: '100%', height: 'auto' },
   videoRegion: { position: 'absolute', left: '8.5%', top: '17.4%', width: '82.8%', height: '20.4%', overflow: 'hidden', borderRadius: '1.2%' },
   video: { width: '100%', height: '100%', objectFit: 'cover' },
+  topBackLink: {
+    position: 'absolute',
+    top: '0.6rem',
+    left: '0.65rem',
+    zIndex: 2,
+    textDecoration: 'none',
+    color: 'rgba(61, 39, 22, 0.85)',
+    background: 'rgba(248, 233, 205, 0.64)',
+    border: '1px solid rgba(128, 95, 63, 0.3)',
+    borderRadius: '999px',
+    padding: '0.28rem 0.58rem',
+    fontSize: '0.74rem',
+    letterSpacing: '0.02em',
+    backdropFilter: 'blur(1.5px)',
+  },
   guideSection: {
     width: '100%',
-    padding: '0.9rem 0.85rem 1.6rem',
+    padding: '0.9rem 0.75rem 1.6rem',
     display: 'grid',
-    gap: '0.9rem',
+    gap: '0.6rem',
   },
-  actionRow: { display: 'flex', gap: '0.7rem', flexWrap: 'wrap' },
-  backButton: {
-    textDecoration: 'none',
-    padding: '0.72rem 0.92rem',
-    borderRadius: '0.45rem',
-    border: '1px solid rgba(103, 76, 50, 0.55)',
-    background: 'rgba(251, 239, 209, 0.68)',
-    color: '#4e331d',
-    fontSize: '0.95rem',
-    fontWeight: 600,
-    boxShadow: '0 1px 1px rgba(61, 36, 19, 0.16)',
-  },
-  shareButton: {
-    padding: '0.72rem 0.92rem',
-    borderRadius: '0.45rem',
-    border: '1px solid rgba(103, 76, 50, 0.55)',
-    background: 'rgba(251, 239, 209, 0.72)',
-    color: '#4e331d',
-    fontSize: '0.95rem',
-    fontWeight: 600,
-    cursor: 'pointer',
-    boxShadow: '0 1px 1px rgba(61, 36, 19, 0.16)',
+  guideHeading: {
+    margin: 0,
+    fontSize: 'clamp(1rem, 3.8vw, 1.25rem)',
+    lineHeight: 1.25,
+    color: '#412917',
+    letterSpacing: '0.01em',
   },
 };
