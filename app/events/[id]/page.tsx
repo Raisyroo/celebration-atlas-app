@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
+import InteractiveArtworkPage from '../../../components/InteractiveArtworkPage';
 
 type PageTone = {
   pageBackground: string;
@@ -127,6 +128,23 @@ export default function EventDetailPage() {
   const [memoryOpacity, setMemoryOpacity] = useState(1);
   const [isPageVisible, setIsPageVisible] = useState(false);
   const [isIntroVisible, setIsIntroVisible] = useState(false);
+
+
+  if (event?.id === 'goodells-fair' && event.detailPage) {
+    return (
+      <InteractiveArtworkPage
+        eventName={event.name}
+        artworkSrc="/event-pages/goodells/goodells-master-page.webp"
+        heroVideoSrc="/event-media/goodells-fair-intro.mp4"
+        backHref={`/?event=${event.id}`}
+        chips={[
+          { id: 'parking', label: 'Where should I park for evening events?' },
+          { id: 'families', label: 'Best parts of the fair for families with kids?' },
+          { id: 'food', label: 'What food traditions should I try first?' },
+        ]}
+      />
+    );
+  }
 
   if (!event || !event.detailPage) {
     return (
