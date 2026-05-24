@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import Link from 'next/link';
-import EventAIResult from './EventAIResult';
-import { getMockEventAIResponse } from '../data/eventAI';
+import AtlasAIResponseDemo from './AtlasAIResponseDemo';
 
 type SuggestedChip = { id: string; label: string };
 
@@ -18,8 +17,6 @@ type InteractiveArtworkPageProps = {
 };
 
 export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref, shareUrl, chips }: InteractiveArtworkPageProps) {
-  const [activeQuestion, setActiveQuestion] = useState<string>('');
-
   useEffect(() => {
     document.documentElement.classList.add('event-detail-scroll');
     document.body.classList.add('event-detail-scroll');
@@ -64,33 +61,14 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
           </button>
         </div>
 
-        <div style={styles.promptWrap}>
-          <label htmlFor="goodells-question" style={styles.promptLabel}>
-            Ask Atlas AI about Goodells Fair
-          </label>
-          <input
-            id="goodells-question"
-            value={activeQuestion}
-            onChange={(event) => setActiveQuestion(event.target.value)}
-            placeholder="Ask anything: parking, family activities, food, timing…"
-            style={styles.askInput}
-          />
-        </div>
-
-        <div style={styles.chipsArea} aria-label="Suggested questions">
-          {chips.map((chip) => (
-            <button key={chip.id} type="button" style={styles.chip} onClick={() => setActiveQuestion(chip.label)}>
-              {chip.label}
-            </button>
-          ))}
-        </div>
       </section>
 
       <section style={styles.resultSection}>
-        <EventAIResult
+        <AtlasAIResponseDemo
+          eventId={eventId}
           eventName={eventName}
-          activeQuestion={activeQuestion || undefined}
-          response={activeQuestion ? getMockEventAIResponse(eventId, activeQuestion) : undefined}
+          chips={chips}
+          title={`Atlas field guide for ${eventName}`}
         />
       </section>
     </main>
@@ -138,32 +116,6 @@ const styles: Record<string, CSSProperties> = {
     color: 'rgba(255, 232, 197, 0.98)',
     fontSize: '1rem',
     fontWeight: 600,
-    cursor: 'pointer',
-  },
-  promptWrap: { display: 'grid', gap: '0.4rem' },
-  promptLabel: { fontSize: '1.1rem', lineHeight: 1.3, fontWeight: 700, letterSpacing: '0.01em', color: 'rgba(255, 220, 172, 0.98)' },
-  askInput: {
-    width: '100%',
-    minHeight: '3.15rem',
-    borderRadius: '1rem',
-    border: '1px solid rgba(255, 202, 132, 0.4)',
-    background: 'linear-gradient(170deg, rgba(30, 23, 17, 0.82), rgba(18, 14, 10, 0.78))',
-    color: 'rgba(255, 245, 227, 0.98)',
-    padding: '0.85rem 1rem',
-    fontSize: '1.05rem',
-  },
-  chipsArea: { display: 'grid', gridTemplateColumns: '1fr', gap: '0.6rem' },
-  chip: {
-    width: '100%',
-    textAlign: 'left',
-    minHeight: '3rem',
-    border: '1px solid rgba(255, 202, 128, 0.38)',
-    borderRadius: '0.95rem',
-    background: 'linear-gradient(155deg, rgba(33, 23, 16, 0.84), rgba(20, 15, 11, 0.76))',
-    color: 'rgba(255, 232, 203, 0.98)',
-    padding: '0.75rem 0.9rem',
-    fontSize: '1rem',
-    lineHeight: 1.35,
     cursor: 'pointer',
   },
   resultSection: { width: '100%', maxWidth: '760px', padding: '0 0.8rem' },
