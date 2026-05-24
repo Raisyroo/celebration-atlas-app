@@ -36,37 +36,37 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
           <div style={styles.videoRegion} aria-label="Hero video region">
             <video src={heroVideoSrc} muted autoPlay loop playsInline controls style={styles.video} />
           </div>
-
-          <section style={styles.guideSection} aria-label={`${eventName} AI guide`}>
-            <div style={styles.actionRow}>
-              <Link href={backHref} style={styles.backButton}>
-                ← Back to Atlas
-              </Link>
-
-              <button
-                type="button"
-                style={styles.shareButton}
-                onClick={() => {
-                  const target = shareUrl ?? (typeof window !== 'undefined' ? window.location.href : '');
-                  if (navigator.share) {
-                    navigator.share({ title: eventName, url: target }).catch(() => {});
-                    return;
-                  }
-                  navigator.clipboard.writeText(target).catch(() => {});
-                }}
-              >
-                Share memory
-              </button>
-            </div>
-
-            <AtlasAIResponseDemo
-              eventId={eventId}
-              eventName={eventName}
-              chips={chips}
-              title={`Atlas field guide for ${eventName}`}
-            />
-          </section>
         </div>
+
+        <section style={styles.guideSection} aria-label={`${eventName} AI guide`}>
+          <div style={styles.actionRow}>
+            <Link href={backHref} style={styles.backButton}>
+              ← Back to Atlas
+            </Link>
+
+            <button
+              type="button"
+              style={styles.shareButton}
+              onClick={() => {
+                const target = shareUrl ?? (typeof window !== 'undefined' ? window.location.href : '');
+                if (navigator.share) {
+                  navigator.share({ title: eventName, url: target }).catch(() => {});
+                  return;
+                }
+                navigator.clipboard.writeText(target).catch(() => {});
+              }}
+            >
+              Share memory
+            </button>
+          </div>
+
+          <AtlasAIResponseDemo
+            eventId={eventId}
+            eventName={eventName}
+            chips={chips}
+            title={`Atlas field guide for ${eventName}`}
+          />
+        </section>
       </section>
     </main>
   );
@@ -83,22 +83,21 @@ const styles: Record<string, CSSProperties> = {
     gap: '1rem',
     padding: '0 0 6rem',
   },
-  heroSection: { width: '100%', display: 'grid', justifyItems: 'center', position: 'relative', zIndex: 0 },
+  heroSection: { width: '100%', display: 'grid', justifyItems: 'center', alignContent: 'start', position: 'relative', zIndex: 0, gap: '1.25rem' },
   artworkShell: { position: 'relative', width: '100%', maxWidth: '760px' },
   artworkImage: { display: 'block', width: '100%', height: 'auto' },
   videoRegion: { position: 'absolute', left: '8.5%', top: '17.4%', width: '82.8%', height: '20.4%', overflow: 'hidden', borderRadius: '1.2%' },
   video: { width: '100%', height: '100%', objectFit: 'cover' },
   guideSection: {
-    position: 'absolute',
-    left: '7%',
-    top: '42%',
-    width: '86%',
-    maxHeight: '53%',
-    overflowY: 'auto',
-    padding: '0.55rem 0.75rem 0.9rem',
+    width: 'min(86%, 640px)',
+    padding: '1rem',
+    marginTop: '0.4rem',
+    borderRadius: '0.85rem',
+    border: '1px solid rgba(142, 107, 71, 0.55)',
+    background: 'linear-gradient(165deg, rgba(248, 231, 196, 0.93), rgba(232, 206, 167, 0.9))',
+    boxShadow: '0 16px 30px rgba(22, 11, 7, 0.42)',
     display: 'grid',
     gap: '0.9rem',
-    zIndex: 2,
   },
   actionRow: { display: 'flex', gap: '0.7rem', flexWrap: 'wrap' },
   backButton: {
