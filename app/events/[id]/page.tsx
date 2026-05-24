@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
 import InteractiveArtworkPage from '../../../components/InteractiveArtworkPage';
 import EventAIResult from '../../../components/EventAIResult';
+import { getMockEventAIResponse } from '../../../data/eventAI';
 
 type PageTone = {
   pageBackground: string;
@@ -129,11 +130,12 @@ export default function EventDetailPage() {
   const [memoryOpacity, setMemoryOpacity] = useState(1);
   const [isPageVisible, setIsPageVisible] = useState(false);
   const [isIntroVisible, setIsIntroVisible] = useState(false);
-
+  const [activeQuestion, setActiveQuestion] = useState<string | undefined>();
 
   if (event?.id === 'goodells-fair' && event.detailPage) {
     return (
       <InteractiveArtworkPage
+        eventId={event.id}
         eventName={event.name}
         artworkSrc="/event-pages/goodells/goodells-master-page.webp"
         heroVideoSrc="/event-media/goodells-fair-intro.mp4"
@@ -351,7 +353,22 @@ export default function EventDetailPage() {
         </section>
       ) : null}
 
-      <EventAIResult eventName={event.name} />
+      <section style={styles.aiPromptSection} aria-label="Suggested Atlas AI questions">
+        <p style={styles.aiPromptEyebrow}>Suggested questions</p>
+        <div style={styles.aiPromptChips}>
+          {[
+            `What should I prioritize first at ${event.name}?`,
+            `Give me a family-friendly plan for ${event.name}.`,
+            `What should I know about timing, parking, and food?`,
+          ].map((question) => (
+            <button key={question} type="button" style={styles.aiPromptChip} onClick={() => setActiveQuestion(question)}>
+              {question}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <EventAIResult eventName={event.name} activeQuestion={activeQuestion} response={activeQuestion ? getMockEventAIResponse(event.id, activeQuestion) : undefined} />
 
       <section style={{ ...styles.storySection, background: tone.storyBackground, border: tone.storyBorder }}>
         <h2 style={{ ...styles.storyHeading, color: tone.headingColor }}>Story</h2>
@@ -578,6 +595,34 @@ const styles: Record<string, CSSProperties> = {
     fontSize: '0.68rem',
     letterSpacing: '0.09em',
     textTransform: 'uppercase',
+  },
+  aiPromptSection: {
+    width: '100%',
+    maxWidth: '58rem',
+    border: '1px solid rgba(167, 207, 255, 0.24)',
+    background: 'linear-gradient(170deg, rgba(10, 16, 26, 0.74), rgba(8, 12, 20, 0.58))',
+    borderRadius: '1rem',
+    padding: '0.95rem',
+    display: 'grid',
+    gap: '0.6rem',
+  },
+  aiPromptEyebrow: {
+    margin: 0,
+    fontSize: '0.72rem',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: 'rgba(186, 220, 253, 0.86)',
+  },
+  aiPromptChips: { display: 'flex', flexWrap: 'wrap', gap: '0.58rem' },
+  aiPromptChip: {
+    border: '1px solid rgba(158, 201, 255, 0.36)',
+    background: 'rgba(20, 31, 48, 0.72)',
+    color: 'rgba(229, 241, 255, 0.95)',
+    padding: '0.46rem 0.7rem',
+    borderRadius: '999px',
+    fontSize: '0.84rem',
+    cursor: 'pointer',
+    textAlign: 'left',
   },
   snapshotValue: {
     margin: 0,
