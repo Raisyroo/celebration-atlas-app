@@ -52,7 +52,7 @@ export default function AtlasAIResponseDemo({ eventId, eventName, chips, title }
             if (draftQuestion.trim()) setActiveQuestion(draftQuestion.trim());
           }}
         >
-          Ask AI
+          Ask
         </button>
       </div>
 
@@ -79,21 +79,21 @@ const styles: Record<string, CSSProperties> = {
   wrap: {
     width: '100%',
     display: 'grid',
-    gap: '0.85rem',
+    gap: '0.75rem',
     border: '1px solid rgba(110, 82, 54, 0.38)',
     borderRadius: '0.55rem',
-    padding: '0.95rem',
-    background: 'rgba(251, 241, 214, 0.6)',
+    padding: '0.88rem 0.72rem',
+    background: 'rgba(251, 241, 214, 0.72)',
   },
-  eyebrow: { margin: 0, color: '#6a4a2d', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.12em' },
-  heading: { margin: 0, fontSize: '1.1rem', lineHeight: 1.3, color: '#3a2515' },
-  sub: { margin: 0, color: '#5b4027', fontSize: '0.9rem', lineHeight: 1.45 },
-  askRow: { display: 'grid', gap: '0.5rem', gridTemplateColumns: '1fr auto', alignItems: 'stretch' },
+  eyebrow: { margin: 0, color: '#6a4a2d', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.1em' },
+  heading: { margin: 0, fontSize: 'clamp(1.05rem, 4.2vw, 1.3rem)', lineHeight: 1.3, color: '#3a2515' },
+  sub: { margin: 0, color: '#5b4027', fontSize: '0.88rem', lineHeight: 1.4 },
+  askRow: { display: 'grid', gap: '0.5rem', gridTemplateColumns: '1fr', alignItems: 'stretch' },
   askInput: {
     border: '1px solid rgba(112, 81, 49, 0.52)',
     borderRadius: '0.45rem',
-    padding: '0.78rem 0.8rem',
-    fontSize: '1.05rem',
+    padding: '0.76rem 0.74rem',
+    fontSize: '1rem',
     color: '#3b2818',
     background: 'rgba(255, 250, 235, 0.7)',
   },
@@ -102,16 +102,17 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: '0.45rem',
     background: 'rgba(239, 218, 178, 0.9)',
     color: '#432b18',
-    padding: '0.72rem 0.95rem',
+    padding: '0.7rem 0.95rem',
     fontWeight: 700,
+    justifySelf: 'start',
     cursor: 'pointer',
   },
-  chipGrid: { display: 'grid', gap: '0.55rem' },
+  chipGrid: { display: 'grid', gap: '0.5rem' },
   chip: {
     textAlign: 'left',
     borderRadius: '0.35rem',
     border: '1px solid rgba(110, 81, 52, 0.5)',
-    padding: '0.68rem 0.8rem',
+    padding: '0.64rem 0.72rem',
     background: 'rgba(246, 228, 195, 0.85)',
     color: '#4a301d',
     fontSize: '0.95rem',
