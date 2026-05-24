@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import AtlasAIResponseDemo from './AtlasAIResponseDemo';
+import AtlasAIResponseCard, { type AtlasAIResponseCardData } from './AtlasAIResponseCard';
+import { getMockEventAIResponse } from '../data/eventAI';
 
 type SuggestedChip = { id: string; label: string };
 
@@ -16,6 +18,8 @@ type InteractiveArtworkPageProps = {
 };
 
 export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref, chips }: InteractiveArtworkPageProps) {
+  const [activeQuestion, setActiveQuestion] = useState('');
+
   useEffect(() => {
     document.documentElement.classList.add('event-detail-scroll');
     document.body.classList.add('event-detail-scroll');
@@ -25,6 +29,20 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
       document.body.classList.remove('event-detail-scroll');
     };
   }, []);
+
+  const responseCards = useMemo<AtlasAIResponseCardData[]>(() => {
+    if (!activeQuestion) return [];
+    const response = getMockEventAIResponse(eventId, activeQuestion);
+    const typeMap = {
+      answer: 'narrative',
+      checklist: 'checklist',
+      itinerary: 'timeline',
+      mapPreview: 'mapPreview',
+      sourceConfidence: 'sourceConfidence',
+    } as const;
+
+    return response.sections.map((section) => ({ type: typeMap[section.type], lines: section.lines }));
+  }, [activeQuestion, eventId]);
 
   return (
     <main style={styles.page}>
@@ -39,16 +57,27 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
           <Link href={backHref} style={styles.topBackLink}>
             ← Back to Atlas
           </Link>
+
+          <section style={styles.overlayGuideCard} aria-label={`${eventName} AI guide`}>
+            <AtlasAIResponseDemo
+              eventName={eventName}
+              chips={chips}
+              title="Ask the Fair Guide"
+              onQuestionSelect={setActiveQuestion}
+            />
+          </section>
         </div>
 
-        <section style={styles.guideSection} aria-label={`${eventName} AI guide`}>
-          <AtlasAIResponseDemo
-            eventId={eventId}
-            eventName={eventName}
-            chips={chips}
-            title={`Ask the Fair Guide`}
-          />
-        </section>
+        {activeQuestion ? (
+          <section style={styles.resultsSection} aria-label="AI guide results">
+            <p style={styles.activeQuestion}>“{activeQuestion}”</p>
+            <div style={styles.responseStack}>
+              {responseCards.map((card, index) => (
+                <AtlasAIResponseCard key={`${card.type}-${index}`} card={card} />
+              ))}
+            </div>
+          </section>
+        ) : null}
       </section>
     </main>
   );
@@ -100,10 +129,26 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.02em',
     backdropFilter: 'blur(1.5px)',
   },
-  guideSection: {
-    width: '100%',
-    padding: '1rem 0.75rem 1.8rem',
-    display: 'grid',
-    gap: '0.2rem',
+  overlayGuideCard: {
+    position: 'absolute',
+    left: '8%',
+    width: '84%',
+    top: '72%',
+    zIndex: 2,
+    border: '1px solid rgba(165, 126, 86, 0.4)',
+    borderRadius: '1rem',
+    padding: '0.78rem 0.7rem',
+    background: 'rgba(246, 236, 216, 0.4)',
+    boxShadow: '0 14px 28px rgba(53, 31, 16, 0.24)',
+    backdropFilter: 'blur(10px) saturate(108%)',
+    WebkitBackdropFilter: 'blur(10px) saturate(108%)',
   },
+  resultsSection: {
+    width: '100%',
+    padding: '0.85rem 0.75rem 1.8rem',
+    display: 'grid',
+    gap: '0.6rem',
+  },
+  activeQuestion: { margin: 0, fontSize: '0.9rem', color: '#4b3321', opacity: 0.9 },
+  responseStack: { display: 'grid', gap: '0.65rem' },
 };
