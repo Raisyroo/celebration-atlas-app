@@ -15,6 +15,7 @@ type AtlasAIResponseDemoProps = {
 
 export default function AtlasAIResponseDemo({ eventId, eventName, chips, title }: AtlasAIResponseDemoProps) {
   const [activeQuestion, setActiveQuestion] = useState<string>('');
+  const [draftQuestion, setDraftQuestion] = useState<string>('');
 
   const cards = useMemo<AtlasAIResponseCardData[]>(() => {
     const response = getMockEventAIResponse(eventId, activeQuestion || `What should I know before visiting ${eventName}?`);
@@ -35,6 +36,25 @@ export default function AtlasAIResponseDemo({ eventId, eventName, chips, title }
       <p style={styles.eyebrow}>Atlas AI guide preview</p>
       <h2 style={styles.heading}>{title ?? `Ask about ${eventName}`}</h2>
       <p style={styles.sub}>Prompt chips trigger mock on-page answers only. No live AI, RAG, database, or API calls yet.</p>
+      <div style={styles.askRow}>
+        <input
+          type="text"
+          value={draftQuestion}
+          onChange={(event) => setDraftQuestion(event.target.value)}
+          placeholder={`Ask AI about ${eventName}`}
+          style={styles.askInput}
+          aria-label="Ask AI question"
+        />
+        <button
+          type="button"
+          style={styles.askButton}
+          onClick={() => {
+            if (draftQuestion.trim()) setActiveQuestion(draftQuestion.trim());
+          }}
+        >
+          Ask AI
+        </button>
+      </div>
 
       <div style={styles.chipGrid}>
         {chips.map((chip) => (
@@ -60,26 +80,45 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     display: 'grid',
     gap: '0.85rem',
-    border: '1px solid rgba(163, 201, 252, 0.3)',
-    borderRadius: '1.2rem',
+    border: '1px solid rgba(110, 82, 54, 0.38)',
+    borderRadius: '0.55rem',
     padding: '0.95rem',
-    background: 'radial-gradient(circle at 15% 0%, rgba(121, 177, 255, 0.17), transparent 48%), linear-gradient(170deg, rgba(8, 12, 21, 0.95), rgba(6, 10, 18, 0.89))',
+    background: 'rgba(251, 241, 214, 0.6)',
   },
-  eyebrow: { margin: 0, color: 'rgba(177, 216, 255, 0.92)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.12em' },
-  heading: { margin: 0, fontSize: '1.1rem', lineHeight: 1.3, color: 'rgba(241, 247, 255, 0.97)' },
-  sub: { margin: 0, color: 'rgba(206, 225, 248, 0.9)', fontSize: '0.9rem', lineHeight: 1.45 },
+  eyebrow: { margin: 0, color: '#6a4a2d', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.12em' },
+  heading: { margin: 0, fontSize: '1.1rem', lineHeight: 1.3, color: '#3a2515' },
+  sub: { margin: 0, color: '#5b4027', fontSize: '0.9rem', lineHeight: 1.45 },
+  askRow: { display: 'grid', gap: '0.5rem', gridTemplateColumns: '1fr auto', alignItems: 'stretch' },
+  askInput: {
+    border: '1px solid rgba(112, 81, 49, 0.52)',
+    borderRadius: '0.45rem',
+    padding: '0.78rem 0.8rem',
+    fontSize: '1.05rem',
+    color: '#3b2818',
+    background: 'rgba(255, 250, 235, 0.7)',
+  },
+  askButton: {
+    border: '1px solid rgba(98, 68, 42, 0.55)',
+    borderRadius: '0.45rem',
+    background: 'rgba(239, 218, 178, 0.9)',
+    color: '#432b18',
+    padding: '0.72rem 0.95rem',
+    fontWeight: 700,
+    cursor: 'pointer',
+  },
   chipGrid: { display: 'grid', gap: '0.55rem' },
   chip: {
     textAlign: 'left',
-    borderRadius: '0.9rem',
-    border: '1px solid rgba(176, 211, 255, 0.34)',
-    padding: '0.72rem 0.82rem',
-    background: 'linear-gradient(170deg, rgba(15, 24, 38, 0.88), rgba(10, 16, 28, 0.82))',
-    color: 'rgba(235, 245, 255, 0.97)',
-    fontSize: '0.96rem',
+    borderRadius: '0.35rem',
+    border: '1px solid rgba(110, 81, 52, 0.5)',
+    padding: '0.68rem 0.8rem',
+    background: 'rgba(246, 228, 195, 0.85)',
+    color: '#4a301d',
+    fontSize: '0.95rem',
     lineHeight: 1.38,
     cursor: 'pointer',
+    boxShadow: '0 1px 1px rgba(72, 45, 25, 0.12)',
   },
-  question: { margin: 0, fontSize: '0.9rem', color: 'rgba(225, 239, 255, 0.94)' },
+  question: { margin: 0, fontSize: '0.9rem', color: '#4a311f' },
   cards: { display: 'grid', gap: '0.68rem' },
 };
