@@ -17,7 +17,7 @@ export default function AtlasAIResponseDemo({ eventId, eventName, chips, title }
   const [activeQuestion, setActiveQuestion] = useState<string>('');
   const [draftQuestion, setDraftQuestion] = useState<string>('');
 
-  const cards = useMemo<AtlasAIResponseCardData[]>(() => {
+  useMemo<AtlasAIResponseCardData[]>(() => {
     const response = getMockEventAIResponse(eventId, activeQuestion || `What should I know before visiting ${eventName}?`);
     return response.sections.map((section) => {
       const typeMap = {
@@ -33,15 +33,13 @@ export default function AtlasAIResponseDemo({ eventId, eventName, chips, title }
 
   return (
     <section style={styles.wrap} aria-label="Atlas AI response section">
-      <p style={styles.eyebrow}>Intelligence layer</p>
-      <h2 style={styles.heading}>{title ?? `Ask about ${eventName}`}</h2>
-      <p style={styles.sub}>Prompt chips trigger mock on-page answers only. No live AI, RAG, database, or API calls yet.</p>
+      <h2 style={styles.heading}>{title ?? `Ask the Fair Guide`}</h2>
       <div style={styles.askRow}>
         <input
           type="text"
           value={draftQuestion}
           onChange={(event) => setDraftQuestion(event.target.value)}
-          placeholder={`Ask AI about ${eventName}`}
+          placeholder={`Ask about ${eventName}`}
           style={styles.askInput}
           aria-label="Ask AI question"
         />
@@ -57,20 +55,14 @@ export default function AtlasAIResponseDemo({ eventId, eventName, chips, title }
       </div>
 
       <div style={styles.chipGrid}>
-        {chips.map((chip) => (
+        {chips.slice(0, 3).map((chip) => (
           <button key={chip.id} type="button" onClick={() => setActiveQuestion(chip.label)} style={styles.chip}>
             {chip.label}
           </button>
         ))}
       </div>
 
-      {activeQuestion ? <p style={styles.question}>Asked: “{activeQuestion}”</p> : null}
-
-      <div style={styles.cards}>
-        {cards.map((card, idx) => (
-          <AtlasAIResponseCard key={`${card.type}-${idx}`} card={card} />
-        ))}
-      </div>
+      {activeQuestion ? <p style={styles.question}>“{activeQuestion}”</p> : null}
     </section>
   );
 }
@@ -79,57 +71,62 @@ const styles: Record<string, CSSProperties> = {
   wrap: {
     width: '100%',
     display: 'grid',
-    gap: '0.9rem',
-    border: '1px solid rgba(149, 114, 74, 0.42)',
-    borderRadius: '1.1rem',
-    padding: '1rem 0.85rem 1.05rem',
+    gap: '1.15rem',
+    border: '1px solid rgba(197, 168, 126, 0.4)',
+    borderRadius: '1.25rem',
+    padding: '1.28rem 1rem 1.24rem',
     background:
-      'linear-gradient(150deg, rgba(255, 247, 226, 0.82), rgba(238, 217, 177, 0.68) 62%, rgba(226, 200, 160, 0.58))',
+      'linear-gradient(160deg, rgba(254, 248, 234, 0.44), rgba(241, 224, 194, 0.34) 55%, rgba(213, 183, 145, 0.3) 100%)',
     boxShadow:
-      '0 26px 44px rgba(47, 26, 13, 0.28), 0 2px 12px rgba(120, 79, 44, 0.17), inset 0 1px 0 rgba(255, 253, 244, 0.68)',
-    backdropFilter: 'blur(7px) saturate(108%)',
-    WebkitBackdropFilter: 'blur(7px) saturate(108%)',
+      '0 30px 50px rgba(36, 20, 9, 0.33), 0 10px 24px rgba(84, 52, 25, 0.2), inset 0 1px 0 rgba(255, 252, 244, 0.58), 0 0 34px rgba(240, 206, 146, 0.15)',
+    backdropFilter: 'blur(16px) saturate(112%)',
+    WebkitBackdropFilter: 'blur(16px) saturate(112%)',
     position: 'relative',
-    transform: 'translateY(-0.2rem)',
+    transform: 'translateY(-0.15rem)',
+    overflow: 'hidden',
   },
-  eyebrow: { margin: 0, color: '#7a5431', fontSize: '0.66rem', textTransform: 'uppercase', letterSpacing: '0.14em' },
-  heading: { margin: 0, fontSize: 'clamp(1.1rem, 4.5vw, 1.42rem)', lineHeight: 1.25, color: '#402715', textShadow: '0 1px 0 rgba(255, 247, 230, 0.5)' },
-  sub: { margin: 0, color: '#5d4128', fontSize: '0.88rem', lineHeight: 1.5 },
-  askRow: { display: 'grid', gap: '0.5rem', gridTemplateColumns: '1fr', alignItems: 'stretch' },
+  heading: {
+    margin: 0,
+    fontSize: 'clamp(1.18rem, 4.5vw, 1.56rem)',
+    lineHeight: 1.22,
+    letterSpacing: '0.01em',
+    color: '#3f2818',
+    textShadow: '0 1px 1px rgba(255, 249, 236, 0.58)',
+  },
+  askRow: { display: 'grid', gap: '0.6rem', gridTemplateColumns: '1fr', alignItems: 'stretch' },
   askInput: {
-    border: '1px solid rgba(126, 90, 56, 0.58)',
-    borderRadius: '0.68rem',
-    padding: '0.82rem 0.78rem',
+    border: '1px solid rgba(136, 101, 69, 0.44)',
+    borderRadius: '0.84rem',
+    padding: '0.9rem 0.85rem',
     fontSize: '1rem',
     color: '#3b2818',
-    background: 'linear-gradient(180deg, rgba(255, 252, 241, 0.84), rgba(246, 235, 210, 0.82))',
-    boxShadow: 'inset 0 1px 2px rgba(111, 74, 44, 0.13)',
+    background: 'linear-gradient(180deg, rgba(255, 252, 241, 0.74), rgba(247, 235, 210, 0.66))',
+    boxShadow: 'inset 0 1px 2px rgba(111, 74, 44, 0.1)',
   },
   askButton: {
-    border: '1px solid rgba(107, 74, 44, 0.6)',
-    borderRadius: '0.7rem',
-    background: 'linear-gradient(180deg, rgba(243, 224, 186, 0.97), rgba(222, 193, 146, 0.93))',
+    border: '1px solid rgba(106, 77, 52, 0.52)',
+    borderRadius: '0.82rem',
+    background: 'linear-gradient(180deg, rgba(246, 230, 197, 0.92), rgba(223, 195, 151, 0.88))',
     color: '#432918',
-    padding: '0.74rem 1.05rem',
+    padding: '0.74rem 1.1rem',
     fontWeight: 700,
     justifySelf: 'start',
     cursor: 'pointer',
-    boxShadow: '0 4px 11px rgba(84, 54, 28, 0.22), inset 0 1px 0 rgba(255, 247, 228, 0.68)',
+    boxShadow: '0 5px 14px rgba(84, 54, 28, 0.24), inset 0 1px 0 rgba(255, 247, 228, 0.66)',
   },
-  chipGrid: { display: 'grid', gap: '0.5rem' },
+  chipGrid: { display: 'grid', gap: '0.6rem' },
   chip: {
     textAlign: 'left',
-    borderRadius: '0.7rem',
-    border: '1px solid rgba(122, 87, 56, 0.62)',
-    padding: '0.7rem 0.76rem',
+    borderRadius: '0.75rem',
+    border: '1px solid rgba(125, 90, 58, 0.5)',
+    padding: '0.76rem 0.84rem',
     background:
-      'linear-gradient(160deg, rgba(247, 231, 200, 0.9), rgba(232, 206, 165, 0.88) 66%, rgba(221, 191, 150, 0.9))',
+      'linear-gradient(155deg, rgba(250, 236, 208, 0.74), rgba(236, 212, 173, 0.64) 60%, rgba(228, 196, 150, 0.66))',
     color: '#4a2f1b',
     fontSize: '0.93rem',
     lineHeight: 1.42,
     cursor: 'pointer',
-    boxShadow: '0 6px 12px rgba(82, 53, 29, 0.18), inset 0 1px 0 rgba(255, 247, 225, 0.58)',
+    boxShadow: '0 8px 16px rgba(82, 53, 29, 0.2), inset 0 1px 0 rgba(255, 247, 225, 0.62)',
   },
-  question: { margin: 0, fontSize: '0.9rem', color: '#4a311f' },
-  cards: { display: 'grid', gap: '0.72rem' },
+  question: { margin: '0.1rem 0 0', fontSize: '0.88rem', color: '#4b3321', opacity: 0.88 },
 };
