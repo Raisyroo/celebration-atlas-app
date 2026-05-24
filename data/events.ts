@@ -9,6 +9,8 @@ export type AtmosphereEffect =
   | 'ferrisGlow';
 
 export type AtlasEvent = {
+  searchAliases?: string[];
+  pageArchetype?: 'standard' | 'livingScrapbook';
   iconType?: 'music' | 'fair' | 'food' | 'fireworks' | 'flower' | 'harvest' | 'waterfront' | 'winter' | 'art' | 'heritage';
   id: string;
   name: string;
@@ -208,19 +210,21 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
 
   {
     id: 'goodells-fair',
-    name: 'Goodells Fair',
-    location: 'Goodells, MI',
-    atmosphereLabel: 'Sunset midway glow',
-    blurb: 'A St. Clair County fair tradition with livestock shows, grandstand nights, and local midway classics.',
+    name: 'St. Clair County 4-H & Youth Fair',
+    location: 'Goodells, Michigan',
+    atmosphereLabel: 'Barn-lantern midway glow',
+    blurb: 'A St. Clair County tradition featuring 4-H exhibits, youth showcases, livestock judging, and evening midway lights.',
     category: 'Fairs',
     iconType: 'fair',
+    searchAliases: ['Goodells Fair', 'St. Clair County Fair', '4-H Fair', 'Youth Fair'],
+    pageArchetype: 'livingScrapbook',
     x: 79,
     y: 37,
     atmosphere: atmosphere(['ferrisGlow'], 'medium'),
     regionAtmosphere: 'harvest',
     detailPage: {
-      shortStory: 'Interactive artwork experience.',
-      atmosphereLine: 'Interactive artwork page grounded in the original Goodells fair illustration.',
+      shortStory: 'A lightweight scrapbook entry anchored in youth livestock traditions and county-fair summer nights.',
+      atmosphereLine: 'Rural barns, show rings, and twilight midway lights in Goodells.',
       mediaType: 'video',
       mediaSrc: '/event-media/goodells-fair-intro.mp4',
     },

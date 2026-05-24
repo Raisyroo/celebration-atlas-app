@@ -132,7 +132,7 @@ export default function EventDetailPage() {
   const [isIntroVisible, setIsIntroVisible] = useState(false);
   const [activeQuestion, setActiveQuestion] = useState<string | undefined>();
 
-  if (event?.id === 'goodells-fair' && event.detailPage) {
+  if (event?.pageArchetype === 'livingScrapbook' && event.detailPage) {
     return (
       <InteractiveArtworkPage
         eventId={event.id}
