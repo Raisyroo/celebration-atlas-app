@@ -1,12 +1,14 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import EventAIResult from './EventAIResult';
+import { getMockEventAIResponse } from '../data/eventAI';
 
 type SuggestedChip = { id: string; label: string };
 
 type InteractiveArtworkPageProps = {
+  eventId: string;
   eventName: string;
   artworkSrc: string;
   heroVideoSrc: string;
@@ -15,7 +17,9 @@ type InteractiveArtworkPageProps = {
   chips: SuggestedChip[];
 };
 
-export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVideoSrc, backHref, shareUrl, chips }: InteractiveArtworkPageProps) {
+export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref, shareUrl, chips }: InteractiveArtworkPageProps) {
+  const [activeQuestion, setActiveQuestion] = useState<string | undefined>();
+
   return (
     <main style={styles.page}>
       <div style={styles.artworkShell}>
@@ -51,7 +55,7 @@ export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVide
 
         <div style={styles.chipsArea} aria-label="Suggested questions">
           {chips.map((chip) => (
-            <button key={chip.id} type="button" style={styles.chip}>
+            <button key={chip.id} type="button" style={styles.chip} onClick={() => setActiveQuestion(chip.label)}>
               {chip.label}
             </button>
           ))}
@@ -59,7 +63,11 @@ export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVide
       </div>
 
       <section style={styles.resultSection}>
-        <EventAIResult eventName={eventName} />
+        <EventAIResult
+          eventName={eventName}
+          activeQuestion={activeQuestion}
+          response={activeQuestion ? getMockEventAIResponse(eventId, activeQuestion) : undefined}
+        />
       </section>
     </main>
   );
