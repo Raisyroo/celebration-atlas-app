@@ -226,7 +226,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       shortStory: 'A lightweight scrapbook entry anchored in youth livestock traditions and county-fair summer nights.',
       atmosphereLine: 'Rural barns, show rings, and twilight midway lights in Goodells.',
       mediaType: 'video',
-      mediaSrc: '/event-media/goodells-fair-intro.mp4',
+      mediaSrc: '/event-media/goodells/goodells-fair-intro.mp4',
     },
   },
   { id: 'shiawassee-fair', name: 'Shiawassee County Fair', location: 'Corunna, MI', atmosphereLabel: 'County fair nostalgia', blurb: 'A classic county fair with agricultural exhibits, midway rides, and grandstand entertainment.', category: 'Fairs', iconType: 'fair', x: 54, y: 49, atmosphere: atmosphere(['ferrisGlow'], 'medium'), regionAtmosphere: 'harvest' },

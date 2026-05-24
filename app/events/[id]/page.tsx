@@ -138,7 +138,7 @@ export default function EventDetailPage() {
         eventId={event.id}
         eventName={event.name}
         artworkSrc="/event-pages/goodells/goodells-master-page.webp"
-        heroVideoSrc="/event-media/goodells-fair-intro.mp4"
+        heroVideoSrc="/event-media/goodells/goodells-fair-intro.mp4"
         backHref={`/?event=${event.id}`}
         chips={[
           { id: 'parking', label: 'Where should I park for evening events?' },
