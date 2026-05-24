@@ -45,15 +45,17 @@ export default function AtlasAIResponseCard({ card }: AtlasAIResponseCardProps) 
 
 const styles: Record<string, CSSProperties> = {
   card: {
-    border: '1px solid rgba(132, 98, 67, 0.36)',
-    background: 'rgba(255, 247, 227, 0.72)',
-    borderRadius: '0.48rem',
-    padding: '0.9rem',
-    boxShadow: '0 1px 2px rgba(74, 48, 28, 0.12)',
+    border: '1px solid rgba(137, 101, 65, 0.34)',
+    background: 'linear-gradient(165deg, rgba(255, 249, 233, 0.74), rgba(242, 224, 189, 0.58))',
+    borderRadius: '0.9rem',
+    padding: '0.95rem',
+    boxShadow: '0 12px 20px rgba(84, 52, 28, 0.14), inset 0 1px 0 rgba(255, 249, 232, 0.7)',
+    backdropFilter: 'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)',
   },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' },
-  title: { margin: 0, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.09em', color: '#5c3c24', fontWeight: 700 },
-  badge: { fontSize: '0.72rem', color: '#5b3c22', border: '1px solid rgba(134, 103, 69, 0.45)', borderRadius: '0.35rem', padding: '0.18rem 0.55rem', background: 'rgba(243, 226, 190, 0.9)' },
+  title: { margin: 0, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.11em', color: '#5c3c24', fontWeight: 700 },
+  badge: { fontSize: '0.72rem', color: '#5b3c22', border: '1px solid rgba(134, 103, 69, 0.45)', borderRadius: '0.45rem', padding: '0.18rem 0.55rem', background: 'rgba(243, 226, 190, 0.9)' },
   body: { display: 'grid', gap: '0.42rem', marginTop: '0.5rem' },
   line: { margin: 0, fontSize: '0.95rem', lineHeight: 1.5, color: '#3c2716' },
 };
