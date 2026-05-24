@@ -1,4 +1,9 @@
-import type { EventAIResponse } from '../components/EventAIResult';
+export type EventAISectionType = 'answer' | 'checklist' | 'itinerary' | 'mapPreview' | 'sourceConfidence';
+
+export type EventAIResponse = {
+  question: string;
+  sections: { type: EventAISectionType; lines: string[] }[];
+};
 
 const defaultResponse = (question: string): EventAIResponse => ({
   question,

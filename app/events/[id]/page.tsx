@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
 import InteractiveArtworkPage from '../../../components/InteractiveArtworkPage';
-import EventAIResult from '../../../components/EventAIResult';
-import { getMockEventAIResponse } from '../../../data/eventAI';
+import AtlasAIResponseDemo from '../../../components/AtlasAIResponseDemo';
 
 type PageTone = {
   pageBackground: string;
@@ -130,7 +129,6 @@ export default function EventDetailPage() {
   const [memoryOpacity, setMemoryOpacity] = useState(1);
   const [isPageVisible, setIsPageVisible] = useState(false);
   const [isIntroVisible, setIsIntroVisible] = useState(false);
-  const [activeQuestion, setActiveQuestion] = useState<string | undefined>();
 
   if (event?.pageArchetype === 'livingScrapbook' && event.detailPage) {
     return (
@@ -354,21 +352,17 @@ export default function EventDetailPage() {
       ) : null}
 
       <section style={styles.aiPromptSection} aria-label="Suggested Atlas AI questions">
-        <p style={styles.aiPromptEyebrow}>Suggested questions</p>
-        <div style={styles.aiPromptChips}>
-          {[
-            `What should I prioritize first at ${event.name}?`,
-            `Give me a family-friendly plan for ${event.name}.`,
-            `What should I know about timing, parking, and food?`,
-          ].map((question) => (
-            <button key={question} type="button" style={styles.aiPromptChip} onClick={() => setActiveQuestion(question)}>
-              {question}
-            </button>
-          ))}
-        </div>
+        <AtlasAIResponseDemo
+          eventId={event.id}
+          eventName={event.name}
+          chips={[
+            { id: 'priority', label: `What should I prioritize first at ${event.name}?` },
+            { id: 'family-plan', label: `Give me a family-friendly plan for ${event.name}.` },
+            { id: 'logistics', label: 'What should I know about timing, parking, and food?' },
+          ]}
+          title={`Atlas guide results for ${event.name}`}
+        />
       </section>
-
-      <EventAIResult eventName={event.name} activeQuestion={activeQuestion} response={activeQuestion ? getMockEventAIResponse(event.id, activeQuestion) : undefined} />
 
       <section style={{ ...styles.storySection, background: tone.storyBackground, border: tone.storyBorder }}>
         <h2 style={{ ...styles.storyHeading, color: tone.headingColor }}>Story</h2>
