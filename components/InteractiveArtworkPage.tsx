@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import EventAIResult from './EventAIResult';
 import { getMockEventAIResponse } from '../data/eventAI';
@@ -19,6 +19,16 @@ type InteractiveArtworkPageProps = {
 
 export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref, shareUrl, chips }: InteractiveArtworkPageProps) {
   const [activeQuestion, setActiveQuestion] = useState<string>('');
+
+  useEffect(() => {
+    document.documentElement.classList.add('event-detail-scroll');
+    document.body.classList.add('event-detail-scroll');
+
+    return () => {
+      document.documentElement.classList.remove('event-detail-scroll');
+      document.body.classList.remove('event-detail-scroll');
+    };
+  }, []);
 
   return (
     <main style={styles.page}>
