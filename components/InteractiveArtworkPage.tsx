@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
+import { getGoodellsMockConversation, type ConversationCard } from '../data/goodellsConversation';
 
 type InteractiveArtworkPageProps = {
   eventId: string;
@@ -42,7 +43,7 @@ const FAIR_GUIDE_CARDS = {
   },
 } as const;
 
-function getMockResponse(question: string): Pick<ChatMessage, 'text' | 'title' | 'highlights'> {
+function getDefaultMockResponse(question: string): ConversationCard {
   const normalized = question.toLowerCase();
   if (normalized.includes('park')) return FAIR_GUIDE_CARDS.parking;
   if (normalized.includes('family') || normalized.includes('kids')) return FAIR_GUIDE_CARDS.family;
@@ -50,7 +51,15 @@ function getMockResponse(question: string): Pick<ChatMessage, 'text' | 'title' |
   return FAIR_GUIDE_CARDS.default;
 }
 
-export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVideoSrc, backHref }: InteractiveArtworkPageProps) {
+function getMockResponse(eventId: string, question: string): ConversationCard {
+  if (eventId === 'goodells-fair') {
+    return getGoodellsMockConversation(question);
+  }
+
+  return getDefaultMockResponse(question);
+}
+
+export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref }: InteractiveArtworkPageProps) {
   const [draft, setDraft] = useState('');
   const [isConversationOpen, setIsConversationOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -83,7 +92,7 @@ export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVide
       text: question,
     };
 
-    const atlasGuide = getMockResponse(question);
+    const atlasGuide = getMockResponse(eventId, question);
 
     const atlasMessage: ChatMessage = {
       id: `atlas-${Date.now() + 1}`,
