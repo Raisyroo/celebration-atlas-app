@@ -14,8 +14,7 @@ const ATMOSPHERIC_SUGGESTIONS = [
   'waterfront festivals',
   'hidden gems',
 ];
-const MAP_BLEED_X = 0.12;
-const MAP_BLEED_Y = 0.1;
+const MAP_ART_ASPECT_RATIO = 2814 / 5000;
 const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
 const MEDIA_MASKS: Record<'romeoPeach', string> = {
   romeoPeach:
@@ -406,6 +405,15 @@ export default function AtlasMap() {
       >
         <div
           style={{
+            ...styles.atmosphereMapContent,
+            transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.55}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.55}px, 0) scale(${BASE_SCALE})`,
+          }}
+        >
+          <img src="/maps/michigan-atlas-base.webp" alt="" aria-hidden draggable={false} style={styles.atmosphereMapImage} />
+        </div>
+
+        <div
+          style={{
             ...styles.mapContent,
             transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.55}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.55}px, 0) scale(${BASE_SCALE})`,
           }}
@@ -781,18 +789,44 @@ const styles: Record<string, CSSProperties> = {
   },
   mapContent: {
     position: 'absolute',
-    inset: `-${MAP_BLEED_Y * 50}% -${MAP_BLEED_X * 50}%`,
+    inset: 0,
+    margin: 'auto',
+    width: 'auto',
+    height: '100%',
+    maxWidth: '100%',
+    aspectRatio: MAP_ART_ASPECT_RATIO,
     transformOrigin: 'center center',
     transition: 'filter 260ms ease, transform 520ms cubic-bezier(.22,.61,.36,1)',
     touchAction: 'none',
     filter: 'saturate(0.74) brightness(0.62) contrast(1.08)',
+  },
+  atmosphereMapContent: {
+    position: 'absolute',
+    inset: '-6% -10%',
+    transformOrigin: 'center center',
+    filter: 'saturate(0.8) brightness(0.4) contrast(1.08)',
+    pointerEvents: 'none',
+  },
+  atmosphereMapImage: {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    opacity: 0.72,
+    filter: 'blur(10px)',
+    transform: 'scale(1.1)',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
+    pointerEvents: 'none',
   },
   mapImage: {
     position: 'relative',
     zIndex: Z_INDEX.mapImage,
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
+    objectFit: 'contain',
     objectPosition: 'center',
     opacity: 0.88,
     userSelect: 'none',
