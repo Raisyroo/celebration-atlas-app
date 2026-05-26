@@ -106,6 +106,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   return (
     <main style={styles.page}>
       <section style={styles.artworkStage} aria-label={`${eventName} memory collage`}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- artworkSrc may be external/dynamic and must render as-is for this composited stage */}
         <img src={artworkSrc} alt={`${eventName} scrapbook artwork`} style={styles.artworkImage} />
         <div style={styles.atmosphereVeil} />
 
