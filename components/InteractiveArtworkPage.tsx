@@ -67,14 +67,22 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
 
   useEffect(() => {
-    document.documentElement.classList.add('event-detail-scroll');
-    document.body.classList.add('event-detail-scroll');
+    if (eventId !== 'goodells-fair') return;
+
+    const previousHtmlOverflow = document.documentElement.style.overflowY;
+    const previousBodyOverflow = document.body.style.overflowY;
+    const previousBodyTouchAction = document.body.style.touchAction;
+
+    document.documentElement.style.overflowY = 'hidden';
+    document.body.style.overflowY = 'hidden';
+    document.body.style.touchAction = 'manipulation';
 
     return () => {
-      document.documentElement.classList.remove('event-detail-scroll');
-      document.body.classList.remove('event-detail-scroll');
+      document.documentElement.style.overflowY = previousHtmlOverflow;
+      document.body.style.overflowY = previousBodyOverflow;
+      document.body.style.touchAction = previousBodyTouchAction;
     };
-  }, []);
+  }, [eventId]);
 
   const canSend = useMemo(() => draft.trim().length > 0, [draft]);
 
@@ -104,12 +112,14 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
     setIsConversationOpen(true);
   };
 
+  const isGoodellsEvent = eventId === 'goodells-fair';
+
   return (
-    <main style={styles.page}>
-      <section style={styles.artworkStage} aria-label={`${eventName} memory collage`}>
+    <main style={{ ...styles.page, ...(isGoodellsEvent ? styles.goodellsPage : null) }}>
+      <section style={{ ...styles.artworkStage, ...(isGoodellsEvent ? styles.goodellsArtworkStage : null) }} aria-label={`${eventName} memory collage`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- artworkSrc may be external/dynamic and must render as-is for this composited stage */}
-        <img src={artworkSrc} alt={`${eventName} scrapbook artwork`} style={styles.artworkImage} />
-        <div style={styles.atmosphereVeil} />
+        <img src={artworkSrc} alt={`${eventName} scrapbook artwork`} style={{ ...styles.artworkImage, ...(isGoodellsEvent ? styles.goodellsArtworkImage : null) }} />
+        <div style={{ ...styles.atmosphereVeil, ...(isGoodellsEvent ? styles.goodellsAtmosphereVeil : null) }} />
 
         {/* Temporarily disabled: preserve Goodells hero video overlay for easy restore later. */}
         {showGoodellsHeroVideo ? (
@@ -169,7 +179,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
           ) : null}
         </div>
 
-        <form style={styles.askDock} onSubmit={(event) => { event.preventDefault(); handleSend(); }}>
+        <form style={{ ...styles.askDock, ...(isGoodellsEvent ? styles.goodellsAskDock : null) }} onSubmit={(event) => { event.preventDefault(); handleSend(); }}>
           <input
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -188,13 +198,18 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
 const styles: Record<string, CSSProperties> = {
   page: { minHeight: '100dvh', background: '#070b13', padding: 0 },
+  goodellsPage: { height: '100dvh', overflow: 'hidden' },
   artworkStage: { position: 'relative', minHeight: '100dvh', overflowX: 'hidden', overflowY: 'visible', maxWidth: '760px', margin: '0 auto' },
+  goodellsArtworkStage: { height: '100dvh', minHeight: '100dvh', overflow: 'hidden' },
   artworkImage: { display: 'block', width: '100%', height: 'auto', objectFit: 'contain' },
+  goodellsArtworkImage: { width: '100%', height: '100dvh', objectFit: 'contain', objectPosition: 'center center' },
   atmosphereVeil: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(5,8,15,0.2) 0%, rgba(6,9,17,0.52) 45%, rgba(4,6,12,0.86) 100%)' },
+  goodellsAtmosphereVeil: { background: 'linear-gradient(180deg, rgba(8,12,20,0.03) 0%, rgba(8,12,20,0.04) 55%, rgba(8,12,20,0.18) 100%)' },
   videoRegion: { position: 'absolute', left: '8.5%', top: '17.4%', width: '82.8%', height: '20.4%', overflow: 'hidden', borderRadius: '1.2%', zIndex: 2 },
   video: { width: '100%', height: '100%', objectFit: 'cover' },
   topBackLink: { position: 'absolute', top: '0.8rem', left: '0.8rem', zIndex: 5, color: 'rgba(244,227,198,0.92)', textDecoration: 'none', fontSize: '0.72rem', letterSpacing: '0.05em', textTransform: 'uppercase', border: '1px solid rgba(221,178,111,0.42)', borderRadius: '999px', padding: '0.35rem 0.68rem', background: 'rgba(8,14,24,0.55)' },
   askDock: { position: 'absolute', left: '4%', bottom: '3%', width: '92%', zIndex: 7, display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.55rem', padding: '0.55rem', borderRadius: '1.2rem', background: 'linear-gradient(170deg, rgba(11,18,31,0.88), rgba(11,16,26,0.7))', border: '1px solid rgba(224,182,114,0.32)', boxShadow: '0 20px 30px rgba(1,2,6,0.48), inset 0 1px 0 rgba(249,222,178,0.22)' },
+  goodellsAskDock: { bottom: 'max(7%, calc(env(safe-area-inset-bottom, 0px) + 1.15rem))' },
   askInput: { minWidth: 0, border: '1px solid rgba(218,179,116,0.24)', borderRadius: '0.88rem', background: 'rgba(6,11,20,0.78)', color: 'rgba(241,227,200,0.96)', fontSize: '0.86rem', padding: '0.68rem 0.75rem', outline: 'none' },
   askButton: { border: '1px solid rgba(236,194,123,0.42)', borderRadius: '0.88rem', background: 'linear-gradient(160deg, rgba(137,95,51,0.78), rgba(95,64,35,0.76))', color: 'rgba(255,245,228,0.98)', padding: '0.64rem 0.9rem', fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase' },
   conversationLayers: { position: 'absolute', left: '4%', right: '4%', bottom: '14%', zIndex: 6, height: '70dvh', display: 'grid', gridTemplateRows: 'auto 1fr', gap: '0.35rem', transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease' },
