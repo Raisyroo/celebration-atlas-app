@@ -45,17 +45,17 @@ export default function AtlasAIResponseCard({ card }: AtlasAIResponseCardProps) 
 
 const styles: Record<string, CSSProperties> = {
   card: {
-    border: '1px solid rgba(137, 101, 65, 0.34)',
-    background: 'linear-gradient(165deg, rgba(255, 249, 233, 0.74), rgba(242, 224, 189, 0.58))',
-    borderRadius: '0.9rem',
-    padding: '0.95rem',
-    boxShadow: '0 12px 20px rgba(84, 52, 28, 0.14), inset 0 1px 0 rgba(255, 249, 232, 0.7)',
-    backdropFilter: 'blur(4px)',
-    WebkitBackdropFilter: 'blur(4px)',
+    border: '1px solid rgba(142, 106, 70, 0.3)',
+    background: 'linear-gradient(165deg, rgba(255, 249, 236, 0.8), rgba(242, 224, 192, 0.56))',
+    borderRadius: '1rem',
+    padding: '1rem',
+    boxShadow: '0 14px 26px rgba(78, 48, 25, 0.14), 0 0 0 1px rgba(168, 126, 77, 0.12), inset 0 1px 0 rgba(255, 249, 232, 0.75)',
+    backdropFilter: 'blur(5px)',
+    WebkitBackdropFilter: 'blur(5px)',
   },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' },
-  title: { margin: 0, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.11em', color: '#5c3c24', fontWeight: 700 },
-  badge: { fontSize: '0.72rem', color: '#5b3c22', border: '1px solid rgba(134, 103, 69, 0.45)', borderRadius: '0.45rem', padding: '0.18rem 0.55rem', background: 'rgba(243, 226, 190, 0.9)' },
-  body: { display: 'grid', gap: '0.42rem', marginTop: '0.5rem' },
-  line: { margin: 0, fontSize: '0.95rem', lineHeight: 1.5, color: '#3c2716' },
+  title: { margin: 0, fontSize: '0.77rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#5f3f26', fontWeight: 700 },
+  badge: { fontSize: '0.68rem', color: '#5f4025', border: '1px solid rgba(140, 108, 74, 0.45)', borderRadius: '999px', padding: '0.2rem 0.58rem', background: 'linear-gradient(180deg, rgba(245, 229, 195, 0.95), rgba(237, 217, 179, 0.75))' },
+  body: { display: 'grid', gap: '0.48rem', marginTop: '0.6rem' },
+  line: { margin: 0, fontSize: '0.94rem', lineHeight: 1.56, color: '#3f2a18' },
 };
