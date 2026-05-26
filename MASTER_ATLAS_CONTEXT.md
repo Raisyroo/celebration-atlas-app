@@ -307,3 +307,29 @@ Future gallery formats may include:
 Implementation status:
 - This is a future-direction context definition only.
 - Do not implement gallery ingestion, curation pipelines, or transformation tooling yet.
+
+## 20. Future Atlas Zoom + Clustering Strategy
+This roadmap defines how map scale should evolve once the current baseline is stable. It is a strategy document only; no immediate behavior change is intended.
+
+Guiding principles:
+- The current home map intentionally avoids custom pinch/drag zoom to preserve mobile tap reliability.
+- Scaling to hundreds or thousands of events will require zoom and clustering support.
+- The intended interaction model is guided cinematic zoom, not generic Google Maps-style behavior.
+- Marker density should never become visual noise.
+- Zoom behavior must protect the map’s painterly/atlas identity at every scale transition.
+
+Target scale behavior:
+- **Statewide view**: present regional glow clusters that communicate emotional geography before individual events.
+- **Mid-level view**: resolve clusters into grouped category lights or celebration regions.
+- **Close view**: resolve into individual event markers, with optional small category icons where clarity supports it.
+
+Conversation-triggered focus expectations:
+- Search and conversation should be able to drive map focus transitions (pan/zoom/cluster state) in response to intent-driven prompts, including examples such as:
+  - “show me county fairs near the Thumb”
+  - “music festivals near the lakeshore”
+  - “all July fireworks”
+
+Sequencing + implementation timing:
+- Do not implement zoom/clustering until the current map-fit behavior, event page flows, and conversation layer are stable.
+- When implementation begins, it should be data-driven (region/event/category metadata + intent routing), preserving current atmospheric hierarchy and mobile tap trust.
+
