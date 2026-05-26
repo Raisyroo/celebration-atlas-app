@@ -95,3 +95,49 @@ body.event-detail-scroll::-webkit-scrollbar {
     bottom: 14px !important;
   }
 }
+
+/* Portrait-canvas lock for cinematic event pages on phones in landscape. */
+.event-portrait-root {
+  background:
+    radial-gradient(circle at 18% 45%, rgba(143, 111, 74, 0.22), transparent 42%),
+    radial-gradient(circle at 82% 52%, rgba(60, 78, 114, 0.24), transparent 44%),
+    #080d16;
+}
+
+.event-portrait-canvas,
+.event-portrait-conversation-layers,
+.event-portrait-ask-dock {
+  transition: left 320ms ease, right 320ms ease, width 320ms ease, bottom 320ms ease, transform 320ms ease;
+}
+
+@media (orientation: landscape) and (max-width: 1024px) {
+  .event-portrait-shell {
+    padding: 0 1.2rem;
+  }
+
+  .event-portrait-canvas {
+    width: min(100dvh * 0.5625, 100vw - 2.4rem) !important;
+    height: min(100dvh, calc((100vw - 2.4rem) / 0.5625)) !important;
+    min-height: 0 !important;
+    max-height: 100dvh;
+    border-radius: 1.2rem;
+    box-shadow: 0 24px 55px rgba(2, 4, 10, 0.5), inset 0 0 0 1px rgba(255, 238, 210, 0.08);
+    position: relative;
+  }
+
+  .event-portrait-conversation-layers {
+    position: absolute !important;
+    left: 6% !important;
+    right: 6% !important;
+    bottom: 5.8rem !important;
+    height: min(56%, 20rem) !important;
+  }
+
+  .event-portrait-ask-dock {
+    position: absolute !important;
+    left: 6% !important;
+    right: 6% !important;
+    bottom: max(4%, calc(env(safe-area-inset-bottom, 0px) + 0.8rem)) !important;
+    width: auto !important;
+  }
+}

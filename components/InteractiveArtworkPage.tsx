@@ -97,9 +97,19 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   const isGoodellsEvent = eventId === 'goodells-fair';
 
   return (
-    <main style={{ ...styles.page, ...(isGoodellsEvent ? styles.goodellsPage : null) }}>
-      <section style={{ ...styles.artworkStage, ...(isGoodellsEvent ? styles.goodellsArtworkStage : null) }} aria-label={`${eventName} memory collage`}>
-        <div style={{ ...styles.artworkFrame, ...(isGoodellsEvent ? styles.goodellsArtworkFrame : null) }}>
+    <main
+      className={isGoodellsEvent ? 'event-portrait-root' : undefined}
+      style={{ ...styles.page, ...(isGoodellsEvent ? styles.goodellsPage : null) }}
+    >
+      <section
+        className={isGoodellsEvent ? 'event-portrait-shell' : undefined}
+        style={{ ...styles.artworkStage, ...(isGoodellsEvent ? styles.goodellsArtworkStage : null) }}
+        aria-label={`${eventName} memory collage`}
+      >
+        <div
+          className={isGoodellsEvent ? 'event-portrait-canvas' : undefined}
+          style={{ ...styles.artworkFrame, ...(isGoodellsEvent ? styles.goodellsArtworkFrame : null) }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element -- artworkSrc may be external/dynamic and must render as-is for this composited stage */}
           <img src={artworkSrc} alt={`${eventName} scrapbook artwork`} style={{ ...styles.artworkImage, ...(isGoodellsEvent ? styles.goodellsArtworkImage : null) }} />
           <div style={{ ...styles.atmosphereVeil, ...(isGoodellsEvent ? styles.goodellsAtmosphereVeil : null) }} />
@@ -116,6 +126,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
           </Link>
 
           <div
+            className={isGoodellsEvent ? 'event-portrait-conversation-layers' : undefined}
             style={{
               ...styles.conversationLayers,
               ...(isGoodellsEvent ? styles.goodellsConversationLayers : null),
@@ -162,7 +173,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
               </article>
             ) : null}
           </div>
-          <form style={{ ...styles.askDock, ...(isGoodellsEvent ? styles.goodellsAskDock : null) }} onSubmit={(event) => { event.preventDefault(); handleSend(); }}>
+          <form className={isGoodellsEvent ? 'event-portrait-ask-dock' : undefined} style={{ ...styles.askDock, ...(isGoodellsEvent ? styles.goodellsAskDock : null) }} onSubmit={(event) => { event.preventDefault(); handleSend(); }}>
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
@@ -184,9 +195,9 @@ const styles: Record<string, CSSProperties> = {
   page: { width: '100vw', height: '100dvh', minHeight: '100dvh', background: '#070b13', padding: 0, margin: 0, overflow: 'hidden' },
   goodellsPage: { width: '100vw', height: '100dvh', minHeight: '100dvh', overflow: 'hidden' },
   artworkStage: { position: 'relative', width: '100%', height: '100%', minHeight: '100dvh', overflow: 'hidden', maxWidth: '760px', margin: '0 auto' },
-  goodellsArtworkStage: { width: '100vw', height: '100dvh', minHeight: '100dvh', overflow: 'hidden', display: 'block', margin: 0, maxWidth: 'none', padding: 0 },
+  goodellsArtworkStage: { width: '100vw', height: '100dvh', minHeight: '100dvh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 0, maxWidth: 'none', padding: 0 },
   artworkFrame: { position: 'relative', width: '100%', height: '100%' },
-  goodellsArtworkFrame: { width: '100vw', height: '100dvh', maxWidth: '100%', minHeight: '100dvh', margin: 0, overflow: 'hidden' },
+  goodellsArtworkFrame: { width: '100vw', height: '100dvh', maxWidth: '100%', minHeight: '100dvh', margin: 0, overflow: 'hidden', transition: 'width 320ms ease, height 320ms ease, box-shadow 320ms ease, border-radius 320ms ease' },
   artworkImage: { display: 'block', width: '100%', height: 'auto', objectFit: 'contain' },
   goodellsArtworkImage: { width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' },
   atmosphereVeil: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(5,8,15,0.2) 0%, rgba(6,9,17,0.52) 45%, rgba(4,6,12,0.86) 100%)' },
@@ -195,7 +206,7 @@ const styles: Record<string, CSSProperties> = {
   video: { width: '100%', height: '100%', objectFit: 'cover' },
   topBackLink: { position: 'absolute', top: 'max(env(safe-area-inset-top, 0px), 0.8rem)', left: '0.8rem', zIndex: 5, color: 'rgba(244,227,198,0.92)', textDecoration: 'none', fontSize: '0.72rem', letterSpacing: '0.05em', textTransform: 'uppercase', border: '1px solid rgba(221,178,111,0.42)', borderRadius: '999px', padding: '0.35rem 0.68rem', background: 'rgba(8,14,24,0.55)' },
   askDock: { position: 'fixed', left: '4%', bottom: '3%', width: '92%', zIndex: 7, display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.55rem', padding: '0.55rem', borderRadius: '1.2rem', background: 'linear-gradient(170deg, rgba(11,18,31,0.88), rgba(11,16,26,0.7))', border: '1px solid rgba(224,182,114,0.32)', boxShadow: '0 20px 30px rgba(1,2,6,0.48), inset 0 1px 0 rgba(249,222,178,0.22)' },
-  goodellsAskDock: { left: '6%', right: '6%', width: 'auto', maxWidth: '100%', boxSizing: 'border-box', bottom: 'max(5%, calc(env(safe-area-inset-bottom, 0px) + 0.95rem))' },
+  goodellsAskDock: { left: '6%', right: '6%', width: 'auto', maxWidth: '100%', boxSizing: 'border-box', bottom: 'max(5%, calc(env(safe-area-inset-bottom, 0px) + 0.95rem))', position: 'absolute' },
   askInput: { minWidth: 0, width: '100%', maxWidth: '100%', border: '1px solid rgba(218,179,116,0.24)', borderRadius: '0.88rem', background: 'rgba(6,11,20,0.78)', color: 'rgba(241,227,200,0.96)', fontSize: '16px', lineHeight: 1.2, padding: '0.68rem 0.75rem', outline: 'none' },
   askButton: { maxWidth: '100%', border: '1px solid rgba(236,194,123,0.42)', borderRadius: '0.88rem', background: 'linear-gradient(160deg, rgba(137,95,51,0.78), rgba(95,64,35,0.76))', color: 'rgba(255,245,228,0.98)', padding: '0.64rem 0.9rem', fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' },
   conversationLayers: { position: 'fixed', left: '4%', right: '4%', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.25rem)', zIndex: 6, height: 'min(62dvh, 33rem)', display: 'grid', gridTemplateRows: 'auto 1fr', gap: '0.35rem', transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease' },
