@@ -66,24 +66,6 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   const [layers, setLayers] = useState<ConversationLayer[]>([]);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (eventId !== 'goodells-fair') return;
-
-    const previousHtmlOverflow = document.documentElement.style.overflowY;
-    const previousBodyOverflow = document.body.style.overflowY;
-    const previousBodyTouchAction = document.body.style.touchAction;
-
-    document.documentElement.style.overflowY = 'hidden';
-    document.body.style.overflowY = 'hidden';
-    document.body.style.touchAction = 'manipulation';
-
-    return () => {
-      document.documentElement.style.overflowY = previousHtmlOverflow;
-      document.body.style.overflowY = previousBodyOverflow;
-      document.body.style.touchAction = previousBodyTouchAction;
-    };
-  }, [eventId]);
-
   const canSend = useMemo(() => draft.trim().length > 0, [draft]);
 
   const activeLayer = useMemo(() => layers.find((layer) => layer.id === activeLayerId) ?? layers.at(-1) ?? null, [layers, activeLayerId]);
@@ -199,19 +181,19 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 }
 
 const styles: Record<string, CSSProperties> = {
-  page: { minHeight: '100dvh', background: '#070b13', padding: 0 },
-  goodellsPage: { width: '100%', minHeight: '100dvh', overflowX: 'hidden' },
+  page: { minHeight: '100dvh', width: '100vw', background: '#070b13', padding: 0, margin: 0 },
+  goodellsPage: { width: '100vw', minHeight: '100dvh', overflowX: 'hidden', overflowY: 'auto' },
   artworkStage: { position: 'relative', minHeight: '100dvh', overflowX: 'hidden', overflowY: 'visible', maxWidth: '760px', margin: '0 auto' },
-  goodellsArtworkStage: { width: '100%', minHeight: '100dvh', overflow: 'hidden', display: 'grid', placeItems: 'center', margin: 0, maxWidth: 'none', padding: '0 0 env(safe-area-inset-bottom, 0px)' },
+  goodellsArtworkStage: { width: '100vw', minHeight: '100dvh', overflowX: 'hidden', overflowY: 'visible', display: 'block', margin: 0, maxWidth: 'none', padding: 0 },
   artworkFrame: { position: 'relative' },
-  goodellsArtworkFrame: { width: '100vw', maxWidth: '100%', height: '100dvh', margin: '0 auto', overflow: 'hidden' },
+  goodellsArtworkFrame: { width: '100vw', maxWidth: '100%', minHeight: '100dvh', margin: 0, overflow: 'hidden' },
   artworkImage: { display: 'block', width: '100%', height: 'auto', objectFit: 'contain' },
   goodellsArtworkImage: { width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' },
   atmosphereVeil: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(5,8,15,0.2) 0%, rgba(6,9,17,0.52) 45%, rgba(4,6,12,0.86) 100%)' },
   goodellsAtmosphereVeil: { background: 'linear-gradient(180deg, rgba(8,12,20,0.03) 0%, rgba(8,12,20,0.04) 55%, rgba(8,12,20,0.18) 100%)' },
   videoRegion: { position: 'absolute', left: '8.5%', top: '17.4%', width: '82.8%', height: '20.4%', overflow: 'hidden', borderRadius: '1.2%', zIndex: 2 },
   video: { width: '100%', height: '100%', objectFit: 'cover' },
-  topBackLink: { position: 'absolute', top: '0.8rem', left: '0.8rem', zIndex: 5, color: 'rgba(244,227,198,0.92)', textDecoration: 'none', fontSize: '0.72rem', letterSpacing: '0.05em', textTransform: 'uppercase', border: '1px solid rgba(221,178,111,0.42)', borderRadius: '999px', padding: '0.35rem 0.68rem', background: 'rgba(8,14,24,0.55)' },
+  topBackLink: { position: 'absolute', top: 'max(env(safe-area-inset-top, 0px), 0.8rem)', left: '0.8rem', zIndex: 5, color: 'rgba(244,227,198,0.92)', textDecoration: 'none', fontSize: '0.72rem', letterSpacing: '0.05em', textTransform: 'uppercase', border: '1px solid rgba(221,178,111,0.42)', borderRadius: '999px', padding: '0.35rem 0.68rem', background: 'rgba(8,14,24,0.55)' },
   askDock: { position: 'absolute', left: '4%', bottom: '3%', width: '92%', zIndex: 7, display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.55rem', padding: '0.55rem', borderRadius: '1.2rem', background: 'linear-gradient(170deg, rgba(11,18,31,0.88), rgba(11,16,26,0.7))', border: '1px solid rgba(224,182,114,0.32)', boxShadow: '0 20px 30px rgba(1,2,6,0.48), inset 0 1px 0 rgba(249,222,178,0.22)' },
   goodellsAskDock: { left: '6%', right: '6%', width: 'auto', maxWidth: '100%', boxSizing: 'border-box', bottom: 'max(5%, calc(env(safe-area-inset-bottom, 0px) + 0.95rem))' },
   askInput: { minWidth: 0, width: '100%', maxWidth: '100%', border: '1px solid rgba(218,179,116,0.24)', borderRadius: '0.88rem', background: 'rgba(6,11,20,0.78)', color: 'rgba(241,227,200,0.96)', fontSize: '16px', lineHeight: 1.2, padding: '0.68rem 0.75rem', outline: 'none' },
