@@ -1,12 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
-import AtlasAIResponseDemo from './AtlasAIResponseDemo';
-import AtlasAIResponseCard, { type AtlasAIResponseCardData } from './AtlasAIResponseCard';
-import { getMockEventAIResponse } from '../data/eventAI';
-
-type SuggestedChip = { id: string; label: string };
 
 type InteractiveArtworkPageProps = {
   eventId: string;
@@ -14,11 +9,34 @@ type InteractiveArtworkPageProps = {
   artworkSrc: string;
   heroVideoSrc: string;
   backHref: string;
-  chips: SuggestedChip[];
 };
 
-export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref, chips }: InteractiveArtworkPageProps) {
-  const [activeQuestion, setActiveQuestion] = useState('');
+type ChatMessage = {
+  id: string;
+  role: 'user' | 'atlas';
+  text: string;
+};
+
+const FALLBACK_RESPONSES = [
+  'Start at the midway around golden hour, then walk to the 4-H barns for the evening animal showcases.',
+  'For families, begin with youth exhibits, then move to kid rides before the grandstand crowds build.',
+  'Fair food tip: grab a classic elephant ear first, then save room for a local barbecue plate later in the night.',
+  'Parking is easiest near the east lots before 5:30 PM. After that, use overflow and follow shuttle signs.',
+];
+
+function getMockResponse(question: string): string {
+  const normalized = question.toLowerCase();
+  if (normalized.includes('park')) return FALLBACK_RESPONSES[3];
+  if (normalized.includes('family') || normalized.includes('kids')) return FALLBACK_RESPONSES[1];
+  if (normalized.includes('food') || normalized.includes('eat')) return FALLBACK_RESPONSES[2];
+  return FALLBACK_RESPONSES[0];
+}
+
+export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVideoSrc, backHref }: InteractiveArtworkPageProps) {
+  const [draft, setDraft] = useState('');
+  const [isConversationOpen, setIsConversationOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.add('event-detail-scroll');
@@ -30,19 +48,38 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
     };
   }, []);
 
-  const responseCards = useMemo<AtlasAIResponseCardData[]>(() => {
-    if (!activeQuestion) return [];
-    const response = getMockEventAIResponse(eventId, activeQuestion);
-    const typeMap = {
-      answer: 'narrative',
-      checklist: 'checklist',
-      itinerary: 'timeline',
-      mapPreview: 'mapPreview',
-      sourceConfidence: 'sourceConfidence',
-    } as const;
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, isConversationOpen]);
 
-    return response.sections.map((section) => ({ type: typeMap[section.type], lines: section.lines }));
-  }, [activeQuestion, eventId]);
+  const canSend = useMemo(() => draft.trim().length > 0, [draft]);
+
+  const handleSend = () => {
+    const question = draft.trim();
+    if (!question) return;
+
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      text: question,
+    };
+
+    const atlasMessage: ChatMessage = {
+      id: `atlas-${Date.now() + 1}`,
+      role: 'atlas',
+      text: getMockResponse(question),
+    };
+
+    setMessages((current) => [...current, userMessage, atlasMessage]);
+    setDraft('');
+    setIsConversationOpen(true);
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleSend();
+  };
 
   return (
     <main style={styles.page}>
@@ -58,26 +95,46 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
             ← Back to Atlas
           </Link>
 
-          <section style={styles.overlayGuideCard} aria-label={`${eventName} AI guide`}>
-            <AtlasAIResponseDemo
-              eventName={eventName}
-              chips={chips}
-              title="Ask the Fair Guide"
-              onQuestionSelect={setActiveQuestion}
-            />
-          </section>
-        </div>
-
-        {activeQuestion ? (
-          <section style={styles.resultsSection} aria-label="AI guide results">
-            <p style={styles.activeQuestion}>“{activeQuestion}”</p>
-            <div style={styles.responseStack}>
-              {responseCards.map((card, index) => (
-                <AtlasAIResponseCard key={`${card.type}-${index}`} card={card} />
+          <div
+            style={{
+              ...styles.conversationPanel,
+              transform: isConversationOpen ? 'translateY(0)' : 'translateY(103%)',
+              opacity: isConversationOpen ? 1 : 0,
+              pointerEvents: isConversationOpen ? 'auto' : 'none',
+            }}
+            aria-hidden={!isConversationOpen}
+          >
+            <div style={styles.panelHeader}>
+              <p style={styles.panelTitle}>Atlas Conversation</p>
+              <button type="button" style={styles.minimizeButton} onClick={() => setIsConversationOpen(false)}>
+                Minimize
+              </button>
+            </div>
+            <div ref={scrollRef} style={styles.messageScrollRegion}>
+              {messages.map((message) => (
+                <div key={message.id} style={message.role === 'user' ? styles.userBubble : styles.atlasBubble}>
+                  {message.text}
+                </div>
               ))}
             </div>
-          </section>
-        ) : null}
+          </div>
+
+          <form style={styles.askDock} onSubmit={handleSubmit}>
+            <input
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder="Ask Anything About the Fair..."
+              style={styles.askInput}
+              aria-label="Ask anything about the fair"
+            />
+            <button type="submit" style={styles.askButton} disabled={!canSend}>
+              Send
+            </button>
+            <button type="button" style={styles.micButton} aria-label="Speak (coming soon)">
+              Mic
+            </button>
+          </form>
+        </div>
       </section>
     </main>
   );
@@ -92,7 +149,7 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    padding: '0 1rem 6rem',
+    padding: '0 1rem 2rem',
   },
   parchmentColumn: {
     width: 'min(100%, 760px)',
@@ -108,7 +165,6 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     zIndex: 0,
     overflow: 'hidden',
-    gap: '0',
   },
   artworkShell: { position: 'relative', width: '100%' },
   artworkImage: { display: 'block', width: '100%', height: 'auto' },
@@ -118,7 +174,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     top: '0.6rem',
     left: '0.65rem',
-    zIndex: 2,
+    zIndex: 3,
     textDecoration: 'none',
     color: 'rgba(61, 39, 22, 0.85)',
     background: 'rgba(248, 233, 205, 0.64)',
@@ -129,24 +185,102 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.02em',
     backdropFilter: 'blur(1.5px)',
   },
-  overlayGuideCard: {
+  askDock: {
     position: 'absolute',
-    left: '8%',
-    width: '84%',
-    top: '72%',
-    zIndex: 2,
-    border: '1px solid rgba(165, 126, 86, 0.4)',
-    borderRadius: '1rem',
-    padding: '0.78rem 0.7rem',
-    background: 'rgba(245, 219, 166, 0.55)',
-    boxShadow: '0 10px 18px rgba(53, 31, 16, 0.18)',
-  },
-  resultsSection: {
-    width: '100%',
-    padding: '0.85rem 0.75rem 1.8rem',
+    left: '6%',
+    bottom: '2.5%',
+    width: '88%',
+    zIndex: 4,
     display: 'grid',
-    gap: '0.6rem',
+    gridTemplateColumns: '1fr auto auto',
+    gap: '0.45rem',
+    padding: '0.5rem',
+    borderRadius: '0.85rem',
+    background: 'rgba(11, 14, 22, 0.62)',
+    border: '1px solid rgba(220, 226, 243, 0.25)',
+    backdropFilter: 'blur(7px)',
   },
-  activeQuestion: { margin: 0, fontSize: '0.9rem', color: '#4b3321', opacity: 0.9 },
-  responseStack: { display: 'grid', gap: '0.65rem' },
+  askInput: {
+    minWidth: 0,
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '0.65rem',
+    background: 'rgba(7, 10, 16, 0.62)',
+    color: 'rgba(243, 247, 255, 0.95)',
+    fontSize: '0.9rem',
+    padding: '0.55rem 0.65rem',
+    outline: 'none',
+  },
+  askButton: {
+    border: '1px solid rgba(175, 212, 255, 0.42)',
+    borderRadius: '0.65rem',
+    background: 'rgba(70, 123, 196, 0.4)',
+    color: 'rgba(237, 246, 255, 0.95)',
+    fontSize: '0.83rem',
+    padding: '0.55rem 0.62rem',
+  },
+  micButton: {
+    border: '1px solid rgba(234, 240, 255, 0.34)',
+    borderRadius: '0.65rem',
+    background: 'rgba(33, 40, 58, 0.48)',
+    color: 'rgba(239, 245, 255, 0.92)',
+    fontSize: '0.82rem',
+    padding: '0.55rem 0.6rem',
+  },
+  conversationPanel: {
+    position: 'absolute',
+    left: '4%',
+    right: '4%',
+    bottom: '16%',
+    height: '44%',
+    zIndex: 4,
+    borderRadius: '1rem',
+    border: '1px solid rgba(204, 218, 243, 0.24)',
+    background: 'linear-gradient(180deg, rgba(8, 11, 18, 0.74), rgba(8, 11, 18, 0.6))',
+    backdropFilter: 'blur(6px)',
+    boxShadow: '0 12px 30px rgba(0, 0, 0, 0.42)',
+    display: 'grid',
+    gridTemplateRows: 'auto 1fr',
+    transition: 'transform 280ms ease, opacity 220ms ease',
+  },
+  panelHeader: {
+    padding: '0.58rem 0.7rem',
+    borderBottom: '1px solid rgba(195, 214, 245, 0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  panelTitle: { margin: 0, color: 'rgba(238, 244, 255, 0.92)', fontSize: '0.8rem', letterSpacing: '0.06em', textTransform: 'uppercase' },
+  minimizeButton: {
+    border: '1px solid rgba(211, 225, 246, 0.34)',
+    background: 'rgba(26, 34, 51, 0.58)',
+    color: 'rgba(232, 241, 255, 0.93)',
+    borderRadius: '999px',
+    fontSize: '0.72rem',
+    padding: '0.25rem 0.55rem',
+  },
+  messageScrollRegion: {
+    overflowY: 'auto',
+    padding: '0.65rem',
+    display: 'grid',
+    alignContent: 'start',
+    gap: '0.5rem',
+  },
+  userBubble: {
+    marginLeft: '2.4rem',
+    padding: '0.52rem 0.62rem',
+    borderRadius: '0.7rem',
+    background: 'rgba(95, 145, 224, 0.35)',
+    color: 'rgba(239, 245, 255, 0.96)',
+    fontSize: '0.86rem',
+    lineHeight: 1.35,
+  },
+  atlasBubble: {
+    marginRight: '2.4rem',
+    padding: '0.52rem 0.62rem',
+    borderRadius: '0.7rem',
+    background: 'rgba(39, 49, 70, 0.62)',
+    color: 'rgba(230, 238, 254, 0.96)',
+    fontSize: '0.86rem',
+    lineHeight: 1.35,
+  },
 };
