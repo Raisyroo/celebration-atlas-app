@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { getGoodellsMockConversation, type ConversationCard } from '../data/goodellsConversation';
 
@@ -12,12 +12,12 @@ type InteractiveArtworkPageProps = {
   backHref: string;
 };
 
-type ChatMessage = {
+type ConversationLayer = {
   id: string;
-  role: 'user' | 'atlas';
-  text: string;
-  title?: string;
-  highlights?: readonly string[];
+  question: string;
+  answer: string;
+  title: string;
+  highlights: readonly string[];
 };
 
 const FAIR_GUIDE_CARDS = {
@@ -62,8 +62,8 @@ function getMockResponse(eventId: string, question: string): ConversationCard {
 export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref }: InteractiveArtworkPageProps) {
   const [draft, setDraft] = useState('');
   const [isConversationOpen, setIsConversationOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [layers, setLayers] = useState<ConversationLayer[]>([]);
+  const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.add('event-detail-scroll');
@@ -75,295 +75,137 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
     };
   }, []);
 
-  useEffect(() => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, isConversationOpen]);
-
   const canSend = useMemo(() => draft.trim().length > 0, [draft]);
+
+  const activeLayer = useMemo(() => layers.find((layer) => layer.id === activeLayerId) ?? layers.at(-1) ?? null, [layers, activeLayerId]);
+
+  const stackedLayers = useMemo(() => {
+    if (!activeLayer) return [];
+    return layers.filter((layer) => layer.id !== activeLayer.id).slice(-4).reverse();
+  }, [activeLayer, layers]);
 
   const handleSend = () => {
     const question = draft.trim();
     if (!question) return;
 
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      text: question,
-    };
-
     const atlasGuide = getMockResponse(eventId, question);
-
-    const atlasMessage: ChatMessage = {
-      id: `atlas-${Date.now() + 1}`,
-      role: 'atlas',
-      text: atlasGuide.text,
+    const newLayer: ConversationLayer = {
+      id: `layer-${Date.now()}`,
+      question,
+      answer: atlasGuide.text,
       title: atlasGuide.title,
-      highlights: atlasGuide.highlights,
+      highlights: atlasGuide.highlights ?? [],
     };
 
-    setMessages((current) => [...current, userMessage, atlasMessage]);
+    setLayers((current) => [...current, newLayer]);
+    setActiveLayerId(newLayer.id);
     setDraft('');
     setIsConversationOpen(true);
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    handleSend();
-  };
-
   return (
     <main style={styles.page}>
-      <section style={styles.parchmentColumn} aria-label={`${eventName} memory collage`}>
-        <div style={styles.artworkShell}>
-          <img src={artworkSrc} alt={`${eventName} scrapbook artwork`} style={styles.artworkImage} />
+      <section style={styles.artworkStage} aria-label={`${eventName} memory collage`}>
+        <img src={artworkSrc} alt={`${eventName} scrapbook artwork`} style={styles.artworkImage} />
+        <div style={styles.atmosphereVeil} />
 
-          <div style={styles.videoRegion} aria-label="Hero video region">
-            <video src={heroVideoSrc} muted autoPlay loop playsInline controls style={styles.video} />
-          </div>
-
-          <Link href={backHref} style={styles.topBackLink}>
-            ← Back to Atlas
-          </Link>
-
-          <div
-            style={{
-              ...styles.conversationPanel,
-              transform: isConversationOpen ? 'translateY(0)' : 'translateY(103%)',
-              opacity: isConversationOpen ? 1 : 0,
-              pointerEvents: isConversationOpen ? 'auto' : 'none',
-            }}
-            aria-hidden={!isConversationOpen}
-          >
-            <div style={styles.panelHeader}>
-              <p style={styles.panelTitle}>Goodells Field Notes</p>
-              <button type="button" style={styles.minimizeButton} onClick={() => setIsConversationOpen(false)}>
-                Minimize
-              </button>
-            </div>
-            <div ref={scrollRef} style={styles.messageScrollRegion}>
-              {messages.map((message) =>
-                message.role === 'user' ? (
-                  <div key={message.id} style={styles.userChip}>
-                    You: {message.text}
-                  </div>
-                ) : (
-                  <article key={message.id} style={styles.atlasCard}>
-                    {message.title ? <p style={styles.atlasCardTitle}>{message.title}</p> : null}
-                    <p style={styles.atlasCardText}>{message.text}</p>
-                    {message.highlights?.length ? (
-                      <ul style={styles.atlasHighlights}>
-                        {message.highlights.map((highlight) => (
-                          <li key={highlight} style={styles.atlasHighlightItem}>
-                            {highlight}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </article>
-                )
-              )}
-            </div>
-          </div>
-
-          <form style={styles.askDock} onSubmit={handleSubmit}>
-            <input
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="Ask Atlas for tonight’s fair route"
-              style={styles.askInput}
-              aria-label="Ask anything about the fair"
-            />
-            <button type="submit" style={styles.askButton} disabled={!canSend}>
-              Share
-            </button>
-            <button type="button" style={styles.micButton} aria-label="Speak (coming soon)">
-              ◉
-            </button>
-          </form>
+        <div style={styles.videoRegion} aria-label="Hero video region">
+          <video src={heroVideoSrc} muted autoPlay loop playsInline controls style={styles.video} />
         </div>
+
+        <Link href={backHref} style={styles.topBackLink}>
+          ← Back to Atlas
+        </Link>
+
+        <div
+          style={{
+            ...styles.conversationLayers,
+            transform: isConversationOpen ? 'translateY(0)' : 'translateY(110%)',
+            opacity: isConversationOpen ? 1 : 0,
+            pointerEvents: isConversationOpen ? 'auto' : 'none',
+          }}
+        >
+          <div style={styles.stackRegion}>
+            {stackedLayers.map((layer, index) => (
+              <button key={layer.id} type="button" style={{ ...styles.stackedCard, marginTop: `${index * 0.28}rem` }} onClick={() => setActiveLayerId(layer.id)}>
+                <span style={styles.stackedTitle}>{layer.title}</span>
+                <span style={styles.stackedQuestion}>{layer.question}</span>
+              </button>
+            ))}
+          </div>
+
+          {activeLayer ? (
+            <article style={styles.activeCard}>
+              <header style={styles.panelHeader}>
+                <p style={styles.panelTitle}>Atlas Memory Layer</p>
+                <button type="button" style={styles.minimizeButton} onClick={() => setIsConversationOpen(false)}>
+                  Minimize
+                </button>
+              </header>
+
+              <div style={styles.activeScrollRegion}>
+                <p style={styles.userPromptLabel}>You asked</p>
+                <p style={styles.userPrompt}>{activeLayer.question}</p>
+
+                <p style={styles.atlasCardTitle}>{activeLayer.title}</p>
+                <p style={styles.atlasCardText}>{activeLayer.answer}</p>
+
+                {activeLayer.highlights.length ? (
+                  <ul style={styles.atlasHighlights}>
+                    {activeLayer.highlights.map((highlight) => (
+                      <li key={highlight} style={styles.atlasHighlightItem}>
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            </article>
+          ) : null}
+        </div>
+
+        <form style={styles.askDock} onSubmit={(event) => { event.preventDefault(); handleSend(); }}>
+          <input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Ask Atlas what memory to follow next"
+            style={styles.askInput}
+            aria-label="Ask Atlas"
+          />
+          <button type="submit" style={styles.askButton} disabled={!canSend}>
+            Ask
+          </button>
+        </form>
       </section>
     </main>
   );
 }
 
 const styles: Record<string, CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    background:
-      'radial-gradient(circle at 20% 10%, rgba(83, 53, 34, 0.34), transparent 32%), radial-gradient(circle at 80% 30%, rgba(67, 43, 28, 0.32), transparent 28%), linear-gradient(180deg, #1f130d 0%, #2b1a11 55%, #1a100b 100%)',
-    color: '#3b2818',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '0 1rem 2rem',
-  },
-  parchmentColumn: {
-    width: 'min(100%, 760px)',
-    background: 'linear-gradient(180deg, rgba(248, 232, 198, 0.98), rgba(236, 210, 170, 0.97))',
-    border: '1px solid rgba(150, 116, 75, 0.52)',
-    borderTop: 'none',
-    borderBottomLeftRadius: '0.8rem',
-    borderBottomRightRadius: '0.8rem',
-    boxShadow: '0 20px 35px rgba(13, 6, 4, 0.46)',
-    display: 'grid',
-    justifyItems: 'center',
-    alignContent: 'start',
-    position: 'relative',
-    zIndex: 0,
-    overflow: 'hidden',
-  },
-  artworkShell: { position: 'relative', width: '100%' },
-  artworkImage: { display: 'block', width: '100%', height: 'auto' },
-  videoRegion: { position: 'absolute', left: '8.5%', top: '17.4%', width: '82.8%', height: '20.4%', overflow: 'hidden', borderRadius: '1.2%' },
+  page: { minHeight: '100dvh', background: '#070b13', padding: 0 },
+  artworkStage: { position: 'relative', minHeight: '100dvh', overflow: 'hidden', maxWidth: '760px', margin: '0 auto' },
+  artworkImage: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
+  atmosphereVeil: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(5,8,15,0.2) 0%, rgba(6,9,17,0.52) 45%, rgba(4,6,12,0.86) 100%)' },
+  videoRegion: { position: 'absolute', left: '8.5%', top: '17.4%', width: '82.8%', height: '20.4%', overflow: 'hidden', borderRadius: '1.2%', zIndex: 2 },
   video: { width: '100%', height: '100%', objectFit: 'cover' },
-  topBackLink: {
-    position: 'absolute',
-    top: '0.6rem',
-    left: '0.65rem',
-    zIndex: 3,
-    textDecoration: 'none',
-    color: 'rgba(61, 39, 22, 0.85)',
-    background: 'rgba(248, 233, 205, 0.64)',
-    border: '1px solid rgba(128, 95, 63, 0.3)',
-    borderRadius: '999px',
-    padding: '0.28rem 0.58rem',
-    fontSize: '0.74rem',
-    letterSpacing: '0.02em',
-    backdropFilter: 'blur(1.5px)',
-  },
-  askDock: {
-    position: 'absolute',
-    left: '5%',
-    bottom: '2.5%',
-    width: '90%',
-    zIndex: 4,
-    display: 'grid',
-    gridTemplateColumns: '1fr auto auto',
-    gap: '0.46rem',
-    padding: '0.48rem',
-    borderRadius: '1.12rem',
-    background:
-      'linear-gradient(170deg, rgba(53, 40, 29, 0.52), rgba(35, 27, 22, 0.41) 46%, rgba(20, 18, 21, 0.35)), radial-gradient(circle at 16% 8%, rgba(255, 219, 160, 0.22), transparent 40%)',
-    border: '1px solid rgba(244, 216, 171, 0.24)',
-    boxShadow: '0 14px 26px rgba(7, 4, 2, 0.35), inset 0 1px 0 rgba(255, 236, 206, 0.2)',
-    backdropFilter: 'blur(8px)',
-  },
-  askInput: {
-    minWidth: 0,
-    border: '1px solid rgba(236, 206, 161, 0.24)',
-    borderRadius: '0.82rem',
-    background: 'linear-gradient(180deg, rgba(25, 21, 21, 0.48), rgba(21, 17, 18, 0.4))',
-    color: 'rgba(255, 245, 226, 0.96)',
-    fontSize: '0.84rem',
-    padding: '0.62rem 0.75rem',
-    outline: 'none',
-  },
-  askButton: {
-    border: '1px solid rgba(253, 222, 173, 0.38)',
-    borderRadius: '0.82rem',
-    background: 'linear-gradient(165deg, rgba(122, 79, 47, 0.7), rgba(86, 56, 35, 0.74))',
-    color: 'rgba(255, 246, 229, 0.98)',
-    fontSize: '0.78rem',
-    letterSpacing: '0.03em',
-    padding: '0.58rem 0.74rem',
-  },
-  micButton: {
-    border: '1px solid rgba(235, 209, 171, 0.26)',
-    borderRadius: '0.82rem',
-    background: 'linear-gradient(155deg, rgba(74, 56, 43, 0.58), rgba(42, 35, 34, 0.54))',
-    color: 'rgba(252, 235, 209, 0.95)',
-    fontSize: '0.9rem',
-    lineHeight: 1,
-    padding: '0.55rem 0.68rem',
-  },
-  conversationPanel: {
-    position: 'absolute',
-    left: '4%',
-    right: '4%',
-    bottom: '13.2%',
-    height: '36%',
-    zIndex: 4,
-    borderRadius: '1.28rem 1.28rem 0.95rem 0.95rem',
-    border: '1px solid rgba(243, 212, 168, 0.22)',
-    background:
-      'linear-gradient(180deg, rgba(30, 23, 21, 0.72), rgba(23, 21, 24, 0.62) 45%, rgba(19, 19, 24, 0.54) 100%), radial-gradient(circle at 22% 0%, rgba(255, 214, 153, 0.14), transparent 46%)',
-    backdropFilter: 'blur(9px)',
-    boxShadow: '0 20px 30px rgba(5, 2, 2, 0.34), inset 0 1px 0 rgba(255, 235, 201, 0.16)',
-    display: 'grid',
-    gridTemplateRows: 'auto 1fr',
-    transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease',
-  },
-  panelHeader: {
-    padding: '0.56rem 0.8rem 0.52rem',
-    borderBottom: '1px solid rgba(232, 201, 154, 0.17)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  panelTitle: { margin: 0, color: 'rgba(250, 231, 197, 0.94)', fontSize: '0.66rem', letterSpacing: '0.13em', textTransform: 'uppercase' },
-  minimizeButton: {
-    border: '1px solid rgba(237, 210, 168, 0.24)',
-    background: 'rgba(47, 35, 29, 0.38)',
-    color: 'rgba(249, 232, 200, 0.9)',
-    borderRadius: '999px',
-    fontSize: '0.66rem',
-    letterSpacing: '0.04em',
-    padding: '0.28rem 0.58rem',
-  },
-  messageScrollRegion: {
-    overflowY: 'auto',
-    overscrollBehavior: 'contain',
-    padding: '0.65rem',
-    display: 'grid',
-    alignContent: 'start',
-    gap: '0.5rem',
-  },
-  userChip: {
-    justifySelf: 'end',
-    maxWidth: '84%',
-    padding: '0.42rem 0.68rem',
-    borderRadius: '0.84rem',
-    background: 'linear-gradient(150deg, rgba(104, 76, 52, 0.54), rgba(71, 53, 43, 0.45))',
-    border: '1px solid rgba(232, 200, 151, 0.22)',
-    color: 'rgba(254, 242, 219, 0.95)',
-    fontSize: '0.73rem',
-    lineHeight: 1.2,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  },
-  atlasCard: {
-    marginRight: '0.75rem',
-    borderRadius: '1rem',
-    padding: '0.72rem 0.78rem',
-    border: '1px solid rgba(243, 212, 166, 0.2)',
-    background:
-      'linear-gradient(158deg, rgba(42, 34, 30, 0.62), rgba(32, 29, 34, 0.58)), radial-gradient(circle at 100% 0%, rgba(255, 215, 158, 0.08), transparent 40%)',
-    boxShadow: 'inset 0 1px 0 rgba(255, 238, 205, 0.11), 0 10px 14px rgba(12, 9, 8, 0.14)',
-  },
-  atlasCardTitle: {
-    margin: '0 0 0.3rem',
-    color: 'rgba(244, 214, 171, 0.95)',
-    fontSize: '0.66rem',
-    letterSpacing: '0.1em',
-    textTransform: 'uppercase',
-  },
-  atlasCardText: {
-    margin: 0,
-    color: 'rgba(244, 236, 224, 0.95)',
-    fontSize: '0.82rem',
-    lineHeight: 1.38,
-  },
-  atlasHighlights: {
-    margin: '0.45rem 0 0',
-    paddingLeft: '1rem',
-    display: 'grid',
-    gap: '0.2rem',
-  },
-  atlasHighlightItem: {
-    color: 'rgba(236, 219, 194, 0.92)',
-    fontSize: '0.73rem',
-    lineHeight: 1.25,
-  },
+  topBackLink: { position: 'absolute', top: '0.8rem', left: '0.8rem', zIndex: 5, color: 'rgba(244,227,198,0.92)', textDecoration: 'none', fontSize: '0.72rem', letterSpacing: '0.05em', textTransform: 'uppercase', border: '1px solid rgba(221,178,111,0.42)', borderRadius: '999px', padding: '0.35rem 0.68rem', background: 'rgba(8,14,24,0.55)' },
+  askDock: { position: 'absolute', left: '4%', bottom: '3%', width: '92%', zIndex: 7, display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.55rem', padding: '0.55rem', borderRadius: '1.2rem', background: 'linear-gradient(170deg, rgba(11,18,31,0.88), rgba(11,16,26,0.7))', border: '1px solid rgba(224,182,114,0.32)', boxShadow: '0 20px 30px rgba(1,2,6,0.48), inset 0 1px 0 rgba(249,222,178,0.22)' },
+  askInput: { minWidth: 0, border: '1px solid rgba(218,179,116,0.24)', borderRadius: '0.88rem', background: 'rgba(6,11,20,0.78)', color: 'rgba(241,227,200,0.96)', fontSize: '0.86rem', padding: '0.68rem 0.75rem', outline: 'none' },
+  askButton: { border: '1px solid rgba(236,194,123,0.42)', borderRadius: '0.88rem', background: 'linear-gradient(160deg, rgba(137,95,51,0.78), rgba(95,64,35,0.76))', color: 'rgba(255,245,228,0.98)', padding: '0.64rem 0.9rem', fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase' },
+  conversationLayers: { position: 'absolute', left: '4%', right: '4%', bottom: '14%', zIndex: 6, height: '70dvh', display: 'grid', gridTemplateRows: 'auto 1fr', gap: '0.35rem', transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease' },
+  stackRegion: { display: 'grid', justifyItems: 'stretch' },
+  stackedCard: { all: 'unset', cursor: 'pointer', borderRadius: '0.9rem', padding: '0.5rem 0.7rem', border: '1px solid rgba(215,173,109,0.2)', background: 'linear-gradient(180deg, rgba(10,15,23,0.78), rgba(10,14,20,0.66))', boxShadow: '0 8px 14px rgba(2,4,8,0.35), inset 0 1px 0 rgba(236,204,154,0.12)', display: 'grid', gap: '0.2rem' },
+  stackedTitle: { color: 'rgba(237,204,151,0.88)', fontSize: '0.58rem', letterSpacing: '0.08em', textTransform: 'uppercase' },
+  stackedQuestion: { color: 'rgba(221,215,205,0.9)', fontSize: '0.72rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  activeCard: { borderRadius: '1.35rem', border: '1px solid rgba(226,183,114,0.28)', background: 'linear-gradient(180deg, rgba(12,18,30,0.94), rgba(11,15,25,0.84))', boxShadow: '0 25px 45px rgba(1,2,6,0.64), inset 0 1px 0 rgba(252,225,179,0.2)', display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden', backdropFilter: 'blur(6px)' },
+  panelHeader: { padding: '0.72rem 0.85rem 0.62rem', borderBottom: '1px solid rgba(214,170,104,0.24)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  panelTitle: { margin: 0, color: 'rgba(240,206,149,0.95)', fontSize: '0.64rem', letterSpacing: '0.14em', textTransform: 'uppercase' },
+  minimizeButton: { border: '1px solid rgba(216,174,109,0.36)', background: 'rgba(15,21,33,0.66)', color: 'rgba(235,213,179,0.92)', borderRadius: '999px', fontSize: '0.62rem', letterSpacing: '0.05em', padding: '0.3rem 0.6rem', textTransform: 'uppercase' },
+  activeScrollRegion: { overflowY: 'auto', overscrollBehavior: 'contain', padding: '0.9rem 0.95rem 1rem', display: 'grid', alignContent: 'start', gap: '0.55rem' },
+  userPromptLabel: { margin: 0, color: 'rgba(198,176,138,0.8)', fontSize: '0.58rem', letterSpacing: '0.08em', textTransform: 'uppercase' },
+  userPrompt: { margin: 0, color: 'rgba(235,226,208,0.96)', fontSize: '0.82rem', lineHeight: 1.3 },
+  atlasCardTitle: { margin: '0.25rem 0 0', color: 'rgba(245,209,151,0.95)', fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase' },
+  atlasCardText: { margin: 0, color: 'rgba(242,233,218,0.96)', fontSize: '0.86rem', lineHeight: 1.42 },
+  atlasHighlights: { margin: '0.25rem 0 0', paddingLeft: '1rem', display: 'grid', gap: '0.28rem' },
+  atlasHighlightItem: { color: 'rgba(231,214,188,0.92)', fontSize: '0.77rem', lineHeight: 1.3 },
 };
