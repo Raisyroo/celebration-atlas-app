@@ -60,6 +60,7 @@ function getMockResponse(eventId: string, question: string): ConversationCard {
 }
 
 export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref }: InteractiveArtworkPageProps) {
+  const showGoodellsHeroVideo = false;
   const [draft, setDraft] = useState('');
   const [isConversationOpen, setIsConversationOpen] = useState(false);
   const [layers, setLayers] = useState<ConversationLayer[]>([]);
@@ -110,9 +111,12 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
         <img src={artworkSrc} alt={`${eventName} scrapbook artwork`} style={styles.artworkImage} />
         <div style={styles.atmosphereVeil} />
 
-        <div style={styles.videoRegion} aria-label="Hero video region">
-          <video src={heroVideoSrc} muted autoPlay loop playsInline controls style={styles.video} />
-        </div>
+        {/* Temporarily disabled: preserve Goodells hero video overlay for easy restore later. */}
+        {showGoodellsHeroVideo ? (
+          <div style={styles.videoRegion} aria-label="Hero video region">
+            <video src={heroVideoSrc} muted autoPlay loop playsInline controls style={styles.video} />
+          </div>
+        ) : null}
 
         <Link href={backHref} style={styles.topBackLink}>
           ← Back to Atlas
@@ -184,8 +188,8 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
 const styles: Record<string, CSSProperties> = {
   page: { minHeight: '100dvh', background: '#070b13', padding: 0 },
-  artworkStage: { position: 'relative', minHeight: '100dvh', overflow: 'hidden', maxWidth: '760px', margin: '0 auto' },
-  artworkImage: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
+  artworkStage: { position: 'relative', minHeight: '100dvh', overflowX: 'hidden', overflowY: 'visible', maxWidth: '760px', margin: '0 auto' },
+  artworkImage: { display: 'block', width: '100%', height: 'auto', objectFit: 'contain' },
   atmosphereVeil: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(5,8,15,0.2) 0%, rgba(6,9,17,0.52) 45%, rgba(4,6,12,0.86) 100%)' },
   videoRegion: { position: 'absolute', left: '8.5%', top: '17.4%', width: '82.8%', height: '20.4%', overflow: 'hidden', borderRadius: '1.2%', zIndex: 2 },
   video: { width: '100%', height: '100%', objectFit: 'cover' },
