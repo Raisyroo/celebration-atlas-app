@@ -104,25 +104,44 @@ body.event-detail-scroll::-webkit-scrollbar {
     #080d16;
 }
 
+.event-portrait-shell {
+  width: 100vw;
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.event-portrait-canvas {
+  position: relative;
+  aspect-ratio: 9 / 19.5;
+  overflow: hidden;
+}
+
 .event-portrait-canvas,
 .event-portrait-conversation-layers,
 .event-portrait-ask-dock {
   transition: left 320ms ease, right 320ms ease, width 320ms ease, bottom 320ms ease, transform 320ms ease;
 }
 
-@media (orientation: landscape) and (max-width: 1024px) {
-  .event-portrait-shell {
-    padding: 0 1.2rem;
-  }
-
+@media (orientation: portrait) {
   .event-portrait-canvas {
-    width: min(100dvh * 0.5625, 100vw - 2.4rem) !important;
-    height: min(100dvh, calc((100vw - 2.4rem) / 0.5625)) !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 1024px) {
+  .event-portrait-canvas {
+    height: 100dvh !important;
+    width: calc(100dvh * 9 / 19.5) !important;
     min-height: 0 !important;
-    max-height: 100dvh;
+    max-width: 100vw;
     border-radius: 1.2rem;
     box-shadow: 0 24px 55px rgba(2, 4, 10, 0.5), inset 0 0 0 1px rgba(255, 238, 210, 0.08);
-    position: relative;
   }
 
   .event-portrait-conversation-layers {
