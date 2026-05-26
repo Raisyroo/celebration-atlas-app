@@ -177,7 +177,7 @@ body.event-detail-scroll::-webkit-scrollbar {
     position: absolute !important;
     left: calc(env(safe-area-inset-left, 0px) + 0.78rem) !important;
     right: calc(env(safe-area-inset-right, 0px) + 0.78rem) !important;
-    bottom: max(4%, calc(env(safe-area-inset-bottom, 0px) + 0.8rem)) !important;
+    bottom: max(2%, calc(env(safe-area-inset-bottom, 0px) + 0.56rem)) !important;
     width: auto !important;
   }
 }
