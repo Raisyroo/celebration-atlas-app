@@ -167,16 +167,16 @@ body.event-detail-scroll::-webkit-scrollbar {
 
   .event-portrait-conversation-layers {
     position: absolute !important;
-    left: 6% !important;
-    right: 6% !important;
+    left: calc(env(safe-area-inset-left, 0px) + 0.78rem) !important;
+    right: calc(env(safe-area-inset-right, 0px) + 0.78rem) !important;
     bottom: 5.8rem !important;
     height: min(56%, 20rem) !important;
   }
 
   .event-portrait-ask-dock {
     position: absolute !important;
-    left: 6% !important;
-    right: 6% !important;
+    left: calc(env(safe-area-inset-left, 0px) + 0.78rem) !important;
+    right: calc(env(safe-area-inset-right, 0px) + 0.78rem) !important;
     bottom: max(4%, calc(env(safe-area-inset-bottom, 0px) + 0.8rem)) !important;
     width: auto !important;
   }
