@@ -124,6 +124,27 @@ body.event-detail-scroll::-webkit-scrollbar {
   transition: left 320ms ease, right 320ms ease, width 320ms ease, bottom 320ms ease, transform 320ms ease;
 }
 
+.event-portrait-ask-dock {
+  position: relative;
+}
+
+.event-portrait-ask-dock::after {
+  content: '';
+  position: absolute;
+  left: 2.65rem;
+  right: 2.6rem;
+  top: 0.34rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(210, 173, 112, 0), rgba(210, 173, 112, 0.42), rgba(210, 173, 112, 0));
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.atlas-ask-input::placeholder {
+  color: rgba(198, 183, 159, 0.66);
+  letter-spacing: 0.04em;
+}
+
 @media (orientation: portrait) {
   .event-portrait-canvas {
     width: 100vw !important;

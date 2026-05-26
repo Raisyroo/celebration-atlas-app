@@ -174,15 +174,19 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
             ) : null}
           </div>
           <form className={isGoodellsEvent ? 'event-portrait-ask-dock' : undefined} style={{ ...styles.askDock, ...(isGoodellsEvent ? styles.goodellsAskDock : null) }} onSubmit={(event) => { event.preventDefault(); handleSend(); }}>
+            <span aria-hidden style={styles.askSigil}>
+              ✦
+            </span>
             <input
+              className="atlas-ask-input"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder="Ask Atlas what memory to follow next"
               style={styles.askInput}
               aria-label="Ask Atlas"
             />
-            <button type="submit" style={styles.askButton} disabled={!canSend}>
-              Ask
+            <button type="submit" style={styles.askButton} disabled={!canSend} aria-label="Send Ask Atlas prompt">
+              ↗
             </button>
           </form>
         </div>
@@ -205,10 +209,11 @@ const styles: Record<string, CSSProperties> = {
   videoRegion: { position: 'absolute', left: '8.5%', top: '17.4%', width: '82.8%', height: '20.4%', overflow: 'hidden', borderRadius: '1.2%', zIndex: 2 },
   video: { width: '100%', height: '100%', objectFit: 'cover' },
   topBackLink: { position: 'absolute', top: 'max(env(safe-area-inset-top, 0px), 0.8rem)', left: '0.8rem', zIndex: 5, color: 'rgba(244,227,198,0.92)', textDecoration: 'none', fontSize: '0.68rem', letterSpacing: '0.09em', textTransform: 'uppercase', border: '1px solid rgba(226,188,122,0.38)', borderRadius: '999px', padding: '0.38rem 0.74rem', background: 'linear-gradient(165deg, rgba(10,16,26,0.64), rgba(10,15,23,0.42))', boxShadow: '0 10px 20px rgba(1,3,9,0.38), inset 0 1px 0 rgba(248,226,182,0.16)' },
-  askDock: { position: 'fixed', left: '4%', bottom: '3%', width: '92%', zIndex: 7, display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.62rem', padding: '0.7rem', borderRadius: '1.35rem', background: 'linear-gradient(170deg, rgba(12,19,30,0.84), rgba(10,15,23,0.7))', border: '1px solid rgba(230,187,120,0.3)', boxShadow: '0 24px 38px rgba(1,2,6,0.46), 0 0 0 1px rgba(40,31,20,0.2), inset 0 1px 0 rgba(250,224,178,0.2)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' },
+  askDock: { position: 'fixed', left: '4%', bottom: '3%', width: '92%', zIndex: 7, display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '0.5rem', padding: '0.44rem 0.54rem', borderRadius: '1.08rem', background: 'linear-gradient(170deg, rgba(9,14,22,0.92), rgba(8,12,19,0.8))', border: '1px solid rgba(222,178,112,0.28)', boxShadow: '0 20px 32px rgba(1,2,6,0.46), 0 0 0 1px rgba(40,31,20,0.2), inset 0 1px 0 rgba(250,224,178,0.16), inset 0 -8px 16px rgba(2,4,8,0.32)', backdropFilter: 'blur(9px)', WebkitBackdropFilter: 'blur(9px)' },
   goodellsAskDock: { left: '6%', right: '6%', width: 'auto', maxWidth: '100%', boxSizing: 'border-box', bottom: 'max(5%, calc(env(safe-area-inset-bottom, 0px) + 0.95rem))', position: 'absolute' },
-  askInput: { minWidth: 0, width: '100%', maxWidth: '100%', border: '1px solid rgba(223,184,119,0.26)', borderRadius: '0.96rem', background: 'linear-gradient(180deg, rgba(7,12,20,0.78), rgba(8,12,19,0.62))', color: 'rgba(242,228,203,0.98)', fontSize: '16px', lineHeight: 1.26, padding: '0.76rem 0.84rem', outline: 'none', boxShadow: 'inset 0 1px 0 rgba(247,225,183,0.09), inset 0 -8px 16px rgba(3,5,10,0.2)' },
-  askButton: { maxWidth: '100%', border: '1px solid rgba(239,197,126,0.44)', borderRadius: '0.96rem', background: 'linear-gradient(160deg, rgba(142,102,56,0.78), rgba(96,66,38,0.72))', color: 'rgba(255,246,231,0.99)', padding: '0.68rem 0.95rem', fontSize: '0.76rem', letterSpacing: '0.09em', textTransform: 'uppercase', whiteSpace: 'nowrap', boxShadow: '0 8px 14px rgba(8,6,4,0.3), inset 0 1px 0 rgba(255,233,193,0.28)' },
+  askSigil: { width: '1.5rem', height: '1.5rem', borderRadius: '999px', border: '1px solid rgba(223,184,121,0.3)', display: 'grid', placeItems: 'center', color: 'rgba(226,196,146,0.78)', fontSize: '0.62rem', letterSpacing: '0.08em', background: 'linear-gradient(170deg, rgba(20,26,37,0.8), rgba(9,13,21,0.7))', boxShadow: 'inset 0 1px 0 rgba(245,220,177,0.15), 0 0 0 1px rgba(41,32,21,0.26)' },
+  askInput: { minWidth: 0, width: '100%', maxWidth: '100%', border: '1px solid rgba(216,178,118,0.2)', borderRadius: '0.84rem', background: 'linear-gradient(180deg, rgba(5,9,15,0.86), rgba(6,10,17,0.76))', color: 'rgba(234,223,205,0.95)', fontSize: '15px', lineHeight: 1.24, padding: '0.62rem 0.76rem', outline: 'none', letterSpacing: '0.014em', boxShadow: 'inset 0 1px 0 rgba(247,225,183,0.08), inset 0 -10px 16px rgba(2,3,8,0.28)' },
+  askButton: { width: '2rem', height: '2rem', minWidth: '2rem', border: '1px solid rgba(233,191,120,0.34)', borderRadius: '999px', background: 'radial-gradient(circle at 35% 28%, rgba(165,121,72,0.45), rgba(67,46,27,0.58) 70%)', color: 'rgba(250,236,210,0.92)', padding: 0, fontSize: '0.83rem', letterSpacing: '0.01em', lineHeight: 1, whiteSpace: 'nowrap', display: 'grid', placeItems: 'center', boxShadow: '0 0 18px rgba(186,132,69,0.24), inset 0 1px 0 rgba(255,233,193,0.24)' },
   conversationLayers: { position: 'fixed', left: '4%', right: '4%', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.35rem)', zIndex: 6, height: 'min(62dvh, 33rem)', display: 'grid', gridTemplateRows: 'auto 1fr', gap: '0.48rem', transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease' },
   goodellsConversationLayers: { left: '6%', right: '6%' },
   stackRegion: { display: 'grid', justifyItems: 'stretch' },
