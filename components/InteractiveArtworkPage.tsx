@@ -15,21 +15,39 @@ type ChatMessage = {
   id: string;
   role: 'user' | 'atlas';
   text: string;
+  title?: string;
+  highlights?: readonly string[];
 };
 
-const FALLBACK_RESPONSES = [
-  'Start at the midway around golden hour, then walk to the 4-H barns for the evening animal showcases.',
-  'For families, begin with youth exhibits, then move to kid rides before the grandstand crowds build.',
-  'Fair food tip: grab a classic elephant ear first, then save room for a local barbecue plate later in the night.',
-  'Parking is easiest near the east lots before 5:30 PM. After that, use overflow and follow shuttle signs.',
-];
+const FAIR_GUIDE_CARDS = {
+  default: {
+    title: 'Trail Start · Evening Fair Loop',
+    text: 'Begin at the midway near sunset, then drift toward the 4-H barns when showcase energy builds.',
+    highlights: ['Golden-hour midway photos', '4-H barn walk-through', 'Grandstand-ready by dusk'],
+  },
+  parking: {
+    title: 'Field Note · Parking & Arrival',
+    text: 'Arrive before 5:30 PM for easier east-lot parking. After that window, overflow lots plus shuttle signs are the smoothest route.',
+    highlights: ['Best window: before 5:30 PM', 'Use east lots first', 'Overflow + shuttle after peak'],
+  },
+  family: {
+    title: 'Family Route · Youth-First Plan',
+    text: 'Start with youth exhibits and hands-on barns, then move to kid rides before late-evening ride lines build.',
+    highlights: ['Hands-on 4-H exhibits', 'Kid rides before peak', 'Snack reset between zones'],
+  },
+  food: {
+    title: 'Fair Fuel · Classic + Local Pairing',
+    text: 'Pick one classic fair treat early, then save room for a local savory plate later when crowds shift to the grandstand.',
+    highlights: ['Classic sweet first', 'Local savory second', 'Shorter lines during showtime'],
+  },
+} as const;
 
-function getMockResponse(question: string): string {
+function getMockResponse(question: string): Pick<ChatMessage, 'text' | 'title' | 'highlights'> {
   const normalized = question.toLowerCase();
-  if (normalized.includes('park')) return FALLBACK_RESPONSES[3];
-  if (normalized.includes('family') || normalized.includes('kids')) return FALLBACK_RESPONSES[1];
-  if (normalized.includes('food') || normalized.includes('eat')) return FALLBACK_RESPONSES[2];
-  return FALLBACK_RESPONSES[0];
+  if (normalized.includes('park')) return FAIR_GUIDE_CARDS.parking;
+  if (normalized.includes('family') || normalized.includes('kids')) return FAIR_GUIDE_CARDS.family;
+  if (normalized.includes('food') || normalized.includes('eat')) return FAIR_GUIDE_CARDS.food;
+  return FAIR_GUIDE_CARDS.default;
 }
 
 export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVideoSrc, backHref }: InteractiveArtworkPageProps) {
@@ -65,10 +83,14 @@ export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVide
       text: question,
     };
 
+    const atlasGuide = getMockResponse(question);
+
     const atlasMessage: ChatMessage = {
       id: `atlas-${Date.now() + 1}`,
       role: 'atlas',
-      text: getMockResponse(question),
+      text: atlasGuide.text,
+      title: atlasGuide.title,
+      highlights: atlasGuide.highlights,
     };
 
     setMessages((current) => [...current, userMessage, atlasMessage]);
@@ -111,11 +133,27 @@ export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVide
               </button>
             </div>
             <div ref={scrollRef} style={styles.messageScrollRegion}>
-              {messages.map((message) => (
-                <div key={message.id} style={message.role === 'user' ? styles.userBubble : styles.atlasBubble}>
-                  {message.text}
-                </div>
-              ))}
+              {messages.map((message) =>
+                message.role === 'user' ? (
+                  <div key={message.id} style={styles.userChip}>
+                    You: {message.text}
+                  </div>
+                ) : (
+                  <article key={message.id} style={styles.atlasCard}>
+                    {message.title ? <p style={styles.atlasCardTitle}>{message.title}</p> : null}
+                    <p style={styles.atlasCardText}>{message.text}</p>
+                    {message.highlights?.length ? (
+                      <ul style={styles.atlasHighlights}>
+                        {message.highlights.map((highlight) => (
+                          <li key={highlight} style={styles.atlasHighlightItem}>
+                            {highlight}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </article>
+                )
+              )}
             </div>
           </div>
 
@@ -123,7 +161,7 @@ export default function InteractiveArtworkPage({ eventName, artworkSrc, heroVide
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="Ask Anything About the Fair..."
+              placeholder="Ask the Fair Guide"
               style={styles.askInput}
               aria-label="Ask anything about the fair"
             />
@@ -193,8 +231,8 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 4,
     display: 'grid',
     gridTemplateColumns: '1fr auto auto',
-    gap: '0.45rem',
-    padding: '0.5rem',
+    gap: '0.42rem',
+    padding: '0.42rem',
     borderRadius: '0.85rem',
     background: 'rgba(11, 14, 22, 0.62)',
     border: '1px solid rgba(220, 226, 243, 0.25)',
@@ -230,8 +268,8 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: '4%',
     right: '4%',
-    bottom: '16%',
-    height: '44%',
+    bottom: '13.2%',
+    height: '36%',
     zIndex: 4,
     borderRadius: '1rem',
     border: '1px solid rgba(204, 218, 243, 0.24)',
@@ -240,7 +278,7 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: '0 12px 30px rgba(0, 0, 0, 0.42)',
     display: 'grid',
     gridTemplateRows: 'auto 1fr',
-    transition: 'transform 280ms ease, opacity 220ms ease',
+    transition: 'transform 260ms cubic-bezier(0.2, 0.8, 0.24, 1), opacity 200ms ease',
   },
   panelHeader: {
     padding: '0.58rem 0.7rem',
@@ -260,27 +298,56 @@ const styles: Record<string, CSSProperties> = {
   },
   messageScrollRegion: {
     overflowY: 'auto',
+    overscrollBehavior: 'contain',
     padding: '0.65rem',
     display: 'grid',
     alignContent: 'start',
     gap: '0.5rem',
   },
-  userBubble: {
-    marginLeft: '2.4rem',
-    padding: '0.52rem 0.62rem',
-    borderRadius: '0.7rem',
-    background: 'rgba(95, 145, 224, 0.35)',
-    color: 'rgba(239, 245, 255, 0.96)',
-    fontSize: '0.86rem',
-    lineHeight: 1.35,
+  userChip: {
+    justifySelf: 'end',
+    maxWidth: '80%',
+    padding: '0.34rem 0.55rem',
+    borderRadius: '999px',
+    background: 'rgba(110, 158, 230, 0.22)',
+    border: '1px solid rgba(174, 205, 245, 0.38)',
+    color: 'rgba(234, 243, 255, 0.92)',
+    fontSize: '0.76rem',
+    lineHeight: 1.2,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
-  atlasBubble: {
-    marginRight: '2.4rem',
-    padding: '0.52rem 0.62rem',
-    borderRadius: '0.7rem',
-    background: 'rgba(39, 49, 70, 0.62)',
-    color: 'rgba(230, 238, 254, 0.96)',
-    fontSize: '0.86rem',
-    lineHeight: 1.35,
+  atlasCard: {
+    marginRight: '0.9rem',
+    borderRadius: '0.9rem',
+    padding: '0.65rem 0.72rem',
+    border: '1px solid rgba(206, 222, 247, 0.28)',
+    background: 'linear-gradient(165deg, rgba(24, 33, 50, 0.8), rgba(14, 21, 35, 0.74))',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+  },
+  atlasCardTitle: {
+    margin: '0 0 0.3rem',
+    color: 'rgba(214, 230, 252, 0.95)',
+    fontSize: '0.72rem',
+    letterSpacing: '0.07em',
+    textTransform: 'uppercase',
+  },
+  atlasCardText: {
+    margin: 0,
+    color: 'rgba(233, 240, 254, 0.95)',
+    fontSize: '0.84rem',
+    lineHeight: 1.34,
+  },
+  atlasHighlights: {
+    margin: '0.45rem 0 0',
+    paddingLeft: '1rem',
+    display: 'grid',
+    gap: '0.2rem',
+  },
+  atlasHighlightItem: {
+    color: 'rgba(208, 226, 250, 0.9)',
+    fontSize: '0.76rem',
+    lineHeight: 1.25,
   },
 };
