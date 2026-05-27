@@ -28,14 +28,15 @@ type AtlasModeOption = {
   id: AtlasMode;
   label: string;
   blurb: string;
+  icon: string;
 };
 
 const ATLAS_MODE_OPTIONS: readonly AtlasModeOption[] = [
-  { id: 'highlights', label: 'Highlights', blurb: 'Live pulse' },
-  { id: 'schedule', label: 'Schedule', blurb: 'Tonight flow' },
-  { id: 'map', label: 'Map', blurb: 'Grounds lens' },
-  { id: 'gallery', label: 'Gallery', blurb: 'Atmosphere reel' },
-  { id: 'plan', label: 'Plan', blurb: 'Family route' },
+  { id: 'highlights', label: 'Highlights', blurb: 'Live pulse', icon: '✦' },
+  { id: 'schedule', label: 'Schedule', blurb: 'Tonight flow', icon: '◷' },
+  { id: 'map', label: 'Map', blurb: 'Grounds lens', icon: '⌖' },
+  { id: 'gallery', label: 'Gallery', blurb: 'Atmosphere reel', icon: '◌' },
+  { id: 'plan', label: 'Plan', blurb: 'Family route', icon: '☰' },
 ] as const;
 
 const FAIR_GUIDE_CARDS = {
@@ -174,6 +175,28 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
             ) : null}
 
             {activeLayer ? (
+              <div style={styles.memoryLayerWrap}>
+                <nav style={styles.modeRail} aria-label="Atlas exploration modes">
+                  {ATLAS_MODE_OPTIONS.map((mode) => {
+                    const isActive = activeMode === mode.id;
+                    return (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => setActiveMode(mode.id)}
+                        style={{ ...styles.modePill, ...(isActive ? styles.modePillActive : null) }}
+                        aria-pressed={isActive}
+                      >
+                        <span style={styles.modeGlyph} aria-hidden>{mode.icon}</span>
+                        <span style={styles.modeText}>
+                          <span style={styles.modeLabel}>{mode.label}</span>
+                          <span style={styles.modeBlurb}>{mode.blurb}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </nav>
+
               <article style={styles.activeCard}>
                 <header style={styles.panelHeader}>
                   <p style={styles.panelTitle}>Atlas Memory Layer</p>
@@ -185,24 +208,6 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                 <div style={styles.activeScrollRegion}>
                   <p style={styles.userPromptLabel}>You asked</p>
                   <p style={styles.userPrompt}>{activeLayer.question}</p>
-
-                  <nav style={styles.modeRail} aria-label="Atlas exploration modes">
-                    {ATLAS_MODE_OPTIONS.map((mode) => {
-                      const isActive = activeMode === mode.id;
-                      return (
-                        <button
-                          key={mode.id}
-                          type="button"
-                          onClick={() => setActiveMode(mode.id)}
-                          style={{ ...styles.modePill, ...(isActive ? styles.modePillActive : null) }}
-                          aria-pressed={isActive}
-                        >
-                          <span style={styles.modeLabel}>{mode.label}</span>
-                          <span style={styles.modeBlurb}>{mode.blurb}</span>
-                        </button>
-                      );
-                    })}
-                  </nav>
 
                   {activeMode === 'highlights' ? (
                     <section style={styles.modeSection}>
@@ -273,6 +278,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                   ) : null}
                 </div>
               </article>
+              </div>
             ) : null}
           </div>
           <form className={isGoodellsEvent ? 'event-portrait-ask-dock' : undefined} style={{ ...styles.askDock, ...(isGoodellsEvent ? styles.goodellsAskDock : null) }} onSubmit={(event) => { event.preventDefault(); handleSend(); }}>
@@ -327,6 +333,7 @@ const styles: Record<string, CSSProperties> = {
   panelHeader: { padding: '0.8rem 0.95rem 0.68rem', borderBottom: '1px solid rgba(220,178,111,0.22)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg, rgba(18,25,36,0.46), rgba(15,21,31,0.08))' },
   panelTitle: { margin: 0, color: 'rgba(242,210,157,0.95)', fontSize: '0.6rem', letterSpacing: '0.16em', textTransform: 'uppercase' },
   minimizeButton: { border: '1px solid rgba(220,179,114,0.34)', background: 'rgba(13,20,31,0.6)', color: 'rgba(236,215,183,0.9)', borderRadius: '999px', fontSize: '0.58rem', letterSpacing: '0.09em', padding: '0.33rem 0.62rem', textTransform: 'uppercase' },
+  memoryLayerWrap: { display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.45rem', minHeight: 0 },
   activeScrollRegion: { overflowY: 'auto', overscrollBehavior: 'contain', padding: '1rem 1.04rem 1.14rem', display: 'grid', alignContent: 'start', gap: '0.62rem' },
   userPromptLabel: { margin: 0, color: 'rgba(203,182,147,0.78)', fontSize: '0.55rem', letterSpacing: '0.12em', textTransform: 'uppercase' },
   userPrompt: { margin: 0, color: 'rgba(236,228,212,0.94)', fontSize: '0.83rem', lineHeight: 1.4, fontStyle: 'italic' },
@@ -335,11 +342,13 @@ const styles: Record<string, CSSProperties> = {
   atlasHighlights: { margin: '0.25rem 0 0', paddingLeft: '1.05rem', display: 'grid', gap: '0.3rem' },
   atlasHighlightItem: { color: 'rgba(234,217,191,0.92)', fontSize: '0.77rem', lineHeight: 1.34 },
 
-  modeRail: { display: 'flex', gap: '0.42rem', overflowX: 'auto', overscrollBehaviorX: 'contain', paddingBottom: '0.1rem', marginTop: '0.12rem', scrollbarWidth: 'thin' },
-  modePill: { all: 'unset', cursor: 'pointer', flexShrink: 0, display: 'grid', gap: '0.08rem', borderRadius: '0.78rem', padding: '0.4rem 0.58rem', border: '1px solid rgba(213,176,118,0.22)', background: 'linear-gradient(180deg, rgba(12,17,27,0.72), rgba(10,15,24,0.58))', boxShadow: 'inset 0 1px 0 rgba(240,210,164,0.08)' },
-  modePillActive: { border: '1px solid rgba(236,193,124,0.46)', background: 'linear-gradient(180deg, rgba(28,35,48,0.86), rgba(14,20,30,0.76))', boxShadow: '0 10px 18px rgba(2,4,8,0.3), inset 0 1px 0 rgba(247,223,182,0.22)' },
-  modeLabel: { color: 'rgba(239,222,192,0.96)', fontSize: '0.66rem', textTransform: 'uppercase', letterSpacing: '0.11em' },
-  modeBlurb: { color: 'rgba(203,187,160,0.84)', fontSize: '0.58rem', letterSpacing: '0.06em' },
+  modeRail: { display: 'flex', gap: '0.42rem', overflowX: 'auto', overscrollBehaviorX: 'contain', padding: '0.1rem 0.05rem 0.2rem', scrollbarWidth: 'thin' },
+  modePill: { all: 'unset', cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '0.42rem', borderRadius: '999px', padding: '0.42rem 0.62rem', border: '1px solid rgba(225,179,114,0.28)', background: 'linear-gradient(180deg, rgba(13,19,30,0.78), rgba(9,14,22,0.68))', boxShadow: '0 12px 20px rgba(2,4,8,0.32), inset 0 1px 0 rgba(245,214,167,0.11)' },
+  modePillActive: { border: '1px solid rgba(242,194,118,0.6)', background: 'linear-gradient(180deg, rgba(41,33,20,0.9), rgba(24,20,15,0.82))', boxShadow: '0 12px 22px rgba(2,4,8,0.34), 0 0 0 1px rgba(97,67,30,0.22), inset 0 1px 0 rgba(255,230,184,0.24)' },
+  modeGlyph: { width: '1.1rem', height: '1.1rem', borderRadius: '999px', display: 'grid', placeItems: 'center', color: 'rgba(243,211,156,0.92)', background: 'rgba(30,22,14,0.46)', border: '1px solid rgba(229,186,118,0.22)', fontSize: '0.62rem', lineHeight: 1 },
+  modeText: { display: 'grid', gap: '0.05rem' },
+  modeLabel: { color: 'rgba(239,222,192,0.96)', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.1em', lineHeight: 1.1 },
+  modeBlurb: { color: 'rgba(203,187,160,0.84)', fontSize: '0.54rem', letterSpacing: '0.06em', lineHeight: 1.1 },
   modeSection: { display: 'grid', gap: '0.5rem' },
   timelineStack: { display: 'grid', gap: '0.44rem' },
   timelineBlock: { borderRadius: '0.76rem', border: '1px solid rgba(214,177,117,0.24)', padding: '0.5rem 0.62rem', background: 'linear-gradient(160deg, rgba(15,21,33,0.82), rgba(11,16,25,0.64))' },
