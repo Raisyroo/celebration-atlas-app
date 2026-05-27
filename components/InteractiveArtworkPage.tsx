@@ -196,12 +196,12 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 }
 
 const styles: Record<string, CSSProperties> = {
-  page: { width: '100vw', height: '100dvh', minHeight: '100dvh', background: '#070b13', padding: 0, margin: 0, overflow: 'hidden' },
-  goodellsPage: { width: '100vw', height: '100dvh', minHeight: '100dvh', overflow: 'hidden' },
-  artworkStage: { position: 'relative', width: '100%', height: '100%', minHeight: '100dvh', overflow: 'hidden', maxWidth: '760px', margin: '0 auto' },
-  goodellsArtworkStage: { width: '100vw', height: '100dvh', minHeight: '100dvh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 0, maxWidth: 'none', padding: 0 },
+  page: { width: '100vw', height: '100svh', minHeight: '100svh', background: '#070b13', padding: 0, margin: 0, overflow: 'hidden' },
+  goodellsPage: { width: '100vw', height: '100svh', minHeight: '100svh', overflow: 'hidden' },
+  artworkStage: { position: 'relative', width: '100%', height: '100%', minHeight: '100svh', overflow: 'hidden', maxWidth: '760px', margin: '0 auto' },
+  goodellsArtworkStage: { width: '100vw', height: '100svh', minHeight: '100svh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 0, maxWidth: 'none', padding: 0 },
   artworkFrame: { position: 'relative', width: '100%', height: '100%' },
-  goodellsArtworkFrame: { width: '100vw', height: '100dvh', maxWidth: '100%', minHeight: '100dvh', margin: 0, overflow: 'hidden', transition: 'width 320ms ease, height 320ms ease, box-shadow 320ms ease, border-radius 320ms ease' },
+  goodellsArtworkFrame: { width: '100%', height: '100%', maxWidth: '100%', minHeight: 0, margin: 0, overflow: 'hidden', transition: 'width 320ms ease, height 320ms ease, box-shadow 320ms ease, border-radius 320ms ease' },
   artworkImage: { display: 'block', width: '100%', height: 'auto', objectFit: 'contain' },
   goodellsArtworkImage: { width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' },
   atmosphereVeil: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(5,8,15,0.2) 0%, rgba(6,9,17,0.52) 45%, rgba(4,6,12,0.86) 100%)' },
