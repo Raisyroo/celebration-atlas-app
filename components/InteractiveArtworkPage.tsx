@@ -36,6 +36,16 @@ const ATLAS_MODE_OPTIONS: readonly AtlasModeOption[] = [
   { id: 'gallery', label: 'Gallery' },
 ] as const;
 
+
+type GalleryItem = { id: string; caption: string; tone: string };
+
+const GALLERY_ITEMS: readonly GalleryItem[] = [
+  { id: 'ferris-glow', caption: 'Ferris wheel glow before dusk.', tone: 'radial-gradient(circle at 32% 26%, rgba(239,180,102,0.4), rgba(86,58,34,0.46) 48%, rgba(16,13,14,0.9) 100%)' },
+  { id: 'barn-lantern', caption: 'Barn lantern aisle at blue hour.', tone: 'radial-gradient(circle at 25% 32%, rgba(213,159,96,0.38), rgba(74,56,45,0.5) 44%, rgba(15,19,28,0.92) 100%)' },
+  { id: 'grandstand-sky', caption: 'Grandstand skyline before fireworks.', tone: 'radial-gradient(circle at 44% 24%, rgba(248,189,117,0.34), rgba(73,52,37,0.5) 40%, rgba(12,16,27,0.92) 100%)' },
+  { id: 'midway-neon', caption: 'Midway neon reflections on gravel.', tone: 'radial-gradient(circle at 56% 24%, rgba(248,177,110,0.36), rgba(78,58,45,0.5) 42%, rgba(15,16,24,0.92) 100%)' },
+] as const;
+
 function ModeIcon({ mode }: { mode: AtlasMode }) {
   const commonProps = {
     width: 14,
@@ -137,6 +147,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   const [layers, setLayers] = useState<ConversationLayer[]>([]);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [activeMode, setActiveMode] = useState<AtlasMode>('highlights');
+  const [activeGalleryId, setActiveGalleryId] = useState<string>(GALLERY_ITEMS[0].id);
 
   const canSend = useMemo(() => draft.trim().length > 0, [draft]);
   const isGoodellsEvent = eventId === 'goodells-fair';
@@ -173,6 +184,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   const displayedLayer = activeLayer ?? previewLayer;
   const isMapMode = activeMode === 'map' && Boolean(displayedLayer?.visual);
   const showIdleModeRail = !isConversationOpen;
+  const activeGalleryItem = useMemo(() => GALLERY_ITEMS.find((item) => item.id === activeGalleryId) ?? GALLERY_ITEMS[0], [activeGalleryId]);
 
   const handleSend = () => {
     const question = draft.trim();
@@ -229,7 +241,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
   return (
     <main
-      className={isGoodellsEvent ? 'event-portrait-root' : undefined}
+      className={isGoodellsEvent ? 'event-portrait-root atlas-event-shell' : 'atlas-event-shell'}
       style={{ ...styles.page, ...(isGoodellsEvent ? styles.goodellsPage : null) }}
     >
       <section
@@ -348,14 +360,27 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
                   {activeMode === 'gallery' ? (
                     <section style={{ ...styles.modeSection, ...styles.galleryModeSection }}>
-                      <div style={styles.galleryRail}>
-                        {['Ferris wheel glow before dusk','Barn lantern aisle at blue hour','Grandstand skyline before fireworks','Midway neon reflections on gravel'].map((caption) => (
-                          <article key={caption} style={styles.galleryCard}>
-                            <div style={styles.galleryImageTone} aria-hidden />
-                            <p style={styles.galleryCaption}>{caption}</p>
-                          </article>
-                        ))}
+                      <article style={styles.galleryFocusCard} aria-label="Gallery feature image">
+                        <div style={{ ...styles.galleryImageTone, ...styles.galleryFocusImageTone, background: activeGalleryItem.tone }} aria-hidden />
+                      </article>
+                      <div style={styles.galleryThumbRail} aria-label="Gallery thumbnails">
+                        {GALLERY_ITEMS.map((item) => {
+                          const isSelected = item.id === activeGalleryItem.id;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => setActiveGalleryId(item.id)}
+                              style={{ ...styles.galleryThumbButton, ...(isSelected ? styles.galleryThumbButtonActive : null) }}
+                              aria-pressed={isSelected}
+                              aria-label={item.caption}
+                            >
+                              <span style={{ ...styles.galleryThumbTone, background: item.tone }} aria-hidden />
+                            </button>
+                          );
+                        })}
                       </div>
+                      <p style={styles.galleryCaption}>{activeGalleryItem.caption}</p>
                     </section>
                   ) : null}
 
@@ -403,7 +428,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 }
 
 const styles: Record<string, CSSProperties> = {
-  page: { width: '100vw', height: '100svh', minHeight: '100svh', background: '#070b13', padding: 0, margin: 0, overflow: 'hidden' },
+  page: { width: '100vw', height: '100svh', minHeight: '100svh', padding: 0, margin: 0, overflow: 'hidden' },
   goodellsPage: { width: '100vw', height: '100svh', minHeight: '100svh', overflow: 'hidden' },
   artworkStage: { position: 'relative', width: '100%', height: '100%', minHeight: '100svh', overflow: 'hidden', maxWidth: '760px', margin: '0 auto' },
   goodellsArtworkStage: { width: '100vw', height: '100svh', minHeight: '100svh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 0, maxWidth: 'none', padding: 0 },
@@ -450,15 +475,19 @@ const styles: Record<string, CSSProperties> = {
   modePillActive: { border: '1px solid rgba(244,197,122,0.76)', background: 'linear-gradient(180deg, rgba(49,37,20,0.93), rgba(25,20,13,0.84))', boxShadow: '0 0 0 1px rgba(116,82,38,0.34), 0 0 12px rgba(220,164,89,0.28), inset 0 1px 0 rgba(255,230,184,0.26)' },
   modeGlyph: { width: '1.34rem', height: '1.34rem', borderRadius: '999px', display: 'grid', placeItems: 'center', color: 'rgba(243,211,156,0.95)', background: 'rgba(30,22,14,0.58)', border: '1px solid rgba(229,186,118,0.3)', lineHeight: 1 },
   modeSection: { display: 'grid', gap: '0.5rem' },
-  galleryModeSection: { marginTop: '-0.12rem', gap: '0.26rem' },
+  galleryModeSection: { marginTop: '-0.12rem', gap: '0.38rem' },
   timelineStack: { display: 'grid', gap: '0.44rem' },
   timelineBlock: { borderRadius: '0.76rem', border: '1px solid rgba(214,177,117,0.24)', padding: '0.5rem 0.62rem', background: 'linear-gradient(160deg, rgba(15,21,33,0.82), rgba(11,16,25,0.64))' },
   timelineTime: { color: 'rgba(248,211,151,0.92)', fontSize: '0.62rem', letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: '0.22rem' },
   timelineText: { margin: 0, color: 'rgba(236,226,206,0.92)', fontSize: '0.76rem', lineHeight: 1.35 },
-  galleryRail: { display: 'flex', gap: '0.76rem', overflowX: 'auto', padding: '0.12rem 0.06rem 0.18rem', marginBottom: '0.08rem', overscrollBehaviorX: 'contain', scrollbarWidth: 'thin', alignItems: 'stretch' },
-  galleryCard: { minWidth: '14.8rem', flex: '0 0 min(78%, 19.5rem)', borderRadius: '0.96rem', overflow: 'hidden', border: '1px solid rgba(224,186,123,0.2)', background: 'linear-gradient(165deg, rgba(16,22,34,0.78), rgba(10,15,24,0.64))', boxShadow: '0 12px 24px rgba(1,3,7,0.34), inset 0 1px 0 rgba(247,222,184,0.1)', display: 'grid', gridTemplateRows: '1fr auto' },
-  galleryImageTone: { aspectRatio: '4 / 5', minHeight: '16.8rem', background: 'radial-gradient(circle at 30% 26%, rgba(239,180,102,0.36), rgba(93,65,38,0.42) 45%, rgba(18,14,15,0.88) 100%)' },
-  galleryCaption: { margin: 0, padding: '0.38rem 0.48rem 0.46rem', color: 'rgba(236,225,205,0.72)', fontSize: '0.62rem', lineHeight: 1.28 },
+  galleryFocusCard: { borderRadius: '0.96rem', overflow: 'hidden', border: '1px solid rgba(224,186,123,0.2)', background: 'linear-gradient(165deg, rgba(16,22,34,0.78), rgba(10,15,24,0.64))', boxShadow: '0 12px 24px rgba(1,3,7,0.34), inset 0 1px 0 rgba(247,222,184,0.1)' },
+  galleryImageTone: { aspectRatio: '4 / 5', minHeight: '12.6rem', background: 'radial-gradient(circle at 30% 26%, rgba(239,180,102,0.36), rgba(93,65,38,0.42) 45%, rgba(18,14,15,0.88) 100%)' },
+  galleryFocusImageTone: { width: '100%' },
+  galleryThumbRail: { display: 'flex', gap: '0.46rem', overflowX: 'auto', overscrollBehaviorX: 'contain', padding: '0.06rem 0.02rem', scrollbarWidth: 'thin' },
+  galleryThumbButton: { all: 'unset', cursor: 'pointer', flex: '0 0 auto', width: '3rem', height: '3.7rem', borderRadius: '0.56rem', padding: '0.14rem', border: '1px solid rgba(224,186,123,0.28)', background: 'linear-gradient(175deg, rgba(18,24,36,0.72), rgba(9,14,23,0.7))', boxShadow: 'inset 0 1px 0 rgba(247,222,184,0.1)' },
+  galleryThumbButtonActive: { border: '1px solid rgba(245,196,123,0.82)', boxShadow: '0 0 0 1px rgba(141,103,56,0.42), inset 0 1px 0 rgba(255,228,187,0.2)' },
+  galleryThumbTone: { display: 'block', width: '100%', height: '100%', borderRadius: '0.46rem' },
+  galleryCaption: { margin: 0, color: 'rgba(236,225,205,0.82)', fontSize: '0.66rem', lineHeight: 1.28 },
 
   atlasVisualWrap: { marginTop: '0.24rem', display: 'grid', gap: '0.5rem' },
   atlasVisualLabel: { margin: 0, color: 'rgba(242,209,150,0.92)', fontSize: '0.62rem', letterSpacing: '0.12em', textTransform: 'uppercase' },
