@@ -396,6 +396,7 @@ export default function AtlasMap() {
 
   return (
     <section className="atlas-hero" style={styles.hero} onPointerDown={handleBackdropPointerDown}>
+      <div className="atlas-portrait-stage" style={styles.portraitStage}>
       <div
         ref={mapFrameRef}
         className="atlas-map-frame"
@@ -664,6 +665,7 @@ export default function AtlasMap() {
           />
         </div>
       </div>
+      </div>
       <style jsx>{`
         .atlas-search-input--pulse {
           animation: searchAcceptPulse 360ms ease-out;
@@ -766,13 +768,22 @@ export default function AtlasMap() {
 const styles: Record<string, CSSProperties> = {
   hero: {
     position: 'relative',
-    height: '100dvh',
-    minHeight: '100dvh',
+    height: '100svh',
+    minHeight: '100svh',
     overflow: 'hidden',
     touchAction: 'manipulation',
     overscrollBehavior: 'none',
     background: 'radial-gradient(circle at 50% 15%, #172233, #05070c 70%)',
     color: '#f5e8c7',
+  },
+  portraitStage: {
+    position: 'relative',
+    width: 'min(100vw, calc(100svh * 9 / 19.5))',
+    height: 'min(100svh, calc(100vw * 19.5 / 9))',
+    maxWidth: '100vw',
+    maxHeight: '100svh',
+    margin: '0 auto',
+    overflow: 'hidden',
   },
   mapFrame: {
     position: 'absolute',
@@ -917,7 +928,7 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'center',
   },
   searchDock: {
-    position: 'fixed',
+    position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
@@ -1025,7 +1036,7 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: 'none',
   },
   card: {
-    position: 'fixed',
+    position: 'absolute',
     left: 12,
     right: 12,
     bottom: 120,
