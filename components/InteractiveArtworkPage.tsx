@@ -90,6 +90,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
   const activeLayer = useMemo(() => layers.find((layer) => layer.id === activeLayerId) ?? layers.at(-1) ?? null, [layers, activeLayerId]);
   const isMapMode = activeMode === 'map' && Boolean(activeLayer?.visual);
+  const showIdleModeRail = Boolean(activeLayer) && !isConversationOpen;
 
   const handleSend = () => {
     const question = draft.trim();
@@ -112,6 +113,28 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   };
 
   const isGoodellsEvent = eventId === 'goodells-fair';
+  const renderModeRail = () => (
+    <nav style={styles.modeRail} aria-label="Atlas exploration modes">
+      {ATLAS_MODE_OPTIONS.map((mode) => {
+        const isActive = activeMode === mode.id;
+        return (
+          <button
+            key={mode.id}
+            type="button"
+            onClick={() => setActiveMode(mode.id)}
+            style={{ ...styles.modePill, ...(isActive ? styles.modePillActive : null) }}
+            aria-pressed={isActive}
+          >
+            <span style={styles.modeGlyph} aria-hidden>{mode.icon}</span>
+            <span style={styles.modeText}>
+              <span style={styles.modeLabel}>{mode.label}</span>
+              <span style={styles.modeBlurb}>{mode.blurb}</span>
+            </span>
+          </button>
+        );
+      })}
+    </nav>
+  );
 
   return (
     <main
@@ -176,27 +199,6 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
             {activeLayer ? (
               <div style={styles.memoryLayerWrap}>
-                <nav style={styles.modeRail} aria-label="Atlas exploration modes">
-                  {ATLAS_MODE_OPTIONS.map((mode) => {
-                    const isActive = activeMode === mode.id;
-                    return (
-                      <button
-                        key={mode.id}
-                        type="button"
-                        onClick={() => setActiveMode(mode.id)}
-                        style={{ ...styles.modePill, ...(isActive ? styles.modePillActive : null) }}
-                        aria-pressed={isActive}
-                      >
-                        <span style={styles.modeGlyph} aria-hidden>{mode.icon}</span>
-                        <span style={styles.modeText}>
-                          <span style={styles.modeLabel}>{mode.label}</span>
-                          <span style={styles.modeBlurb}>{mode.blurb}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </nav>
-
               <article style={styles.activeCard}>
                 <header style={styles.panelHeader}>
                   <p style={styles.panelTitle}>Atlas Memory Layer</p>
@@ -204,6 +206,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                     Minimize
                   </button>
                 </header>
+                <div style={styles.panelModeRail}>{renderModeRail()}</div>
 
                 <div style={styles.activeScrollRegion}>
                   <p style={styles.userPromptLabel}>You asked</p>
@@ -281,6 +284,11 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
               </div>
             ) : null}
           </div>
+          {showIdleModeRail ? (
+            <div style={{ ...styles.idleModeRailWrap, ...(isGoodellsEvent ? styles.goodellsIdleModeRailWrap : null) }}>
+              {renderModeRail()}
+            </div>
+          ) : null}
           <form className={isGoodellsEvent ? 'event-portrait-ask-dock' : undefined} style={{ ...styles.askDock, ...(isGoodellsEvent ? styles.goodellsAskDock : null) }} onSubmit={(event) => { event.preventDefault(); handleSend(); }}>
             <span aria-hidden style={styles.askSigil}>
               ✦
@@ -319,6 +327,8 @@ const styles: Record<string, CSSProperties> = {
   topBackLink: { position: 'absolute', top: 'max(env(safe-area-inset-top, 0px), 0.8rem)', left: '0.8rem', zIndex: 5, color: 'rgba(244,227,198,0.92)', textDecoration: 'none', fontSize: '0.68rem', letterSpacing: '0.09em', textTransform: 'uppercase', border: '1px solid rgba(226,188,122,0.38)', borderRadius: '999px', padding: '0.38rem 0.74rem', background: 'linear-gradient(165deg, rgba(10,16,26,0.64), rgba(10,15,23,0.42))', boxShadow: '0 10px 20px rgba(1,3,9,0.38), inset 0 1px 0 rgba(248,226,182,0.16)' },
   askDock: { position: 'fixed', left: '4%', bottom: '3%', width: '92%', zIndex: 7, display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '0.5rem', padding: '0.44rem 0.54rem', borderRadius: '1.08rem', background: 'linear-gradient(170deg, rgba(9,14,22,0.92), rgba(8,12,19,0.8))', border: '1px solid rgba(222,178,112,0.28)', boxShadow: '0 20px 32px rgba(1,2,6,0.46), 0 0 0 1px rgba(40,31,20,0.2), inset 0 1px 0 rgba(250,224,178,0.16), inset 0 -8px 16px rgba(2,4,8,0.32)', backdropFilter: 'blur(9px)', WebkitBackdropFilter: 'blur(9px)' },
   goodellsAskDock: { left: 'calc(env(safe-area-inset-left, 0px) + 0.78rem)', right: 'calc(env(safe-area-inset-right, 0px) + 0.78rem)', width: 'auto', maxWidth: '100%', boxSizing: 'border-box', bottom: 'max(1.6%, calc(env(safe-area-inset-bottom, 0px) + 0.56rem))', position: 'absolute', padding: '0.54rem 0.62rem', gap: '0.56rem', borderRadius: '1.14rem' },
+  idleModeRailWrap: { position: 'fixed', left: '4%', right: '4%', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4.85rem)', zIndex: 7, padding: '0.2rem 0.12rem' },
+  goodellsIdleModeRailWrap: { left: 'calc(env(safe-area-inset-left, 0px) + 0.78rem)', right: 'calc(env(safe-area-inset-right, 0px) + 0.78rem)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 4.62rem)' },
   askSigil: { width: '1.5rem', height: '1.5rem', borderRadius: '999px', border: '1px solid rgba(223,184,121,0.3)', display: 'grid', placeItems: 'center', color: 'rgba(226,196,146,0.78)', fontSize: '0.62rem', letterSpacing: '0.08em', background: 'linear-gradient(170deg, rgba(20,26,37,0.8), rgba(9,13,21,0.7))', boxShadow: 'inset 0 1px 0 rgba(245,220,177,0.15), 0 0 0 1px rgba(41,32,21,0.26)' },
   askInput: { minWidth: 0, width: '100%', flex: 1, maxWidth: '100%', border: '1px solid rgba(216,178,118,0.2)', borderRadius: '0.84rem', background: 'linear-gradient(180deg, rgba(5,9,15,0.86), rgba(6,10,17,0.76))', color: 'rgba(234,223,205,0.95)', fontSize: '15px', lineHeight: 1.24, padding: '0.62rem 0.76rem', outline: 'none', letterSpacing: '0.014em', boxShadow: 'inset 0 1px 0 rgba(247,225,183,0.08), inset 0 -10px 16px rgba(2,3,8,0.28)' },
   askButton: { width: '2rem', height: '2rem', minWidth: '2rem', border: '1px solid rgba(233,191,120,0.34)', borderRadius: '999px', background: 'radial-gradient(circle at 35% 28%, rgba(165,121,72,0.45), rgba(67,46,27,0.58) 70%)', color: 'rgba(250,236,210,0.92)', padding: 0, fontSize: '0.83rem', letterSpacing: '0.01em', lineHeight: 1, whiteSpace: 'nowrap', display: 'grid', placeItems: 'center', boxShadow: '0 0 18px rgba(186,132,69,0.24), inset 0 1px 0 rgba(255,233,193,0.24)' },
@@ -331,6 +341,7 @@ const styles: Record<string, CSSProperties> = {
   historyTabLabel: { color: 'inherit', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   activeCard: { width: '100%', borderRadius: '1.18rem', border: '1px solid rgba(229,187,120,0.3)', background: 'linear-gradient(180deg, rgba(12,18,29,0.93), rgba(10,14,22,0.84))', boxShadow: '0 28px 52px rgba(1,2,6,0.62), 0 0 0 1px rgba(46,35,23,0.28), inset 0 1px 0 rgba(253,227,185,0.2), inset 0 -14px 30px rgba(5,8,14,0.3)', display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden', backdropFilter: 'blur(9px)', WebkitBackdropFilter: 'blur(9px)' },
   panelHeader: { padding: '0.8rem 0.95rem 0.68rem', borderBottom: '1px solid rgba(220,178,111,0.22)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg, rgba(18,25,36,0.46), rgba(15,21,31,0.08))' },
+  panelModeRail: { padding: '0.5rem 0.78rem 0.45rem', borderBottom: '1px solid rgba(220,178,111,0.18)', background: 'linear-gradient(180deg, rgba(16,24,35,0.3), rgba(12,18,28,0.08))' },
   panelTitle: { margin: 0, color: 'rgba(242,210,157,0.95)', fontSize: '0.6rem', letterSpacing: '0.16em', textTransform: 'uppercase' },
   minimizeButton: { border: '1px solid rgba(220,179,114,0.34)', background: 'rgba(13,20,31,0.6)', color: 'rgba(236,215,183,0.9)', borderRadius: '999px', fontSize: '0.58rem', letterSpacing: '0.09em', padding: '0.33rem 0.62rem', textTransform: 'uppercase' },
   memoryLayerWrap: { display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.45rem', minHeight: 0 },
