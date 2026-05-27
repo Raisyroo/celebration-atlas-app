@@ -142,6 +142,10 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   const isGoodellsEvent = eventId === 'goodells-fair';
 
   const activeLayer = useMemo(() => layers.find((layer) => layer.id === activeLayerId) ?? layers.at(-1) ?? null, [layers, activeLayerId]);
+  const historyLayers = useMemo(() => {
+    if (!activeLayer) return [];
+    return layers.filter((layer) => layer.id !== activeLayer.id);
+  }, [activeLayer, layers]);
   const previewQuestionByMode: Record<AtlasMode, string> = {
     highlights: 'Show me the top Goodells highlights right now.',
     schedule: 'What does a strong evening schedule look like at Goodells?',
@@ -273,11 +277,10 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                     Minimize
                   </button>
                 </header>
-                {layers.length > 0 ? (
+                {historyLayers.length > 0 ? (
                   <div style={styles.panelHistoryRail}>
                     <div style={styles.historyRail} aria-label="Atlas memory history">
-                      {layers.map((layer, index) => {
-                        const isActive = activeLayer?.id === layer.id;
+                      {historyLayers.map((layer, index) => {
                         const compactLabel = layer.question.length > 22 ? `${layer.question.slice(0, 22).trimEnd()}…` : layer.question;
 
                         return (
@@ -285,8 +288,8 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                             key={layer.id}
                             type="button"
                             onClick={() => setActiveLayerId(layer.id)}
-                            style={{ ...styles.historyTab, ...(isActive ? styles.historyTabActive : null) }}
-                            aria-pressed={isActive}
+                            style={styles.historyTab}
+                            aria-pressed={false}
                           >
                             <span style={styles.historyTabIndex}>#{index + 1}</span>
                             <span style={styles.historyTabLabel}>{compactLabel}</span>
