@@ -177,6 +177,7 @@ export default function EventDetailPage() {
   const introVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const localFlavorItems = (event.localFlavor ?? []).filter(Boolean).slice(0, 4);
+  const isRomeoPeachTestView = event.id === 'romeo-peach';
 
   const handleShare = async () => {
     try {
@@ -309,6 +310,24 @@ export default function EventDetailPage() {
           transition: 'opacity 680ms ease',
         }}
       >
+      {isRomeoPeachTestView ? (
+        // TEMP: Romeo detail page is intentionally simplified to test the Midnight Atlas background visibility.
+        <section style={styles.romeoMinimalTestShell} aria-label="Romeo Peach Festival background test">
+          <p style={styles.romeoMinimalLabel}>Romeo Peach Festival</p>
+          <Link
+            href={`/?event=${event.id}`}
+            style={{
+              ...styles.backLink,
+              ...styles.romeoMinimalBackLink,
+              color: tone.backLinkColor,
+              borderBottom: `1px solid ${tone.backLinkColor.replace('0.9', '0.45')}`,
+            }}
+          >
+            ← Back to Atlas
+          </Link>
+        </section>
+      ) : (
+      <>
       <section style={styles.hero}>
         <p style={{ ...styles.kicker, color: tone.kickerColor }}>Event Atlas</p>
         <h1 style={styles.title}>{event.name}</h1>
@@ -441,6 +460,8 @@ export default function EventDetailPage() {
       <Link href={`/?event=${event.id}`} style={{ ...styles.backLink, color: tone.backLinkColor, borderBottom: `1px solid ${tone.backLinkColor.replace('0.9', '0.45')}` }}>
         ← Back to Atlas
       </Link>
+      </>
+      )}
       </main>
     </>
   );
@@ -506,6 +527,25 @@ const styles: Record<string, CSSProperties> = {
     gap: '1.25rem',
     position: 'relative',
     zIndex: 1,
+  },
+  romeoMinimalTestShell: {
+    minHeight: '100svh',
+    display: 'grid',
+    alignContent: 'start',
+    justifyItems: 'start',
+    gap: '0.85rem',
+    paddingTop: '0.5rem',
+  },
+  romeoMinimalLabel: {
+    margin: 0,
+    fontSize: '0.78rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    color: 'rgba(205, 221, 241, 0.82)',
+  },
+  romeoMinimalBackLink: {
+    fontSize: '0.86rem',
+    letterSpacing: '0.06em',
   },
   hero: { maxWidth: '52rem' },
   kicker: {
