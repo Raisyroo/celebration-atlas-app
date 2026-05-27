@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getGoodellsMockConversation, type ConversationCard, type ConversationVisual } from '../data/goodellsConversation';
 
 type InteractiveArtworkPageProps = {
@@ -175,18 +176,30 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                     <section style={styles.atlasVisualWrap} aria-label={activeLayer.visual.label}>
                       <p style={styles.atlasVisualLabel}>{activeLayer.visual.label}</p>
                       <div style={styles.atlasMapInsert}>
-                        <div style={styles.atlasMapTexture} aria-hidden />
-                        <div style={styles.atlasMapGrid} aria-hidden />
-                        <div style={styles.atlasMapRoute} aria-hidden />
-                        <div style={styles.atlasMapPinsRow}>
-                          <span style={styles.atlasMapPin}>Gate</span>
-                          <span style={styles.atlasMapPin}>Barns</span>
-                          <span style={styles.atlasMapPin}>Midway</span>
-                          <span style={styles.atlasMapPin}>Food</span>
-                        </div>
+                        {activeLayer.visual.src ? (
+                          <Image
+                            src={activeLayer.visual.src}
+                            alt="Goodells fairgrounds map field-note insert"
+                            fill
+                            sizes="(max-width: 720px) 100vw, 620px"
+                            style={styles.atlasMapImage}
+                            priority={false}
+                          />
+                        ) : null}
+                        <div style={styles.atlasMapOverlay} aria-hidden />
+                        <div style={styles.atlasMapFrameGlow} aria-hidden />
                       </div>
                       <p style={styles.atlasVisualCaption}>{activeLayer.visual.caption}</p>
                       {activeLayer.visual.localTip ? <p style={styles.atlasVisualTip}>{activeLayer.visual.localTip}</p> : null}
+                      {activeLayer.visual.guideNotes?.length ? (
+                        <ul style={styles.atlasVisualGuideList}>
+                          {activeLayer.visual.guideNotes.map((note) => (
+                            <li key={note} style={styles.atlasVisualGuideItem}>
+                              {note}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                     </section>
                   ) : null}
 
@@ -265,12 +278,12 @@ const styles: Record<string, CSSProperties> = {
 
   atlasVisualWrap: { marginTop: '0.24rem', display: 'grid', gap: '0.5rem' },
   atlasVisualLabel: { margin: 0, color: 'rgba(242,209,150,0.92)', fontSize: '0.62rem', letterSpacing: '0.12em', textTransform: 'uppercase' },
-  atlasMapInsert: { position: 'relative', width: '100%', minHeight: '10.75rem', borderRadius: '0.92rem', overflow: 'hidden', border: '1px solid rgba(224,185,119,0.36)', background: 'radial-gradient(circle at 20% 18%, rgba(138,102,66,0.48), rgba(68,49,33,0.5) 40%, rgba(26,19,14,0.86) 100%)', boxShadow: '0 18px 30px rgba(3,4,7,0.44), inset 0 1px 0 rgba(248,223,183,0.22), inset 0 -18px 28px rgba(11,9,7,0.34)' },
-  atlasMapTexture: { position: 'absolute', inset: 0, background: 'repeating-linear-gradient(160deg, rgba(236,207,163,0.09) 0 2px, rgba(108,79,51,0.09) 2px 4px)', mixBlendMode: 'soft-light', opacity: 0.68 },
-  atlasMapGrid: { position: 'absolute', inset: '9% 7%', borderRadius: '0.72rem', border: '1px solid rgba(235,206,159,0.28)', background: 'linear-gradient(135deg, rgba(239,207,155,0.14), rgba(144,102,60,0.08))' },
-  atlasMapRoute: { position: 'absolute', left: '13%', right: '13%', top: '27%', bottom: '24%', borderRadius: '999px', border: '2px dashed rgba(252,224,178,0.74)', transform: 'rotate(-8deg)', boxShadow: '0 0 18px rgba(242,188,112,0.28)' },
-  atlasMapPinsRow: { position: 'absolute', left: '7%', right: '7%', bottom: '10%', display: 'flex', justifyContent: 'space-between', gap: '0.35rem', flexWrap: 'wrap' },
-  atlasMapPin: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.2rem 0.4rem', borderRadius: '999px', border: '1px solid rgba(241,212,166,0.38)', background: 'rgba(31,24,18,0.62)', color: 'rgba(248,227,191,0.96)', fontSize: '0.58rem', letterSpacing: '0.06em', textTransform: 'uppercase' },
+  atlasMapInsert: { position: 'relative', width: '100%', aspectRatio: '16 / 9', minHeight: '11rem', borderRadius: '0.92rem', overflow: 'hidden', border: '1px solid rgba(224,185,119,0.34)', background: 'radial-gradient(circle at 20% 18%, rgba(128,95,62,0.36), rgba(43,31,21,0.72) 55%, rgba(19,14,10,0.9) 100%)', boxShadow: '0 18px 30px rgba(3,4,7,0.44), inset 0 1px 0 rgba(248,223,183,0.22), inset 0 -20px 30px rgba(10,8,7,0.38)' },
+  atlasMapImage: { objectFit: 'cover', objectPosition: 'center', transform: 'scale(1.01)', filter: 'saturate(1.03) contrast(1.03)' },
+  atlasMapOverlay: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(16,12,8,0.1) 0%, rgba(16,12,8,0.02) 38%, rgba(14,10,8,0.28) 100%), repeating-linear-gradient(150deg, rgba(235,205,156,0.06) 0 2px, rgba(118,84,53,0.05) 2px 5px)', mixBlendMode: 'soft-light' },
+  atlasMapFrameGlow: { position: 'absolute', inset: 0, borderRadius: 'inherit', boxShadow: 'inset 0 0 0 1px rgba(248,219,172,0.14), inset 0 16px 26px rgba(255,224,172,0.08), inset 0 -20px 30px rgba(6,5,4,0.34)' },
   atlasVisualCaption: { margin: 0, color: 'rgba(236,224,203,0.92)', fontSize: '0.76rem', lineHeight: 1.4 },
   atlasVisualTip: { margin: 0, color: 'rgba(245,212,163,0.9)', fontSize: '0.72rem', lineHeight: 1.35, fontStyle: 'italic' },
+  atlasVisualGuideList: { margin: 0, paddingLeft: '1rem', display: 'grid', gap: '0.26rem' },
+  atlasVisualGuideItem: { color: 'rgba(232,216,189,0.88)', fontSize: '0.71rem', lineHeight: 1.34 },
 };
