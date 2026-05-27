@@ -90,7 +90,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
   const activeLayer = useMemo(() => layers.find((layer) => layer.id === activeLayerId) ?? layers.at(-1) ?? null, [layers, activeLayerId]);
   const isMapMode = activeMode === 'map' && Boolean(activeLayer?.visual);
-  const showIdleModeRail = Boolean(activeLayer) && !isConversationOpen;
+  const showIdleModeRail = !isConversationOpen;
 
   const handleSend = () => {
     const question = draft.trim();
@@ -175,28 +175,6 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
               pointerEvents: isConversationOpen ? 'auto' : 'none',
             }}
           >
-            {layers.length > 1 ? (
-              <div style={styles.historyRail} aria-label="Atlas memory history">
-                {layers.map((layer, index) => {
-                  const isActive = activeLayer?.id === layer.id;
-                  const compactLabel = layer.question.length > 28 ? `Q${index + 1}` : layer.question;
-
-                  return (
-                    <button
-                      key={layer.id}
-                      type="button"
-                      onClick={() => setActiveLayerId(layer.id)}
-                      style={{ ...styles.historyTab, ...(isActive ? styles.historyTabActive : null) }}
-                      aria-pressed={isActive}
-                    >
-                      <span style={styles.historyTabIndex}>#{index + 1}</span>
-                      <span style={styles.historyTabLabel}>{compactLabel}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-
             {activeLayer ? (
               <div style={styles.memoryLayerWrap}>
               <article style={styles.activeCard}>
@@ -207,6 +185,27 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                   </button>
                 </header>
                 <div style={styles.panelModeRail}>{renderModeRail()}</div>
+                {layers.length > 0 ? (
+                  <div style={styles.panelHistoryRail} aria-label="Atlas memory history">
+                    {layers.map((layer, index) => {
+                      const isActive = activeLayer?.id === layer.id;
+                      const compactLabel = layer.question.length > 28 ? `Q${index + 1}` : layer.question;
+
+                      return (
+                        <button
+                          key={layer.id}
+                          type="button"
+                          onClick={() => setActiveLayerId(layer.id)}
+                          style={{ ...styles.historyTab, ...(isActive ? styles.historyTabActive : null) }}
+                          aria-pressed={isActive}
+                        >
+                          <span style={styles.historyTabIndex}>#{index + 1}</span>
+                          <span style={styles.historyTabLabel}>{compactLabel}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
 
                 <div style={styles.activeScrollRegion}>
                   <p style={styles.userPromptLabel}>You asked</p>
@@ -334,7 +333,7 @@ const styles: Record<string, CSSProperties> = {
   askButton: { width: '2rem', height: '2rem', minWidth: '2rem', border: '1px solid rgba(233,191,120,0.34)', borderRadius: '999px', background: 'radial-gradient(circle at 35% 28%, rgba(165,121,72,0.45), rgba(67,46,27,0.58) 70%)', color: 'rgba(250,236,210,0.92)', padding: 0, fontSize: '0.83rem', letterSpacing: '0.01em', lineHeight: 1, whiteSpace: 'nowrap', display: 'grid', placeItems: 'center', boxShadow: '0 0 18px rgba(186,132,69,0.24), inset 0 1px 0 rgba(255,233,193,0.24)' },
   conversationLayers: { position: 'fixed', left: '4%', right: '4%', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.35rem)', zIndex: 6, height: 'min(62dvh, 33rem)', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.48rem', transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease' },
   goodellsConversationLayers: { left: 'calc(env(safe-area-inset-left, 0px) + 0.78rem)', right: 'calc(env(safe-area-inset-right, 0px) + 0.78rem)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.95rem)', height: 'min(64dvh, 34rem)' },
-  historyRail: { display: 'flex', gap: '0.38rem', overflowX: 'auto', overscrollBehaviorX: 'contain', paddingBottom: '0.15rem', scrollbarWidth: 'thin' },
+  panelHistoryRail: { display: 'flex', gap: '0.38rem', overflowX: 'auto', overscrollBehaviorX: 'contain', padding: '0.44rem 0.78rem 0.3rem', borderBottom: '1px solid rgba(220,178,111,0.16)', scrollbarWidth: 'thin' },
   historyTab: { all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.34rem', flexShrink: 0, maxWidth: '11.5rem', padding: '0.35rem 0.58rem', borderRadius: '999px', border: '1px solid rgba(222,182,118,0.24)', background: 'linear-gradient(180deg, rgba(11,16,25,0.76), rgba(10,14,20,0.6))', color: 'rgba(226,216,198,0.88)', boxShadow: '0 8px 14px rgba(2,4,8,0.28), inset 0 1px 0 rgba(239,209,162,0.09)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' },
   historyTabActive: { border: '1px solid rgba(232,191,124,0.5)', background: 'linear-gradient(180deg, rgba(30,36,49,0.9), rgba(16,22,32,0.82))', boxShadow: '0 10px 18px rgba(2,4,8,0.34), 0 0 0 1px rgba(63,45,24,0.25), inset 0 1px 0 rgba(246,220,178,0.2)' },
   historyTabIndex: { color: 'rgba(246,211,154,0.88)', fontSize: '0.58rem', letterSpacing: '0.08em' },
