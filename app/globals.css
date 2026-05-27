@@ -48,6 +48,7 @@ html.event-detail-scroll,
 body.event-detail-scroll {
   height: auto;
   min-height: 100dvh;
+  background: #050812;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: auto;
@@ -59,6 +60,33 @@ body.event-detail-scroll {
 
 body.event-detail-scroll::-webkit-scrollbar {
   display: block;
+}
+
+.atlas-event-shell {
+  isolation: isolate;
+}
+
+.atlas-event-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image: url('/backgrounds/midnight-atlas-bg-v1.webp');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  min-height: 100svh;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.atlas-event-shell::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(5, 8, 18, 0.28);
+  pointer-events: none;
 }
 
 /* Responsive atlas framing (tablet/desktop only; mobile remains unchanged) */
