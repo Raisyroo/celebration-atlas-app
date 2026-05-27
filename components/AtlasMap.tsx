@@ -14,7 +14,6 @@ const ATMOSPHERIC_SUGGESTIONS = [
   'waterfront festivals',
   'hidden gems',
 ];
-const MAP_ART_ASPECT_RATIO = 2814 / 5000;
 const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
 const MEDIA_MASKS: Record<'romeoPeach', string> = {
   romeoPeach:
@@ -396,7 +395,6 @@ export default function AtlasMap() {
 
   return (
     <section className="atlas-hero" style={styles.hero} onPointerDown={handleBackdropPointerDown}>
-      <div className="atlas-portrait-stage" style={styles.portraitStage}>
       <div
         ref={mapFrameRef}
         className="atlas-map-frame"
@@ -665,7 +663,6 @@ export default function AtlasMap() {
           />
         </div>
       </div>
-      </div>
       <style jsx>{`
         .atlas-search-input--pulse {
           animation: searchAcceptPulse 360ms ease-out;
@@ -768,22 +765,13 @@ export default function AtlasMap() {
 const styles: Record<string, CSSProperties> = {
   hero: {
     position: 'relative',
-    height: '100svh',
-    minHeight: '100svh',
+    width: '100vw',
+    minHeight: '100dvh',
     overflow: 'hidden',
     touchAction: 'manipulation',
     overscrollBehavior: 'none',
     background: 'radial-gradient(circle at 50% 15%, #172233, #05070c 70%)',
     color: '#f5e8c7',
-  },
-  portraitStage: {
-    position: 'relative',
-    width: '100vw',
-    height: '100svh',
-    maxWidth: 'none',
-    maxHeight: '100svh',
-    margin: 0,
-    overflow: 'hidden',
   },
   mapFrame: {
     position: 'absolute',
@@ -801,11 +789,8 @@ const styles: Record<string, CSSProperties> = {
   mapContent: {
     position: 'absolute',
     inset: 0,
-    margin: 'auto',
-    width: 'auto',
+    width: '100%',
     height: '100%',
-    maxWidth: '100%',
-    aspectRatio: MAP_ART_ASPECT_RATIO,
     transformOrigin: 'center center',
     transition: 'filter 260ms ease, transform 520ms cubic-bezier(.22,.61,.36,1)',
     touchAction: 'none',
@@ -837,7 +822,7 @@ const styles: Record<string, CSSProperties> = {
     zIndex: Z_INDEX.mapImage,
     width: '100%',
     height: '100%',
-    objectFit: 'contain',
+    objectFit: 'cover',
     objectPosition: 'center',
     opacity: 0.88,
     userSelect: 'none',
