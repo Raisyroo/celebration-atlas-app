@@ -312,7 +312,7 @@ export default function EventDetailPage() {
       >
       {isRomeoPeachTestView ? (
         // TEMP: Romeo detail page is intentionally simplified to test the Midnight Atlas background visibility.
-        <section style={styles.romeoMinimalTestShell} aria-label="Romeo Peach Festival background test">
+        <section className="atlas-event-shell" style={styles.romeoMinimalTestShell} aria-label="Romeo Peach Festival background test">
           <p style={styles.romeoMinimalLabel}>Romeo Peach Festival</p>
           <Link
             href={`/?event=${event.id}`}
