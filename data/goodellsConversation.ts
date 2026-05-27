@@ -2,6 +2,8 @@ export type ConversationVisual = {
   label: string;
   caption: string;
   localTip?: string;
+  src?: string;
+  guideNotes?: readonly string[];
 };
 
 export type ConversationCard = {
@@ -51,6 +53,12 @@ const GOOD_ELLS_FAIR_CARDS = {
       label: 'Fairgrounds Map',
       caption: 'Use this field-note insert to get your bearings: entry gates, barn lanes, midway lights, and the food corridor are shown in a quick visual sweep.',
       localTip: 'Local tip: The west-side entry is usually calmer right after opening hour.',
+      src: '/maps/michigan-atlas-base.webp',
+      guideNotes: [
+        'Parking guidance: East lots fill first near headline windows, so overflow signage is usually fastest after 5:30 PM.',
+        'Midway timing: Hit rides before dusk if you want shorter lines and smoother stroller flow.',
+        'Livestock navigation: Enter through the barn-side aisle loop and set a regroup point at the 4-H corner marker.',
+      ],
     },
   },
 } as const;
