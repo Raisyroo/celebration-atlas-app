@@ -139,9 +139,35 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   const [activeMode, setActiveMode] = useState<AtlasMode>('highlights');
 
   const canSend = useMemo(() => draft.trim().length > 0, [draft]);
+  const isGoodellsEvent = eventId === 'goodells-fair';
 
   const activeLayer = useMemo(() => layers.find((layer) => layer.id === activeLayerId) ?? layers.at(-1) ?? null, [layers, activeLayerId]);
-  const isMapMode = activeMode === 'map' && Boolean(activeLayer?.visual);
+  const previewQuestionByMode: Record<AtlasMode, string> = {
+    highlights: 'Show me the top Goodells highlights right now.',
+    schedule: 'What does a strong evening schedule look like at Goodells?',
+    map: 'Show me a quick map view for Goodells.',
+    gallery: 'Give me a quick gallery-style memory moodboard.',
+    plan: 'Build a simple family plan for Goodells.',
+  };
+
+  const previewLayer = useMemo<ConversationLayer | null>(() => {
+    if (activeLayer || !isConversationOpen || !isGoodellsEvent) return null;
+
+    const question = previewQuestionByMode[activeMode];
+    const atlasGuide = getMockResponse(eventId, question);
+
+    return {
+      id: `preview-${activeMode}`,
+      question,
+      answer: atlasGuide.text,
+      title: atlasGuide.title,
+      highlights: atlasGuide.highlights ?? [],
+      visual: atlasGuide.visual,
+    };
+  }, [activeLayer, activeMode, eventId, isConversationOpen, isGoodellsEvent]);
+
+  const displayedLayer = activeLayer ?? previewLayer;
+  const isMapMode = activeMode === 'map' && Boolean(displayedLayer?.visual);
   const showIdleModeRail = !isConversationOpen;
 
   const handleSend = () => {
@@ -176,7 +202,6 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
     setIsConversationOpen(true);
   };
 
-  const isGoodellsEvent = eventId === 'goodells-fair';
   const renderModeRail = (shouldOpenMemoryLayer: boolean) => (
     <nav style={styles.modeRail} aria-label="Atlas exploration modes">
       {ATLAS_MODE_OPTIONS.map((mode) => {
@@ -239,7 +264,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
           >
             <div style={styles.openModeRailWrap}>{renderModeRail(false)}</div>
 
-            {activeLayer ? (
+            {displayedLayer ? (
               <div style={styles.memoryLayerWrap}>
               <article style={styles.activeCard}>
                 <header style={styles.panelHeader}>
@@ -274,12 +299,12 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
                 <div style={styles.activeScrollRegion}>
                   <p style={styles.userPromptLabel}>You asked</p>
-                  <p style={styles.userPrompt}>{activeLayer.question}</p>
+                  <p style={styles.userPrompt}>{displayedLayer.question}</p>
 
                   {activeMode === 'highlights' ? (
                     <section style={styles.modeSection}>
-                      <p style={styles.atlasCardTitle}>{activeLayer.title}</p>
-                      <p style={styles.atlasCardText}>{activeLayer.answer}</p>
+                      <p style={styles.atlasCardTitle}>{displayedLayer.title}</p>
+                      <p style={styles.atlasCardText}>{displayedLayer.answer}</p>
                       <ul style={styles.atlasHighlights}>
                         <li style={styles.atlasHighlightItem}>Fireworks tonight: Grandstand skyburst around 10:15 PM.</li>
                         <li style={styles.atlasHighlightItem}>Livestock ring windows: youth showcase at 4:30 PM and 7:00 PM.</li>
@@ -303,17 +328,17 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
                   {isMapMode ? (
                     <section style={styles.modeSection}>
-                      <section style={styles.atlasVisualWrap} aria-label={activeLayer.visual?.label}>
-                        <p style={styles.atlasVisualLabel}>{activeLayer.visual?.label}</p>
+                      <section style={styles.atlasVisualWrap} aria-label={displayedLayer.visual?.label}>
+                        <p style={styles.atlasVisualLabel}>{displayedLayer.visual?.label}</p>
                         <div style={styles.atlasMapInsert}>
-                          {activeLayer.visual?.src ? (
-                            <Image src={activeLayer.visual.src} alt="Goodells fairgrounds map field-note insert" fill sizes="(max-width: 720px) 100vw, 620px" style={styles.atlasMapImage} priority={false} />
+                          {displayedLayer.visual?.src ? (
+                            <Image src={displayedLayer.visual.src} alt="Goodells fairgrounds map field-note insert" fill sizes="(max-width: 720px) 100vw, 620px" style={styles.atlasMapImage} priority={false} />
                           ) : null}
                           <div style={styles.atlasMapOverlay} aria-hidden />
                           <div style={styles.atlasMapFrameGlow} aria-hidden />
                         </div>
-                        <p style={styles.atlasVisualCaption}>{activeLayer.visual?.caption}</p>
-                        {activeLayer.visual?.localTip ? <p style={styles.atlasVisualTip}>{activeLayer.visual.localTip}</p> : null}
+                        <p style={styles.atlasVisualCaption}>{displayedLayer.visual?.caption}</p>
+                        {displayedLayer.visual?.localTip ? <p style={styles.atlasVisualTip}>{displayedLayer.visual.localTip}</p> : null}
                       </section>
                     </section>
                   ) : null}
