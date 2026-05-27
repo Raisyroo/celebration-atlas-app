@@ -27,16 +27,15 @@ type AtlasMode = 'highlights' | 'schedule' | 'map' | 'gallery' | 'plan';
 type AtlasModeOption = {
   id: AtlasMode;
   label: string;
-  blurb: string;
   icon: string;
 };
 
 const ATLAS_MODE_OPTIONS: readonly AtlasModeOption[] = [
-  { id: 'highlights', label: 'Highlights', blurb: 'Live pulse', icon: '✦' },
-  { id: 'schedule', label: 'Schedule', blurb: 'Tonight flow', icon: '◷' },
-  { id: 'map', label: 'Map', blurb: 'Grounds lens', icon: '⌖' },
-  { id: 'gallery', label: 'Gallery', blurb: 'Atmosphere reel', icon: '◌' },
-  { id: 'plan', label: 'Plan', blurb: 'Family route', icon: '☰' },
+  { id: 'highlights', label: 'Highlights', icon: '✦' },
+  { id: 'schedule', label: 'Schedule', icon: '◷' },
+  { id: 'map', label: 'Map', icon: '⌖' },
+  { id: 'gallery', label: 'Gallery', icon: '◌' },
+  { id: 'plan', label: 'Plan', icon: '☰' },
 ] as const;
 
 const FAIR_GUIDE_CARDS = {
@@ -90,7 +89,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
   const activeLayer = useMemo(() => layers.find((layer) => layer.id === activeLayerId) ?? layers.at(-1) ?? null, [layers, activeLayerId]);
   const isMapMode = activeMode === 'map' && Boolean(activeLayer?.visual);
-  const showIdleModeRail = Boolean(activeLayer) && !isConversationOpen;
+  const showIdleModeRail = !isConversationOpen;
 
   const handleSend = () => {
     const question = draft.trim();
@@ -128,7 +127,6 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
             <span style={styles.modeGlyph} aria-hidden>{mode.icon}</span>
             <span style={styles.modeText}>
               <span style={styles.modeLabel}>{mode.label}</span>
-              <span style={styles.modeBlurb}>{mode.blurb}</span>
             </span>
           </button>
         );
@@ -175,27 +173,6 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
               pointerEvents: isConversationOpen ? 'auto' : 'none',
             }}
           >
-            {layers.length > 1 ? (
-              <div style={styles.historyRail} aria-label="Atlas memory history">
-                {layers.map((layer, index) => {
-                  const isActive = activeLayer?.id === layer.id;
-                  const compactLabel = layer.question.length > 28 ? `Q${index + 1}` : layer.question;
-
-                  return (
-                    <button
-                      key={layer.id}
-                      type="button"
-                      onClick={() => setActiveLayerId(layer.id)}
-                      style={{ ...styles.historyTab, ...(isActive ? styles.historyTabActive : null) }}
-                      aria-pressed={isActive}
-                    >
-                      <span style={styles.historyTabIndex}>#{index + 1}</span>
-                      <span style={styles.historyTabLabel}>{compactLabel}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
 
             {activeLayer ? (
               <div style={styles.memoryLayerWrap}>
@@ -206,7 +183,29 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                     Minimize
                   </button>
                 </header>
-                <div style={styles.panelModeRail}>{renderModeRail()}</div>
+                {layers.length > 0 ? (
+                  <div style={styles.panelHistoryRail}>
+                    <div style={styles.historyRail} aria-label="Atlas memory history">
+                      {layers.map((layer, index) => {
+                        const isActive = activeLayer?.id === layer.id;
+                        const compactLabel = layer.question.length > 22 ? `${layer.question.slice(0, 22).trimEnd()}…` : layer.question;
+
+                        return (
+                          <button
+                            key={layer.id}
+                            type="button"
+                            onClick={() => setActiveLayerId(layer.id)}
+                            style={{ ...styles.historyTab, ...(isActive ? styles.historyTabActive : null) }}
+                            aria-pressed={isActive}
+                          >
+                            <span style={styles.historyTabIndex}>#{index + 1}</span>
+                            <span style={styles.historyTabLabel}>{compactLabel}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div style={styles.activeScrollRegion}>
                   <p style={styles.userPromptLabel}>You asked</p>
@@ -335,13 +334,13 @@ const styles: Record<string, CSSProperties> = {
   conversationLayers: { position: 'fixed', left: '4%', right: '4%', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.35rem)', zIndex: 6, height: 'min(62dvh, 33rem)', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.48rem', transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease' },
   goodellsConversationLayers: { left: 'calc(env(safe-area-inset-left, 0px) + 0.78rem)', right: 'calc(env(safe-area-inset-right, 0px) + 0.78rem)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.95rem)', height: 'min(64dvh, 34rem)' },
   historyRail: { display: 'flex', gap: '0.38rem', overflowX: 'auto', overscrollBehaviorX: 'contain', paddingBottom: '0.15rem', scrollbarWidth: 'thin' },
-  historyTab: { all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.34rem', flexShrink: 0, maxWidth: '11.5rem', padding: '0.35rem 0.58rem', borderRadius: '999px', border: '1px solid rgba(222,182,118,0.24)', background: 'linear-gradient(180deg, rgba(11,16,25,0.76), rgba(10,14,20,0.6))', color: 'rgba(226,216,198,0.88)', boxShadow: '0 8px 14px rgba(2,4,8,0.28), inset 0 1px 0 rgba(239,209,162,0.09)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' },
+  historyTab: { all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0, maxWidth: '10.4rem', padding: '0.3rem 0.52rem', borderRadius: '999px', border: '1px solid rgba(222,182,118,0.24)', background: 'linear-gradient(180deg, rgba(11,16,25,0.76), rgba(10,14,20,0.6))', color: 'rgba(226,216,198,0.88)', boxShadow: '0 8px 14px rgba(2,4,8,0.28), inset 0 1px 0 rgba(239,209,162,0.09)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' },
   historyTabActive: { border: '1px solid rgba(232,191,124,0.5)', background: 'linear-gradient(180deg, rgba(30,36,49,0.9), rgba(16,22,32,0.82))', boxShadow: '0 10px 18px rgba(2,4,8,0.34), 0 0 0 1px rgba(63,45,24,0.25), inset 0 1px 0 rgba(246,220,178,0.2)' },
   historyTabIndex: { color: 'rgba(246,211,154,0.88)', fontSize: '0.58rem', letterSpacing: '0.08em' },
-  historyTabLabel: { color: 'inherit', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  historyTabLabel: { color: 'inherit', fontSize: '0.66rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   activeCard: { width: '100%', borderRadius: '1.18rem', border: '1px solid rgba(229,187,120,0.3)', background: 'linear-gradient(180deg, rgba(12,18,29,0.93), rgba(10,14,22,0.84))', boxShadow: '0 28px 52px rgba(1,2,6,0.62), 0 0 0 1px rgba(46,35,23,0.28), inset 0 1px 0 rgba(253,227,185,0.2), inset 0 -14px 30px rgba(5,8,14,0.3)', display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden', backdropFilter: 'blur(9px)', WebkitBackdropFilter: 'blur(9px)' },
   panelHeader: { padding: '0.8rem 0.95rem 0.68rem', borderBottom: '1px solid rgba(220,178,111,0.22)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg, rgba(18,25,36,0.46), rgba(15,21,31,0.08))' },
-  panelModeRail: { padding: '0.5rem 0.78rem 0.45rem', borderBottom: '1px solid rgba(220,178,111,0.18)', background: 'linear-gradient(180deg, rgba(16,24,35,0.3), rgba(12,18,28,0.08))' },
+  panelHistoryRail: { padding: '0.42rem 0.78rem 0.45rem', borderBottom: '1px solid rgba(220,178,111,0.18)', background: 'linear-gradient(180deg, rgba(16,24,35,0.3), rgba(12,18,28,0.08))' },
   panelTitle: { margin: 0, color: 'rgba(242,210,157,0.95)', fontSize: '0.6rem', letterSpacing: '0.16em', textTransform: 'uppercase' },
   minimizeButton: { border: '1px solid rgba(220,179,114,0.34)', background: 'rgba(13,20,31,0.6)', color: 'rgba(236,215,183,0.9)', borderRadius: '999px', fontSize: '0.58rem', letterSpacing: '0.09em', padding: '0.33rem 0.62rem', textTransform: 'uppercase' },
   memoryLayerWrap: { display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.45rem', minHeight: 0 },
@@ -353,13 +352,12 @@ const styles: Record<string, CSSProperties> = {
   atlasHighlights: { margin: '0.25rem 0 0', paddingLeft: '1.05rem', display: 'grid', gap: '0.3rem' },
   atlasHighlightItem: { color: 'rgba(234,217,191,0.92)', fontSize: '0.77rem', lineHeight: 1.34 },
 
-  modeRail: { display: 'flex', gap: '0.42rem', overflowX: 'auto', overscrollBehaviorX: 'contain', padding: '0.1rem 0.05rem 0.2rem', scrollbarWidth: 'thin' },
-  modePill: { all: 'unset', cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '0.42rem', borderRadius: '999px', padding: '0.42rem 0.62rem', border: '1px solid rgba(225,179,114,0.28)', background: 'linear-gradient(180deg, rgba(13,19,30,0.78), rgba(9,14,22,0.68))', boxShadow: '0 12px 20px rgba(2,4,8,0.32), inset 0 1px 0 rgba(245,214,167,0.11)' },
-  modePillActive: { border: '1px solid rgba(242,194,118,0.6)', background: 'linear-gradient(180deg, rgba(41,33,20,0.9), rgba(24,20,15,0.82))', boxShadow: '0 12px 22px rgba(2,4,8,0.34), 0 0 0 1px rgba(97,67,30,0.22), inset 0 1px 0 rgba(255,230,184,0.24)' },
-  modeGlyph: { width: '1.1rem', height: '1.1rem', borderRadius: '999px', display: 'grid', placeItems: 'center', color: 'rgba(243,211,156,0.92)', background: 'rgba(30,22,14,0.46)', border: '1px solid rgba(229,186,118,0.22)', fontSize: '0.62rem', lineHeight: 1 },
-  modeText: { display: 'grid', gap: '0.05rem' },
-  modeLabel: { color: 'rgba(239,222,192,0.96)', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.1em', lineHeight: 1.1 },
-  modeBlurb: { color: 'rgba(203,187,160,0.84)', fontSize: '0.54rem', letterSpacing: '0.06em', lineHeight: 1.1 },
+  modeRail: { display: 'flex', gap: '0.32rem', overflowX: 'auto', overscrollBehaviorX: 'contain', padding: '0.08rem 0.02rem 0.12rem', scrollbarWidth: 'thin' },
+  modePill: { all: 'unset', cursor: 'pointer', flex: '1 1 0', minWidth: '3.2rem', display: 'grid', justifyItems: 'center', alignContent: 'center', gap: '0.16rem', borderRadius: '0.75rem', padding: '0.32rem 0.22rem', border: '1px solid rgba(225,179,114,0.28)', background: 'linear-gradient(180deg, rgba(13,19,30,0.78), rgba(9,14,22,0.68))', boxShadow: '0 12px 20px rgba(2,4,8,0.32), inset 0 1px 0 rgba(245,214,167,0.11)' },
+  modePillActive: { border: '1px solid rgba(242,194,118,0.72)', background: 'linear-gradient(180deg, rgba(41,33,20,0.9), rgba(24,20,15,0.82))', boxShadow: '0 0 0 1px rgba(106,74,33,0.28), 0 0 10px rgba(213,157,84,0.24), inset 0 1px 0 rgba(255,230,184,0.24)' },
+  modeGlyph: { width: '0.94rem', height: '0.94rem', borderRadius: '999px', display: 'grid', placeItems: 'center', color: 'rgba(243,211,156,0.92)', background: 'rgba(30,22,14,0.46)', border: '1px solid rgba(229,186,118,0.22)', fontSize: '0.62rem', lineHeight: 1 },
+  modeText: { display: 'grid', justifyItems: 'center' },
+  modeLabel: { color: 'rgba(239,222,192,0.96)', fontSize: '0.52rem', textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: 1.1, textAlign: 'center', whiteSpace: 'nowrap' },
   modeSection: { display: 'grid', gap: '0.5rem' },
   timelineStack: { display: 'grid', gap: '0.44rem' },
   timelineBlock: { borderRadius: '0.76rem', border: '1px solid rgba(214,177,117,0.24)', padding: '0.5rem 0.62rem', background: 'linear-gradient(160deg, rgba(15,21,33,0.82), rgba(11,16,25,0.64))' },
