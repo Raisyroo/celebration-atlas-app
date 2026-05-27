@@ -301,13 +301,13 @@ export default function EventDetailPage() {
         </div>
       ) : null}
       <main
-      style={{
-        ...styles.page,
-        color: tone.pageColor,
-        background: tone.pageBackground,
-        opacity: isPageVisible ? 1 : 0,
-        transition: 'opacity 680ms ease',
-      }}
+        className="atlas-event-shell"
+        style={{
+          ...styles.page,
+          color: tone.pageColor,
+          opacity: isPageVisible ? 1 : 0,
+          transition: 'opacity 680ms ease',
+        }}
       >
       <section style={styles.hero}>
         <p style={{ ...styles.kicker, color: tone.kickerColor }}>Event Atlas</p>
@@ -500,10 +500,12 @@ const styles: Record<string, CSSProperties> = {
     paddingBottom: '0.15rem',
   },
   page: {
-    minHeight: '100vh',
+    minHeight: '100svh',
     padding: 'clamp(1.5rem, 3.5vw, 3rem)',
     display: 'grid',
     gap: '1.25rem',
+    position: 'relative',
+    zIndex: 1,
   },
   hero: { maxWidth: '52rem' },
   kicker: {
