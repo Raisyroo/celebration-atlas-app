@@ -27,16 +27,69 @@ type AtlasMode = 'highlights' | 'schedule' | 'map' | 'gallery' | 'plan';
 type AtlasModeOption = {
   id: AtlasMode;
   label: string;
-  icon: string;
 };
 
 const ATLAS_MODE_OPTIONS: readonly AtlasModeOption[] = [
-  { id: 'highlights', label: 'Highlights', icon: '✦' },
-  { id: 'schedule', label: 'Schedule', icon: '◷' },
-  { id: 'map', label: 'Map', icon: '⌖' },
-  { id: 'gallery', label: 'Gallery', icon: '◌' },
-  { id: 'plan', label: 'Plan', icon: '☰' },
+  { id: 'highlights', label: 'Highlights' },
+  { id: 'schedule', label: 'Schedule' },
+  { id: 'map', label: 'Map' },
+  { id: 'gallery', label: 'Gallery' },
 ] as const;
+
+function ModeIcon({ mode }: { mode: AtlasMode }) {
+  const commonProps = {
+    width: 14,
+    height: 14,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+    focusable: false,
+  };
+
+  if (mode === 'highlights') {
+    return (
+      <svg {...commonProps}>
+        <path d="M12 3.5l2.2 5.2 5.3 2.2-5.3 2.2L12 18.5l-2.2-5.4L4.5 10.9l5.3-2.2L12 3.5z" />
+      </svg>
+    );
+  }
+
+  if (mode === 'schedule') {
+    return (
+      <svg {...commonProps}>
+        <circle cx="12" cy="13" r="6.7" />
+        <path d="M12 9.7v3.4l2.2 1.4" />
+        <path d="M8 3.7v2.2M16 3.7v2.2M6.4 5.9h11.2" />
+      </svg>
+    );
+  }
+
+  if (mode === 'map') {
+    return (
+      <svg {...commonProps}>
+        <circle cx="12" cy="12" r="6.4" />
+        <circle cx="12" cy="12" r="1.8" />
+        <path d="M12 3.2v2.2M12 18.6v2.2M3.2 12h2.2M18.6 12h2.2" />
+      </svg>
+    );
+  }
+
+  if (mode === 'gallery') {
+    return (
+      <svg {...commonProps}>
+        <rect x="3.8" y="6.8" width="16.4" height="12.4" rx="2.4" />
+        <path d="M9 6.8l1.2-2h3.6l1.2 2" />
+        <circle cx="12" cy="13" r="3.1" />
+      </svg>
+    );
+  }
+
+  return null;
+}
 
 const FAIR_GUIDE_CARDS = {
   default: {
@@ -123,11 +176,10 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
             onClick={() => setActiveMode(mode.id)}
             style={{ ...styles.modePill, ...(isActive ? styles.modePillActive : null) }}
             aria-pressed={isActive}
+            aria-label={mode.label}
+            title={mode.label}
           >
-            <span style={styles.modeGlyph} aria-hidden>{mode.icon}</span>
-            <span style={styles.modeText}>
-              <span style={styles.modeLabel}>{mode.label}</span>
-            </span>
+            <span style={styles.modeGlyph}><ModeIcon mode={mode.id} /></span>
           </button>
         );
       })}
@@ -354,12 +406,10 @@ const styles: Record<string, CSSProperties> = {
   atlasHighlightItem: { color: 'rgba(234,217,191,0.92)', fontSize: '0.77rem', lineHeight: 1.34 },
 
   openModeRailWrap: { padding: '0.02rem 0.03rem 0.06rem', pointerEvents: 'auto' },
-  modeRail: { display: 'flex', gap: '0.22rem', overflowX: 'auto', overscrollBehaviorX: 'contain', padding: '0.04rem 0.01rem 0.1rem', scrollbarWidth: 'thin' },
-  modePill: { all: 'unset', cursor: 'pointer', flex: '0 0 auto', minWidth: '4.25rem', display: 'grid', justifyItems: 'center', alignContent: 'center', gap: '0.12rem', borderRadius: '0.72rem', padding: '0.28rem 0.2rem', border: '1px solid rgba(225,179,114,0.28)', background: 'linear-gradient(180deg, rgba(13,19,30,0.78), rgba(9,14,22,0.68))', boxShadow: '0 12px 20px rgba(2,4,8,0.32), inset 0 1px 0 rgba(245,214,167,0.11)' },
-  modePillActive: { border: '1px solid rgba(242,194,118,0.72)', background: 'linear-gradient(180deg, rgba(41,33,20,0.9), rgba(24,20,15,0.82))', boxShadow: '0 0 0 1px rgba(106,74,33,0.28), 0 0 10px rgba(213,157,84,0.24), inset 0 1px 0 rgba(255,230,184,0.24)' },
-  modeGlyph: { width: '1.06rem', height: '1.06rem', borderRadius: '999px', display: 'grid', placeItems: 'center', color: 'rgba(243,211,156,0.94)', background: 'rgba(30,22,14,0.52)', border: '1px solid rgba(229,186,118,0.28)', fontSize: '0.74rem', lineHeight: 1 },
-  modeText: { display: 'grid', justifyItems: 'center' },
-  modeLabel: { color: 'rgba(239,222,192,0.94)', fontSize: '0.44rem', textTransform: 'uppercase', letterSpacing: '0.07em', lineHeight: 1.04, textAlign: 'center', whiteSpace: 'nowrap' },
+  modeRail: { display: 'flex', gap: '0.34rem', overflowX: 'auto', overscrollBehaviorX: 'contain', padding: '0.04rem 0.01rem 0.1rem', scrollbarWidth: 'thin', justifyContent: 'center' },
+  modePill: { all: 'unset', cursor: 'pointer', flex: '0 0 auto', width: '2.28rem', height: '2.28rem', display: 'grid', placeItems: 'center', borderRadius: '999px', border: '1px solid rgba(225,179,114,0.26)', background: 'linear-gradient(180deg, rgba(13,19,30,0.8), rgba(9,14,22,0.72))', boxShadow: '0 12px 20px rgba(2,4,8,0.34), inset 0 1px 0 rgba(245,214,167,0.11)' },
+  modePillActive: { border: '1px solid rgba(244,197,122,0.76)', background: 'linear-gradient(180deg, rgba(49,37,20,0.93), rgba(25,20,13,0.84))', boxShadow: '0 0 0 1px rgba(116,82,38,0.34), 0 0 12px rgba(220,164,89,0.28), inset 0 1px 0 rgba(255,230,184,0.26)' },
+  modeGlyph: { width: '1.34rem', height: '1.34rem', borderRadius: '999px', display: 'grid', placeItems: 'center', color: 'rgba(243,211,156,0.95)', background: 'rgba(30,22,14,0.58)', border: '1px solid rgba(229,186,118,0.3)', lineHeight: 1 },
   modeSection: { display: 'grid', gap: '0.5rem' },
   timelineStack: { display: 'grid', gap: '0.44rem' },
   timelineBlock: { borderRadius: '0.76rem', border: '1px solid rgba(214,177,117,0.24)', padding: '0.5rem 0.62rem', background: 'linear-gradient(160deg, rgba(15,21,33,0.82), rgba(11,16,25,0.64))' },
