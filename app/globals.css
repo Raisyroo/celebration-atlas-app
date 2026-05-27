@@ -69,22 +69,14 @@ body.event-detail-scroll::-webkit-scrollbar {
   position: fixed;
   inset: 0;
   z-index: -2;
-  background-image: url('/backgrounds/midnight-atlas-bg-v1.webp');
+  background-color: #050812;
+  background-image: linear-gradient(rgba(5, 8, 18, 0.18), rgba(5, 8, 18, 0.18)), url('/backgrounds/midnight-atlas-bg-v1.webp');
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
   min-height: 100svh;
   will-change: transform;
   transform: translateZ(0);
-}
-
-.atlas-event-shell::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: rgba(5, 8, 18, 0.28);
-  pointer-events: none;
 }
 
 /* Responsive atlas framing (tablet/desktop only; mobile remains unchanged) */
