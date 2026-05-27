@@ -778,11 +778,11 @@ const styles: Record<string, CSSProperties> = {
   },
   portraitStage: {
     position: 'relative',
-    width: 'min(100vw, calc(100svh * 9 / 19.5))',
-    height: 'min(100svh, calc(100vw * 19.5 / 9))',
-    maxWidth: '100vw',
+    width: '100vw',
+    height: '100svh',
+    maxWidth: 'none',
     maxHeight: '100svh',
-    margin: '0 auto',
+    margin: 0,
     overflow: 'hidden',
   },
   mapFrame: {
