@@ -48,7 +48,7 @@ html.event-detail-scroll,
 body.event-detail-scroll {
   height: auto;
   min-height: 100dvh;
-  background: #050812;
+  background: transparent;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: auto;
@@ -64,9 +64,12 @@ body.event-detail-scroll::-webkit-scrollbar {
 
 .atlas-event-shell {
   isolation: isolate;
+  position: relative;
+  min-height: 100svh;
 }
 
 .atlas-event-shell::before {
+  /* Requires manually provisioned asset: public/backgrounds/midnight-atlas-bg-v1.webp */
   content: '';
   position: fixed;
   inset: 0;
