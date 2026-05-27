@@ -164,8 +164,20 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
     setIsConversationOpen(true);
   };
 
+  const handleModeSelect = (mode: AtlasMode, shouldOpenMemoryLayer: boolean) => {
+    setActiveMode(mode);
+
+    if (!shouldOpenMemoryLayer) return;
+
+    if (layers.length > 0 && !activeLayerId) {
+      setActiveLayerId(layers[layers.length - 1].id);
+    }
+
+    setIsConversationOpen(true);
+  };
+
   const isGoodellsEvent = eventId === 'goodells-fair';
-  const renderModeRail = () => (
+  const renderModeRail = (shouldOpenMemoryLayer: boolean) => (
     <nav style={styles.modeRail} aria-label="Atlas exploration modes">
       {ATLAS_MODE_OPTIONS.map((mode) => {
         const isActive = activeMode === mode.id;
@@ -173,7 +185,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
           <button
             key={mode.id}
             type="button"
-            onClick={() => setActiveMode(mode.id)}
+            onClick={() => handleModeSelect(mode.id, shouldOpenMemoryLayer)}
             style={{ ...styles.modePill, ...(isActive ? styles.modePillActive : null) }}
             aria-pressed={isActive}
             aria-label={mode.label}
@@ -225,7 +237,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
               pointerEvents: isConversationOpen ? 'auto' : 'none',
             }}
           >
-            <div style={styles.openModeRailWrap}>{renderModeRail()}</div>
+            <div style={styles.openModeRailWrap}>{renderModeRail(false)}</div>
 
             {activeLayer ? (
               <div style={styles.memoryLayerWrap}>
@@ -338,7 +350,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
           </div>
           {showIdleModeRail ? (
             <div style={{ ...styles.idleModeRailWrap, ...(isGoodellsEvent ? styles.goodellsIdleModeRailWrap : null) }}>
-              {renderModeRail()}
+              {renderModeRail(true)}
             </div>
           ) : null}
           <form className={isGoodellsEvent ? 'event-portrait-ask-dock' : undefined} style={{ ...styles.askDock, ...(isGoodellsEvent ? styles.goodellsAskDock : null) }} onSubmit={(event) => { event.preventDefault(); handleSend(); }}>
