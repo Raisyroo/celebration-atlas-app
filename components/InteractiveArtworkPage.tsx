@@ -70,10 +70,6 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
   const activeLayer = useMemo(() => layers.find((layer) => layer.id === activeLayerId) ?? layers.at(-1) ?? null, [layers, activeLayerId]);
 
-  const stackedLayers = useMemo(() => {
-    if (!activeLayer) return [];
-    return layers.filter((layer) => layer.id !== activeLayer.id).slice(-4).reverse();
-  }, [activeLayer, layers]);
 
   const handleSend = () => {
     const question = draft.trim();
@@ -135,14 +131,27 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
               pointerEvents: isConversationOpen ? 'auto' : 'none',
             }}
           >
-            <div style={styles.stackRegion}>
-              {stackedLayers.map((layer, index) => (
-                <button key={layer.id} type="button" style={{ ...styles.stackedCard, marginTop: `${index * 0.28}rem` }} onClick={() => setActiveLayerId(layer.id)}>
-                  <span style={styles.stackedTitle}>{layer.title}</span>
-                  <span style={styles.stackedQuestion}>{layer.question}</span>
-                </button>
-              ))}
-            </div>
+            {layers.length > 1 ? (
+              <div style={styles.historyRail} aria-label="Atlas memory history">
+                {layers.map((layer, index) => {
+                  const isActive = activeLayer?.id === layer.id;
+                  const compactLabel = layer.question.length > 28 ? `Q${index + 1}` : layer.question;
+
+                  return (
+                    <button
+                      key={layer.id}
+                      type="button"
+                      onClick={() => setActiveLayerId(layer.id)}
+                      style={{ ...styles.historyTab, ...(isActive ? styles.historyTabActive : null) }}
+                      aria-pressed={isActive}
+                    >
+                      <span style={styles.historyTabIndex}>#{index + 1}</span>
+                      <span style={styles.historyTabLabel}>{compactLabel}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
 
             {activeLayer ? (
               <article style={styles.activeCard}>
@@ -214,12 +223,13 @@ const styles: Record<string, CSSProperties> = {
   askSigil: { width: '1.5rem', height: '1.5rem', borderRadius: '999px', border: '1px solid rgba(223,184,121,0.3)', display: 'grid', placeItems: 'center', color: 'rgba(226,196,146,0.78)', fontSize: '0.62rem', letterSpacing: '0.08em', background: 'linear-gradient(170deg, rgba(20,26,37,0.8), rgba(9,13,21,0.7))', boxShadow: 'inset 0 1px 0 rgba(245,220,177,0.15), 0 0 0 1px rgba(41,32,21,0.26)' },
   askInput: { minWidth: 0, width: '100%', flex: 1, maxWidth: '100%', border: '1px solid rgba(216,178,118,0.2)', borderRadius: '0.84rem', background: 'linear-gradient(180deg, rgba(5,9,15,0.86), rgba(6,10,17,0.76))', color: 'rgba(234,223,205,0.95)', fontSize: '15px', lineHeight: 1.24, padding: '0.62rem 0.76rem', outline: 'none', letterSpacing: '0.014em', boxShadow: 'inset 0 1px 0 rgba(247,225,183,0.08), inset 0 -10px 16px rgba(2,3,8,0.28)' },
   askButton: { width: '2rem', height: '2rem', minWidth: '2rem', border: '1px solid rgba(233,191,120,0.34)', borderRadius: '999px', background: 'radial-gradient(circle at 35% 28%, rgba(165,121,72,0.45), rgba(67,46,27,0.58) 70%)', color: 'rgba(250,236,210,0.92)', padding: 0, fontSize: '0.83rem', letterSpacing: '0.01em', lineHeight: 1, whiteSpace: 'nowrap', display: 'grid', placeItems: 'center', boxShadow: '0 0 18px rgba(186,132,69,0.24), inset 0 1px 0 rgba(255,233,193,0.24)' },
-  conversationLayers: { position: 'fixed', left: '4%', right: '4%', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.35rem)', zIndex: 6, height: 'min(62dvh, 33rem)', display: 'grid', gridTemplateRows: 'auto 1fr', gap: '0.48rem', transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease' },
+  conversationLayers: { position: 'fixed', left: '4%', right: '4%', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.35rem)', zIndex: 6, height: 'min(62dvh, 33rem)', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.48rem', transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease' },
   goodellsConversationLayers: { left: 'calc(env(safe-area-inset-left, 0px) + 0.78rem)', right: 'calc(env(safe-area-inset-right, 0px) + 0.78rem)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.95rem)', height: 'min(64dvh, 34rem)' },
-  stackRegion: { display: 'grid', justifyItems: 'stretch' },
-  stackedCard: { all: 'unset', cursor: 'pointer', borderRadius: '0.96rem', padding: '0.56rem 0.76rem', border: '1px solid rgba(222,182,118,0.2)', background: 'linear-gradient(180deg, rgba(11,16,25,0.75), rgba(10,14,20,0.6))', boxShadow: '0 10px 18px rgba(2,4,8,0.34), 0 0 0 1px rgba(34,27,19,0.24), inset 0 1px 0 rgba(239,209,162,0.1)', display: 'grid', gap: '0.22rem', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' },
-  stackedTitle: { color: 'rgba(236,205,156,0.8)', fontSize: '0.56rem', letterSpacing: '0.13em', textTransform: 'uppercase' },
-  stackedQuestion: { color: 'rgba(222,216,206,0.86)', fontSize: '0.71rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  historyRail: { display: 'flex', gap: '0.38rem', overflowX: 'auto', overscrollBehaviorX: 'contain', paddingBottom: '0.15rem', scrollbarWidth: 'thin' },
+  historyTab: { all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.34rem', flexShrink: 0, maxWidth: '11.5rem', padding: '0.35rem 0.58rem', borderRadius: '999px', border: '1px solid rgba(222,182,118,0.24)', background: 'linear-gradient(180deg, rgba(11,16,25,0.76), rgba(10,14,20,0.6))', color: 'rgba(226,216,198,0.88)', boxShadow: '0 8px 14px rgba(2,4,8,0.28), inset 0 1px 0 rgba(239,209,162,0.09)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' },
+  historyTabActive: { border: '1px solid rgba(232,191,124,0.5)', background: 'linear-gradient(180deg, rgba(30,36,49,0.9), rgba(16,22,32,0.82))', boxShadow: '0 10px 18px rgba(2,4,8,0.34), 0 0 0 1px rgba(63,45,24,0.25), inset 0 1px 0 rgba(246,220,178,0.2)' },
+  historyTabIndex: { color: 'rgba(246,211,154,0.88)', fontSize: '0.58rem', letterSpacing: '0.08em' },
+  historyTabLabel: { color: 'inherit', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   activeCard: { width: '100%', borderRadius: '1.18rem', border: '1px solid rgba(229,187,120,0.3)', background: 'linear-gradient(180deg, rgba(12,18,29,0.93), rgba(10,14,22,0.84))', boxShadow: '0 28px 52px rgba(1,2,6,0.62), 0 0 0 1px rgba(46,35,23,0.28), inset 0 1px 0 rgba(253,227,185,0.2), inset 0 -14px 30px rgba(5,8,14,0.3)', display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden', backdropFilter: 'blur(9px)', WebkitBackdropFilter: 'blur(9px)' },
   panelHeader: { padding: '0.8rem 0.95rem 0.68rem', borderBottom: '1px solid rgba(220,178,111,0.22)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg, rgba(18,25,36,0.46), rgba(15,21,31,0.08))' },
   panelTitle: { margin: 0, color: 'rgba(242,210,157,0.95)', fontSize: '0.6rem', letterSpacing: '0.16em', textTransform: 'uppercase' },
