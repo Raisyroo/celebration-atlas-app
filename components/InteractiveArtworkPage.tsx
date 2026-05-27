@@ -5,12 +5,30 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getGoodellsMockConversation, type ConversationCard, type ConversationVisual } from '../data/goodellsConversation';
 
+type PromptResponseCard = {
+  title: string;
+  text: string;
+  highlights?: readonly string[];
+  visual?: ConversationVisual;
+};
+
+type ModeContent = {
+  highlights: readonly string[];
+  schedule: readonly { time: string; text: string }[];
+  map: { label: string; caption: string; localTip?: string; visual?: ConversationVisual };
+  gallery: readonly GalleryItem[];
+};
+
 type InteractiveArtworkPageProps = {
   eventId: string;
   eventName: string;
   artworkSrc: string;
   heroVideoSrc: string;
   backHref: string;
+  placeholder?: string;
+  guideLabel?: string;
+  modeContent?: ModeContent;
+  mockResponses?: readonly { keywords: readonly string[]; card: PromptResponseCard }[];
 };
 
 type ConversationLayer = {
@@ -46,6 +64,27 @@ const GALLERY_ITEMS: readonly GalleryItem[] = [
   { id: 'midway-neon', caption: 'Midway neon reflections on gravel.', tone: 'radial-gradient(circle at 56% 24%, rgba(248,177,110,0.36), rgba(78,58,45,0.5) 42%, rgba(15,16,24,0.92) 100%)' },
 ] as const;
 
+
+const DEFAULT_MODE_CONTENT: ModeContent = {
+  highlights: [
+    'Fireworks tonight: Grandstand skyburst around 10:15 PM.',
+    'Livestock ring windows: youth showcase at 4:30 PM and 7:00 PM.',
+    'Midway lights are best for portraits between 8:05 and 8:45 PM.',
+    'Local tip: grab cider near Heritage Gate before dinner rush.',
+  ],
+  schedule: [
+    { time: '3:30 PM', text: '4-H barn walkthrough and youth demos.' },
+    { time: '5:45 PM', text: 'Food lane reset + short midway ride window.' },
+    { time: '7:00 PM', text: 'Livestock show ring spotlight and announcer notes.' },
+    { time: '10:15 PM', text: 'Fireworks sequence from grandstand-facing lawns.' },
+  ],
+  map: {
+    label: 'Fairgrounds Orientation',
+    caption: 'Guide view centered on Heritage Gate, ring lanes, and the grandstand corridor.',
+    localTip: 'Use the ring-to-midway connector at dusk to avoid the busiest crosswalk.',
+  },
+  gallery: GALLERY_ITEMS,
+};
 function ModeIcon({ mode }: { mode: AtlasMode }) {
   const commonProps = {
     width: 14,
@@ -132,15 +171,20 @@ function getDefaultMockResponse(question: string): ConversationCard {
   return FAIR_GUIDE_CARDS.default;
 }
 
-function getMockResponse(eventId: string, question: string): ConversationCard {
-  if (eventId === 'goodells-fair') {
-    return getGoodellsMockConversation(question);
+function getMockResponse(eventId: string, question: string, mockResponses?: readonly { keywords: readonly string[]; card: PromptResponseCard }[]): ConversationCard {
+  if (mockResponses?.length) {
+    const normalized = question.toLowerCase();
+    for (const route of mockResponses) {
+      if (route.keywords.some((keyword) => normalized.includes(keyword.toLowerCase()))) return { ...route.card, highlights: route.card.highlights ?? [] };
+    }
   }
+
+  if (eventId === 'goodells-fair') return getGoodellsMockConversation(question);
 
   return getDefaultMockResponse(question);
 }
 
-export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref }: InteractiveArtworkPageProps) {
+export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc, heroVideoSrc, backHref, placeholder, guideLabel, modeContent, mockResponses }: InteractiveArtworkPageProps) {
   const showGoodellsHeroVideo = false;
   const [draft, setDraft] = useState('');
   const [isConversationOpen, setIsConversationOpen] = useState(false);
@@ -169,7 +213,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
     if (activeLayer || !isConversationOpen || !isGoodellsEvent) return null;
 
     const question = previewQuestionByMode[activeMode];
-    const atlasGuide = getMockResponse(eventId, question);
+    const atlasGuide = getMockResponse(eventId, question, mockResponses);
 
     return {
       id: `preview-${activeMode}`,
@@ -182,15 +226,17 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   }, [activeLayer, activeMode, eventId, isConversationOpen, isGoodellsEvent]);
 
   const displayedLayer = activeLayer ?? previewLayer;
-  const isMapMode = activeMode === 'map' && Boolean(displayedLayer?.visual);
+  const isMapMode = activeMode === 'map';
   const showIdleModeRail = !isConversationOpen;
-  const activeGalleryItem = useMemo(() => GALLERY_ITEMS.find((item) => item.id === activeGalleryId) ?? GALLERY_ITEMS[0], [activeGalleryId]);
+  const activeModeContent = modeContent ?? DEFAULT_MODE_CONTENT;
+  const galleryItems = activeModeContent.gallery?.length ? activeModeContent.gallery : GALLERY_ITEMS;
+  const activeGalleryItem = useMemo(() => galleryItems.find((item) => item.id === activeGalleryId) ?? galleryItems[0], [activeGalleryId, galleryItems]);
 
   const handleSend = () => {
     const question = draft.trim();
     if (!question) return;
 
-    const atlasGuide = getMockResponse(eventId, question);
+    const atlasGuide = getMockResponse(eventId, question, mockResponses);
     const newLayer: ConversationLayer = {
       id: `layer-${Date.now()}`,
       question,
@@ -321,10 +367,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                       <p style={styles.atlasCardTitle}>{displayedLayer.title}</p>
                       <p style={styles.atlasCardText}>{displayedLayer.answer}</p>
                       <ul style={styles.atlasHighlights}>
-                        <li style={styles.atlasHighlightItem}>Fireworks tonight: Grandstand skyburst around 10:15 PM.</li>
-                        <li style={styles.atlasHighlightItem}>Livestock ring windows: youth showcase at 4:30 PM and 7:00 PM.</li>
-                        <li style={styles.atlasHighlightItem}>Midway lights are best for portraits between 8:05 and 8:45 PM.</li>
-                        <li style={styles.atlasHighlightItem}>Local tip: grab cider near Heritage Gate before dinner rush.</li>
+                        {activeModeContent.highlights.map((item) => (<li key={item} style={styles.atlasHighlightItem}>{item}</li>))}
                       </ul>
                     </section>
                   ) : null}
@@ -333,10 +376,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                     <section style={styles.modeSection}>
                       <p style={styles.atlasCardTitle}>Evening Schedule Lens</p>
                       <div style={styles.timelineStack}>
-                        <div style={styles.timelineBlock}><span style={styles.timelineTime}>3:30 PM</span><p style={styles.timelineText}>4-H barn walkthrough and youth demos.</p></div>
-                        <div style={styles.timelineBlock}><span style={styles.timelineTime}>5:45 PM</span><p style={styles.timelineText}>Food lane reset + short midway ride window.</p></div>
-                        <div style={styles.timelineBlock}><span style={styles.timelineTime}>7:00 PM</span><p style={styles.timelineText}>Livestock show ring spotlight and announcer notes.</p></div>
-                        <div style={styles.timelineBlock}><span style={styles.timelineTime}>10:15 PM</span><p style={styles.timelineText}>Fireworks sequence from grandstand-facing lawns.</p></div>
+                        {activeModeContent.schedule.map((entry) => (<div key={entry.time + entry.text} style={styles.timelineBlock}><span style={styles.timelineTime}>{entry.time}</span><p style={styles.timelineText}>{entry.text}</p></div>))}
                       </div>
                     </section>
                   ) : null}
@@ -344,16 +384,16 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                   {isMapMode ? (
                     <section style={styles.modeSection}>
                       <section style={styles.atlasVisualWrap} aria-label={displayedLayer.visual?.label}>
-                        <p style={styles.atlasVisualLabel}>{displayedLayer.visual?.label}</p>
+                        <p style={styles.atlasVisualLabel}>{displayedLayer.visual?.label ?? activeModeContent.map.label}</p>
                         <div style={styles.atlasMapInsert}>
-                          {displayedLayer.visual?.src ? (
-                            <Image src={displayedLayer.visual.src} alt="Goodells fairgrounds map field-note insert" fill sizes="(max-width: 720px) 100vw, 620px" style={styles.atlasMapImage} priority={false} />
+                          {(displayedLayer.visual?.src ?? activeModeContent.map.visual?.src) ? (
+                            <Image src={displayedLayer.visual?.src ?? activeModeContent.map.visual?.src ?? ''} alt="Goodells fairgrounds map field-note insert" fill sizes="(max-width: 720px) 100vw, 620px" style={styles.atlasMapImage} priority={false} />
                           ) : null}
                           <div style={styles.atlasMapOverlay} aria-hidden />
                           <div style={styles.atlasMapFrameGlow} aria-hidden />
                         </div>
-                        <p style={styles.atlasVisualCaption}>{displayedLayer.visual?.caption}</p>
-                        {displayedLayer.visual?.localTip ? <p style={styles.atlasVisualTip}>{displayedLayer.visual.localTip}</p> : null}
+                        <p style={styles.atlasVisualCaption}>{displayedLayer.visual?.caption ?? activeModeContent.map.caption}</p>
+                        {(displayedLayer.visual?.localTip ?? activeModeContent.map.localTip) ? <p style={styles.atlasVisualTip}>{displayedLayer.visual?.localTip ?? activeModeContent.map.localTip}</p> : null}
                       </section>
                     </section>
                   ) : null}
@@ -364,7 +404,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                         <div style={{ ...styles.galleryImageTone, ...styles.galleryFocusImageTone, background: activeGalleryItem.tone }} aria-hidden />
                       </article>
                       <div style={styles.galleryThumbRail} aria-label="Gallery thumbnails">
-                        {GALLERY_ITEMS.map((item) => {
+                        {galleryItems.map((item) => {
                           const isSelected = item.id === activeGalleryItem.id;
                           return (
                             <button
@@ -406,14 +446,12 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
             </div>
           ) : null}
           <form className={isGoodellsEvent ? 'event-portrait-ask-dock' : undefined} style={{ ...styles.askDock, ...(isGoodellsEvent ? styles.goodellsAskDock : null) }} onSubmit={(event) => { event.preventDefault(); handleSend(); }}>
-            <span aria-hidden style={styles.askSigil}>
-              ✦
-            </span>
+            <span aria-hidden style={styles.askSigil}>{guideLabel ?? '✦'}</span>
             <input
               className="atlas-ask-input"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="Ask Atlas what memory to follow next"
+              placeholder={placeholder ?? 'Ask Atlas what memory to follow next'}
               style={styles.askInput}
               aria-label="Ask Atlas"
             />
