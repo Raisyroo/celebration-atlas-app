@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
 import InteractiveArtworkPage from '../../../components/InteractiveArtworkPage';
 import AtlasAIResponseDemo from '../../../components/AtlasAIResponseDemo';
+import RomeoAtlasWindowPage from '../../../components/RomeoAtlasWindowPage';
 
 type PageTone = {
   pageBackground: string;
@@ -145,47 +146,10 @@ export default function EventDetailPage() {
 
   if (event?.id === 'romeo-peach') {
     return (
-      <InteractiveArtworkPage
-        eventId={event.id}
+      <RomeoAtlasWindowPage
         eventName={event.name}
-        artworkSrc="/event-pages/romeo-peach/romeo-peach-master-page.webp"
         heroVideoSrc="/event-media/romeo-peach-loop.mp4"
         backHref={`/?event=${event.id}`}
-        placeholder="Ask Atlas about Romeo Peach Festival (demo)"
-        guideLabel="◎"
-        modeContent={{
-          highlights: [
-            'Mock/demo: Peach parade atmosphere is strongest along Main Street between late afternoon and dusk.',
-            'Mock/demo: Festival food clusters around peach desserts, grilled classics, and rotating vendor specials.',
-            'Mock/demo: Downtown Romeo energy peaks near parade staging and evening music pockets.',
-            'Mock/demo: Family-friendly timing works best from mid-afternoon through early evening.',
-          ],
-          schedule: [
-            { time: '2:00 PM', text: 'Mock/demo: Parade warm-up and downtown crowd build begins.' },
-            { time: '3:30 PM', text: 'Mock/demo: Vendor lane prime window for food and peach desserts.' },
-            { time: '6:00 PM', text: 'Mock/demo: Live music activation near the central downtown block.' },
-            { time: '8:30 PM', text: 'Mock/demo: Evening highlights and lighted-street memory window.' },
-          ],
-          map: {
-            label: 'Mock Downtown Orientation',
-            caption: 'Mock/demo: Main Street spine with parade corridor, food row, and family rest points marked as orientation anchors.',
-            localTip: 'Mock/demo: Park at outer lots and walk inward toward Main for easier exits after evening activity.',
-          },
-          gallery: [
-            { id: 'romeo-parade-glow', caption: 'Mock/demo: Peach parade confetti drifting past downtown storefront lights.', tone: 'radial-gradient(circle at 35% 28%, rgba(248,181,119,0.4), rgba(101,66,41,0.48) 45%, rgba(16,12,12,0.9) 100%)' },
-            { id: 'romeo-vendor-lane', caption: 'Mock/demo: Vendor row with peach hand pies and twilight foot traffic.', tone: 'radial-gradient(circle at 48% 24%, rgba(240,166,104,0.38), rgba(89,58,37,0.5) 46%, rgba(15,13,14,0.9) 100%)' },
-            { id: 'romeo-music-corner', caption: 'Mock/demo: Downtown music corner with warm streetlamp ambience.', tone: 'radial-gradient(circle at 42% 22%, rgba(246,189,126,0.34), rgba(77,54,39,0.5) 44%, rgba(13,12,14,0.92) 100%)' },
-            { id: 'romeo-family-stroll', caption: 'Mock/demo: Family evening stroll under peach banner strings.', tone: 'radial-gradient(circle at 56% 30%, rgba(236,173,114,0.34), rgba(72,49,34,0.52) 46%, rgba(12,10,12,0.92) 100%)' },
-          ],
-        }}
-        mockResponses={[
-          { keywords: ['peach', 'food', 'eat'], card: { title: 'Mock/demo · Peach & Food Lens', text: 'Mock/demo: Start with peach desserts mid-afternoon, then pivot to savory vendors near evening music blocks.', highlights: ['Mock: peach hand pies', 'Mock: vendor rotation timing', 'Mock: best dessert window'] } },
-          { keywords: ['parade'], card: { title: 'Mock/demo · Parade Route Guide', text: 'Mock/demo: Main Street viewing fills early, so claim a curb spot before kickoff and use side blocks for easier movement.' } },
-          { keywords: ['parking'], card: { title: 'Mock/demo · Parking Strategy', text: 'Mock/demo: Outer downtown lots reduce congestion; walk-in routes are smoother than close-in parking after peak.' } },
-          { keywords: ['kids', 'family'], card: { title: 'Mock/demo · Family Timing', text: 'Mock/demo: Aim for a 3:00 PM to 7:30 PM window for parade energy, food, and lower late-night fatigue.' } },
-          { keywords: ['schedule'], card: { title: 'Mock/demo · Schedule Snapshot', text: 'Mock/demo: Sequence the day around parade start, vendor peak, music pulse, then evening photo pass.' } },
-          { keywords: ['map', 'where'], card: { title: 'Mock/demo · Downtown Orientation', text: 'Mock/demo: Use Main as your anchor corridor, with food and family regroup points branching one block east/west.' } },
-        ]}
       />
     );
   }
