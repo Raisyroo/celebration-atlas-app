@@ -148,7 +148,8 @@ export default function EventDetailPage() {
     return (
       <RomeoAtlasWindowPage
         eventName={event.name}
-        heroVideoSrc="/event-media/romeo-peach-loop.mp4"
+        // Binary assets are not allowed in Codex PRs; add this image manually outside Codex.
+        memoryImageSrc="/event-pages/romeo/romeo-peach-festival-memory.webp"
         backHref={`/?event=${event.id}`}
       />
     );
