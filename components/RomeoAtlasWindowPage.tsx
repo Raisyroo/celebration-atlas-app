@@ -118,70 +118,24 @@ function MemorySeparator() {
   );
 }
 
+const MODE_ICON_SRC: Record<RomeoAtlasMode, string> = {
+  highlights: "/icons/atlas/highlights.svg",
+  schedule: "/icons/atlas/schedule.svg",
+  maps: "/icons/atlas/maps.svg",
+  gallery: "/icons/atlas/gallery.svg",
+  plan: "/icons/atlas/plan.svg",
+};
+
 function ModeIcon({ mode }: { mode: RomeoAtlasMode }) {
-  const commonProps = {
-    width: 32,
-    height: 32,
-    viewBox: "0 0 32 32",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.45,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
-    focusable: false,
-  };
-
-  if (mode === "highlights") {
-    return (
-      <svg {...commonProps}>
-        <path d="M16 3.8l2.6 8.4 8.4 3.8-8.4 3.8L16 28.2l-2.6-8.4L5 16l8.4-3.8L16 3.8z" />
-        <path d="M16 8.8v14.4M8.8 16h14.4" opacity="0.54" />
-        <path d="M4.2 7.4h2.3M25.5 24.6h2.3" opacity="0.45" />
-      </svg>
-    );
-  }
-
-  if (mode === "schedule") {
-    return (
-      <svg {...commonProps}>
-        <rect x="7" y="8.4" width="18" height="17.2" rx="2.8" />
-        <path d="M11 5.8v5M21 5.8v5M7 13.2h18" />
-        <path
-          d="M11.2 17.2h2.5M18.3 17.2h2.5M11.2 21h2.5M18.3 21h2.5"
-          opacity="0.62"
-        />
-      </svg>
-    );
-  }
-
-  if (mode === "maps") {
-    return (
-      <svg {...commonProps}>
-        <circle cx="16" cy="16" r="10.2" />
-        <circle cx="16" cy="16" r="3.1" />
-        <path d="M16 3.9v5.2M16 22.9v5.2M3.9 16h5.2M22.9 16h5.2" />
-        <path d="M20.8 11.2l-3.1 6.5-6.5 3.1 3.1-6.5 6.5-3.1z" />
-      </svg>
-    );
-  }
-
-  if (mode === "gallery") {
-    return (
-      <svg {...commonProps}>
-        <rect x="6.5" y="8.2" width="19" height="16.6" rx="2.8" />
-        <path d="M9.6 20.8l4.2-4.7 3.3 3.4 2.1-2.2 3.2 3.5" />
-        <circle cx="20.4" cy="12.8" r="1.6" />
-      </svg>
-    );
-  }
-
   return (
-    <svg {...commonProps}>
-      <rect x="8" y="5.5" width="16" height="21" rx="2.6" />
-      <path d="M12 10.4h8M12 15h8M12 19.6h5.5" />
-      <path d="M16 23.4l1.1-2.2 2.3-.9-2.3-.9L16 17.2l-1.1 2.2-2.3.9 2.3.9 1.1 2.2z" />
-    </svg>
+    <span
+      style={{
+        ...styles.modeIconGlyph,
+        WebkitMaskImage: `url(${MODE_ICON_SRC[mode]})`,
+        maskImage: `url(${MODE_ICON_SRC[mode]})`,
+      }}
+      aria-hidden="true"
+    />
   );
 }
 
@@ -867,13 +821,16 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     justifyItems: "center",
     gap: "0.2rem",
-    color: "rgba(225,173,96,0.8)",
+    color: "rgba(218,171,99,0.66)",
     textAlign: "center",
-    filter: "drop-shadow(0 0 6px rgba(226,152,75,0.12))",
+    filter: "drop-shadow(0 0 5px rgba(226,152,75,0.1))",
+    opacity: 0.78,
   },
   modeButtonActive: {
-    color: "rgba(255,220,156,0.98)",
-    filter: "drop-shadow(0 0 12px rgba(237,169,88,0.48))",
+    color: "rgba(255,226,163,0.98)",
+    filter:
+      "drop-shadow(0 0 10px rgba(247,184,95,0.5)) drop-shadow(0 0 22px rgba(226,150,72,0.26))",
+    opacity: 1,
   },
   modeIcon: {
     width: "2.66rem",
@@ -884,6 +841,22 @@ const styles: Record<string, CSSProperties> = {
     border: "1px solid rgba(226,172,92,0.24)",
     background:
       "radial-gradient(circle at 50% 35%, rgba(58,39,22,0.42), rgba(7,11,18,0.28) 72%)",
+    boxShadow:
+      "0 0 14px rgba(226,150,72,0.12), inset 0 1px 0 rgba(255,235,195,0.08)",
+  },
+  modeIconGlyph: {
+    display: "block",
+    width: "1.92rem",
+    height: "1.92rem",
+    backgroundColor: "currentColor",
+    WebkitMaskPosition: "center",
+    maskPosition: "center",
+    WebkitMaskRepeat: "no-repeat",
+    maskRepeat: "no-repeat",
+    WebkitMaskSize: "contain",
+    maskSize: "contain",
+    filter:
+      "drop-shadow(0 0 6px rgba(245,191,110,0.34)) drop-shadow(0 0 14px rgba(226,150,72,0.16))",
   },
   modeLabel: {
     fontSize: "0.56rem",
