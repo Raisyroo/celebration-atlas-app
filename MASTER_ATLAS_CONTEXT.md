@@ -9,6 +9,102 @@ Core intent:
 - Treat atmosphere as meaning, not decoration.
 - Build toward a long-term living-atlas system where regional identity, event mood, and community memory are first-class data.
 
+## The Wonder Principle
+Celebration Atlas does not attempt to create wonder through marketing copy.
+
+Wonder should emerge from:
+- imagery
+- atmosphere
+- motion
+- sound
+- discovery
+- memory
+- exploration
+
+The platform trusts users to feel emotion without being told what to feel.
+
+### Visuals Create Emotion
+Festival photography, memory imagery, atlas artwork, environmental effects, lighting, motion, cartography, and atmosphere create the emotional experience.
+
+The interface should feel:
+- discovered
+- cinematic
+- archival
+- authentic
+- mysterious
+- lived-in
+
+without requiring elaborate prose.
+
+### Information Creates Value
+Event content should primarily function as a field guide.
+
+Users want answers to:
+- What is it?
+- When does it happen?
+- Where is it?
+- What should I not miss?
+- How do I plan my visit?
+
+Content should be concise, factual, and useful.
+
+Example:
+
+Parade
+- Main parade through downtown Romeo.
+- Best viewing near Main Street and St. Clair.
+- Arrive 30–45 minutes early.
+
+This is preferred over promotional or tourism-style language.
+
+### Atlas AI Creates Discovery
+The event page provides facts.
+
+Atlas AI provides:
+- stories
+- context
+- recommendations
+- hidden gems
+- itineraries
+- local knowledge
+- deeper exploration
+
+The AI serves as the storyteller and guide.
+
+### The Museum Rule
+Celebration Atlas should feel closer to:
+- a museum exhibit
+- a field guide
+- a living archive
+
+than:
+- a tourism website
+- a marketing brochure
+- an event advertisement
+
+### The Quiet Content Rule
+As visual quality increases, text volume should decrease.
+
+The stronger the imagery becomes:
+- fewer titles
+- fewer labels
+- fewer paragraphs
+- fewer adjectives
+
+Visuals should carry emotional weight.
+Content should carry informational weight.
+
+Implementation status:
+
+This is a foundational design principle.
+It should influence:
+- event pages
+- gallery design
+- AI responses
+- maps
+- future memory layers
+- future AR experiences
+
 ## 2. Storybook Americana Art Direction
 The visual language blends:
 - Storybook warmth (soft gradients, nostalgic glow).
