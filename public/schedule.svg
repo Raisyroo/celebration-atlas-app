@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Schedule">
+  <g stroke="#e2ac5c" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="14" y="17" width="36" height="34" rx="4.5" stroke-width="2.4"/>
+    <path d="M21.5 10.5v11M42.5 10.5v11M15 27h34" stroke-width="2.4"/>
+    <path d="M22.5 35h4.2M30 35h4.2M37.5 35h4.2M22.5 43h4.2M30 43h4.2M37.5 43h4.2" stroke-width="2.1"/>
+    <path d="M11.5 33.2c-3.5 2.4-4.7 6.9-2.2 9.4 2.1 2.1 6 1.4 8.1-1.2M52.5 27.7c3.7-1.7 5.1-5.5 3.1-7.6-1.7-1.8-5.2-1.4-7.3 1" stroke-width="1.15" opacity=".55"/>
+    <circle cx="11.2" cy="32.7" r="1.25" fill="#e2ac5c" stroke="none" opacity=".72"/>
+    <circle cx="52.7" cy="27.6" r="1.25" fill="#e2ac5c" stroke="none" opacity=".72"/>
+  </g>
+</svg>
