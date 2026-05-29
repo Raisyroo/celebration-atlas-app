@@ -137,37 +137,76 @@ function ModeIcon({ mode }: { mode: RomeoAtlasMode }) {
     >
       {mode === "highlights" ? (
         <>
-          <path {...sharedProps} d="M16 4.5l2.4 7.1 7.1 2.4-7.1 2.4L16 23.5l-2.4-7.1L6.5 14l7.1-2.4L16 4.5z" />
-          <path {...sharedProps} d="M23.6 21.4l.9 2.4 2.5.9-2.5.8-.9 2.5-.8-2.5-2.5-.8 2.5-.9.8-2.4z" />
+          <path
+            {...sharedProps}
+            d="M16 4.5l2.4 7.1 7.1 2.4-7.1 2.4L16 23.5l-2.4-7.1L6.5 14l7.1-2.4L16 4.5z"
+          />
+          <path
+            {...sharedProps}
+            d="M23.6 21.4l.9 2.4 2.5.9-2.5.8-.9 2.5-.8-2.5-2.5-.8 2.5-.9.8-2.4z"
+          />
         </>
       ) : null}
       {mode === "schedule" ? (
         <>
-          <path {...sharedProps} d="M10.2 5.8h11.6M10.2 26.2h11.6" />
-          <path {...sharedProps} d="M12.2 6.2c0 6 7.6 5.9 7.6 9.8s-7.6 3.8-7.6 9.8" />
-          <path {...sharedProps} d="M19.8 6.2c0 6-7.6 5.9-7.6 9.8s7.6 3.8 7.6 9.8" />
-          <path {...sharedProps} d="M14 12.3h4M14 21.1h4" />
+          <rect
+            {...sharedProps}
+            x="6.8"
+            y="8.3"
+            width="18.4"
+            height="16.7"
+            rx="2.1"
+          />
+          <path {...sharedProps} d="M10.8 5.8v4.6M21.2 5.8v4.6M7.2 13.1h17.6" />
+          <path
+            {...sharedProps}
+            d="M11.2 17.2h2.2M15 17.2h2.2M18.8 17.2H21M11.2 21h2.2M15 21h2.2M18.8 21H21"
+          />
         </>
       ) : null}
       {mode === "maps" ? (
         <>
-          <path {...sharedProps} d="M5.8 9.1l7-2.6 6.4 2.6 7-2.6v16.4l-7 2.6-6.4-2.6-7 2.6V9.1z" />
-          <path {...sharedProps} d="M12.8 6.5v16.4M19.2 9.1v16.4" />
-          <path {...sharedProps} d="M9.2 17.4c2.9-3.6 7-1 9.4-4.6 1.1-1.6 2.5-2.4 4.2-2.7" />
+          <circle {...sharedProps} cx="16" cy="16" r="10.1" />
+          <circle {...sharedProps} cx="16" cy="16" r="2.1" />
+          <path
+            {...sharedProps}
+            d="M16 4.3v4.1M16 23.6v4.1M4.3 16h4.1M23.6 16h4.1"
+          />
+          <path
+            {...sharedProps}
+            d="M19.9 12.1l-2.2 5.6-5.6 2.2 2.2-5.6 5.6-2.2z"
+          />
+          <path
+            {...sharedProps}
+            d="M9.2 9.2l2.1 2.1M20.7 20.7l2.1 2.1M22.8 9.2l-2.1 2.1M11.3 20.7l-2.1 2.1"
+          />
         </>
       ) : null}
       {mode === "gallery" ? (
         <>
-          <rect {...sharedProps} x="6.4" y="8" width="19.2" height="15.8" rx="1.8" />
+          <rect
+            {...sharedProps}
+            x="6.4"
+            y="8"
+            width="19.2"
+            height="15.8"
+            rx="1.8"
+          />
           <circle {...sharedProps} cx="20.8" cy="12.8" r="1.8" />
-          <path {...sharedProps} d="M8.6 21.2l5.4-5.5 4.2 4.1 2.3-2.3 3.2 3.7" />
+          <path
+            {...sharedProps}
+            d="M8.6 21.2l5.4-5.5 4.2 4.1 2.3-2.3 3.2 3.7"
+          />
         </>
       ) : null}
       {mode === "plan" ? (
         <>
           <path {...sharedProps} d="M10.2 5.8h9.5l4.1 4.2v16.2H10.2V5.8z" />
           <path {...sharedProps} d="M19.7 5.8v4.4h4.1" />
-          <path {...sharedProps} d="M13.6 14.8h6.8M13.6 18.8h6.8M13.6 22.8h4.4" />
+          <path
+            {...sharedProps}
+            d="M13.6 14.8h6.8M13.6 18.8h6.8M13.6 22.8h4.4"
+          />
           <path {...sharedProps} d="M7.2 10.2v19h12.2" />
         </>
       ) : null}
@@ -376,7 +415,11 @@ export default function RomeoAtlasWindowPage({
         aria-label={`${eventName} Atlas floating memory prototype`}
       >
         <div style={styles.stars} aria-hidden="true" />
-        <Link href={backHref} className="romeo-atlas-back-link" style={styles.backLink}>
+        <Link
+          href={backHref}
+          className="romeo-atlas-back-link"
+          style={styles.backLink}
+        >
           ← ATLAS
         </Link>
 
@@ -441,6 +484,90 @@ export default function RomeoAtlasWindowPage({
           aria-label="Atlas controls and Ask Anything"
         >
           <nav style={styles.modeRail} aria-label="Atlas controls">
+            <div style={styles.constellationLayer} aria-hidden="true">
+              <span
+                style={{
+                  ...styles.constellationLine,
+                  left: "16%",
+                  width: "18%",
+                  top: "44%",
+                  transform: "rotate(-5deg)",
+                }}
+              />
+              <span
+                style={{
+                  ...styles.constellationLine,
+                  left: "33%",
+                  width: "18%",
+                  top: "42%",
+                  transform: "rotate(6deg)",
+                }}
+              />
+              <span
+                style={{
+                  ...styles.constellationLine,
+                  left: "50%",
+                  width: "18%",
+                  top: "44%",
+                  transform: "rotate(-4deg)",
+                }}
+              />
+              <span
+                style={{
+                  ...styles.constellationLine,
+                  left: "67%",
+                  width: "18%",
+                  top: "43%",
+                  transform: "rotate(5deg)",
+                }}
+              />
+              <span
+                style={{ ...styles.constellationDot, left: "18%", top: "37%" }}
+              />
+              <span
+                style={{
+                  ...styles.constellationDot,
+                  left: "28%",
+                  top: "49%",
+                  opacity: 0.3,
+                }}
+              />
+              <span
+                style={{ ...styles.constellationDot, left: "38%", top: "34%" }}
+              />
+              <span
+                style={{
+                  ...styles.constellationDot,
+                  left: "48%",
+                  top: "50%",
+                  opacity: 0.34,
+                }}
+              />
+              <span
+                style={{ ...styles.constellationDot, left: "58%", top: "36%" }}
+              />
+              <span
+                style={{
+                  ...styles.constellationDot,
+                  left: "68%",
+                  top: "50%",
+                  opacity: 0.32,
+                }}
+              />
+              <span
+                style={{ ...styles.constellationDot, left: "78%", top: "35%" }}
+              />
+              <span style={{ ...styles.constellationDrop, left: "22%" }} />
+              <span
+                style={{
+                  ...styles.constellationDrop,
+                  left: "50%",
+                  height: "1.25rem",
+                  opacity: 0.2,
+                }}
+              />
+              <span style={{ ...styles.constellationDrop, left: "74%" }} />
+            </div>
             {MODE_OPTIONS.map((mode) => {
               const isActive = mode.id === activeMode;
               return (
@@ -849,34 +976,79 @@ const styles: Record<string, CSSProperties> = {
     position: "relative",
     display: "grid",
     gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-    gap: "0.18rem",
-    alignItems: "end",
+    gap: 0,
+    alignItems: "stretch",
+    padding: "0.72rem clamp(0.32rem, 1.8vw, 0.7rem) 0.64rem",
+    borderRadius: "clamp(1rem, 4.4vw, 1.55rem)",
+    border: "1px solid rgba(232, 183, 104, 0.34)",
+    background:
+      "linear-gradient(180deg, rgba(13, 19, 28, 0.76), rgba(6, 10, 17, 0.68)), radial-gradient(ellipse at 50% 0%, rgba(255, 215, 151, 0.1), transparent 58%)",
+    boxShadow:
+      "0 18px 36px rgba(0,0,0,0.38), 0 0 22px rgba(226,150,72,0.12), inset 0 1px 0 rgba(255,235,195,0.16), inset 0 -1px 0 rgba(232,178,96,0.14)",
+    backdropFilter: "blur(14px) saturate(1.12)",
+    WebkitBackdropFilter: "blur(14px) saturate(1.12)",
+    overflow: "hidden",
+  },
+  constellationLayer: {
+    position: "absolute",
+    inset: "0.42rem 0.62rem 1.35rem",
+    zIndex: 0,
+    pointerEvents: "none",
+    opacity: 0.88,
+  },
+  constellationLine: {
+    position: "absolute",
+    height: 1,
+    transformOrigin: "left center",
+    background:
+      "linear-gradient(90deg, transparent, rgba(245, 196, 119, 0.24), transparent)",
+    boxShadow: "0 0 8px rgba(226, 150, 72, 0.14)",
+  },
+  constellationDot: {
+    position: "absolute",
+    width: "0.19rem",
+    height: "0.19rem",
+    borderRadius: "999px",
+    background: "rgba(249, 207, 137, 0.66)",
+    boxShadow: "0 0 8px rgba(238, 168, 84, 0.34)",
+  },
+  constellationDrop: {
+    position: "absolute",
+    top: "48%",
+    width: 1,
+    height: "1.45rem",
+    background:
+      "linear-gradient(180deg, rgba(245,196,119,0.26), rgba(245,196,119,0.04), transparent)",
+    boxShadow: "0 0 8px rgba(226,150,72,0.12)",
+    opacity: 0.24,
   },
   modeButton: {
     all: "unset",
+    position: "relative",
+    zIndex: 1,
     cursor: "pointer",
     display: "grid",
     justifyItems: "center",
-    alignItems: "center",
-    gap: "0.25rem",
-    minHeight: "3.92rem",
-    padding: "0.22rem 0.1rem",
-    color: "rgba(224,177,100,0.72)",
+    alignContent: "center",
+    gap: "0.34rem",
+    minHeight: "4.62rem",
+    padding: "0.26rem 0.08rem 0.14rem",
+    color: "rgba(224,177,100,0.62)",
     textAlign: "center",
     filter:
-      "drop-shadow(0 0 5px rgba(226,152,75,0.12)) drop-shadow(0 0 14px rgba(226,150,72,0.08))",
-    opacity: 0.84,
+      "drop-shadow(0 0 5px rgba(226,152,75,0.1)) drop-shadow(0 0 14px rgba(226,150,72,0.06))",
+    opacity: 0.78,
     touchAction: "manipulation",
   },
   modeButtonActive: {
     color: "rgba(255,229,168,0.98)",
     filter:
-      "drop-shadow(0 0 8px rgba(247,184,95,0.56)) drop-shadow(0 0 20px rgba(226,150,72,0.28))",
+      "drop-shadow(0 0 9px rgba(247,184,95,0.62)) drop-shadow(0 0 24px rgba(226,150,72,0.36))",
     opacity: 1,
   },
   modeIcon: {
-    width: "2.72rem",
-    height: "2.28rem",
+    width: "3.16rem",
+    height: "2.88rem",
     display: "grid",
     placeItems: "center",
     border: 0,
@@ -886,19 +1058,19 @@ const styles: Record<string, CSSProperties> = {
   },
   modeIconGlyph: {
     display: "block",
-    width: "2rem",
-    height: "2rem",
+    width: "2.58rem",
+    height: "2.58rem",
     color: "currentColor",
     filter:
-      "drop-shadow(0 0 5px rgba(245,191,110,0.38)) drop-shadow(0 0 13px rgba(226,150,72,0.18))",
+      "drop-shadow(0 0 5px rgba(245,191,110,0.46)) drop-shadow(0 0 15px rgba(226,150,72,0.2))",
   },
   modeLabel: {
     color: "currentColor",
-    fontSize: "0.54rem",
+    fontSize: "clamp(0.49rem, 1.65vw, 0.58rem)",
     fontWeight: 600,
-    letterSpacing: "0.13em",
+    letterSpacing: "0.16em",
     textTransform: "uppercase",
-    textShadow: "0 0 8px rgba(226,150,72,0.22)",
+    textShadow: "0 0 9px rgba(226,150,72,0.28)",
   },
   askDock: {
     display: "grid",
