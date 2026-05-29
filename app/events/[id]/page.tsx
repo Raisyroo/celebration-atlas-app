@@ -148,8 +148,8 @@ export default function EventDetailPage() {
     return (
       <RomeoAtlasWindowPage
         eventName={event.name}
-        // Binary assets are not allowed in Codex PRs; add this image manually outside Codex.
-        memoryImageSrc="/event-pages/romeo/romeo-peach-festival-memory.webp"
+        // Expected public asset path: /event-media/romeo/romeo-peach-memory-bg-v1.webp
+        memoryImageSrc="/event-media/romeo/romeo-peach-memory-bg-v1.webp"
         backHref={`/?event=${event.id}`}
       />
     );
