@@ -33,27 +33,79 @@ const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
 const GALLERY_MOMENTS: readonly GalleryMoment[] = [
   {
     id: "parade-light",
-    caption:
-      "Parade glow slipping between brick storefronts and peach banners.",
+    caption: "Main Street parade route.",
     tone: "radial-gradient(circle at 46% 24%, rgba(255,194,125,0.48), rgba(126,70,39,0.48) 38%, rgba(13,13,18,0.94) 100%)",
   },
   {
     id: "sugar-stand",
-    caption: "Peach desserts cooling under tent lights as families drift by.",
+    caption: "Peach dessert stand.",
     tone: "radial-gradient(circle at 35% 30%, rgba(255,173,112,0.46), rgba(101,56,39,0.5) 42%, rgba(12,12,17,0.94) 100%)",
   },
   {
     id: "downtown-bluehour",
-    caption:
-      "Downtown Romeo at blue hour, warm windows and festival foot traffic.",
+    caption: "Downtown after sunset.",
     tone: "radial-gradient(circle at 54% 28%, rgba(239,179,103,0.38), rgba(61,57,76,0.45) 42%, rgba(9,12,20,0.95) 100%)",
   },
   {
     id: "family-route",
-    caption:
-      "A family route marked by music, lemonade cups, and one more peach stop.",
+    caption: "Family walking route.",
     tone: "radial-gradient(circle at 44% 26%, rgba(250,202,141,0.42), rgba(85,55,39,0.48) 43%, rgba(12,10,15,0.94) 100%)",
   },
+] as const;
+
+const SCHEDULE_ITEMS = [
+  {
+    time: "11:00 AM",
+    text: "Downtown opens; vendors and storefronts begin service.",
+  },
+  {
+    time: "1:30 PM",
+    text: "Peak food window for peach desserts and cold drinks.",
+  },
+  { time: "4:00 PM", text: "Parade route begins filling along Main Street." },
+  {
+    time: "7:45 PM",
+    text: "Evening walk-through; lights and food stands remain active.",
+  },
+] as const;
+
+const MAP_GUIDANCE = [
+  ["Main Street", "Primary parade corridor and easiest orientation line."],
+  ["Side streets", "Use for food lines, shade, and crowd breaks."],
+  ["Outer lots", "Best parking target; walk into the downtown core."],
+] as const;
+
+const PLAN_ITEMS = [
+  ["Parking", "Park outside the core before afternoon traffic increases."],
+  ["Families", "Choose a side-street meeting point before the parade."],
+  ["Food", "Buy peach items before peak dinner lines."],
+  [
+    "Photography",
+    "Use Main Street for parade photos and storefront light after sunset.",
+  ],
+  [
+    "Accessibility",
+    "Expect crowds and curb changes; arrive early for easier positioning.",
+  ],
+] as const;
+
+const HIGHLIGHT_ITEMS = [
+  [
+    "Parade route",
+    "Main Street fills early; claim a viewing spot before 4:00 PM.",
+  ],
+  [
+    "Peach food",
+    "Pie, cobbler, drinks, and seasonal vendor specials are the main draw.",
+  ],
+  [
+    "Downtown core",
+    "Storefronts, music corners, and food rows are within a short walk.",
+  ],
+  [
+    "Evening window",
+    "After sunset, lighting improves for photos and crowds begin to thin.",
+  ],
 ] as const;
 
 function MemorySeparator() {
@@ -143,25 +195,6 @@ function RomeoMemoryContent({
   setActiveGallery: (id: string) => void;
 }) {
   if (activeMode === "schedule") {
-    const schedule = [
-      {
-        time: "11:00 AM",
-        text: "Downtown opens softly: storefronts, first sweets, and parade chairs appearing along Main.",
-      },
-      {
-        time: "1:30 PM",
-        text: "Peach food window: pies, cobbler, cold drinks, and shaded family pauses.",
-      },
-      {
-        time: "4:00 PM",
-        text: "Parade atmosphere builds with bands, banners, and neighborhood arrivals.",
-      },
-      {
-        time: "7:45 PM",
-        text: "Blue-hour drift: lights, music corners, and one last pass through vendor rows.",
-      },
-    ];
-
     return (
       <section
         className="romeo-memory-scroll"
@@ -169,10 +202,10 @@ function RomeoMemoryContent({
         aria-label="Schedule lens"
       >
         <p style={styles.windowEyebrow}>Schedule</p>
-        <h2 style={styles.windowTitle}>A day unfolding like a town memory.</h2>
+        <h2 style={styles.windowTitle}>Time + event</h2>
         <MemorySeparator />
         <div style={styles.timelineStack}>
-          {schedule.map((item) => (
+          {SCHEDULE_ITEMS.map((item) => (
             <article key={item.time} style={styles.timelineItem}>
               <span style={styles.timelineTime}>{item.time}</span>
               <p style={styles.timelineText}>{item.text}</p>
@@ -190,10 +223,8 @@ function RomeoMemoryContent({
         style={styles.memoryContent}
         aria-label="Maps lens"
       >
-        <p style={styles.windowEyebrow}>Orientation</p>
-        <h2 style={styles.windowTitle}>
-          Use Main Street as your compass line.
-        </h2>
+        <p style={styles.windowEyebrow}>Maps</p>
+        <h2 style={styles.windowTitle}>Downtown Romeo orientation</h2>
         <MemorySeparator />
         <div style={styles.mapPlate} aria-hidden="true">
           <span style={{ ...styles.mapNode, left: "18%", top: "42%" }} />
@@ -202,14 +233,16 @@ function RomeoMemoryContent({
           <span style={styles.mapRoute} />
           <span style={styles.mapCompass}>✦</span>
         </div>
-        <p style={styles.windowBody}>
-          Mock/demo orientation: parade corridor through downtown, food row one
-          block off the main glow, and quieter family regroup points near the
-          edges.
-        </p>
+        <div style={styles.highlightGrid}>
+          {MAP_GUIDANCE.map(([title, text]) => (
+            <article key={title} style={styles.highlightCard}>
+              <h3 style={styles.highlightTitle}>{title}</h3>
+              <p style={styles.highlightText}>{text}</p>
+            </article>
+          ))}
+        </div>
         <p style={styles.windowTip}>
-          Field note: park outside the core and walk inward before evening
-          traffic thickens.
+          Field note: park outside the core and walk inward.
         </p>
       </section>
     );
@@ -223,9 +256,7 @@ function RomeoMemoryContent({
         aria-label="Gallery lens"
       >
         <p style={styles.windowEyebrow}>Gallery</p>
-        <h2 style={styles.windowTitle}>
-          Festival fragments in loose scrapbook light.
-        </h2>
+        <h2 style={styles.windowTitle}>Image notes</h2>
         <MemorySeparator />
         <article style={styles.galleryFeature}>
           <div
@@ -268,21 +299,14 @@ function RomeoMemoryContent({
         aria-label="Plan lens"
       >
         <p style={styles.windowEyebrow}>Plan</p>
-        <h2 style={styles.windowTitle}>A slow, golden route through Romeo.</h2>
+        <h2 style={styles.windowTitle}>Practical notes</h2>
         <MemorySeparator />
         <ol style={styles.planList}>
-          <li style={styles.planItem}>
-            Arrive before the center gets loud; let the first stop be peach food
-            and a quiet storefront pass.
-          </li>
-          <li style={styles.planItem}>
-            Hold your parade position early, then drift toward music rather than
-            fighting the thickest crowd.
-          </li>
-          <li style={styles.planItem}>
-            Save ten blue-hour minutes for photos, lights, and one last dessert
-            before walking back out.
-          </li>
+          {PLAN_ITEMS.map(([title, text]) => (
+            <li key={title} style={styles.planItem}>
+              <strong>{title}:</strong> {text}
+            </li>
+          ))}
         </ol>
       </section>
     );
@@ -295,29 +319,10 @@ function RomeoMemoryContent({
       aria-label="Highlights lens"
     >
       <p style={styles.windowEyebrow}>Highlights</p>
-      <h2 style={styles.windowTitle}>
-        Peach parade, downtown lights, and sugar in the dusk air.
-      </h2>
+      <h2 style={styles.windowTitle}>Do not miss</h2>
       <MemorySeparator />
       <div style={styles.highlightGrid}>
-        {[
-          [
-            "Parade Atmosphere",
-            "Bands, banners, and peach-color motion along a small-town corridor.",
-          ],
-          [
-            "Downtown Lights",
-            "Storefront windows and streetlamps turning the festival cinematic after sunset.",
-          ],
-          [
-            "Festival Food",
-            "Peach pie, cobbler, cold drinks, and summer vendor smoke in the same breath.",
-          ],
-          [
-            "Family Moments",
-            "Low-stakes wandering, shared treats, and familiar faces under late-summer skies.",
-          ],
-        ].map(([title, text]) => (
+        {HIGHLIGHT_ITEMS.map(([title, text]) => (
           <article key={title} style={styles.highlightCard}>
             <h3 style={styles.highlightTitle}>
               <span style={styles.highlightSigil}>✦</span>
