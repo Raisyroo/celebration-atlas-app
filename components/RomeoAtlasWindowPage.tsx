@@ -118,24 +118,60 @@ function MemorySeparator() {
   );
 }
 
-const MODE_ICON_SRC: Record<RomeoAtlasMode, string> = {
-  highlights: "/icons/atlas/highlights.svg",
-  schedule: "/icons/atlas/schedule.svg",
-  maps: "/icons/atlas/maps.svg",
-  gallery: "/icons/atlas/gallery.svg",
-  plan: "/icons/atlas/plan.svg",
-};
-
 function ModeIcon({ mode }: { mode: RomeoAtlasMode }) {
+  const sharedProps = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    strokeWidth: 1.55,
+    vectorEffect: "non-scaling-stroke" as const,
+  };
+
   return (
-    <span
-      style={{
-        ...styles.modeIconGlyph,
-        WebkitMaskImage: `url(${MODE_ICON_SRC[mode]})`,
-        maskImage: `url(${MODE_ICON_SRC[mode]})`,
-      }}
+    <svg
+      viewBox="0 0 32 32"
+      style={styles.modeIconGlyph}
       aria-hidden="true"
-    />
+      focusable="false"
+    >
+      {mode === "highlights" ? (
+        <>
+          <path {...sharedProps} d="M16 4.5l2.4 7.1 7.1 2.4-7.1 2.4L16 23.5l-2.4-7.1L6.5 14l7.1-2.4L16 4.5z" />
+          <path {...sharedProps} d="M23.6 21.4l.9 2.4 2.5.9-2.5.8-.9 2.5-.8-2.5-2.5-.8 2.5-.9.8-2.4z" />
+        </>
+      ) : null}
+      {mode === "schedule" ? (
+        <>
+          <path {...sharedProps} d="M10.2 5.8h11.6M10.2 26.2h11.6" />
+          <path {...sharedProps} d="M12.2 6.2c0 6 7.6 5.9 7.6 9.8s-7.6 3.8-7.6 9.8" />
+          <path {...sharedProps} d="M19.8 6.2c0 6-7.6 5.9-7.6 9.8s7.6 3.8 7.6 9.8" />
+          <path {...sharedProps} d="M14 12.3h4M14 21.1h4" />
+        </>
+      ) : null}
+      {mode === "maps" ? (
+        <>
+          <path {...sharedProps} d="M5.8 9.1l7-2.6 6.4 2.6 7-2.6v16.4l-7 2.6-6.4-2.6-7 2.6V9.1z" />
+          <path {...sharedProps} d="M12.8 6.5v16.4M19.2 9.1v16.4" />
+          <path {...sharedProps} d="M9.2 17.4c2.9-3.6 7-1 9.4-4.6 1.1-1.6 2.5-2.4 4.2-2.7" />
+        </>
+      ) : null}
+      {mode === "gallery" ? (
+        <>
+          <rect {...sharedProps} x="6.4" y="8" width="19.2" height="15.8" rx="1.8" />
+          <circle {...sharedProps} cx="20.8" cy="12.8" r="1.8" />
+          <path {...sharedProps} d="M8.6 21.2l5.4-5.5 4.2 4.1 2.3-2.3 3.2 3.7" />
+        </>
+      ) : null}
+      {mode === "plan" ? (
+        <>
+          <path {...sharedProps} d="M10.2 5.8h9.5l4.1 4.2v16.2H10.2V5.8z" />
+          <path {...sharedProps} d="M19.7 5.8v4.4h4.1" />
+          <path {...sharedProps} d="M13.6 14.8h6.8M13.6 18.8h6.8M13.6 22.8h4.4" />
+          <path {...sharedProps} d="M7.2 10.2v19h12.2" />
+        </>
+      ) : null}
+    </svg>
   );
 }
 
@@ -810,9 +846,10 @@ const styles: Record<string, CSSProperties> = {
     gap: "0.62rem",
   },
   modeRail: {
+    position: "relative",
     display: "grid",
     gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-    gap: "0.28rem",
+    gap: "0.18rem",
     alignItems: "end",
   },
   modeButton: {
@@ -820,48 +857,48 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
     display: "grid",
     justifyItems: "center",
-    gap: "0.2rem",
-    color: "rgba(218,171,99,0.66)",
+    alignItems: "center",
+    gap: "0.25rem",
+    minHeight: "3.92rem",
+    padding: "0.22rem 0.1rem",
+    color: "rgba(224,177,100,0.72)",
     textAlign: "center",
-    filter: "drop-shadow(0 0 5px rgba(226,152,75,0.1))",
-    opacity: 0.78,
+    filter:
+      "drop-shadow(0 0 5px rgba(226,152,75,0.12)) drop-shadow(0 0 14px rgba(226,150,72,0.08))",
+    opacity: 0.84,
+    touchAction: "manipulation",
   },
   modeButtonActive: {
-    color: "rgba(255,226,163,0.98)",
+    color: "rgba(255,229,168,0.98)",
     filter:
-      "drop-shadow(0 0 10px rgba(247,184,95,0.5)) drop-shadow(0 0 22px rgba(226,150,72,0.26))",
+      "drop-shadow(0 0 8px rgba(247,184,95,0.56)) drop-shadow(0 0 20px rgba(226,150,72,0.28))",
     opacity: 1,
   },
   modeIcon: {
-    width: "2.66rem",
-    height: "2.66rem",
+    width: "2.72rem",
+    height: "2.28rem",
     display: "grid",
     placeItems: "center",
-    borderRadius: "999px",
-    border: "1px solid rgba(226,172,92,0.24)",
-    background:
-      "radial-gradient(circle at 50% 35%, rgba(58,39,22,0.42), rgba(7,11,18,0.28) 72%)",
-    boxShadow:
-      "0 0 14px rgba(226,150,72,0.12), inset 0 1px 0 rgba(255,235,195,0.08)",
+    border: 0,
+    outline: "none",
+    background: "transparent",
+    boxShadow: "none",
   },
   modeIconGlyph: {
     display: "block",
-    width: "1.92rem",
-    height: "1.92rem",
-    backgroundColor: "currentColor",
-    WebkitMaskPosition: "center",
-    maskPosition: "center",
-    WebkitMaskRepeat: "no-repeat",
-    maskRepeat: "no-repeat",
-    WebkitMaskSize: "contain",
-    maskSize: "contain",
+    width: "2rem",
+    height: "2rem",
+    color: "currentColor",
     filter:
-      "drop-shadow(0 0 6px rgba(245,191,110,0.34)) drop-shadow(0 0 14px rgba(226,150,72,0.16))",
+      "drop-shadow(0 0 5px rgba(245,191,110,0.38)) drop-shadow(0 0 13px rgba(226,150,72,0.18))",
   },
   modeLabel: {
-    fontSize: "0.56rem",
-    letterSpacing: "0.12em",
+    color: "currentColor",
+    fontSize: "0.54rem",
+    fontWeight: 600,
+    letterSpacing: "0.13em",
     textTransform: "uppercase",
+    textShadow: "0 0 8px rgba(226,150,72,0.22)",
   },
   askDock: {
     display: "grid",
