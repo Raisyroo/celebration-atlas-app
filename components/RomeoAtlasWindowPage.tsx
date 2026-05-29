@@ -127,7 +127,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
     ];
 
     return (
-      <section style={styles.windowContent} aria-label="Schedule lens">
+      <section className="romeo-atlas-window-scroll" style={styles.windowContent} aria-label="Schedule lens">
         <p style={styles.windowEyebrow}>Schedule Lens</p>
         <h2 style={styles.windowTitle}>A day unfolding like a town memory.</h2>
         <div style={styles.timelineStack}>
@@ -144,7 +144,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
 
   if (activeMode === 'maps') {
     return (
-      <section style={styles.windowContent} aria-label="Maps lens">
+      <section className="romeo-atlas-window-scroll" style={styles.windowContent} aria-label="Maps lens">
         <p style={styles.windowEyebrow}>Orientation Lens</p>
         <h2 style={styles.windowTitle}>Use Main Street as your compass line.</h2>
         <div style={styles.mapPlate} aria-hidden="true">
@@ -162,7 +162,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
 
   if (activeMode === 'gallery') {
     return (
-      <section style={styles.windowContent} aria-label="Gallery lens">
+      <section className="romeo-atlas-window-scroll" style={styles.windowContent} aria-label="Gallery lens">
         <p style={styles.windowEyebrow}>Gallery Lens</p>
         <h2 style={styles.windowTitle}>Festival fragments in warm glass.</h2>
         <article style={styles.galleryFeature}>
@@ -192,7 +192,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
 
   if (activeMode === 'plan') {
     return (
-      <section style={styles.windowContent} aria-label="Plan lens">
+      <section className="romeo-atlas-window-scroll" style={styles.windowContent} aria-label="Plan lens">
         <p style={styles.windowEyebrow}>Plan Lens</p>
         <h2 style={styles.windowTitle}>A slow, golden route through Romeo.</h2>
         <ol style={styles.planList}>
@@ -205,7 +205,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
   }
 
   return (
-    <section style={styles.windowContent} aria-label="Highlights lens">
+    <section className="romeo-atlas-window-scroll" style={styles.windowContent} aria-label="Highlights lens">
       <p style={styles.windowEyebrow}>Highlights Lens</p>
       <h2 style={styles.windowTitle}>Peach parade, downtown lights, and sugar in the dusk air.</h2>
       <div style={styles.highlightGrid}>
@@ -237,6 +237,7 @@ export default function RomeoAtlasWindowPage({ eventName, backHref, heroVideoSrc
 
   return (
     <main style={styles.page} className="atlas-event-shell">
+      <style>{`.romeo-atlas-window-scroll::-webkit-scrollbar { display: none; }`}</style>
       <section style={styles.stage} aria-label={`${eventName} Atlas Window prototype`}>
         <div style={styles.stars} aria-hidden="true" />
         <Link href={backHref} style={styles.backLink}>← ATLAS</Link>
@@ -248,7 +249,7 @@ export default function RomeoAtlasWindowPage({ eventName, backHref, heroVideoSrc
             <video src={heroVideoSrc} muted autoPlay loop playsInline style={styles.video} />
             <div style={styles.videoVeil} />
           </div>
-          <RomeoWindowContent activeMode={activeMode} activeGallery={activeGallery} setActiveGallery={setActiveGalleryId} />
+          <RomeoWindowContent key={activeMode} activeMode={activeMode} activeGallery={activeGallery} setActiveGallery={setActiveGalleryId} />
         </section>
 
         <section style={styles.bottomZone} aria-label="Atlas Window lenses and Ask Anything">
@@ -296,7 +297,7 @@ const styles: Record<string, CSSProperties> = {
   videoMemory: { position: 'absolute', inset: 0, opacity: 0.34, filter: 'saturate(1.05) contrast(1.08)', pointerEvents: 'none' },
   video: { width: '100%', height: '100%', objectFit: 'cover' },
   videoVeil: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(4,7,14,0.46), rgba(7,10,16,0.62)), radial-gradient(circle at 50% 35%, rgba(36,20,14,0.12), rgba(2,4,9,0.8) 78%)' },
-  windowContent: { position: 'relative', zIndex: 2, minHeight: '100%', display: 'grid', alignContent: 'center', gap: 'clamp(0.86rem, 2.6svh, 1.18rem)', padding: 'clamp(1.08rem, 4.6vw, 1.72rem)', boxSizing: 'border-box' },
+  windowContent: { position: 'absolute', inset: 0, zIndex: 2, display: 'grid', alignContent: 'safe center', gap: 'clamp(0.86rem, 2.6svh, 1.18rem)', padding: 'clamp(1.08rem, 4.6vw, 1.72rem)', boxSizing: 'border-box', overflowX: 'hidden', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' },
   windowEyebrow: { margin: 0, color: gold, fontSize: '0.62rem', letterSpacing: '0.18em', textTransform: 'uppercase' },
   windowTitle: { margin: 0, color: 'rgba(250,232,202,0.97)', fontFamily: 'Georgia, Times New Roman, serif', fontWeight: 400, fontSize: 'clamp(1.52rem, 6.5vw, 2.72rem)', lineHeight: 1, textShadow: '0 0 18px rgba(227,146,76,0.22)' },
   windowBody: { margin: 0, color: 'rgba(237,221,193,0.9)', fontSize: '0.86rem', lineHeight: 1.5 },
