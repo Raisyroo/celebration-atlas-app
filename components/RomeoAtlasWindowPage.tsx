@@ -119,98 +119,15 @@ function MemorySeparator() {
 }
 
 function ModeIcon({ mode }: { mode: RomeoAtlasMode }) {
-  const sharedProps = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    strokeWidth: 1.55,
-    vectorEffect: "non-scaling-stroke" as const,
-  };
-
   return (
-    <svg
-      viewBox="0 0 32 32"
-      style={styles.modeIconGlyph}
+    <span
+      style={{
+        ...styles.modeIconGlyph,
+        WebkitMaskImage: `url(/${mode}.svg)`,
+        maskImage: `url(/${mode}.svg)`,
+      }}
       aria-hidden="true"
-      focusable="false"
-    >
-      {mode === "highlights" ? (
-        <>
-          <path
-            {...sharedProps}
-            d="M16 4.5l2.4 7.1 7.1 2.4-7.1 2.4L16 23.5l-2.4-7.1L6.5 14l7.1-2.4L16 4.5z"
-          />
-          <path
-            {...sharedProps}
-            d="M23.6 21.4l.9 2.4 2.5.9-2.5.8-.9 2.5-.8-2.5-2.5-.8 2.5-.9.8-2.4z"
-          />
-        </>
-      ) : null}
-      {mode === "schedule" ? (
-        <>
-          <rect
-            {...sharedProps}
-            x="6.8"
-            y="8.3"
-            width="18.4"
-            height="16.7"
-            rx="2.1"
-          />
-          <path {...sharedProps} d="M10.8 5.8v4.6M21.2 5.8v4.6M7.2 13.1h17.6" />
-          <path
-            {...sharedProps}
-            d="M11.2 17.2h2.2M15 17.2h2.2M18.8 17.2H21M11.2 21h2.2M15 21h2.2M18.8 21H21"
-          />
-        </>
-      ) : null}
-      {mode === "maps" ? (
-        <>
-          <circle {...sharedProps} cx="16" cy="16" r="10.1" />
-          <circle {...sharedProps} cx="16" cy="16" r="2.1" />
-          <path
-            {...sharedProps}
-            d="M16 4.3v4.1M16 23.6v4.1M4.3 16h4.1M23.6 16h4.1"
-          />
-          <path
-            {...sharedProps}
-            d="M19.9 12.1l-2.2 5.6-5.6 2.2 2.2-5.6 5.6-2.2z"
-          />
-          <path
-            {...sharedProps}
-            d="M9.2 9.2l2.1 2.1M20.7 20.7l2.1 2.1M22.8 9.2l-2.1 2.1M11.3 20.7l-2.1 2.1"
-          />
-        </>
-      ) : null}
-      {mode === "gallery" ? (
-        <>
-          <rect
-            {...sharedProps}
-            x="6.4"
-            y="8"
-            width="19.2"
-            height="15.8"
-            rx="1.8"
-          />
-          <circle {...sharedProps} cx="20.8" cy="12.8" r="1.8" />
-          <path
-            {...sharedProps}
-            d="M8.6 21.2l5.4-5.5 4.2 4.1 2.3-2.3 3.2 3.7"
-          />
-        </>
-      ) : null}
-      {mode === "plan" ? (
-        <>
-          <path {...sharedProps} d="M10.2 5.8h9.5l4.1 4.2v16.2H10.2V5.8z" />
-          <path {...sharedProps} d="M19.7 5.8v4.4h4.1" />
-          <path
-            {...sharedProps}
-            d="M13.6 14.8h6.8M13.6 18.8h6.8M13.6 22.8h4.4"
-          />
-          <path {...sharedProps} d="M7.2 10.2v19h12.2" />
-        </>
-      ) : null}
-    </svg>
+    />
   );
 }
 
@@ -409,6 +326,31 @@ export default function RomeoAtlasWindowPage({
           .romeo-atlas-back-link:active {
             transform: scale(0.995);
           }
+          .romeo-mode-lens {
+            -webkit-tap-highlight-color: transparent;
+            transition:
+              color 180ms ease,
+              filter 180ms ease,
+              opacity 180ms ease,
+              text-shadow 180ms ease,
+              transform 180ms ease;
+          }
+          .romeo-mode-lens:focus-visible {
+            color: rgba(255, 231, 176, 0.98);
+            filter:
+              drop-shadow(0 0 11px rgba(247,184,95,0.48))
+              drop-shadow(0 0 26px rgba(226,150,72,0.28));
+            opacity: 1;
+            outline: none;
+            transform: translateY(-1px);
+          }
+          .romeo-mode-icon {
+            transition: filter 180ms ease, opacity 180ms ease, transform 180ms ease;
+          }
+          .romeo-mode-lens:hover .romeo-mode-icon,
+          .romeo-mode-lens:focus-visible .romeo-mode-icon {
+            transform: translateY(-1px);
+          }
         `}</style>
       <section
         style={styles.stage}
@@ -575,6 +517,7 @@ export default function RomeoAtlasWindowPage({
                   key={mode.id}
                   type="button"
                   onClick={() => setActiveMode(mode.id)}
+                  className="romeo-mode-lens"
                   style={{
                     ...styles.modeButton,
                     ...(isActive ? styles.modeButtonActive : null),
@@ -583,7 +526,7 @@ export default function RomeoAtlasWindowPage({
                   aria-pressed={isActive}
                   title={mode.label}
                 >
-                  <span style={styles.modeIcon}>
+                  <span className="romeo-mode-icon" style={styles.modeIcon}>
                     <ModeIcon mode={mode.id} />
                   </span>
                   <span style={styles.modeLabel}>{mode.label}</span>
@@ -978,39 +921,35 @@ const styles: Record<string, CSSProperties> = {
     gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
     gap: 0,
     alignItems: "stretch",
-    padding: "0.72rem clamp(0.32rem, 1.8vw, 0.7rem) 0.64rem",
-    borderRadius: "clamp(1rem, 4.4vw, 1.55rem)",
-    border: "1px solid rgba(232, 183, 104, 0.34)",
-    background:
-      "linear-gradient(180deg, rgba(13, 19, 28, 0.76), rgba(6, 10, 17, 0.68)), radial-gradient(ellipse at 50% 0%, rgba(255, 215, 151, 0.1), transparent 58%)",
-    boxShadow:
-      "0 18px 36px rgba(0,0,0,0.38), 0 0 22px rgba(226,150,72,0.12), inset 0 1px 0 rgba(255,235,195,0.16), inset 0 -1px 0 rgba(232,178,96,0.14)",
-    backdropFilter: "blur(14px) saturate(1.12)",
-    WebkitBackdropFilter: "blur(14px) saturate(1.12)",
-    overflow: "hidden",
+    padding: "0.24rem clamp(0.16rem, 1.2vw, 0.46rem) 0.18rem",
+    border: 0,
+    outline: "none",
+    background: "transparent",
+    boxShadow: "none",
+    overflow: "visible",
   },
   constellationLayer: {
     position: "absolute",
-    inset: "0.42rem 0.62rem 1.35rem",
+    inset: "0.18rem 0.62rem 1.3rem",
     zIndex: 0,
     pointerEvents: "none",
-    opacity: 0.88,
+    opacity: 0.46,
   },
   constellationLine: {
     position: "absolute",
     height: 1,
     transformOrigin: "left center",
     background:
-      "linear-gradient(90deg, transparent, rgba(245, 196, 119, 0.24), transparent)",
-    boxShadow: "0 0 8px rgba(226, 150, 72, 0.14)",
+      "linear-gradient(90deg, transparent, rgba(245, 196, 119, 0.16), transparent)",
+    boxShadow: "0 0 7px rgba(226, 150, 72, 0.1)",
   },
   constellationDot: {
     position: "absolute",
     width: "0.19rem",
     height: "0.19rem",
     borderRadius: "999px",
-    background: "rgba(249, 207, 137, 0.66)",
-    boxShadow: "0 0 8px rgba(238, 168, 84, 0.34)",
+    background: "rgba(249, 207, 137, 0.48)",
+    boxShadow: "0 0 7px rgba(238, 168, 84, 0.24)",
   },
   constellationDrop: {
     position: "absolute",
@@ -1031,13 +970,13 @@ const styles: Record<string, CSSProperties> = {
     justifyItems: "center",
     alignContent: "center",
     gap: "0.34rem",
-    minHeight: "4.62rem",
+    minHeight: "4.85rem",
     padding: "0.26rem 0.08rem 0.14rem",
-    color: "rgba(224,177,100,0.62)",
+    color: "rgba(224,177,100,0.68)",
     textAlign: "center",
     filter:
-      "drop-shadow(0 0 5px rgba(226,152,75,0.1)) drop-shadow(0 0 14px rgba(226,150,72,0.06))",
-    opacity: 0.78,
+      "drop-shadow(0 0 5px rgba(226,152,75,0.12)) drop-shadow(0 0 13px rgba(226,150,72,0.07))",
+    opacity: 0.82,
     touchAction: "manipulation",
   },
   modeButtonActive: {
@@ -1047,8 +986,8 @@ const styles: Record<string, CSSProperties> = {
     opacity: 1,
   },
   modeIcon: {
-    width: "3.16rem",
-    height: "2.88rem",
+    width: "3.32rem",
+    height: "3rem",
     display: "grid",
     placeItems: "center",
     border: 0,
@@ -1058,11 +997,18 @@ const styles: Record<string, CSSProperties> = {
   },
   modeIconGlyph: {
     display: "block",
-    width: "2.58rem",
-    height: "2.58rem",
-    color: "currentColor",
+    width: "2.72rem",
+    height: "2.72rem",
+    background: "currentColor",
+    WebkitMaskPosition: "center",
+    maskPosition: "center",
+    WebkitMaskRepeat: "no-repeat",
+    maskRepeat: "no-repeat",
+    WebkitMaskSize: "contain",
+    maskSize: "contain",
     filter:
-      "drop-shadow(0 0 5px rgba(245,191,110,0.46)) drop-shadow(0 0 15px rgba(226,150,72,0.2))",
+      "drop-shadow(0 0 5px rgba(245,191,110,0.32)) drop-shadow(0 0 14px rgba(226,150,72,0.16))",
+    opacity: 0.92,
   },
   modeLabel: {
     color: "currentColor",
