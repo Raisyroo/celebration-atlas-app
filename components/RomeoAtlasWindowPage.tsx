@@ -19,7 +19,7 @@ type GalleryMoment = {
 type RomeoAtlasWindowPageProps = {
   eventName: string;
   backHref: string;
-  heroVideoSrc: string;
+  memoryImageSrc: string;
 };
 
 const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
@@ -226,7 +226,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
   );
 }
 
-export default function RomeoAtlasWindowPage({ eventName, backHref, heroVideoSrc }: RomeoAtlasWindowPageProps) {
+export default function RomeoAtlasWindowPage({ eventName, backHref, memoryImageSrc }: RomeoAtlasWindowPageProps) {
   const [activeMode, setActiveMode] = useState<RomeoAtlasMode>('highlights');
   const [activeGalleryId, setActiveGalleryId] = useState(GALLERY_MOMENTS[0].id);
   const activeGallery = useMemo(() => GALLERY_MOMENTS.find((item) => item.id === activeGalleryId) ?? GALLERY_MOMENTS[0], [activeGalleryId]);
@@ -243,12 +243,10 @@ export default function RomeoAtlasWindowPage({ eventName, backHref, heroVideoSrc
         <Link href={backHref} style={styles.backLink}>← ATLAS</Link>
 
         <section style={styles.atlasWindow} aria-live="polite" aria-label="Atlas Window content">
+          <div style={{ ...styles.festivalMemory, backgroundImage: `url(${memoryImageSrc})` }} aria-hidden="true" />
+          <div style={styles.memorySmoke} aria-hidden="true" />
           <div style={styles.windowReflection} aria-hidden="true" />
           <div style={styles.windowGlow} aria-hidden="true" />
-          <div style={styles.videoMemory} aria-hidden="true">
-            <video src={heroVideoSrc} muted autoPlay loop playsInline style={styles.video} />
-            <div style={styles.videoVeil} />
-          </div>
           <RomeoWindowContent key={activeMode} activeMode={activeMode} activeGallery={activeGallery} setActiveGallery={setActiveGalleryId} />
         </section>
 
@@ -292,11 +290,10 @@ const styles: Record<string, CSSProperties> = {
   stars: { position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(circle at 18% 22%, rgba(241,186,102,0.2) 0 1px, transparent 2px), radial-gradient(circle at 78% 18%, rgba(241,186,102,0.18) 0 1px, transparent 2px), radial-gradient(circle at 65% 72%, rgba(241,186,102,0.16) 0 1px, transparent 2px), linear-gradient(180deg, rgba(4,7,15,0.08), rgba(3,5,11,0.34))' },
   backLink: { position: 'absolute', right: 'max(0.72rem, env(safe-area-inset-right, 0px))', top: 'max(0.62rem, env(safe-area-inset-top, 0px))', zIndex: 4, minHeight: '2.35rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(247,219,169,0.94)', textDecoration: 'none', fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', border: '1px solid rgba(232,178,96,0.52)', borderRadius: '999px', padding: '0.38rem 0.76rem', background: 'linear-gradient(160deg, rgba(7,10,17,0.78), rgba(19,15,13,0.58))', boxShadow: '0 0 18px rgba(226,150,72,0.22), inset 0 1px 0 rgba(255,235,195,0.12)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' },
   atlasWindow: { alignSelf: 'stretch', position: 'relative', zIndex: 2, minHeight: 0, marginTop: 'clamp(2.45rem, 7svh, 4rem)', borderRadius: '1.55rem', overflow: 'hidden', border: '1px solid rgba(232,178,96,0.46)', background: 'linear-gradient(145deg, rgba(7,13,22,0.76), rgba(10,11,17,0.6))', boxShadow: '0 34px 82px rgba(0,0,0,0.58), 0 0 42px rgba(211,133,62,0.16), inset 0 0 0 1px rgba(255,232,190,0.09), inset 0 18px 52px rgba(255,177,91,0.08), inset 0 -40px 90px rgba(1,3,8,0.58)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
-  windowReflection: { position: 'absolute', inset: '-25% -35% auto -20%', height: '48%', transform: 'rotate(-10deg)', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.13), rgba(243,196,126,0.08), transparent)', filter: 'blur(10px)', opacity: 0.82, pointerEvents: 'none' },
-  windowGlow: { position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 0%, rgba(255,229,184,0.18), transparent 28%), radial-gradient(circle at 78% 82%, rgba(225,126,63,0.18), transparent 36%)' },
-  videoMemory: { position: 'absolute', inset: 0, opacity: 0.34, filter: 'saturate(1.05) contrast(1.08)', pointerEvents: 'none' },
-  video: { width: '100%', height: '100%', objectFit: 'cover' },
-  videoVeil: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(4,7,14,0.46), rgba(7,10,16,0.62)), radial-gradient(circle at 50% 35%, rgba(36,20,14,0.12), rgba(2,4,9,0.8) 78%)' },
+  festivalMemory: { position: 'absolute', inset: '-2% -4%', zIndex: 0, opacity: 0.24, backgroundSize: 'cover', backgroundPosition: '50% 46%', backgroundRepeat: 'no-repeat', filter: 'brightness(0.48) saturate(0.92) contrast(1.16) blur(0.4px)', mixBlendMode: 'screen', pointerEvents: 'none', transform: 'translateZ(0)' },
+  memorySmoke: { position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(circle at 46% 36%, rgba(255,190,112,0.08), rgba(9,12,20,0.62) 54%, rgba(2,4,9,0.88) 100%), linear-gradient(180deg, rgba(3,6,13,0.54), rgba(8,10,16,0.72)), radial-gradient(circle at 18% 82%, rgba(0,0,0,0.62), transparent 38%)', boxShadow: 'inset 0 0 80px rgba(0,0,0,0.72), inset 0 0 160px rgba(1,3,8,0.62)' },
+  windowReflection: { position: 'absolute', inset: '-25% -35% auto -20%', zIndex: 1, height: '48%', transform: 'rotate(-10deg)', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.13), rgba(243,196,126,0.08), transparent)', filter: 'blur(10px)', opacity: 0.82, pointerEvents: 'none' },
+  windowGlow: { position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 0%, rgba(255,229,184,0.18), transparent 28%), radial-gradient(circle at 78% 82%, rgba(225,126,63,0.18), transparent 36%)' },
   windowContent: { position: 'absolute', inset: 0, zIndex: 2, display: 'grid', alignContent: 'safe center', gap: 'clamp(0.86rem, 2.6svh, 1.18rem)', padding: 'clamp(1.08rem, 4.6vw, 1.72rem)', boxSizing: 'border-box', overflowX: 'hidden', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' },
   windowEyebrow: { margin: 0, color: gold, fontSize: '0.62rem', letterSpacing: '0.18em', textTransform: 'uppercase' },
   windowTitle: { margin: 0, color: 'rgba(250,232,202,0.97)', fontFamily: 'Georgia, Times New Roman, serif', fontWeight: 400, fontSize: 'clamp(1.52rem, 6.5vw, 2.72rem)', lineHeight: 1, textShadow: '0 0 18px rgba(227,146,76,0.22)' },
