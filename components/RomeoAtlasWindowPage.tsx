@@ -239,12 +239,7 @@ export default function RomeoAtlasWindowPage({ eventName, backHref, heroVideoSrc
     <main style={styles.page} className="atlas-event-shell">
       <section style={styles.stage} aria-label={`${eventName} Atlas Window prototype`}>
         <div style={styles.stars} aria-hidden="true" />
-        <Link href={backHref} style={styles.backLink}>← Atlas</Link>
-        <header style={styles.heroHeader}>
-          <p style={styles.kicker}>Experimental Atlas Window</p>
-          <h1 style={styles.title}>{eventName}</h1>
-          <p style={styles.subtitle}>A cinematic festival memory interface for Romeo, Michigan.</p>
-        </header>
+        <Link href={backHref} style={styles.backLink}>← Back to Atlas</Link>
 
         <section style={styles.atlasWindow} aria-live="polite" aria-label="Atlas Window content">
           <div style={styles.windowReflection} aria-hidden="true" />
@@ -292,22 +287,18 @@ const gold = 'rgba(226, 172, 92, 0.88)';
 
 const styles: Record<string, CSSProperties> = {
   page: { width: '100vw', height: '100svh', minHeight: '100svh', overflow: 'hidden', color: 'rgba(246,232,205,0.94)' },
-  stage: { position: 'relative', width: 'min(100vw, 760px)', height: '100svh', margin: '0 auto', overflow: 'hidden', padding: 'max(1rem, env(safe-area-inset-top, 0px)) 1rem max(0.72rem, env(safe-area-inset-bottom, 0px))', boxSizing: 'border-box', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr) auto', gap: '0.82rem' },
+  stage: { position: 'relative', width: 'min(100vw, 760px)', height: '100svh', margin: '0 auto', overflow: 'hidden', padding: 'max(0.62rem, env(safe-area-inset-top, 0px)) 0.72rem max(0.56rem, env(safe-area-inset-bottom, 0px))', boxSizing: 'border-box', display: 'grid', gridTemplateRows: 'minmax(0, 1fr) auto', gap: '0.52rem' },
   stars: { position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(circle at 18% 22%, rgba(241,186,102,0.2) 0 1px, transparent 2px), radial-gradient(circle at 78% 18%, rgba(241,186,102,0.18) 0 1px, transparent 2px), radial-gradient(circle at 65% 72%, rgba(241,186,102,0.16) 0 1px, transparent 2px), linear-gradient(180deg, rgba(4,7,15,0.08), rgba(3,5,11,0.34))' },
-  backLink: { position: 'absolute', right: '1rem', top: 'max(1rem, env(safe-area-inset-top, 0px))', zIndex: 4, color: 'rgba(241,210,160,0.84)', textDecoration: 'none', fontSize: '0.64rem', letterSpacing: '0.16em', textTransform: 'uppercase', border: '1px solid rgba(226,172,92,0.28)', borderRadius: '999px', padding: '0.42rem 0.62rem', background: 'rgba(5,8,15,0.42)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' },
-  heroHeader: { position: 'relative', zIndex: 2, paddingTop: '2.2rem', maxWidth: '28rem' },
-  kicker: { margin: 0, color: 'rgba(226,172,92,0.82)', fontSize: '0.66rem', letterSpacing: '0.22em', textTransform: 'uppercase' },
-  title: { margin: '0.34rem 0 0', fontFamily: 'Georgia, Times New Roman, serif', fontWeight: 400, color: 'rgba(247,226,190,0.96)', fontSize: 'clamp(2rem, 10vw, 4.2rem)', lineHeight: 0.95, letterSpacing: '0.035em', textShadow: '0 0 22px rgba(223,143,67,0.18)' },
-  subtitle: { margin: '0.7rem 0 0', maxWidth: '18rem', color: 'rgba(228,210,180,0.76)', fontSize: '0.82rem', lineHeight: 1.45 },
-  atlasWindow: { alignSelf: 'stretch', position: 'relative', zIndex: 2, minHeight: 0, borderRadius: '1.45rem', overflow: 'hidden', border: '1px solid rgba(232,178,96,0.42)', background: 'linear-gradient(145deg, rgba(7,13,22,0.74), rgba(10,11,17,0.58))', boxShadow: '0 28px 70px rgba(0,0,0,0.54), 0 0 34px rgba(211,133,62,0.13), inset 0 0 0 1px rgba(255,232,190,0.08), inset 0 18px 52px rgba(255,177,91,0.08), inset 0 -40px 90px rgba(1,3,8,0.58)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
+  backLink: { position: 'absolute', left: '0.72rem', top: 'max(0.62rem, env(safe-area-inset-top, 0px))', zIndex: 4, color: 'rgba(241,210,160,0.84)', textDecoration: 'none', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', border: '1px solid rgba(226,172,92,0.28)', borderRadius: '999px', padding: '0.36rem 0.58rem', background: 'rgba(5,8,15,0.42)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' },
+  atlasWindow: { alignSelf: 'stretch', position: 'relative', zIndex: 2, minHeight: 0, marginTop: 'clamp(2.45rem, 7svh, 4rem)', borderRadius: '1.55rem', overflow: 'hidden', border: '1px solid rgba(232,178,96,0.46)', background: 'linear-gradient(145deg, rgba(7,13,22,0.76), rgba(10,11,17,0.6))', boxShadow: '0 34px 82px rgba(0,0,0,0.58), 0 0 42px rgba(211,133,62,0.16), inset 0 0 0 1px rgba(255,232,190,0.09), inset 0 18px 52px rgba(255,177,91,0.08), inset 0 -40px 90px rgba(1,3,8,0.58)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
   windowReflection: { position: 'absolute', inset: '-25% -35% auto -20%', height: '48%', transform: 'rotate(-10deg)', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.13), rgba(243,196,126,0.08), transparent)', filter: 'blur(10px)', opacity: 0.82, pointerEvents: 'none' },
   windowGlow: { position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 0%, rgba(255,229,184,0.18), transparent 28%), radial-gradient(circle at 78% 82%, rgba(225,126,63,0.18), transparent 36%)' },
   videoMemory: { position: 'absolute', inset: 0, opacity: 0.34, filter: 'saturate(1.05) contrast(1.08)', pointerEvents: 'none' },
   video: { width: '100%', height: '100%', objectFit: 'cover' },
   videoVeil: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(4,7,14,0.46), rgba(7,10,16,0.62)), radial-gradient(circle at 50% 35%, rgba(36,20,14,0.12), rgba(2,4,9,0.8) 78%)' },
-  windowContent: { position: 'relative', zIndex: 2, minHeight: '100%', display: 'grid', alignContent: 'center', gap: '0.78rem', padding: 'clamp(1rem, 4vw, 1.45rem)', boxSizing: 'border-box' },
+  windowContent: { position: 'relative', zIndex: 2, minHeight: '100%', display: 'grid', alignContent: 'center', gap: 'clamp(0.86rem, 2.6svh, 1.18rem)', padding: 'clamp(1.08rem, 4.6vw, 1.72rem)', boxSizing: 'border-box' },
   windowEyebrow: { margin: 0, color: gold, fontSize: '0.62rem', letterSpacing: '0.18em', textTransform: 'uppercase' },
-  windowTitle: { margin: 0, color: 'rgba(250,232,202,0.97)', fontFamily: 'Georgia, Times New Roman, serif', fontWeight: 400, fontSize: 'clamp(1.32rem, 5.7vw, 2.45rem)', lineHeight: 1.02, textShadow: '0 0 18px rgba(227,146,76,0.22)' },
+  windowTitle: { margin: 0, color: 'rgba(250,232,202,0.97)', fontFamily: 'Georgia, Times New Roman, serif', fontWeight: 400, fontSize: 'clamp(1.52rem, 6.5vw, 2.72rem)', lineHeight: 1, textShadow: '0 0 18px rgba(227,146,76,0.22)' },
   windowBody: { margin: 0, color: 'rgba(237,221,193,0.9)', fontSize: '0.86rem', lineHeight: 1.5 },
   windowTip: { margin: 0, color: 'rgba(244,197,126,0.88)', fontSize: '0.78rem', lineHeight: 1.42, fontStyle: 'italic' },
   highlightGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.58rem' },
