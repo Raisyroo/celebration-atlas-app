@@ -356,13 +356,37 @@ export default function RomeoAtlasWindowPage({
 
   return (
     <main style={styles.page} className="atlas-event-shell">
-      <style>{`.romeo-memory-scroll::-webkit-scrollbar { display: none; }`}</style>
+      <style>{`
+          .romeo-memory-scroll::-webkit-scrollbar { display: none; }
+          .romeo-atlas-back-link {
+            transition:
+              color 180ms ease,
+              border-color 180ms ease,
+              box-shadow 180ms ease,
+              text-shadow 180ms ease,
+              transform 180ms ease;
+          }
+          .romeo-atlas-back-link:hover,
+          .romeo-atlas-back-link:focus-visible {
+            color: rgba(255, 229, 181, 0.98);
+            border-color: rgba(244, 194, 112, 0.68);
+            box-shadow:
+              0 0 13px rgba(226, 150, 72, 0.18),
+              inset 0 0 13px rgba(226, 172, 92, 0.07),
+              inset 0 1px 0 rgba(255, 235, 195, 0.1);
+            text-shadow: 0 0 9px rgba(244, 194, 112, 0.28);
+            transform: scale(1.015);
+          }
+          .romeo-atlas-back-link:active {
+            transform: scale(0.995);
+          }
+        `}</style>
       <section
         style={styles.stage}
         aria-label={`${eventName} Atlas floating memory prototype`}
       >
         <div style={styles.stars} aria-hidden="true" />
-        <Link href={backHref} style={styles.backLink}>
+        <Link href={backHref} className="romeo-atlas-back-link" style={styles.backLink}>
           ← ATLAS
         </Link>
 
@@ -515,21 +539,21 @@ const styles: Record<string, CSSProperties> = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "rgba(247,219,169,0.94)",
+    color: "rgba(238,196,126,0.86)",
     textDecoration: "none",
-    fontSize: "0.64rem",
-    fontWeight: 700,
-    letterSpacing: "0.18em",
+    fontSize: "0.61rem",
+    fontWeight: 600,
+    letterSpacing: "0.16em",
     textTransform: "uppercase",
-    border: "1px solid rgba(232,178,96,0.52)",
+    border: "1px solid rgba(232,178,96,0.46)",
     borderRadius: "999px",
-    padding: "0.38rem 0.76rem",
-    background:
-      "linear-gradient(160deg, rgba(7,10,17,0.78), rgba(19,15,13,0.58))",
+    padding: "0.34rem 0.7rem",
+    background: "transparent",
     boxShadow:
-      "0 0 18px rgba(226,150,72,0.22), inset 0 1px 0 rgba(255,235,195,0.12)",
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
+      "0 0 10px rgba(226,150,72,0.12), inset 0 0 11px rgba(226,172,92,0.045), inset 0 1px 0 rgba(255,235,195,0.06)",
+    textShadow: "0 0 7px rgba(226,172,92,0.16)",
+    transformOrigin: "center",
+    willChange: "transform",
   },
   festivalMemory: {
     position: "absolute",
