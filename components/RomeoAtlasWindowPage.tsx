@@ -53,6 +53,17 @@ const GALLERY_MOMENTS: readonly GalleryMoment[] = [
   },
 ] as const;
 
+
+function MemorySeparator() {
+  return (
+    <div style={styles.memorySeparator} aria-hidden="true">
+      <span style={styles.memorySeparatorStar}>✦</span>
+      <span style={styles.memorySeparatorGlyph}>atlas / memory</span>
+      <span style={styles.memorySeparatorStar}>✧</span>
+    </div>
+  );
+}
+
 function ModeIcon({ mode }: { mode: RomeoAtlasMode }) {
   const commonProps = {
     width: 32,
@@ -130,6 +141,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
       <section className="romeo-atlas-window-scroll" style={styles.windowContent} aria-label="Schedule lens">
         <p style={styles.windowEyebrow}>Schedule Lens</p>
         <h2 style={styles.windowTitle}>A day unfolding like a town memory.</h2>
+        <MemorySeparator />
         <div style={styles.timelineStack}>
           {schedule.map((item) => (
             <article key={item.time} style={styles.timelineItem}>
@@ -147,6 +159,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
       <section className="romeo-atlas-window-scroll" style={styles.windowContent} aria-label="Maps lens">
         <p style={styles.windowEyebrow}>Orientation Lens</p>
         <h2 style={styles.windowTitle}>Use Main Street as your compass line.</h2>
+        <MemorySeparator />
         <div style={styles.mapPlate} aria-hidden="true">
           <span style={{ ...styles.mapNode, left: '18%', top: '42%' }} />
           <span style={{ ...styles.mapNode, left: '48%', top: '28%' }} />
@@ -165,6 +178,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
       <section className="romeo-atlas-window-scroll" style={styles.windowContent} aria-label="Gallery lens">
         <p style={styles.windowEyebrow}>Gallery Lens</p>
         <h2 style={styles.windowTitle}>Festival fragments in warm glass.</h2>
+        <MemorySeparator />
         <article style={styles.galleryFeature}>
           <div style={{ ...styles.galleryImage, background: activeGallery.tone }} aria-hidden="true" />
         </article>
@@ -195,6 +209,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
       <section className="romeo-atlas-window-scroll" style={styles.windowContent} aria-label="Plan lens">
         <p style={styles.windowEyebrow}>Plan Lens</p>
         <h2 style={styles.windowTitle}>A slow, golden route through Romeo.</h2>
+        <MemorySeparator />
         <ol style={styles.planList}>
           <li style={styles.planItem}>Arrive before the center gets loud; let the first stop be peach food and a quiet storefront pass.</li>
           <li style={styles.planItem}>Hold your parade position early, then drift toward music rather than fighting the thickest crowd.</li>
@@ -208,6 +223,7 @@ function RomeoWindowContent({ activeMode, activeGallery, setActiveGallery }: { a
     <section className="romeo-atlas-window-scroll" style={styles.windowContent} aria-label="Highlights lens">
       <p style={styles.windowEyebrow}>Highlights Lens</p>
       <h2 style={styles.windowTitle}>Peach parade, downtown lights, and sugar in the dusk air.</h2>
+      <MemorySeparator />
       <div style={styles.highlightGrid}>
         {[
           ['Parade Atmosphere', 'Bands, banners, and peach-color motion along a small-town corridor.'],
@@ -251,6 +267,12 @@ export default function RomeoAtlasWindowPage({ eventName, backHref, memoryImageS
           <div style={styles.perimeterBloom} aria-hidden="true" />
           <div style={styles.windowReflection} aria-hidden="true" />
           <div style={styles.windowGlow} aria-hidden="true" />
+          <div style={styles.floatingMemoryStars} aria-hidden="true">
+            <span style={{ ...styles.floatingMemoryStar, left: '12%', top: '17%' }}>✦</span>
+            <span style={{ ...styles.floatingMemoryStar, left: '82%', top: '24%', opacity: 0.62 }}>✧</span>
+            <span style={{ ...styles.floatingMemoryStar, left: '73%', top: '72%', opacity: 0.5 }}>✦</span>
+            <span style={{ ...styles.floatingMemoryGlyph, left: '16%', top: '78%' }}>atlas</span>
+          </div>
           <RomeoWindowContent key={activeMode} activeMode={activeMode} activeGallery={activeGallery} setActiveGallery={setActiveGalleryId} />
         </section>
 
@@ -293,7 +315,7 @@ const styles: Record<string, CSSProperties> = {
   stage: { position: 'relative', width: 'min(100vw, 760px)', height: '100svh', margin: '0 auto', overflow: 'hidden', padding: 'max(0.62rem, env(safe-area-inset-top, 0px)) 0.72rem max(0.56rem, env(safe-area-inset-bottom, 0px))', boxSizing: 'border-box', display: 'grid', gridTemplateRows: 'minmax(0, 1fr) auto', gap: '0.52rem' },
   stars: { position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(circle at 18% 22%, rgba(241,186,102,0.2) 0 1px, transparent 2px), radial-gradient(circle at 78% 18%, rgba(241,186,102,0.18) 0 1px, transparent 2px), radial-gradient(circle at 65% 72%, rgba(241,186,102,0.16) 0 1px, transparent 2px), linear-gradient(180deg, rgba(4,7,15,0.08), rgba(3,5,11,0.34))' },
   backLink: { position: 'absolute', right: 'max(0.72rem, env(safe-area-inset-right, 0px))', top: 'max(0.62rem, env(safe-area-inset-top, 0px))', zIndex: 4, minHeight: '2.35rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(247,219,169,0.94)', textDecoration: 'none', fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', border: '1px solid rgba(232,178,96,0.52)', borderRadius: '999px', padding: '0.38rem 0.76rem', background: 'linear-gradient(160deg, rgba(7,10,17,0.78), rgba(19,15,13,0.58))', boxShadow: '0 0 18px rgba(226,150,72,0.22), inset 0 1px 0 rgba(255,235,195,0.12)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' },
-  atlasWindow: { alignSelf: 'stretch', position: 'relative', zIndex: 2, minHeight: 0, marginTop: 'clamp(2.45rem, 7svh, 4rem)', borderRadius: '46% 54% 50% 50% / 8% 9% 10% 8%', overflow: 'hidden', border: 'none', outline: 'none', background: 'radial-gradient(ellipse at 50% 46%, rgba(8,13,22,0.22) 0%, rgba(7,11,18,0.22) 52%, rgba(6,8,14,0.18) 78%, rgba(4,6,12,0.1) 100%)', filter: 'drop-shadow(0 28px 58px rgba(0,0,0,.48)) drop-shadow(0 0 44px rgba(226,150,72,.17)) drop-shadow(0 0 92px rgba(226,172,92,.07))', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', maskImage: 'radial-gradient(ellipse 92% 86% at 50% 47%, #000 54%, rgba(0,0,0,0.86) 72%, rgba(0,0,0,0.48) 91%, rgba(0,0,0,0.28) 100%)', WebkitMaskImage: 'radial-gradient(ellipse 92% 86% at 50% 47%, #000 54%, rgba(0,0,0,0.86) 72%, rgba(0,0,0,0.48) 91%, rgba(0,0,0,0.28) 100%)' },
+  atlasWindow: { alignSelf: 'stretch', position: 'relative', zIndex: 2, minHeight: 0, marginTop: 'clamp(2.45rem, 7svh, 4rem)', borderRadius: '46% 54% 50% 50% / 8% 9% 10% 8%', overflow: 'hidden', border: 'none', outline: 'none', background: 'transparent', filter: 'drop-shadow(0 28px 58px rgba(0,0,0,.42)) drop-shadow(0 0 44px rgba(226,150,72,.14)) drop-shadow(0 0 92px rgba(226,172,92,.08))', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', maskImage: 'radial-gradient(ellipse 92% 86% at 50% 47%, #000 54%, rgba(0,0,0,0.86) 72%, rgba(0,0,0,0.48) 91%, rgba(0,0,0,0.28) 100%)', WebkitMaskImage: 'radial-gradient(ellipse 92% 86% at 50% 47%, #000 54%, rgba(0,0,0,0.86) 72%, rgba(0,0,0,0.48) 91%, rgba(0,0,0,0.28) 100%)' },
   festivalMemory: { position: 'absolute', inset: '-7% -10%', zIndex: 0, opacity: 0.42, backgroundSize: 'cover', backgroundPosition: '50% 46%', backgroundRepeat: 'no-repeat', filter: 'brightness(0.7) saturate(1.04) contrast(1.08) blur(0.25px)', mixBlendMode: 'screen', pointerEvents: 'none', transform: 'translateZ(0) scale(1.02)', maskImage: 'radial-gradient(ellipse 72% 66% at 50% 48%, #000 38%, rgba(0,0,0,0.7) 60%, transparent 96%)', WebkitMaskImage: 'radial-gradient(ellipse 72% 66% at 50% 48%, #000 38%, rgba(0,0,0,0.7) 60%, transparent 96%)' },
   memorySmoke: { position: 'absolute', inset: '-10%', zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(ellipse at 46% 39%, rgba(255,190,112,0.1), rgba(9,12,20,0.2) 44%, rgba(2,4,9,0.5) 100%), radial-gradient(ellipse at 17% 20%, rgba(217,223,230,0.08), transparent 42%), radial-gradient(ellipse at 86% 74%, rgba(221,158,91,0.1), transparent 46%), linear-gradient(180deg, rgba(3,6,13,0.14), rgba(8,10,16,0.4))', boxShadow: 'inset 0 0 74px rgba(0,0,0,0.32), inset 0 0 132px rgba(1,3,8,0.34)', filter: 'blur(0.2px)' },
   atmosphericVeil: { position: 'absolute', inset: '-18% -16%', zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(ellipse at 28% 34%, rgba(238,232,216,0.09), transparent 34%), radial-gradient(ellipse at 66% 28%, rgba(255,204,134,0.07), transparent 31%), radial-gradient(ellipse at 42% 74%, rgba(194,205,219,0.07), transparent 36%), repeating-radial-gradient(ellipse at 52% 48%, rgba(255,255,255,0.035) 0 1px, transparent 1px 18px)', opacity: 0.82, filter: 'blur(18px)', mixBlendMode: 'screen', transform: 'rotate(-4deg)' },
@@ -302,33 +324,39 @@ const styles: Record<string, CSSProperties> = {
   perimeterBloom: { position: 'absolute', inset: '-7%', zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(ellipse 78% 84% at 50% 47%, transparent 57%, rgba(246,202,127,0.035) 70%, rgba(226,172,92,0.14) 86%, rgba(226,150,72,0.05) 100%), linear-gradient(90deg, rgba(238,185,101,0.11), transparent 17%, transparent 83%, rgba(238,185,101,0.11)), linear-gradient(180deg, rgba(238,185,101,0.1), transparent 16%, transparent 88%, rgba(238,185,101,0.055))', filter: 'blur(18px)', opacity: 0.95, mixBlendMode: 'screen' },
   windowReflection: { position: 'absolute', inset: '-25% -35% auto -20%', zIndex: 1, height: '48%', transform: 'rotate(-10deg)', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.11), rgba(243,196,126,0.07), transparent)', filter: 'blur(13px)', opacity: 0.62, pointerEvents: 'none' },
   windowGlow: { position: 'absolute', inset: '-8%', zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(ellipse at 52% 6%, rgba(255,229,184,0.15), transparent 30%), radial-gradient(ellipse at 52% 50%, rgba(238,177,96,0.12), transparent 54%), radial-gradient(ellipse at 78% 82%, rgba(225,126,63,0.13), transparent 38%)', mixBlendMode: 'screen' },
-  windowContent: { position: 'absolute', inset: 0, zIndex: 2, display: 'grid', alignContent: 'safe center', gap: 'clamp(0.86rem, 2.6svh, 1.18rem)', padding: 'clamp(1.08rem, 4.6vw, 1.72rem)', boxSizing: 'border-box', overflowX: 'hidden', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' },
+  windowContent: { position: 'absolute', inset: 0, zIndex: 2, display: 'grid', alignContent: 'safe center', gap: 'clamp(1rem, 3.1svh, 1.55rem)', padding: 'clamp(1.2rem, 5.2vw, 2.1rem)', boxSizing: 'border-box', overflowX: 'hidden', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' },
+  floatingMemoryStars: { position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' },
+  floatingMemoryStar: { position: 'absolute', color: 'rgba(246,202,127,0.78)', fontSize: '0.62rem', textShadow: '0 0 16px rgba(226,150,72,0.46)' },
+  floatingMemoryGlyph: { position: 'absolute', color: 'rgba(246,202,127,0.36)', fontSize: '0.52rem', letterSpacing: '0.22em', textTransform: 'uppercase', transform: 'rotate(-10deg)' },
+  memorySeparator: { display: 'inline-flex', alignItems: 'center', gap: '0.42rem', color: 'rgba(246,202,127,0.54)', fontSize: '0.54rem', letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.72, textShadow: '0 0 14px rgba(226,150,72,0.26)' },
+  memorySeparatorStar: { color: 'rgba(246,202,127,0.72)', fontSize: '0.58rem' },
+  memorySeparatorGlyph: { color: 'rgba(230,210,178,0.34)', fontSize: '0.5rem' },
   windowEyebrow: { margin: 0, color: gold, fontSize: '0.62rem', letterSpacing: '0.18em', textTransform: 'uppercase' },
   windowTitle: { margin: 0, color: 'rgba(250,232,202,0.97)', fontFamily: 'Georgia, Times New Roman, serif', fontWeight: 400, fontSize: 'clamp(1.52rem, 6.5vw, 2.72rem)', lineHeight: 1, textShadow: '0 0 18px rgba(227,146,76,0.22)' },
   windowBody: { margin: 0, color: 'rgba(237,221,193,0.9)', fontSize: '0.86rem', lineHeight: 1.5 },
   windowTip: { margin: 0, color: 'rgba(244,197,126,0.88)', fontSize: '0.78rem', lineHeight: 1.42, fontStyle: 'italic' },
-  highlightGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.58rem' },
-  highlightCard: { border: '1px solid rgba(226,172,92,0.22)', borderRadius: '0.92rem', background: 'linear-gradient(150deg, rgba(11,17,27,0.7), rgba(9,11,17,0.46))', padding: '0.72rem', boxShadow: 'inset 0 1px 0 rgba(255,235,195,0.08)' },
-  highlightSigil: { color: gold, fontSize: '0.74rem' },
+  highlightGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', columnGap: '1.08rem', rowGap: '1.18rem' },
+  highlightCard: { position: 'relative', border: 0, outline: 'none', borderRadius: 0, background: 'transparent', padding: '0.08rem 0.08rem 0.18rem', boxShadow: 'none' },
+  highlightSigil: { color: gold, fontSize: '0.66rem', opacity: 0.76, textShadow: '0 0 12px rgba(226,150,72,0.38)' },
   highlightTitle: { margin: '0.24rem 0 0', color: 'rgba(250,224,183,0.94)', fontSize: '0.72rem', letterSpacing: '0.08em', textTransform: 'uppercase' },
   highlightText: { margin: '0.28rem 0 0', color: 'rgba(228,214,190,0.82)', fontSize: '0.72rem', lineHeight: 1.35 },
-  timelineStack: { display: 'grid', gap: '0.5rem' },
-  timelineItem: { display: 'grid', gridTemplateColumns: '4.8rem 1fr', gap: '0.62rem', alignItems: 'start', borderLeft: '1px solid rgba(226,172,92,0.36)', paddingLeft: '0.68rem' },
+  timelineStack: { display: 'grid', gap: '1rem' },
+  timelineItem: { display: 'grid', gridTemplateColumns: '4.8rem 1fr', gap: '0.78rem', alignItems: 'start', border: 0, paddingLeft: 0, opacity: 0.92, filter: 'drop-shadow(0 0 10px rgba(226,150,72,0.08))' },
   timelineTime: { color: gold, fontSize: '0.66rem', letterSpacing: '0.11em', textTransform: 'uppercase' },
   timelineText: { margin: 0, color: 'rgba(237,224,200,0.9)', fontSize: '0.76rem', lineHeight: 1.38 },
-  mapPlate: { position: 'relative', minHeight: '10.8rem', borderRadius: '1rem', border: '1px solid rgba(226,172,92,0.28)', overflow: 'hidden', background: 'radial-gradient(circle at 48% 40%, rgba(224,151,80,0.24), transparent 30%), linear-gradient(135deg, rgba(13,20,31,0.74), rgba(5,8,14,0.76)), repeating-linear-gradient(118deg, rgba(235,190,123,0.12) 0 1px, transparent 1px 28px)', boxShadow: 'inset 0 0 34px rgba(236,172,91,0.12)' },
+  mapPlate: { position: 'relative', minHeight: '10.8rem', borderRadius: 0, border: 0, outline: 'none', overflow: 'hidden', background: 'radial-gradient(circle at 48% 40%, rgba(224,151,80,0.2), transparent 28%), radial-gradient(ellipse at 50% 62%, rgba(238,185,101,0.08), transparent 62%), repeating-linear-gradient(118deg, rgba(235,190,123,0.08) 0 1px, transparent 1px 34px)', boxShadow: 'none', maskImage: 'radial-gradient(ellipse 86% 78% at 50% 48%, #000 44%, rgba(0,0,0,0.64) 76%, transparent 100%)', WebkitMaskImage: 'radial-gradient(ellipse 86% 78% at 50% 48%, #000 44%, rgba(0,0,0,0.64) 76%, transparent 100%)' },
   mapRoute: { position: 'absolute', left: '16%', right: '18%', top: '49%', borderTop: '1px dashed rgba(238,189,112,0.68)', transform: 'rotate(8deg)', boxShadow: '0 0 12px rgba(238,172,91,0.22)' },
   mapNode: { position: 'absolute', width: '0.62rem', height: '0.62rem', borderRadius: '999px', background: 'rgba(246,202,127,0.96)', boxShadow: '0 0 16px rgba(236,160,77,0.6)' },
   mapCompass: { position: 'absolute', right: '1rem', top: '0.8rem', color: 'rgba(246,207,142,0.84)', fontSize: '1.8rem', textShadow: '0 0 18px rgba(226,150,72,0.28)' },
-  galleryFeature: { overflow: 'hidden', borderRadius: '1rem', border: '1px solid rgba(226,172,92,0.28)', boxShadow: '0 18px 34px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,235,195,0.09)' },
+  galleryFeature: { overflow: 'hidden', borderRadius: '42% 58% 50% 50% / 14% 12% 16% 13%', border: 0, outline: 'none', boxShadow: '0 18px 34px rgba(0,0,0,0.18)', maskImage: 'radial-gradient(ellipse 86% 76% at 50% 48%, #000 50%, rgba(0,0,0,0.62) 78%, transparent 100%)', WebkitMaskImage: 'radial-gradient(ellipse 86% 76% at 50% 48%, #000 50%, rgba(0,0,0,0.62) 78%, transparent 100%)' },
   galleryImage: { minHeight: '12rem', aspectRatio: '16 / 10' },
   galleryRail: { display: 'flex', gap: '0.48rem', overflowX: 'auto', padding: '0.04rem 0 0.1rem', scrollbarWidth: 'none' },
-  galleryThumbButton: { all: 'unset', flex: '0 0 auto', cursor: 'pointer', width: '3.4rem', height: '2.5rem', padding: '0.14rem', borderRadius: '0.52rem', border: '1px solid rgba(226,172,92,0.25)', background: 'rgba(6,10,17,0.68)' },
-  galleryThumbButtonActive: { border: '1px solid rgba(246,202,127,0.86)', boxShadow: '0 0 16px rgba(226,150,72,0.26)' },
-  galleryThumbTone: { display: 'block', width: '100%', height: '100%', borderRadius: '0.4rem' },
+  galleryThumbButton: { all: 'unset', flex: '0 0 auto', cursor: 'pointer', width: '3.4rem', height: '2.5rem', padding: '0.14rem', borderRadius: 0, border: 0, outline: 'none', background: 'transparent', opacity: 0.54, filter: 'drop-shadow(0 0 10px rgba(226,150,72,0.1))' },
+  galleryThumbButtonActive: { opacity: 1, boxShadow: 'none', filter: 'drop-shadow(0 0 16px rgba(226,150,72,0.34))' },
+  galleryThumbTone: { display: 'block', width: '100%', height: '100%', borderRadius: '50% 44% 52% 46% / 42% 56% 44% 58%', maskImage: 'radial-gradient(ellipse at 50% 50%, #000 46%, rgba(0,0,0,0.52) 74%, transparent 100%)', WebkitMaskImage: 'radial-gradient(ellipse at 50% 50%, #000 46%, rgba(0,0,0,0.52) 74%, transparent 100%)' },
   galleryCaption: { margin: 0, color: 'rgba(232,217,190,0.82)', fontSize: '0.74rem', lineHeight: 1.35 },
-  planList: { margin: 0, paddingLeft: '1.25rem', display: 'grid', gap: '0.72rem' },
-  planItem: { color: 'rgba(238,224,200,0.9)', fontSize: '0.84rem', lineHeight: 1.48, paddingLeft: '0.2rem' },
+  planList: { margin: 0, paddingLeft: '1.25rem', display: 'grid', gap: '1rem' },
+  planItem: { color: 'rgba(238,224,200,0.9)', fontSize: '0.84rem', lineHeight: 1.48, paddingLeft: '0.34rem', textShadow: '0 0 12px rgba(226,150,72,0.1)' },
   bottomZone: { position: 'relative', zIndex: 3, display: 'grid', gap: '0.62rem' },
   modeRail: { display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '0.28rem', alignItems: 'end' },
   modeButton: { all: 'unset', cursor: 'pointer', display: 'grid', justifyItems: 'center', gap: '0.2rem', color: 'rgba(225,173,96,0.8)', textAlign: 'center', filter: 'drop-shadow(0 0 6px rgba(226,152,75,0.12))' },
