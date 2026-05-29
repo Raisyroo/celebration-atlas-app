@@ -218,6 +218,8 @@ export default function AtlasMap() {
   };
 
   useEffect(() => {
+    let isCurrentSelection = true;
+
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
@@ -234,37 +236,59 @@ export default function AtlasMap() {
     }
 
     if (selected) {
-      setRenderedEvent(selected);
-      setCardEnterOffset(48);
-      setIsCardVisible(false);
-      enterFrameRef.current = requestAnimationFrame(() => {
-        enterFrameRef.current = null;
-        enterFrameInnerRef.current = requestAnimationFrame(() => {
-          setIsCardVisible(true);
-          enterFrameInnerRef.current = null;
+      queueMicrotask(() => {
+        if (!isCurrentSelection) return;
+        setRenderedEvent(selected);
+        setCardEnterOffset(48);
+        setIsCardVisible(false);
+        enterFrameRef.current = requestAnimationFrame(() => {
+          enterFrameRef.current = null;
+          enterFrameInnerRef.current = requestAnimationFrame(() => {
+            setIsCardVisible(true);
+            enterFrameInnerRef.current = null;
+          });
         });
       });
-      return;
+      return () => {
+        isCurrentSelection = false;
+      };
     }
 
-    setCardEnterOffset(36);
-    setIsCardVisible(false);
-    closeTimerRef.current = setTimeout(() => {
-      setRenderedEvent(null);
-      closeTimerRef.current = null;
-    }, 260);
+    queueMicrotask(() => {
+      if (!isCurrentSelection) return;
+      setCardEnterOffset(36);
+      setIsCardVisible(false);
+      closeTimerRef.current = setTimeout(() => {
+        setRenderedEvent(null);
+        closeTimerRef.current = null;
+      }, 260);
+    });
+
+    return () => {
+      isCurrentSelection = false;
+    };
   }, [selected]);
 
   useEffect(() => {
+    let isCurrentMedia = true;
+
     if (cardMediaFadeTimerRef.current) {
       clearTimeout(cardMediaFadeTimerRef.current);
       cardMediaFadeTimerRef.current = null;
     }
-    setIsCardMediaVisible(false);
-    const selectedEvent = ATLAS_EVENTS.find((event) => event.id === selectedId);
-    if (!selectedEvent?.cardMedia?.mediaSrc) return;
-    setCardMediaVideoKey((prev) => prev + 1);
-    setShowCardMediaVideoFallback(false);
+
+    queueMicrotask(() => {
+      if (!isCurrentMedia) return;
+      setIsCardMediaVisible(false);
+      const selectedEvent = ATLAS_EVENTS.find((event) => event.id === selectedId);
+      if (!selectedEvent?.cardMedia?.mediaSrc) return;
+      setCardMediaVideoKey((prev) => prev + 1);
+      setShowCardMediaVideoFallback(false);
+    });
+
+    return () => {
+      isCurrentMedia = false;
+    };
   }, [selectedId]);
 
   useEffect(() => {
@@ -342,7 +366,9 @@ export default function AtlasMap() {
     const matchingEvent = ATLAS_EVENTS.find((event) => event.id === requestedEventId);
     if (!matchingEvent) return;
 
-    setSelectedId(matchingEvent.id);
+    queueMicrotask(() => {
+      setSelectedId(matchingEvent.id);
+    });
   }, [searchParams]);
 
   useEffect(() => {

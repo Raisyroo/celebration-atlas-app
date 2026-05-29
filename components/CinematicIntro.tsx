@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 
 type CinematicIntroProps = {
@@ -11,47 +11,39 @@ type CinematicIntroProps = {
 const INTRO_DURATION_MS = 4200;
 const REDUCED_MOTION_DURATION_MS = 900;
 
+function subscribeToMediaQuery(query: string, onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia(query);
+  mediaQuery.addEventListener('change', onStoreChange);
+  return () => mediaQuery.removeEventListener('change', onStoreChange);
+}
+
+function getMediaQuerySnapshot(query: string) {
+  return window.matchMedia(query).matches;
+}
+
+function useMediaQuery(query: string, serverSnapshot: boolean) {
+  return useSyncExternalStore(
+    (onStoreChange) => subscribeToMediaQuery(query, onStoreChange),
+    () => getMediaQuerySnapshot(query),
+    () => serverSnapshot,
+  );
+}
+
 export default function CinematicIntro({ children }: CinematicIntroProps) {
-  const [isActive, setIsActive] = useState(false);
-  const [isReducedMotion, setIsReducedMotion] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [hasIntroFinished, setHasIntroFinished] = useState(false);
+  const isReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)', false);
+  const isMobile = useMediaQuery('(max-width: 767px)', true);
 
-  useEffect(() => {
-    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const mobileQuery = window.matchMedia('(max-width: 767px)');
-
-    const syncMotion = () => setIsReducedMotion(reducedMotionQuery.matches);
-    const syncMobile = () => setIsMobile(mobileQuery.matches);
-
-    syncMotion();
-    syncMobile();
-    setIsActive(!mobileQuery.matches);
-
-    reducedMotionQuery.addEventListener('change', syncMotion);
-    mobileQuery.addEventListener('change', syncMobile);
-
-    return () => {
-      reducedMotionQuery.removeEventListener('change', syncMotion);
-      mobileQuery.removeEventListener('change', syncMobile);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isMobile) {
-      setIsActive(false);
-    }
-  }, [isMobile]);
-
-  const shouldRenderOverlay = isActive && !isMobile;
+  const shouldRenderOverlay = !hasIntroFinished && !isMobile;
   const introDurationMs = isReducedMotion ? REDUCED_MOTION_DURATION_MS : INTRO_DURATION_MS;
 
   useEffect(() => {
     if (!shouldRenderOverlay) return;
-    const timer = window.setTimeout(() => setIsActive(false), introDurationMs);
+    const timer = window.setTimeout(() => setHasIntroFinished(true), introDurationMs);
     return () => window.clearTimeout(timer);
   }, [introDurationMs, shouldRenderOverlay]);
 
-  const finishIntro = () => setIsActive(false);
+  const finishIntro = () => setHasIntroFinished(true);
 
   const introTimingClass = useMemo(() => (shouldRenderOverlay ? 'atlas-intro--active' : ''), [shouldRenderOverlay]);
 

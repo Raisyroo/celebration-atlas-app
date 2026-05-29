@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
 import InteractiveArtworkPage from '../../../components/InteractiveArtworkPage';
 import AtlasAIResponseDemo from '../../../components/AtlasAIResponseDemo';
 import RomeoAtlasWindowPage from '../../../components/RomeoAtlasWindowPage';
+
+type AtlasEventWithDetail = AtlasEvent & { detailPage: NonNullable<AtlasEvent['detailPage']> };
 
 type PageTone = {
   pageBackground: string;
@@ -96,6 +98,10 @@ const TONES: Record<'harvest' | 'musicNorthwoods' | 'urban' | 'lakeshore', PageT
   },
 };
 
+function hasDetailPage(event: AtlasEvent | undefined): event is AtlasEventWithDetail {
+  return Boolean(event?.detailPage);
+}
+
 function getPageTone(regionAtmosphere?: string, iconType?: string): PageTone {
   if (regionAtmosphere === 'harvest' || iconType === 'harvest') return TONES.harvest;
   if (regionAtmosphere === 'urban') return TONES.urban;
@@ -125,12 +131,6 @@ export default function EventDetailPage() {
   const searchParams = useSearchParams();
   const id = params?.id;
   const event = ATLAS_EVENTS.find((entry) => entry.id === id);
-  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
-  const [memoryIndex, setMemoryIndex] = useState(0);
-  const [memoryOpacity, setMemoryOpacity] = useState(1);
-  const [isPageVisible, setIsPageVisible] = useState(false);
-  const [isIntroVisible, setIsIntroVisible] = useState(false);
-
 
   if (event?.pageArchetype === 'livingScrapbook' && event.detailPage) {
     return (
@@ -154,7 +154,7 @@ export default function EventDetailPage() {
     );
   }
 
-  if (!event || !event.detailPage) {
+  if (!hasDetailPage(event)) {
     return (
       <main style={styles.notFoundPage}>
         <Link href="/" style={styles.notFoundLink}>
@@ -163,6 +163,89 @@ export default function EventDetailPage() {
       </main>
     );
   }
+
+  return <StandardEventDetailPage event={event} isElectricForestCinematicEntry={event.id === 'electric-forest' && searchParams.get('intro') === 'cinematic'} />;
+}
+
+function EventIntroOverlay({ introVideoSrc, onFinished }: { introVideoSrc: string; onFinished: () => void }) {
+  const [isIntroFallbackVisible, setIsIntroFallbackVisible] = useState(false);
+  const [isIntroMuted, setIsIntroMuted] = useState(false);
+  const [showIntroUnmuteAffordance, setShowIntroUnmuteAffordance] = useState(false);
+  const introVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (!introVideoSrc) return;
+    const introVideo = introVideoRef.current;
+    if (!introVideo) return;
+
+    introVideo.muted = false;
+    const playAttempt = introVideo.play();
+    if (!playAttempt) return;
+
+    playAttempt.catch(() => {
+      const fallbackVideo = introVideoRef.current;
+      if (!fallbackVideo) return;
+      fallbackVideo.muted = true;
+      setIsIntroMuted(true);
+      setShowIntroUnmuteAffordance(true);
+      fallbackVideo.play().catch(() => {
+        setIsIntroFallbackVisible(true);
+      });
+    });
+  }, [introVideoSrc]);
+
+  const handleIntroUnmute = () => {
+    const introVideo = introVideoRef.current;
+    if (!introVideo) return;
+    introVideo.muted = false;
+    setIsIntroMuted(false);
+    setShowIntroUnmuteAffordance(false);
+    introVideo.play().catch(() => {
+      introVideo.muted = true;
+      setIsIntroMuted(true);
+      setShowIntroUnmuteAffordance(true);
+    });
+  };
+
+  if (isIntroFallbackVisible) {
+    return (
+      <div style={styles.introOverlay}>
+        <p style={styles.introFallbackText}>Entering event...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.introOverlay}>
+      <video
+        ref={introVideoRef}
+        src={introVideoSrc}
+        muted={isIntroMuted}
+        autoPlay
+        playsInline
+        controls={false}
+        preload="auto"
+        style={styles.introVideo}
+        onError={() => {
+          setIsIntroFallbackVisible(true);
+        }}
+        onEnded={onFinished}
+      />
+      {showIntroUnmuteAffordance ? (
+        <button type="button" style={styles.introUnmuteButton} onClick={handleIntroUnmute}>
+          Tap for sound
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function StandardEventDetailPage({ event, isElectricForestCinematicEntry }: { event: AtlasEventWithDetail; isElectricForestCinematicEntry: boolean }) {
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [memoryIndex, setMemoryIndex] = useState(0);
+  const [memoryOpacity, setMemoryOpacity] = useState(1);
+  const [isPageVisible, setIsPageVisible] = useState(false);
+  const [introDismissedForEventId, setIntroDismissedForEventId] = useState<string | null>(null);
 
   const tone = getPageTone(event.regionAtmosphere, event.iconType);
   const relatedEvents = getRelatedEvents(event);
@@ -181,12 +264,8 @@ export default function EventDetailPage() {
     ? [event.detailPage.detailIntro, ...event.detailPage.storySections].filter(Boolean)
     : [event.detailPage.shortStory];
   const atlasMemories = event.atlasMemories ?? [];
-  const isElectricForestCinematicEntry = event.id === 'electric-forest' && searchParams.get('intro') === 'cinematic';
-  const introVideoSrc = useMemo(() => event.detailPage?.introVideoSrc ?? '', [event.detailPage?.introVideoSrc]);
-  const [isIntroFallbackVisible, setIsIntroFallbackVisible] = useState(false);
-  const [isIntroMuted, setIsIntroMuted] = useState(false);
-  const [showIntroUnmuteAffordance, setShowIntroUnmuteAffordance] = useState(false);
-  const introVideoRef = useRef<HTMLVideoElement | null>(null);
+  const introVideoSrc = event.detailPage.introVideoSrc ?? '';
+  const isIntroVisible = isElectricForestCinematicEntry && introDismissedForEventId !== event.id;
 
   const localFlavorItems = (event.localFlavor ?? []).filter(Boolean).slice(0, 4);
 
@@ -206,49 +285,6 @@ export default function EventDetailPage() {
     return () => window.clearTimeout(timer);
   }, [isElectricForestCinematicEntry]);
 
-  useEffect(() => {
-    setIsIntroVisible(isElectricForestCinematicEntry);
-  }, [isElectricForestCinematicEntry]);
-
-  useEffect(() => {
-    setIsIntroFallbackVisible(false);
-    setIsIntroMuted(false);
-    setShowIntroUnmuteAffordance(false);
-  }, [introVideoSrc, event.id]);
-
-  useEffect(() => {
-    if (!isIntroVisible || !introVideoSrc) return;
-    const introVideo = introVideoRef.current;
-    if (!introVideo) return;
-
-    introVideo.muted = false;
-    const playAttempt = introVideo.play();
-    if (!playAttempt) return;
-
-    playAttempt.catch(() => {
-      const fallbackVideo = introVideoRef.current;
-      if (!fallbackVideo) return;
-      fallbackVideo.muted = true;
-      setIsIntroMuted(true);
-      setShowIntroUnmuteAffordance(true);
-      fallbackVideo.play().catch(() => {
-        setIsIntroFallbackVisible(true);
-      });
-    });
-  }, [isIntroVisible, introVideoSrc]);
-
-  const handleIntroUnmute = () => {
-    const introVideo = introVideoRef.current;
-    if (!introVideo) return;
-    introVideo.muted = false;
-    setIsIntroMuted(false);
-    setShowIntroUnmuteAffordance(false);
-    introVideo.play().catch(() => {
-      introVideo.muted = true;
-      setIsIntroMuted(true);
-      setShowIntroUnmuteAffordance(true);
-    });
-  };
 
   useEffect(() => {
     document.documentElement.classList.add('event-detail-scroll');
@@ -282,35 +318,14 @@ export default function EventDetailPage() {
 
   return (
     <>
-      {isIntroVisible && introVideoSrc && !isIntroFallbackVisible ? (
-        <div style={styles.introOverlay}>
-          <video
-            ref={introVideoRef}
-            src={introVideoSrc}
-            muted={isIntroMuted}
-            autoPlay
-            playsInline
-            controls={false}
-            preload="auto"
-            style={styles.introVideo}
-            onError={() => {
-              setIsIntroFallbackVisible(true);
-            }}
-            onEnded={() => {
-              setIsIntroVisible(false);
-            }}
-          />
-          {showIntroUnmuteAffordance ? (
-            <button type="button" style={styles.introUnmuteButton} onClick={handleIntroUnmute}>
-              Tap for sound
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-      {isIntroVisible && isIntroFallbackVisible ? (
-        <div style={styles.introOverlay}>
-          <p style={styles.introFallbackText}>Entering event...</p>
-        </div>
+      {isIntroVisible && introVideoSrc ? (
+        <EventIntroOverlay
+          key={`${event.id}:${introVideoSrc}`}
+          introVideoSrc={introVideoSrc}
+          onFinished={() => {
+            setIntroDismissedForEventId(event.id);
+          }}
+        />
       ) : null}
       <main
         className="atlas-event-shell"
