@@ -1,12 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Gallery">
-  <g stroke="#e2ac5c" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="11" y="16" width="42" height="33" rx="3.5" stroke-width="2.4"/>
-    <path d="M15.5 45.5l12.1-12.3 8.4 8.2 5-5 7.6 9.1" stroke-width="2.35"/>
-    <circle cx="42.7" cy="25.5" r="4.1" stroke-width="2.1"/>
-    <path d="M10.5 16l-4.2 4.1v24.3M53.5 16l4.2 4.1v24.3M16.2 10.8h31.6" stroke-width="1.25" opacity=".58"/>
-    <circle cx="11" cy="16" r="2" stroke-width="1.7"/>
-    <circle cx="53" cy="16" r="2" stroke-width="1.7"/>
-    <circle cx="11" cy="49" r="2" stroke-width="1.7"/>
-    <circle cx="53" cy="49" r="2" stroke-width="1.7"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Gallery">
+  <defs>
+    <linearGradient id="galleryGold" x1="18" y1="18" x2="110" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff2c4"/>
+      <stop offset="0.34" stop-color="#f3c977"/>
+      <stop offset="0.72" stop-color="#c3753a"/>
+      <stop offset="1" stop-color="#ffe2a4"/>
+    </linearGradient>
+    <radialGradient id="galleryGlow" cx="50%" cy="48%" r="62%">
+      <stop offset="0" stop-color="#f3c977" stop-opacity="0.23"/>
+      <stop offset="1" stop-color="#05070c" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="galleryShadow" x="-16" y="-16" width="160" height="160" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#070509" flood-opacity="0.56"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#e2ac5c" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <circle cx="64" cy="64" r="54" fill="url(#galleryGlow)"/>
+  <g filter="url(#galleryShadow)" fill="none" stroke="url(#galleryGold)" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="22" y="31" width="84" height="67" rx="8" stroke-width="4.8"/>
+    <path d="M29.8 91.4 52.9 67.8 69.3 83.5 79.9 72.8 98.6 92" stroke-width="4.5"/>
+    <circle cx="83.5" cy="49.8" r="8.7" stroke-width="3.8"/>
+    <path d="M21.5 31.2 12.8 39v49.6M106.5 31.2l8.7 7.8v49.6M33.5 20.5h61" stroke-width="2.1" opacity="0.55"/>
+    <path d="M35.3 21c17.1-7.5 36-7.5 56.7 0M35.3 107c17.1 7.5 36 7.5 56.7 0" stroke-width="1.5" opacity="0.36"/>
+    <circle cx="22" cy="31" r="4.2" stroke-width="2.8"/>
+    <circle cx="106" cy="31" r="4.2" stroke-width="2.8"/>
+    <circle cx="22" cy="98" r="4.2" stroke-width="2.8"/>
+    <circle cx="106" cy="98" r="4.2" stroke-width="2.8"/>
+    <path d="M42 44.5c8-3.9 15.4-3.9 22.2 0" stroke-width="1.6" opacity="0.4"/>
   </g>
 </svg>
