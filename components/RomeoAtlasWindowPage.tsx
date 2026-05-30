@@ -9,6 +9,7 @@ type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 type RomeoAtlasModeOption = {
   id: RomeoAtlasMode;
   label: string;
+  iconSrc: string;
 };
 
 type GalleryMoment = {
@@ -24,11 +25,11 @@ type RomeoAtlasWindowPageProps = {
 };
 
 const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
-  { id: "highlights", label: "Highlights" },
-  { id: "schedule", label: "Schedule" },
-  { id: "maps", label: "Maps" },
-  { id: "gallery", label: "Gallery" },
-  { id: "plan", label: "Plan" },
+  { id: "highlights", label: "Highlights", iconSrc: "/highlights-icon.svg" },
+  { id: "schedule", label: "Schedule", iconSrc: "/schedule-icon.svg" },
+  { id: "maps", label: "Maps", iconSrc: "/maps-icon.svg" },
+  { id: "gallery", label: "Gallery", iconSrc: "/gallery-icon.svg" },
+  { id: "plan", label: "Plan", iconSrc: "/plan-icon.svg" },
 ] as const;
 
 const GALLERY_MOMENTS: readonly GalleryMoment[] = [
@@ -119,15 +120,15 @@ function MemorySeparator() {
   );
 }
 
-function ModeIcon({ mode }: { mode: RomeoAtlasMode }) {
+function ModeIcon({ mode }: { mode: RomeoAtlasModeOption }) {
   return (
     <Image
-      src={`/${mode}.svg`}
+      src={mode.iconSrc}
       alt=""
       aria-hidden="true"
       draggable={false}
-      width={64}
-      height={64}
+      width={140}
+      height={96}
       unoptimized
       style={styles.modeIconArtwork}
     />
@@ -464,90 +465,6 @@ export default function RomeoAtlasWindowPage({
           aria-label="Atlas controls and Ask Anything"
         >
           <nav style={styles.modeRail} aria-label="Atlas controls">
-            <div style={styles.constellationLayer} aria-hidden="true">
-              <span
-                style={{
-                  ...styles.constellationLine,
-                  left: "16%",
-                  width: "18%",
-                  top: "44%",
-                  transform: "rotate(-5deg)",
-                }}
-              />
-              <span
-                style={{
-                  ...styles.constellationLine,
-                  left: "33%",
-                  width: "18%",
-                  top: "42%",
-                  transform: "rotate(6deg)",
-                }}
-              />
-              <span
-                style={{
-                  ...styles.constellationLine,
-                  left: "50%",
-                  width: "18%",
-                  top: "44%",
-                  transform: "rotate(-4deg)",
-                }}
-              />
-              <span
-                style={{
-                  ...styles.constellationLine,
-                  left: "67%",
-                  width: "18%",
-                  top: "43%",
-                  transform: "rotate(5deg)",
-                }}
-              />
-              <span
-                style={{ ...styles.constellationDot, left: "18%", top: "37%" }}
-              />
-              <span
-                style={{
-                  ...styles.constellationDot,
-                  left: "28%",
-                  top: "49%",
-                  opacity: 0.3,
-                }}
-              />
-              <span
-                style={{ ...styles.constellationDot, left: "38%", top: "34%" }}
-              />
-              <span
-                style={{
-                  ...styles.constellationDot,
-                  left: "48%",
-                  top: "50%",
-                  opacity: 0.34,
-                }}
-              />
-              <span
-                style={{ ...styles.constellationDot, left: "58%", top: "36%" }}
-              />
-              <span
-                style={{
-                  ...styles.constellationDot,
-                  left: "68%",
-                  top: "50%",
-                  opacity: 0.32,
-                }}
-              />
-              <span
-                style={{ ...styles.constellationDot, left: "78%", top: "35%" }}
-              />
-              <span style={{ ...styles.constellationDrop, left: "22%" }} />
-              <span
-                style={{
-                  ...styles.constellationDrop,
-                  left: "50%",
-                  height: "1.25rem",
-                  opacity: 0.2,
-                }}
-              />
-              <span style={{ ...styles.constellationDrop, left: "74%" }} />
-            </div>
             {MODE_OPTIONS.map((mode) => {
               const isActive = mode.id === activeMode;
               return (
@@ -565,10 +482,7 @@ export default function RomeoAtlasWindowPage({
                   data-active={isActive ? "true" : "false"}
                   title={mode.label}
                 >
-                  <span className="romeo-mode-icon" style={styles.modeIcon}>
-                    <ModeIcon mode={mode.id} />
-                  </span>
-                  <span style={styles.modeLabel}>{mode.label}</span>
+                  <ModeIcon mode={mode} />
                 </button>
               );
             })}
@@ -971,39 +885,6 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: "none",
     overflow: "visible",
   },
-  constellationLayer: {
-    position: "absolute",
-    inset: "0.18rem 0.62rem 1.3rem",
-    zIndex: 0,
-    pointerEvents: "none",
-    opacity: 0.46,
-  },
-  constellationLine: {
-    position: "absolute",
-    height: 1,
-    transformOrigin: "left center",
-    background:
-      "linear-gradient(90deg, transparent, rgba(245, 196, 119, 0.16), transparent)",
-    boxShadow: "0 0 7px rgba(226, 150, 72, 0.1)",
-  },
-  constellationDot: {
-    position: "absolute",
-    width: "0.19rem",
-    height: "0.19rem",
-    borderRadius: "999px",
-    background: "rgba(249, 207, 137, 0.48)",
-    boxShadow: "0 0 7px rgba(238, 168, 84, 0.24)",
-  },
-  constellationDrop: {
-    position: "absolute",
-    top: "48%",
-    width: 1,
-    height: "1.45rem",
-    background:
-      "linear-gradient(180deg, rgba(245,196,119,0.26), rgba(245,196,119,0.04), transparent)",
-    boxShadow: "0 0 8px rgba(226,150,72,0.12)",
-    opacity: 0.24,
-  },
   modeButton: {
     all: "unset",
     position: "relative",
@@ -1028,36 +909,17 @@ const styles: Record<string, CSSProperties> = {
       "drop-shadow(0 0 9px rgba(247,184,95,0.62)) drop-shadow(0 0 24px rgba(226,150,72,0.36))",
     opacity: 1,
   },
-  modeIcon: {
-    position: "relative",
-    width: "clamp(2.42rem, 11.5vw, 3.32rem)",
-    height: "clamp(2.42rem, 10.4vw, 3rem)",
-    display: "grid",
-    placeItems: "center",
-    border: 0,
-    outline: "none",
-    background: "transparent",
-    boxShadow: "none",
-    overflow: "visible",
-  },
   modeIconArtwork: {
     position: "relative",
     zIndex: 1,
     display: "block",
-    width: "clamp(2.18rem, 9.6vw, 2.72rem)",
-    height: "clamp(2.18rem, 9.6vw, 2.72rem)",
+    width: "min(100%, clamp(3.2rem, 18vw, 5.2rem))",
+    height: "auto",
+    maxHeight: "4.2rem",
     objectFit: "contain",
     opacity: 1,
     userSelect: "none",
     pointerEvents: "none",
-  },
-  modeLabel: {
-    color: "currentColor",
-    fontSize: "clamp(0.49rem, 1.65vw, 0.58rem)",
-    fontWeight: 600,
-    letterSpacing: "0.16em",
-    textTransform: "uppercase",
-    textShadow: "0 0 9px rgba(226,150,72,0.28)",
   },
   askDock: {
     display: "grid",
