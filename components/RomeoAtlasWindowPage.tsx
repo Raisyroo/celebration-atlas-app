@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 
@@ -120,13 +121,15 @@ function MemorySeparator() {
 
 function ModeIcon({ mode }: { mode: RomeoAtlasMode }) {
   return (
-    <span
-      style={{
-        ...styles.modeIconGlyph,
-        WebkitMaskImage: `url(/${mode}.svg)`,
-        maskImage: `url(/${mode}.svg)`,
-      }}
+    <Image
+      src={`/${mode}.svg`}
+      alt=""
       aria-hidden="true"
+      draggable={false}
+      width={64}
+      height={64}
+      unoptimized
+      style={styles.modeIconArtwork}
     />
   );
 }
@@ -328,6 +331,8 @@ export default function RomeoAtlasWindowPage({
           }
           .romeo-mode-lens {
             -webkit-tap-highlight-color: transparent;
+            transform: scale(1);
+            transform-origin: center;
             transition:
               color 180ms ease,
               filter 180ms ease,
@@ -335,21 +340,54 @@ export default function RomeoAtlasWindowPage({
               text-shadow 180ms ease,
               transform 180ms ease;
           }
+          .romeo-mode-lens:hover,
           .romeo-mode-lens:focus-visible {
             color: rgba(255, 231, 176, 0.98);
             filter:
-              drop-shadow(0 0 11px rgba(247,184,95,0.48))
-              drop-shadow(0 0 26px rgba(226,150,72,0.28));
+              drop-shadow(0 0 11px rgba(247,184,95,0.36))
+              drop-shadow(0 0 24px rgba(226,150,72,0.22));
             opacity: 1;
             outline: none;
-            transform: translateY(-1px);
+            transform: scale(1.03);
+          }
+          .romeo-mode-lens[data-active="true"] {
+            color: rgba(255, 232, 174, 0.98);
+            filter:
+              drop-shadow(0 0 12px rgba(255,211,128,0.68))
+              drop-shadow(0 0 30px rgba(239,166,75,0.42))
+              drop-shadow(0 0 54px rgba(185,106,42,0.18));
+            opacity: 1;
+            text-shadow: 0 0 13px rgba(255, 211, 128, 0.34);
           }
           .romeo-mode-icon {
             transition: filter 180ms ease, opacity 180ms ease, transform 180ms ease;
           }
+          .romeo-mode-icon::before {
+            content: "";
+            position: absolute;
+            inset: 5%;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(255, 211, 128, 0.34), rgba(239, 166, 75, 0.12) 42%, transparent 72%);
+            filter: blur(8px);
+            opacity: 0;
+            transform: scale(0.88);
+            transition: opacity 180ms ease, transform 180ms ease;
+          }
           .romeo-mode-lens:hover .romeo-mode-icon,
           .romeo-mode-lens:focus-visible .romeo-mode-icon {
-            transform: translateY(-1px);
+            filter:
+              drop-shadow(0 0 7px rgba(245,191,110,0.44))
+              drop-shadow(0 0 18px rgba(226,150,72,0.22));
+          }
+          .romeo-mode-lens[data-active="true"] .romeo-mode-icon {
+            filter:
+              drop-shadow(0 0 9px rgba(255,216,139,0.74))
+              drop-shadow(0 0 22px rgba(247,184,95,0.46))
+              drop-shadow(0 0 36px rgba(226,150,72,0.28));
+          }
+          .romeo-mode-lens[data-active="true"] .romeo-mode-icon::before {
+            opacity: 1;
+            transform: scale(1.06);
           }
         `}</style>
       <section
@@ -524,6 +562,7 @@ export default function RomeoAtlasWindowPage({
                   }}
                   aria-label={`${mode.label} lens`}
                   aria-pressed={isActive}
+                  data-active={isActive ? "true" : "false"}
                   title={mode.label}
                 >
                   <span className="romeo-mode-icon" style={styles.modeIcon}>
@@ -980,7 +1019,7 @@ const styles: Record<string, CSSProperties> = {
     textAlign: "center",
     filter:
       "drop-shadow(0 0 5px rgba(226,152,75,0.12)) drop-shadow(0 0 13px rgba(226,150,72,0.07))",
-    opacity: 0.82,
+    opacity: 0.85,
     touchAction: "manipulation",
   },
   modeButtonActive: {
@@ -990,29 +1029,27 @@ const styles: Record<string, CSSProperties> = {
     opacity: 1,
   },
   modeIcon: {
-    width: "3.32rem",
-    height: "3rem",
+    position: "relative",
+    width: "clamp(2.42rem, 11.5vw, 3.32rem)",
+    height: "clamp(2.42rem, 10.4vw, 3rem)",
     display: "grid",
     placeItems: "center",
     border: 0,
     outline: "none",
     background: "transparent",
     boxShadow: "none",
+    overflow: "visible",
   },
-  modeIconGlyph: {
+  modeIconArtwork: {
+    position: "relative",
+    zIndex: 1,
     display: "block",
-    width: "2.72rem",
-    height: "2.72rem",
-    background: "currentColor",
-    WebkitMaskPosition: "center",
-    maskPosition: "center",
-    WebkitMaskRepeat: "no-repeat",
-    maskRepeat: "no-repeat",
-    WebkitMaskSize: "contain",
-    maskSize: "contain",
-    filter:
-      "drop-shadow(0 0 5px rgba(245,191,110,0.32)) drop-shadow(0 0 14px rgba(226,150,72,0.16))",
-    opacity: 0.92,
+    width: "clamp(2.18rem, 9.6vw, 2.72rem)",
+    height: "clamp(2.18rem, 9.6vw, 2.72rem)",
+    objectFit: "contain",
+    opacity: 1,
+    userSelect: "none",
+    pointerEvents: "none",
   },
   modeLabel: {
     color: "currentColor",
