@@ -8,7 +8,6 @@ type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 type RomeoAtlasModeOption = {
   id: RomeoAtlasMode;
   label: string;
-  iconSrc: string;
 };
 
 type GalleryMoment = {
@@ -24,11 +23,11 @@ type RomeoAtlasWindowPageProps = {
 };
 
 const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
-  { id: "highlights", label: "Highlights", iconSrc: "/ui/highlights-icon.svg" },
-  { id: "schedule", label: "Schedule", iconSrc: "/ui/schedule-icon.svg" },
-  { id: "maps", label: "Maps", iconSrc: "/ui/maps-icon.svg" },
-  { id: "gallery", label: "Gallery", iconSrc: "/ui/gallery-icon.svg" },
-  { id: "plan", label: "Plan", iconSrc: "/ui/plan-icon.svg" },
+  { id: "highlights", label: "Highlights" },
+  { id: "schedule", label: "Schedule" },
+  { id: "maps", label: "Maps" },
+  { id: "gallery", label: "Gallery" },
+  { id: "plan", label: "Plan" },
 ] as const;
 
 const GALLERY_MOMENTS: readonly GalleryMoment[] = [
@@ -119,28 +118,66 @@ function MemorySeparator() {
   );
 }
 
-function ModeIcon({
-  mode,
-  isActive,
-}: {
-  mode: RomeoAtlasModeOption;
-  isActive: boolean;
-}) {
+function ModeIcon({ mode }: { mode: RomeoAtlasMode }) {
+  const commonProps = {
+    width: 34,
+    height: 34,
+    viewBox: "0 0 256 256",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 12,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+    focusable: false,
+  };
+
+  if (mode === "highlights") {
+    return (
+      <svg {...commonProps}>
+        <path d="M128 24l23.4 62.6L214 110l-62.6 23.4L128 196l-23.4-62.6L42 110l62.6-23.4L128 24z" />
+        <path d="M56 154l10.4 27.6L94 192l-27.6 10.4L56 230l-10.4-27.6L18 192l27.6-10.4L56 154z" />
+        <path d="M204 34l7.7 20.3L232 62l-20.3 7.7L204 90l-7.7-20.3L176 62l20.3-7.7L204 34z" />
+      </svg>
+    );
+  }
+
+  if (mode === "schedule") {
+    return (
+      <svg {...commonProps}>
+        <rect x="38" y="52" width="180" height="166" rx="22" />
+        <path d="M82 30v42M174 30v42M38 96h180" />
+        <path d="M86 136h24M146 136h24M86 174h24M146 174h24" />
+      </svg>
+    );
+  }
+
+  if (mode === "maps") {
+    return (
+      <svg {...commonProps}>
+        <circle cx="128" cy="128" r="90" />
+        <path d="M164 92l-24 48-48 24 24-48 48-24z" />
+        <circle cx="128" cy="128" r="8" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+
+  if (mode === "gallery") {
+    return (
+      <svg {...commonProps}>
+        <rect x="34" y="54" width="188" height="148" rx="20" />
+        <circle cx="92" cy="104" r="18" />
+        <path d="M66 178l50-50 34 34 22-22 34 38" />
+      </svg>
+    );
+  }
+
   return (
-    <span style={styles.modeIconStack}>
-      <img
-        src={mode.iconSrc}
-        alt=""
-        aria-hidden="true"
-        draggable={false}
-        width={140}
-        height={96}
-        style={{
-          ...styles.modeIconArtwork,
-          ...(isActive ? styles.modeIconArtworkActive : null),
-        }}
-      />
-    </span>
+    <svg {...commonProps}>
+      <rect x="58" y="42" width="140" height="176" rx="20" />
+      <path d="M96 42a32 32 0 0 1 64 0" />
+      <path d="M92 104h72M92 142h72M92 180h48" />
+    </svg>
   );
 }
 
@@ -350,13 +387,16 @@ export default function RomeoAtlasWindowPage({
           }
           .romeo-mode-lens:hover,
           .romeo-mode-lens:focus-visible {
-            color: rgba(198, 140, 58, 0.88);
+            color: rgba(211, 156, 78, 0.86);
             outline: none;
             transform: scale(1.015);
           }
           .romeo-mode-lens[data-active="true"] {
-            color: rgba(198, 140, 58, 0.9);
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+            color: rgba(239, 190, 116, 0.96);
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.62);
+          }
+          .romeo-mode-lens[data-active="true"] > span {
+            opacity: 1 !important;
           }
         `}</style>
       <section
@@ -450,7 +490,10 @@ export default function RomeoAtlasWindowPage({
                   data-active={isActive ? "true" : "false"}
                   title={mode.label}
                 >
-                  <ModeIcon mode={mode} isActive={isActive} />
+                  <span style={styles.modeIconStack}>
+                    <ModeIcon mode={mode.id} />
+                  </span>
+                  <span style={styles.modeLabel}>{mode.label}</span>
                 </button>
               );
             })}
@@ -859,16 +902,16 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     placeItems: "center",
     alignContent: "center",
-    gap: "0.34rem",
+    gap: "0.2rem",
     minHeight: "4.85rem",
-    padding: "0.26rem 0.08rem 0.14rem",
+    padding: "0.28rem 0.08rem 0.16rem",
     boxSizing: "border-box",
-    color: "rgba(155,104,42,0.64)",
+    color: "rgba(201,151,82,0.6)",
     textAlign: "center",
     touchAction: "manipulation",
   },
   modeButtonActive: {
-    color: "rgba(198,140,58,0.9)",
+    color: "rgba(239,190,116,0.96)",
   },
   modeIconStack: {
     position: "relative",
@@ -876,33 +919,26 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     placeItems: "center",
     width: "100%",
-    minHeight: "3.8rem",
+    minHeight: "3.15rem",
     borderRadius: "1.25rem",
-    background:
-      "radial-gradient(circle at 50% 48%, rgba(99,64,25,0.2), rgba(23,17,12,0.12) 48%, transparent 72%)",
-    boxShadow:
-      "inset 0 1px 2px rgba(255,218,150,0.05), inset 0 -2px 4px rgba(0,0,0,0.2)",
-    userSelect: "none",
-    pointerEvents: "none",
-  },
-  modeIconArtwork: {
-    display: "block",
-    width: "min(100%, clamp(3.2rem, 18vw, 5.2rem))",
-    height: "auto",
-    maxHeight: "4.2rem",
-    objectFit: "contain",
-    userSelect: "none",
-    pointerEvents: "none",
+    color: "currentColor",
     opacity: 0.6,
-    filter:
-      "brightness(0.62) sepia(0.3) saturate(0.82) hue-rotate(350deg) contrast(1.08) drop-shadow(0 1px 0 rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(196,140,58,.22))",
-    mixBlendMode: "multiply",
+    filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.62))",
+    userSelect: "none",
+    pointerEvents: "none",
   },
-  modeIconArtworkActive: {
-    opacity: 0.9,
-    filter:
-      "brightness(0.76) sepia(0.28) saturate(0.9) hue-rotate(350deg) contrast(1.12) drop-shadow(0 1px 0 rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(196,140,58,.22))",
-    mixBlendMode: "normal",
+  modeLabel: {
+    display: "block",
+    color: "currentColor",
+    fontSize: "0.58rem",
+    fontWeight: 600,
+    letterSpacing: "0.1em",
+    lineHeight: 1.1,
+    textTransform: "uppercase",
+    opacity: 0.6,
+    textShadow: "0 1px 0 rgba(0,0,0,0.62)",
+    userSelect: "none",
+    pointerEvents: "none",
   },
   askDock: {
     display: "grid",
