@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 
@@ -115,6 +116,21 @@ function MemorySeparator() {
       <span style={styles.memorySeparatorGlyph}>atlas / memory</span>
       <span style={styles.memorySeparatorStar}>✧</span>
     </div>
+  );
+}
+
+function ModeIcon({ mode }: { mode: RomeoAtlasMode }) {
+  return (
+    <Image
+      src={`/${mode}.svg`}
+      alt=""
+      aria-hidden="true"
+      draggable={false}
+      width={64}
+      height={64}
+      unoptimized
+      style={styles.modeIconArtwork}
+    />
   );
 }
 
@@ -313,50 +329,65 @@ export default function RomeoAtlasWindowPage({
           .romeo-atlas-back-link:active {
             transform: scale(0.995);
           }
-          .romeo-atlas-nav-clean-room,
-          .romeo-atlas-nav-image-frame {
-            isolation: isolate !important;
-            opacity: 1 !important;
-            filter: none !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            mask-image: none !important;
-            -webkit-mask-image: none !important;
-            mix-blend-mode: normal !important;
-          }
-          .romeo-atlas-nav-clean-room::before,
-          .romeo-atlas-nav-clean-room::after,
-          .romeo-atlas-nav-image-frame::before,
-          .romeo-atlas-nav-image-frame::after,
-          .romeo-atlas-nav-image::before,
-          .romeo-atlas-nav-image::after {
-            content: none !important;
-            display: none !important;
-          }
-          .romeo-atlas-nav-image {
-            display: block;
-            width: 100%;
-            height: auto;
-            opacity: 1 !important;
-            filter: none !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            mix-blend-mode: normal !important;
-            transform: none;
-            mask-image: none !important;
-            -webkit-mask-image: none !important;
-            pointer-events: none;
-            user-select: none;
-          }
-          .romeo-atlas-nav-absolute-button {
+          .romeo-mode-lens {
             -webkit-tap-highlight-color: transparent;
+            transform: scale(1);
+            transform-origin: center;
+            transition:
+              color 180ms ease,
+              filter 180ms ease,
+              opacity 180ms ease,
+              text-shadow 180ms ease,
+              transform 180ms ease;
+          }
+          .romeo-mode-lens:hover,
+          .romeo-mode-lens:focus-visible {
+            color: rgba(255, 231, 176, 0.98);
+            filter:
+              drop-shadow(0 0 11px rgba(247,184,95,0.36))
+              drop-shadow(0 0 24px rgba(226,150,72,0.22));
+            opacity: 1;
             outline: none;
+            transform: scale(1.03);
           }
-          .romeo-atlas-nav-absolute-button:focus-visible {
-            box-shadow: inset 0 0 0 1px rgba(255, 224, 166, 0.46);
+          .romeo-mode-lens[data-active="true"] {
+            color: rgba(255, 232, 174, 0.98);
+            filter:
+              drop-shadow(0 0 12px rgba(255,211,128,0.68))
+              drop-shadow(0 0 30px rgba(239,166,75,0.42))
+              drop-shadow(0 0 54px rgba(185,106,42,0.18));
+            opacity: 1;
+            text-shadow: 0 0 13px rgba(255, 211, 128, 0.34);
           }
-          .romeo-atlas-nav-absolute-button[data-active="true"] {
-            cursor: default;
+          .romeo-mode-icon {
+            transition: filter 180ms ease, opacity 180ms ease, transform 180ms ease;
+          }
+          .romeo-mode-icon::before {
+            content: "";
+            position: absolute;
+            inset: 5%;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(255, 211, 128, 0.34), rgba(239, 166, 75, 0.12) 42%, transparent 72%);
+            filter: blur(8px);
+            opacity: 0;
+            transform: scale(0.88);
+            transition: opacity 180ms ease, transform 180ms ease;
+          }
+          .romeo-mode-lens:hover .romeo-mode-icon,
+          .romeo-mode-lens:focus-visible .romeo-mode-icon {
+            filter:
+              drop-shadow(0 0 7px rgba(245,191,110,0.44))
+              drop-shadow(0 0 18px rgba(226,150,72,0.22));
+          }
+          .romeo-mode-lens[data-active="true"] .romeo-mode-icon {
+            filter:
+              drop-shadow(0 0 9px rgba(255,216,139,0.74))
+              drop-shadow(0 0 22px rgba(247,184,95,0.46))
+              drop-shadow(0 0 36px rgba(226,150,72,0.28));
+          }
+          .romeo-mode-lens[data-active="true"] .romeo-mode-icon::before {
+            opacity: 1;
+            transform: scale(1.06);
           }
         `}</style>
       <section
@@ -432,44 +463,115 @@ export default function RomeoAtlasWindowPage({
           style={styles.bottomZone}
           aria-label="Atlas controls and Ask Anything"
         >
-          <nav
-            className="romeo-atlas-nav-clean-room"
-            style={styles.romeoAtlasNavCleanRoom}
-            aria-label="Atlas controls"
-          >
-            <div
-              className="romeo-atlas-nav-image-frame"
-              style={styles.romeoAtlasNavImageFrame}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/ui/atlas-nav.svg"
-                alt="Atlas navigation"
-                className="romeo-atlas-nav-image"
+          <nav style={styles.modeRail} aria-label="Atlas controls">
+            <div style={styles.constellationLayer} aria-hidden="true">
+              <span
+                style={{
+                  ...styles.constellationLine,
+                  left: "16%",
+                  width: "18%",
+                  top: "44%",
+                  transform: "rotate(-5deg)",
+                }}
               />
-              {MODE_OPTIONS.map((mode, index) => {
-                const isActive = mode.id === activeMode;
-                return (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    onClick={() => setActiveMode(mode.id)}
-                    className="romeo-atlas-nav-absolute-button"
-                    style={{
-                      ...styles.romeoAtlasNavAbsoluteButton,
-                      left: `${index * 20}%`,
-                    }}
-                    aria-label={`${mode.label} lens`}
-                    aria-pressed={isActive}
-                    data-active={isActive ? "true" : "false"}
-                    title={mode.label}
-                  >
-                    <span style={styles.visuallyHidden}>{mode.label}</span>
-                  </button>
-                );
-              })}
+              <span
+                style={{
+                  ...styles.constellationLine,
+                  left: "33%",
+                  width: "18%",
+                  top: "42%",
+                  transform: "rotate(6deg)",
+                }}
+              />
+              <span
+                style={{
+                  ...styles.constellationLine,
+                  left: "50%",
+                  width: "18%",
+                  top: "44%",
+                  transform: "rotate(-4deg)",
+                }}
+              />
+              <span
+                style={{
+                  ...styles.constellationLine,
+                  left: "67%",
+                  width: "18%",
+                  top: "43%",
+                  transform: "rotate(5deg)",
+                }}
+              />
+              <span
+                style={{ ...styles.constellationDot, left: "18%", top: "37%" }}
+              />
+              <span
+                style={{
+                  ...styles.constellationDot,
+                  left: "28%",
+                  top: "49%",
+                  opacity: 0.3,
+                }}
+              />
+              <span
+                style={{ ...styles.constellationDot, left: "38%", top: "34%" }}
+              />
+              <span
+                style={{
+                  ...styles.constellationDot,
+                  left: "48%",
+                  top: "50%",
+                  opacity: 0.34,
+                }}
+              />
+              <span
+                style={{ ...styles.constellationDot, left: "58%", top: "36%" }}
+              />
+              <span
+                style={{
+                  ...styles.constellationDot,
+                  left: "68%",
+                  top: "50%",
+                  opacity: 0.32,
+                }}
+              />
+              <span
+                style={{ ...styles.constellationDot, left: "78%", top: "35%" }}
+              />
+              <span style={{ ...styles.constellationDrop, left: "22%" }} />
+              <span
+                style={{
+                  ...styles.constellationDrop,
+                  left: "50%",
+                  height: "1.25rem",
+                  opacity: 0.2,
+                }}
+              />
+              <span style={{ ...styles.constellationDrop, left: "74%" }} />
             </div>
-            <p style={styles.romeoAtlasNavLoadedFallback}>NAV SVG LOADED</p>
+            {MODE_OPTIONS.map((mode) => {
+              const isActive = mode.id === activeMode;
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => setActiveMode(mode.id)}
+                  className="romeo-mode-lens"
+                  style={{
+                    ...styles.modeButton,
+                    ...(isActive ? styles.modeButtonActive : null),
+                  }}
+                  aria-label={`${mode.label} lens`}
+                  aria-pressed={isActive}
+                  data-active={isActive ? "true" : "false"}
+                  title={mode.label}
+                >
+                  <span className="romeo-mode-icon" style={styles.modeIcon}>
+                    <ModeIcon mode={mode.id} />
+                  </span>
+                  <span style={styles.modeLabel}>{mode.label}</span>
+                </button>
+              );
+            })}
           </nav>
 
           <form style={styles.askDock} onSubmit={handleAskSubmit}>
@@ -856,93 +958,106 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     gap: "0.62rem",
   },
-  romeoAtlasNavCleanRoom: {
+  modeRail: {
     position: "relative",
-    width: "100%",
-    maxWidth: "760px",
-    margin: "0 auto",
-    zIndex: 50,
-    isolation: "isolate",
-    minHeight: "120px",
-    filter: "none",
-    backdropFilter: "none",
-    WebkitBackdropFilter: "none",
-    maskImage: "none",
-    WebkitMaskImage: "none",
-    opacity: 1,
-    mixBlendMode: "normal",
-    background: "transparent",
+    display: "grid",
+    gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+    gap: 0,
+    alignItems: "stretch",
+    padding: "0.24rem clamp(0.16rem, 1.2vw, 0.46rem) 0.18rem",
     border: 0,
     outline: "none",
+    background: "transparent",
     boxShadow: "none",
     overflow: "visible",
   },
-  romeoAtlasNavImageFrame: {
-    position: "relative",
-    zIndex: 50,
-    isolation: "isolate",
-    width: "100%",
-    minHeight: "120px",
-    filter: "none",
-    backdropFilter: "none",
-    WebkitBackdropFilter: "none",
-    maskImage: "none",
-    WebkitMaskImage: "none",
-    opacity: 1,
-    mixBlendMode: "normal",
-    background: "transparent",
-    border: 0,
-    outline: "none",
-    boxShadow: "none",
-    overflow: "visible",
-  },
-  romeoAtlasNavAbsoluteButton: {
-    all: "unset",
+  constellationLayer: {
     position: "absolute",
-    top: 0,
-    bottom: 0,
-    width: "20%",
-    cursor: "pointer",
-    touchAction: "manipulation",
-    background: "transparent",
-    border: 0,
-    outline: "none",
-    boxShadow: "none",
-    color: "transparent",
-    filter: "none",
-    backdropFilter: "none",
-    WebkitBackdropFilter: "none",
-    maskImage: "none",
-    WebkitMaskImage: "none",
-    opacity: 1,
-    mixBlendMode: "normal",
+    inset: "0.18rem 0.62rem 1.3rem",
+    zIndex: 0,
+    pointerEvents: "none",
+    opacity: 0.46,
   },
-  romeoAtlasNavLoadedFallback: {
-    margin: "0.28rem 0 0",
-    color: "rgba(255, 238, 207, 0.72)",
-    fontSize: "0.58rem",
-    fontWeight: 700,
-    letterSpacing: "0.2em",
-    textAlign: "center",
-    textTransform: "uppercase",
-    filter: "none",
-    backdropFilter: "none",
-    WebkitBackdropFilter: "none",
-    maskImage: "none",
-    WebkitMaskImage: "none",
-    opacity: 1,
-    mixBlendMode: "normal",
-  },
-  visuallyHidden: {
+  constellationLine: {
     position: "absolute",
-    width: 1,
     height: 1,
-    padding: 0,
-    margin: -1,
-    overflow: "hidden",
-    clip: "rect(0, 0, 0, 0)",
-    whiteSpace: "nowrap",
+    transformOrigin: "left center",
+    background:
+      "linear-gradient(90deg, transparent, rgba(245, 196, 119, 0.16), transparent)",
+    boxShadow: "0 0 7px rgba(226, 150, 72, 0.1)",
+  },
+  constellationDot: {
+    position: "absolute",
+    width: "0.19rem",
+    height: "0.19rem",
+    borderRadius: "999px",
+    background: "rgba(249, 207, 137, 0.48)",
+    boxShadow: "0 0 7px rgba(238, 168, 84, 0.24)",
+  },
+  constellationDrop: {
+    position: "absolute",
+    top: "48%",
+    width: 1,
+    height: "1.45rem",
+    background:
+      "linear-gradient(180deg, rgba(245,196,119,0.26), rgba(245,196,119,0.04), transparent)",
+    boxShadow: "0 0 8px rgba(226,150,72,0.12)",
+    opacity: 0.24,
+  },
+  modeButton: {
+    all: "unset",
+    position: "relative",
+    zIndex: 1,
+    cursor: "pointer",
+    display: "grid",
+    justifyItems: "center",
+    alignContent: "center",
+    gap: "0.34rem",
+    minHeight: "4.85rem",
+    padding: "0.26rem 0.08rem 0.14rem",
+    color: "rgba(224,177,100,0.68)",
+    textAlign: "center",
+    filter:
+      "drop-shadow(0 0 5px rgba(226,152,75,0.12)) drop-shadow(0 0 13px rgba(226,150,72,0.07))",
+    opacity: 0.85,
+    touchAction: "manipulation",
+  },
+  modeButtonActive: {
+    color: "rgba(255,229,168,0.98)",
+    filter:
+      "drop-shadow(0 0 9px rgba(247,184,95,0.62)) drop-shadow(0 0 24px rgba(226,150,72,0.36))",
+    opacity: 1,
+  },
+  modeIcon: {
+    position: "relative",
+    width: "clamp(2.42rem, 11.5vw, 3.32rem)",
+    height: "clamp(2.42rem, 10.4vw, 3rem)",
+    display: "grid",
+    placeItems: "center",
     border: 0,
+    outline: "none",
+    background: "transparent",
+    boxShadow: "none",
+    overflow: "visible",
+  },
+  modeIconArtwork: {
+    position: "relative",
+    zIndex: 1,
+    display: "block",
+    width: "clamp(2.18rem, 9.6vw, 2.72rem)",
+    height: "clamp(2.18rem, 9.6vw, 2.72rem)",
+    objectFit: "contain",
+    opacity: 1,
+    userSelect: "none",
+    pointerEvents: "none",
+  },
+  modeLabel: {
+    color: "currentColor",
+    fontSize: "clamp(0.49rem, 1.65vw, 0.58rem)",
+    fontWeight: 600,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    textShadow: "0 0 9px rgba(226,150,72,0.28)",
   },
   askDock: {
     display: "grid",
