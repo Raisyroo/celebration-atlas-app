@@ -313,18 +313,38 @@ export default function RomeoAtlasWindowPage({
           .romeo-atlas-back-link:active {
             transform: scale(0.995);
           }
+          .romeo-atlas-nav-clean-room,
+          .romeo-atlas-nav-image-frame {
+            isolation: isolate !important;
+            opacity: 1 !important;
+            filter: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            mask-image: none !important;
+            -webkit-mask-image: none !important;
+            mix-blend-mode: normal !important;
+          }
+          .romeo-atlas-nav-clean-room::before,
+          .romeo-atlas-nav-clean-room::after,
+          .romeo-atlas-nav-image-frame::before,
+          .romeo-atlas-nav-image-frame::after,
+          .romeo-atlas-nav-image::before,
+          .romeo-atlas-nav-image::after {
+            content: none !important;
+            display: none !important;
+          }
           .romeo-atlas-nav-image {
             display: block;
             width: 100%;
             height: auto;
-            object-fit: contain;
-            filter: none;
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-            mask-image: none;
-            -webkit-mask-image: none;
-            opacity: 1;
-            mix-blend-mode: normal;
+            opacity: 1 !important;
+            filter: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            mix-blend-mode: normal !important;
+            transform: none;
+            mask-image: none !important;
+            -webkit-mask-image: none !important;
             pointer-events: none;
             user-select: none;
           }
@@ -841,7 +861,9 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     maxWidth: "760px",
     margin: "0 auto",
-    zIndex: 20,
+    zIndex: 50,
+    isolation: "isolate",
+    minHeight: "120px",
     filter: "none",
     backdropFilter: "none",
     WebkitBackdropFilter: "none",
@@ -857,7 +879,10 @@ const styles: Record<string, CSSProperties> = {
   },
   romeoAtlasNavImageFrame: {
     position: "relative",
+    zIndex: 50,
+    isolation: "isolate",
     width: "100%",
+    minHeight: "120px",
     filter: "none",
     backdropFilter: "none",
     WebkitBackdropFilter: "none",
