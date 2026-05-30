@@ -82,7 +82,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     cardMedia: {
       mediaType: 'video',
       mediaSrc: '/event-media/romeo-peach-loop.mp4',
-      atmosphereTitle: 'Orchard glow',
+      atmosphereTitle: 'First Peach Queen',
       mediaPosition: '43% 18%',
       mediaScale: 1,
       mediaMaskProfile: 'romeoPeach',

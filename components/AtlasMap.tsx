@@ -181,8 +181,9 @@ export default function AtlasMap() {
   const mediaMask = selectedMedia?.mediaMaskProfile ? MEDIA_MASKS[selectedMedia.mediaMaskProfile] : undefined;
   const cardBaseTheme = renderedEvent ? CARD_THEME_BY_CATEGORY[renderedEvent.category] : CARD_THEME_BY_CATEGORY.Festivals;
   const cardTheme = blendCardTheme(cardBaseTheme, renderedEvent?.regionAtmosphere);
-  const cardCue = renderedEvent?.iconType ? CARD_CUE_BY_ICON_TYPE[renderedEvent.iconType] : null;
-  const cardMemoryExcerpt = renderedEvent?.atlasMemories?.[0]?.trim();
+  const shouldSimplifyRomeoPeachCard = renderedEvent?.id === 'romeo-peach';
+  const cardCue = !shouldSimplifyRomeoPeachCard && renderedEvent?.iconType ? CARD_CUE_BY_ICON_TYPE[renderedEvent.iconType] : null;
+  const cardMemoryExcerpt = shouldSimplifyRomeoPeachCard ? undefined : renderedEvent?.atlasMemories?.[0]?.trim();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
