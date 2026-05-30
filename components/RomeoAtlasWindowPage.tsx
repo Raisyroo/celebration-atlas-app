@@ -25,11 +25,11 @@ type RomeoAtlasWindowPageProps = {
 };
 
 const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
-  { id: "highlights", label: "Highlights", iconSrc: "/highlights-icon.svg" },
-  { id: "schedule", label: "Schedule", iconSrc: "/schedule-icon.svg" },
-  { id: "maps", label: "Maps", iconSrc: "/maps-icon.svg" },
-  { id: "gallery", label: "Gallery", iconSrc: "/gallery-icon.svg" },
-  { id: "plan", label: "Plan", iconSrc: "/plan-icon.svg" },
+  { id: "highlights", label: "Highlights", iconSrc: "/ui/highlights-icon.svg" },
+  { id: "schedule", label: "Schedule", iconSrc: "/ui/schedule-icon.svg" },
+  { id: "maps", label: "Maps", iconSrc: "/ui/maps-icon.svg" },
+  { id: "gallery", label: "Gallery", iconSrc: "/ui/gallery-icon.svg" },
+  { id: "plan", label: "Plan", iconSrc: "/ui/plan-icon.svg" },
 ] as const;
 
 const GALLERY_MOMENTS: readonly GalleryMoment[] = [
@@ -483,6 +483,7 @@ export default function RomeoAtlasWindowPage({
                   title={mode.label}
                 >
                   <ModeIcon mode={mode} />
+                  <span style={styles.modeLabel}>{mode.label}</span>
                 </button>
               );
             })}
@@ -908,6 +909,18 @@ const styles: Record<string, CSSProperties> = {
     filter:
       "drop-shadow(0 0 9px rgba(247,184,95,0.62)) drop-shadow(0 0 24px rgba(226,150,72,0.36))",
     opacity: 1,
+  },
+  modeLabel: {
+    position: "relative",
+    zIndex: 1,
+    color: "currentColor",
+    fontSize: "0.58rem",
+    fontWeight: 600,
+    letterSpacing: "0.11em",
+    lineHeight: 1,
+    textTransform: "uppercase",
+    userSelect: "none",
+    pointerEvents: "none",
   },
   modeIconArtwork: {
     position: "relative",
