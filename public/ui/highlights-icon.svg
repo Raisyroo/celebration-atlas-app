@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Highlights">
+  <g stroke="#e2ac5c" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 8.5l4.9 14.6 14.6 4.9-14.6 4.9L32 47.5l-4.9-14.6-14.6-4.9 14.6-4.9L32 8.5z" stroke-width="2.6"/>
+    <path d="M32 15.5v25M19.5 28h25M23.2 19.2l17.6 17.6M40.8 19.2L23.2 36.8" stroke-width="1.15" opacity=".58"/>
+    <path d="M49 42.5l1.6 4.5 4.4 1.6-4.4 1.5-1.6 4.6-1.5-4.6-4.5-1.5 4.5-1.6 1.5-4.5zM13.8 12.2l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z" stroke-width="1.6"/>
+    <circle cx="52.5" cy="28" r="1.2" fill="#e2ac5c" stroke="none" opacity=".75"/>
+    <circle cx="11.5" cy="28" r="1.2" fill="#e2ac5c" stroke="none" opacity=".75"/>
+  </g>
+</svg>

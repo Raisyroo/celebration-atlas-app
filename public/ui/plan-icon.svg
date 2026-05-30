@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Plan">
+  <g stroke="#e2ac5c" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 8.5h22l8 8.2v38.8H21V8.5z" stroke-width="2.35"/>
+    <path d="M43 8.5V17h8" stroke-width="2.15"/>
+    <path d="M27 26h16M27 34h16M27 42h10" stroke-width="2.15"/>
+    <path d="M14 17.5v38h28" stroke-width="1.8" opacity=".66"/>
+    <path d="M32 18.3l2 5.9 5.9 2-5.9 2-2 5.9-2-5.9-5.9-2 5.9-2 2-5.9z" stroke-width="1.2" opacity=".52"/>
+    <path d="M17.2 9.8c2.2-3.5 6.4-4.4 9.2-2M49.8 54.2c-2.2 3.5-6.4 4.4-9.2 2" stroke-width="1.05" opacity=".45"/>
+  </g>
+</svg>
