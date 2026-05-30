@@ -2,7 +2,6 @@
 
 import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
-import Image from "next/image";
 
 type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 
@@ -121,17 +120,21 @@ function MemorySeparator() {
 }
 
 function ModeIcon({ mode }: { mode: RomeoAtlasModeOption }) {
+  const filename = mode.iconSrc.split("/").at(-1) ?? mode.iconSrc;
+
   return (
-    <Image
-      src={mode.iconSrc}
-      alt=""
-      aria-hidden="true"
-      draggable={false}
-      width={140}
-      height={96}
-      unoptimized
-      style={styles.modeIconArtwork}
-    />
+    <span style={styles.modeIconStack}>
+      <img
+        src={mode.iconSrc}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        width={140}
+        height={96}
+        style={styles.modeIconArtwork}
+      />
+      <span style={styles.modeIconFilename}>{filename}</span>
+    </span>
   );
 }
 
@@ -336,59 +339,18 @@ export default function RomeoAtlasWindowPage({
             transform-origin: center;
             transition:
               color 180ms ease,
-              filter 180ms ease,
-              opacity 180ms ease,
               text-shadow 180ms ease,
               transform 180ms ease;
           }
           .romeo-mode-lens:hover,
           .romeo-mode-lens:focus-visible {
             color: rgba(255, 231, 176, 0.98);
-            filter:
-              drop-shadow(0 0 11px rgba(247,184,95,0.36))
-              drop-shadow(0 0 24px rgba(226,150,72,0.22));
-            opacity: 1;
             outline: none;
             transform: scale(1.03);
           }
           .romeo-mode-lens[data-active="true"] {
             color: rgba(255, 232, 174, 0.98);
-            filter:
-              drop-shadow(0 0 12px rgba(255,211,128,0.68))
-              drop-shadow(0 0 30px rgba(239,166,75,0.42))
-              drop-shadow(0 0 54px rgba(185,106,42,0.18));
-            opacity: 1;
             text-shadow: 0 0 13px rgba(255, 211, 128, 0.34);
-          }
-          .romeo-mode-icon {
-            transition: filter 180ms ease, opacity 180ms ease, transform 180ms ease;
-          }
-          .romeo-mode-icon::before {
-            content: "";
-            position: absolute;
-            inset: 5%;
-            border-radius: 999px;
-            background: radial-gradient(circle, rgba(255, 211, 128, 0.34), rgba(239, 166, 75, 0.12) 42%, transparent 72%);
-            filter: blur(8px);
-            opacity: 0;
-            transform: scale(0.88);
-            transition: opacity 180ms ease, transform 180ms ease;
-          }
-          .romeo-mode-lens:hover .romeo-mode-icon,
-          .romeo-mode-lens:focus-visible .romeo-mode-icon {
-            filter:
-              drop-shadow(0 0 7px rgba(245,191,110,0.44))
-              drop-shadow(0 0 18px rgba(226,150,72,0.22));
-          }
-          .romeo-mode-lens[data-active="true"] .romeo-mode-icon {
-            filter:
-              drop-shadow(0 0 9px rgba(255,216,139,0.74))
-              drop-shadow(0 0 22px rgba(247,184,95,0.46))
-              drop-shadow(0 0 36px rgba(226,150,72,0.28));
-          }
-          .romeo-mode-lens[data-active="true"] .romeo-mode-icon::before {
-            opacity: 1;
-            transform: scale(1.06);
           }
         `}</style>
       <section
@@ -899,16 +861,10 @@ const styles: Record<string, CSSProperties> = {
     padding: "0.26rem 0.08rem 0.14rem",
     color: "rgba(224,177,100,0.68)",
     textAlign: "center",
-    filter:
-      "drop-shadow(0 0 5px rgba(226,152,75,0.12)) drop-shadow(0 0 13px rgba(226,150,72,0.07))",
-    opacity: 0.85,
     touchAction: "manipulation",
   },
   modeButtonActive: {
     color: "rgba(255,229,168,0.98)",
-    filter:
-      "drop-shadow(0 0 9px rgba(247,184,95,0.62)) drop-shadow(0 0 24px rgba(226,150,72,0.36))",
-    opacity: 1,
   },
   modeLabel: {
     position: "relative",
@@ -922,17 +878,31 @@ const styles: Record<string, CSSProperties> = {
     userSelect: "none",
     pointerEvents: "none",
   },
-  modeIconArtwork: {
+  modeIconStack: {
     position: "relative",
     zIndex: 1,
+    display: "grid",
+    justifyItems: "center",
+    gap: "0.16rem",
+    userSelect: "none",
+    pointerEvents: "none",
+  },
+  modeIconArtwork: {
     display: "block",
     width: "min(100%, clamp(3.2rem, 18vw, 5.2rem))",
     height: "auto",
     maxHeight: "4.2rem",
     objectFit: "contain",
-    opacity: 1,
     userSelect: "none",
     pointerEvents: "none",
+  },
+  modeIconFilename: {
+    color: "rgba(246, 226, 190, 0.72)",
+    fontSize: "0.48rem",
+    letterSpacing: "0.02em",
+    lineHeight: 1,
+    textTransform: "none",
+    whiteSpace: "nowrap",
   },
   askDock: {
     display: "grid",

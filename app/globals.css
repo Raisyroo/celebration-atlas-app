@@ -213,25 +213,14 @@ body.event-detail-scroll::-webkit-scrollbar {
 }
 
 .romeo-mode-lens {
-  transition:
-    opacity 180ms ease,
-    filter 220ms ease,
-    transform 180ms ease;
+  transition: transform 180ms ease;
 }
 
 .romeo-mode-lens:hover,
 .romeo-mode-lens:focus-visible {
-  opacity: 1 !important;
-  filter: drop-shadow(0 0 8px rgba(247, 184, 95, 0.42))
-    drop-shadow(0 0 18px rgba(226, 150, 72, 0.2)) !important;
   transform: translateY(-1px) scale(1.03);
 }
 
 .romeo-mode-lens:active {
   transform: translateY(1px) scale(0.97);
-}
-
-.romeo-mode-lens[data-active="true"] {
-  filter: drop-shadow(0 0 10px rgba(247, 184, 95, 0.62))
-    drop-shadow(0 0 24px rgba(226, 150, 72, 0.34)) !important;
 }
