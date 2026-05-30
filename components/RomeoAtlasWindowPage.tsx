@@ -318,13 +318,10 @@ export default function RomeoAtlasWindowPage({
             width: 100%;
             max-width: 100%;
             height: auto;
+            min-height: 80px;
             object-fit: contain;
-            opacity: 0.78;
-            filter:
-              saturate(1.04)
-              brightness(0.94)
-              drop-shadow(0 0 10px rgba(226, 150, 72, 0.16))
-              drop-shadow(0 0 24px rgba(226, 150, 72, 0.08));
+            outline: 1px solid red;
+            background: rgba(255, 0, 0, 0.05);
             pointer-events: none;
             user-select: none;
           }
@@ -421,8 +418,7 @@ export default function RomeoAtlasWindowPage({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/ui/atlas-nav.svg"
-              alt=""
-              aria-hidden="true"
+              alt="Atlas lens navigation"
               draggable={false}
               className="romeo-atlas-nav-art"
             />
