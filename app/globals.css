@@ -18,7 +18,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-
 html,
 body {
   margin: 0;
@@ -37,7 +36,6 @@ body {
 body::-webkit-scrollbar {
   display: none;
 }
-
 
 html.event-detail-scroll,
 body.event-detail-scroll {
@@ -66,12 +64,14 @@ body.event-detail-scroll::-webkit-scrollbar {
 
 .atlas-event-shell::before {
   /* Requires manually provisioned asset: public/backgrounds/midnight-atlas-bg-v1.webp */
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
   background-color: #050812;
-  background-image: linear-gradient(rgba(5, 8, 18, 0.18), rgba(5, 8, 18, 0.18)), url('/backgrounds/midnight-atlas-bg-v1.webp');
+  background-image:
+    linear-gradient(rgba(5, 8, 18, 0.18), rgba(5, 8, 18, 0.18)),
+    url("/backgrounds/midnight-atlas-bg-v1.webp");
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -96,7 +96,9 @@ body.event-detail-scroll::-webkit-scrollbar {
     width: min(100%, 1120px);
     height: min(100%, 980px);
     border-radius: 28px;
-    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.48), inset 0 0 0 1px rgba(255, 236, 196, 0.06);
+    box-shadow:
+      0 28px 60px rgba(0, 0, 0, 0.48),
+      inset 0 0 0 1px rgba(255, 236, 196, 0.06);
     overflow: hidden;
   }
 
@@ -141,7 +143,12 @@ body.event-detail-scroll::-webkit-scrollbar {
 .event-portrait-canvas,
 .event-portrait-conversation-layers,
 .event-portrait-ask-dock {
-  transition: left 320ms ease, right 320ms ease, width 320ms ease, bottom 320ms ease, transform 320ms ease;
+  transition:
+    left 320ms ease,
+    right 320ms ease,
+    width 320ms ease,
+    bottom 320ms ease,
+    transform 320ms ease;
 }
 
 .event-portrait-ask-dock {
@@ -149,13 +156,18 @@ body.event-detail-scroll::-webkit-scrollbar {
 }
 
 .event-portrait-ask-dock::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 2.65rem;
   right: 2.6rem;
   top: 0.34rem;
   height: 1px;
-  background: linear-gradient(90deg, rgba(210, 173, 112, 0), rgba(210, 173, 112, 0.42), rgba(210, 173, 112, 0));
+  background: linear-gradient(
+    90deg,
+    rgba(210, 173, 112, 0),
+    rgba(210, 173, 112, 0.42),
+    rgba(210, 173, 112, 0)
+  );
   opacity: 0.55;
   pointer-events: none;
 }
@@ -175,7 +187,9 @@ body.event-detail-scroll::-webkit-scrollbar {
 
   .event-portrait-canvas {
     border-radius: 1.2rem;
-    box-shadow: 0 24px 55px rgba(2, 4, 10, 0.5), inset 0 0 0 1px rgba(255, 238, 210, 0.08);
+    box-shadow:
+      0 24px 55px rgba(2, 4, 10, 0.5),
+      inset 0 0 0 1px rgba(255, 238, 210, 0.08);
   }
 
   .event-portrait-conversation-layers {
@@ -190,7 +204,34 @@ body.event-detail-scroll::-webkit-scrollbar {
     position: absolute !important;
     left: calc(env(safe-area-inset-left, 0px) + 0.78rem) !important;
     right: calc(env(safe-area-inset-right, 0px) + 0.78rem) !important;
-    bottom: max(2%, calc(env(safe-area-inset-bottom, 0px) + 0.56rem)) !important;
+    bottom: max(
+      2%,
+      calc(env(safe-area-inset-bottom, 0px) + 0.56rem)
+    ) !important;
     width: auto !important;
   }
+}
+
+.romeo-mode-lens {
+  transition:
+    opacity 180ms ease,
+    filter 220ms ease,
+    transform 180ms ease;
+}
+
+.romeo-mode-lens:hover,
+.romeo-mode-lens:focus-visible {
+  opacity: 1 !important;
+  filter: drop-shadow(0 0 8px rgba(247, 184, 95, 0.42))
+    drop-shadow(0 0 18px rgba(226, 150, 72, 0.2)) !important;
+  transform: translateY(-1px) scale(1.03);
+}
+
+.romeo-mode-lens:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.romeo-mode-lens[data-active="true"] {
+  filter: drop-shadow(0 0 10px rgba(247, 184, 95, 0.62))
+    drop-shadow(0 0 24px rgba(226, 150, 72, 0.34)) !important;
 }
