@@ -680,6 +680,10 @@ const styles: Record<string, CSSProperties> = {
     overflowY: "auto",
     overscrollBehavior: "contain",
     WebkitOverflowScrolling: "touch",
+    WebkitMaskImage:
+      "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+    maskImage:
+      "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
     scrollbarWidth: "none",
     msOverflowStyle: "none",
     textShadow: "0 2px 18px rgba(0,0,0,0.58), 0 0 26px rgba(226,150,72,0.12)",
