@@ -2,7 +2,6 @@
 
 import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
-import Image from "next/image";
 
 type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 
@@ -116,21 +115,6 @@ function MemorySeparator() {
       <span style={styles.memorySeparatorGlyph}>atlas / memory</span>
       <span style={styles.memorySeparatorStar}>✧</span>
     </div>
-  );
-}
-
-function ModeIcon({ mode }: { mode: RomeoAtlasMode }) {
-  return (
-    <Image
-      src={`/${mode}.svg`}
-      alt=""
-      aria-hidden="true"
-      draggable={false}
-      width={64}
-      height={64}
-      unoptimized
-      style={styles.modeIconArtwork}
-    />
   );
 }
 
@@ -329,66 +313,93 @@ export default function RomeoAtlasWindowPage({
           .romeo-atlas-back-link:active {
             transform: scale(0.995);
           }
-          .romeo-mode-lens {
+          .romeo-atlas-nav-art {
+            display: block;
+            width: 100%;
+            height: auto;
+            opacity: 0.74;
+            filter:
+              saturate(1.04)
+              brightness(0.92)
+              drop-shadow(0 0 10px rgba(226, 150, 72, 0.16))
+              drop-shadow(0 0 24px rgba(226, 150, 72, 0.08));
+            pointer-events: none;
+            user-select: none;
+            transition: opacity 180ms ease, filter 180ms ease;
+          }
+          .romeo-atlas-nav-hit {
             -webkit-tap-highlight-color: transparent;
-            transform: scale(1);
-            transform-origin: center;
-            transition:
-              color 180ms ease,
-              filter 180ms ease,
-              opacity 180ms ease,
-              text-shadow 180ms ease,
-              transform 180ms ease;
-          }
-          .romeo-mode-lens:hover,
-          .romeo-mode-lens:focus-visible {
-            color: rgba(255, 231, 176, 0.98);
-            filter:
-              drop-shadow(0 0 11px rgba(247,184,95,0.36))
-              drop-shadow(0 0 24px rgba(226,150,72,0.22));
-            opacity: 1;
             outline: none;
-            transform: scale(1.03);
           }
-          .romeo-mode-lens[data-active="true"] {
-            color: rgba(255, 232, 174, 0.98);
-            filter:
-              drop-shadow(0 0 12px rgba(255,211,128,0.68))
-              drop-shadow(0 0 30px rgba(239,166,75,0.42))
-              drop-shadow(0 0 54px rgba(185,106,42,0.18));
-            opacity: 1;
-            text-shadow: 0 0 13px rgba(255, 211, 128, 0.34);
-          }
-          .romeo-mode-icon {
-            transition: filter 180ms ease, opacity 180ms ease, transform 180ms ease;
-          }
-          .romeo-mode-icon::before {
+          .romeo-atlas-nav-hit::before {
             content: "";
             position: absolute;
-            inset: 5%;
+            inset: 10% 6% 8%;
             border-radius: 999px;
-            background: radial-gradient(circle, rgba(255, 211, 128, 0.34), rgba(239, 166, 75, 0.12) 42%, transparent 72%);
-            filter: blur(8px);
+            background: radial-gradient(circle, rgba(255, 212, 137, 0.32), rgba(232, 156, 74, 0.13) 46%, transparent 73%);
+            filter: blur(10px);
             opacity: 0;
-            transform: scale(0.88);
+            transform: scale(0.92);
             transition: opacity 180ms ease, transform 180ms ease;
           }
-          .romeo-mode-lens:hover .romeo-mode-icon,
-          .romeo-mode-lens:focus-visible .romeo-mode-icon {
-            filter:
-              drop-shadow(0 0 7px rgba(245,191,110,0.44))
-              drop-shadow(0 0 18px rgba(226,150,72,0.22));
-          }
-          .romeo-mode-lens[data-active="true"] .romeo-mode-icon {
-            filter:
-              drop-shadow(0 0 9px rgba(255,216,139,0.74))
-              drop-shadow(0 0 22px rgba(247,184,95,0.46))
-              drop-shadow(0 0 36px rgba(226,150,72,0.28));
-          }
-          .romeo-mode-lens[data-active="true"] .romeo-mode-icon::before {
+          .romeo-atlas-nav-hit:hover::before,
+          .romeo-atlas-nav-hit:focus-visible::before,
+          .romeo-atlas-nav-hit[data-active="true"]::before {
             opacity: 1;
-            transform: scale(1.06);
+            transform: scale(1.03);
           }
+          .romeo-atlas-nav-hit:focus-visible {
+            box-shadow: inset 0 0 0 1px rgba(255, 224, 166, 0.46);
+          }
+          .romeo-atlas-nav-hit:nth-of-type(1) { left: 0%; }
+          .romeo-atlas-nav-hit:nth-of-type(2) { left: 20%; }
+          .romeo-atlas-nav-hit:nth-of-type(3) { left: 40%; }
+          .romeo-atlas-nav-hit:nth-of-type(4) { left: 60%; }
+          .romeo-atlas-nav-hit:nth-of-type(5) { left: 80%; }
+          .romeo-atlas-nav-hit[data-active="true"] {
+            cursor: default;
+          }
+          .romeo-atlas-nav-active-slice {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 180ms ease, filter 180ms ease;
+          }
+          .romeo-atlas-nav-hit:hover .romeo-atlas-nav-active-slice,
+          .romeo-atlas-nav-hit:focus-visible .romeo-atlas-nav-active-slice {
+            opacity: 0.76;
+            filter:
+              brightness(1.18)
+              saturate(1.08)
+              drop-shadow(0 0 9px rgba(255, 208, 126, 0.36))
+              drop-shadow(0 0 20px rgba(226, 150, 72, 0.2));
+          }
+          .romeo-atlas-nav-hit[data-active="true"] .romeo-atlas-nav-active-slice {
+            opacity: 1;
+            filter:
+              brightness(1.36)
+              saturate(1.14)
+              drop-shadow(0 0 10px rgba(255, 216, 139, 0.58))
+              drop-shadow(0 0 24px rgba(247, 184, 95, 0.34))
+              drop-shadow(0 0 42px rgba(226, 150, 72, 0.2));
+          }
+          .romeo-atlas-nav-active-slice img {
+            position: absolute;
+            top: 0;
+            width: 500%;
+            height: 100%;
+            max-width: none;
+            object-fit: fill;
+            pointer-events: none;
+            user-select: none;
+          }
+          .romeo-atlas-nav-hit:nth-of-type(1) .romeo-atlas-nav-active-slice img { left: 0%; }
+          .romeo-atlas-nav-hit:nth-of-type(2) .romeo-atlas-nav-active-slice img { left: -100%; }
+          .romeo-atlas-nav-hit:nth-of-type(3) .romeo-atlas-nav-active-slice img { left: -200%; }
+          .romeo-atlas-nav-hit:nth-of-type(4) .romeo-atlas-nav-active-slice img { left: -300%; }
+          .romeo-atlas-nav-hit:nth-of-type(5) .romeo-atlas-nav-active-slice img { left: -400%; }
         `}</style>
       <section
         style={styles.stage}
@@ -463,91 +474,15 @@ export default function RomeoAtlasWindowPage({
           style={styles.bottomZone}
           aria-label="Atlas controls and Ask Anything"
         >
-          <nav style={styles.modeRail} aria-label="Atlas controls">
-            <div style={styles.constellationLayer} aria-hidden="true">
-              <span
-                style={{
-                  ...styles.constellationLine,
-                  left: "16%",
-                  width: "18%",
-                  top: "44%",
-                  transform: "rotate(-5deg)",
-                }}
-              />
-              <span
-                style={{
-                  ...styles.constellationLine,
-                  left: "33%",
-                  width: "18%",
-                  top: "42%",
-                  transform: "rotate(6deg)",
-                }}
-              />
-              <span
-                style={{
-                  ...styles.constellationLine,
-                  left: "50%",
-                  width: "18%",
-                  top: "44%",
-                  transform: "rotate(-4deg)",
-                }}
-              />
-              <span
-                style={{
-                  ...styles.constellationLine,
-                  left: "67%",
-                  width: "18%",
-                  top: "43%",
-                  transform: "rotate(5deg)",
-                }}
-              />
-              <span
-                style={{ ...styles.constellationDot, left: "18%", top: "37%" }}
-              />
-              <span
-                style={{
-                  ...styles.constellationDot,
-                  left: "28%",
-                  top: "49%",
-                  opacity: 0.3,
-                }}
-              />
-              <span
-                style={{ ...styles.constellationDot, left: "38%", top: "34%" }}
-              />
-              <span
-                style={{
-                  ...styles.constellationDot,
-                  left: "48%",
-                  top: "50%",
-                  opacity: 0.34,
-                }}
-              />
-              <span
-                style={{ ...styles.constellationDot, left: "58%", top: "36%" }}
-              />
-              <span
-                style={{
-                  ...styles.constellationDot,
-                  left: "68%",
-                  top: "50%",
-                  opacity: 0.32,
-                }}
-              />
-              <span
-                style={{ ...styles.constellationDot, left: "78%", top: "35%" }}
-              />
-              <span style={{ ...styles.constellationDrop, left: "22%" }} />
-              <span
-                style={{
-                  ...styles.constellationDrop,
-                  left: "50%",
-                  height: "1.25rem",
-                  opacity: 0.2,
-                }}
-              />
-              <span style={{ ...styles.constellationDrop, left: "74%" }} />
-            </div>
+          <nav style={styles.atlasNavShell} aria-label="Atlas controls">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ui/atlas-nav.svg"
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              className="romeo-atlas-nav-art"
+            />
             {MODE_OPTIONS.map((mode) => {
               const isActive = mode.id === activeMode;
               return (
@@ -555,20 +490,22 @@ export default function RomeoAtlasWindowPage({
                   key={mode.id}
                   type="button"
                   onClick={() => setActiveMode(mode.id)}
-                  className="romeo-mode-lens"
-                  style={{
-                    ...styles.modeButton,
-                    ...(isActive ? styles.modeButtonActive : null),
-                  }}
+                  className="romeo-atlas-nav-hit"
+                  style={styles.atlasNavHit}
                   aria-label={`${mode.label} lens`}
                   aria-pressed={isActive}
                   data-active={isActive ? "true" : "false"}
                   title={mode.label}
                 >
-                  <span className="romeo-mode-icon" style={styles.modeIcon}>
-                    <ModeIcon mode={mode.id} />
+                  <span className="romeo-atlas-nav-active-slice" aria-hidden="true">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/ui/atlas-nav.svg"
+                      alt=""
+                      draggable={false}
+                    />
                   </span>
-                  <span style={styles.modeLabel}>{mode.label}</span>
+                  <span style={styles.visuallyHidden}>{mode.label}</span>
                 </button>
               );
             })}
@@ -958,106 +895,40 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     gap: "0.62rem",
   },
-  modeRail: {
+  atlasNavShell: {
     position: "relative",
-    display: "grid",
-    gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-    gap: 0,
-    alignItems: "stretch",
-    padding: "0.24rem clamp(0.16rem, 1.2vw, 0.46rem) 0.18rem",
+    width: "100%",
+    maxWidth: "min(100%, 36rem)",
+    margin: "0 auto",
     border: 0,
     outline: "none",
     background: "transparent",
     boxShadow: "none",
-    overflow: "visible",
+    overflow: "hidden",
+    borderRadius: "1.05rem",
+    isolation: "isolate",
   },
-  constellationLayer: {
-    position: "absolute",
-    inset: "0.18rem 0.62rem 1.3rem",
-    zIndex: 0,
-    pointerEvents: "none",
-    opacity: 0.46,
-  },
-  constellationLine: {
-    position: "absolute",
-    height: 1,
-    transformOrigin: "left center",
-    background:
-      "linear-gradient(90deg, transparent, rgba(245, 196, 119, 0.16), transparent)",
-    boxShadow: "0 0 7px rgba(226, 150, 72, 0.1)",
-  },
-  constellationDot: {
-    position: "absolute",
-    width: "0.19rem",
-    height: "0.19rem",
-    borderRadius: "999px",
-    background: "rgba(249, 207, 137, 0.48)",
-    boxShadow: "0 0 7px rgba(238, 168, 84, 0.24)",
-  },
-  constellationDrop: {
-    position: "absolute",
-    top: "48%",
-    width: 1,
-    height: "1.45rem",
-    background:
-      "linear-gradient(180deg, rgba(245,196,119,0.26), rgba(245,196,119,0.04), transparent)",
-    boxShadow: "0 0 8px rgba(226,150,72,0.12)",
-    opacity: 0.24,
-  },
-  modeButton: {
+  atlasNavHit: {
     all: "unset",
-    position: "relative",
-    zIndex: 1,
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: "20%",
     cursor: "pointer",
-    display: "grid",
-    justifyItems: "center",
-    alignContent: "center",
-    gap: "0.34rem",
-    minHeight: "4.85rem",
-    padding: "0.26rem 0.08rem 0.14rem",
-    color: "rgba(224,177,100,0.68)",
-    textAlign: "center",
-    filter:
-      "drop-shadow(0 0 5px rgba(226,152,75,0.12)) drop-shadow(0 0 13px rgba(226,150,72,0.07))",
-    opacity: 0.85,
+    borderRadius: "0.82rem",
+    overflow: "hidden",
     touchAction: "manipulation",
   },
-  modeButtonActive: {
-    color: "rgba(255,229,168,0.98)",
-    filter:
-      "drop-shadow(0 0 9px rgba(247,184,95,0.62)) drop-shadow(0 0 24px rgba(226,150,72,0.36))",
-    opacity: 1,
-  },
-  modeIcon: {
-    position: "relative",
-    width: "clamp(2.42rem, 11.5vw, 3.32rem)",
-    height: "clamp(2.42rem, 10.4vw, 3rem)",
-    display: "grid",
-    placeItems: "center",
+  visuallyHidden: {
+    position: "absolute",
+    width: 1,
+    height: 1,
+    padding: 0,
+    margin: -1,
+    overflow: "hidden",
+    clip: "rect(0, 0, 0, 0)",
+    whiteSpace: "nowrap",
     border: 0,
-    outline: "none",
-    background: "transparent",
-    boxShadow: "none",
-    overflow: "visible",
-  },
-  modeIconArtwork: {
-    position: "relative",
-    zIndex: 1,
-    display: "block",
-    width: "clamp(2.18rem, 9.6vw, 2.72rem)",
-    height: "clamp(2.18rem, 9.6vw, 2.72rem)",
-    objectFit: "contain",
-    opacity: 1,
-    userSelect: "none",
-    pointerEvents: "none",
-  },
-  modeLabel: {
-    color: "currentColor",
-    fontSize: "clamp(0.49rem, 1.65vw, 0.58rem)",
-    fontWeight: 600,
-    letterSpacing: "0.16em",
-    textTransform: "uppercase",
-    textShadow: "0 0 9px rgba(226,150,72,0.28)",
   },
   askDock: {
     display: "grid",
