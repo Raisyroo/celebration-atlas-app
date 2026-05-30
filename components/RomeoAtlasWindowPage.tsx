@@ -120,8 +120,6 @@ function MemorySeparator() {
 }
 
 function ModeIcon({ mode }: { mode: RomeoAtlasModeOption }) {
-  const filename = mode.iconSrc.split("/").at(-1) ?? mode.iconSrc;
-
   return (
     <span style={styles.modeIconStack}>
       <img
@@ -133,7 +131,6 @@ function ModeIcon({ mode }: { mode: RomeoAtlasModeOption }) {
         height={96}
         style={styles.modeIconArtwork}
       />
-      <span style={styles.modeIconFilename}>{filename}</span>
     </span>
   );
 }
@@ -355,7 +352,7 @@ export default function RomeoAtlasWindowPage({
         `}</style>
       <section
         style={styles.stage}
-        aria-label={`${eventName} Atlas floating memory prototype`}
+        aria-label={`${eventName} Atlas floating memory`}
       >
         <div style={styles.stars} aria-hidden="true" />
         <Link
@@ -464,7 +461,7 @@ export default function RomeoAtlasWindowPage({
             <button
               type="submit"
               style={styles.askButton}
-              aria-label="Submit Ask Anything demo prompt"
+              aria-label="Submit Ask Anything prompt"
             >
               ↗
             </button>
@@ -839,13 +836,11 @@ const styles: Record<string, CSSProperties> = {
     position: "relative",
     display: "grid",
     gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-    gap: 0,
+    columnGap: "clamp(0.14rem, 1.4vw, 0.52rem)",
     alignItems: "stretch",
+    justifyItems: "stretch",
     padding: "0.24rem clamp(0.16rem, 1.2vw, 0.46rem) 0.18rem",
-    border: 0,
-    outline: "none",
     background: "transparent",
-    boxShadow: "none",
     overflow: "visible",
   },
   modeButton: {
@@ -854,11 +849,12 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 1,
     cursor: "pointer",
     display: "grid",
-    justifyItems: "center",
+    placeItems: "center",
     alignContent: "center",
     gap: "0.34rem",
     minHeight: "4.85rem",
     padding: "0.26rem 0.08rem 0.14rem",
+    boxSizing: "border-box",
     color: "rgba(224,177,100,0.68)",
     textAlign: "center",
     touchAction: "manipulation",
@@ -882,8 +878,9 @@ const styles: Record<string, CSSProperties> = {
     position: "relative",
     zIndex: 1,
     display: "grid",
-    justifyItems: "center",
-    gap: "0.16rem",
+    placeItems: "center",
+    width: "100%",
+    minHeight: "3.8rem",
     userSelect: "none",
     pointerEvents: "none",
   },
@@ -895,14 +892,6 @@ const styles: Record<string, CSSProperties> = {
     objectFit: "contain",
     userSelect: "none",
     pointerEvents: "none",
-  },
-  modeIconFilename: {
-    color: "rgba(246, 226, 190, 0.72)",
-    fontSize: "0.48rem",
-    letterSpacing: "0.02em",
-    lineHeight: 1,
-    textTransform: "none",
-    whiteSpace: "nowrap",
   },
   askDock: {
     display: "grid",
