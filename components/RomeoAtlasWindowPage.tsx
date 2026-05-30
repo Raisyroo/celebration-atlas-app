@@ -119,7 +119,13 @@ function MemorySeparator() {
   );
 }
 
-function ModeIcon({ mode }: { mode: RomeoAtlasModeOption }) {
+function ModeIcon({
+  mode,
+  isActive,
+}: {
+  mode: RomeoAtlasModeOption;
+  isActive: boolean;
+}) {
   return (
     <span style={styles.modeIconStack}>
       <img
@@ -129,7 +135,10 @@ function ModeIcon({ mode }: { mode: RomeoAtlasModeOption }) {
         draggable={false}
         width={140}
         height={96}
-        style={styles.modeIconArtwork}
+        style={{
+          ...styles.modeIconArtwork,
+          ...(isActive ? styles.modeIconArtworkActive : null),
+        }}
       />
     </span>
   );
@@ -341,13 +350,13 @@ export default function RomeoAtlasWindowPage({
           }
           .romeo-mode-lens:hover,
           .romeo-mode-lens:focus-visible {
-            color: rgba(255, 231, 176, 0.98);
+            color: rgba(198, 140, 58, 0.88);
             outline: none;
-            transform: scale(1.03);
+            transform: scale(1.015);
           }
           .romeo-mode-lens[data-active="true"] {
-            color: rgba(255, 232, 174, 0.98);
-            text-shadow: 0 0 13px rgba(255, 211, 128, 0.34);
+            color: rgba(198, 140, 58, 0.9);
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
           }
         `}</style>
       <section
@@ -441,7 +450,7 @@ export default function RomeoAtlasWindowPage({
                   data-active={isActive ? "true" : "false"}
                   title={mode.label}
                 >
-                  <ModeIcon mode={mode} />
+                  <ModeIcon mode={mode} isActive={isActive} />
                 </button>
               );
             })}
@@ -854,12 +863,12 @@ const styles: Record<string, CSSProperties> = {
     minHeight: "4.85rem",
     padding: "0.26rem 0.08rem 0.14rem",
     boxSizing: "border-box",
-    color: "rgba(224,177,100,0.68)",
+    color: "rgba(155,104,42,0.64)",
     textAlign: "center",
     touchAction: "manipulation",
   },
   modeButtonActive: {
-    color: "rgba(255,229,168,0.98)",
+    color: "rgba(198,140,58,0.9)",
   },
   modeIconStack: {
     position: "relative",
@@ -868,6 +877,11 @@ const styles: Record<string, CSSProperties> = {
     placeItems: "center",
     width: "100%",
     minHeight: "3.8rem",
+    borderRadius: "1.25rem",
+    background:
+      "radial-gradient(circle at 50% 48%, rgba(99,64,25,0.2), rgba(23,17,12,0.12) 48%, transparent 72%)",
+    boxShadow:
+      "inset 0 1px 2px rgba(255,218,150,0.05), inset 0 -2px 4px rgba(0,0,0,0.2)",
     userSelect: "none",
     pointerEvents: "none",
   },
@@ -879,6 +893,16 @@ const styles: Record<string, CSSProperties> = {
     objectFit: "contain",
     userSelect: "none",
     pointerEvents: "none",
+    opacity: 0.6,
+    filter:
+      "brightness(0.62) sepia(0.3) saturate(0.82) hue-rotate(350deg) contrast(1.08) drop-shadow(0 1px 0 rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(196,140,58,.22))",
+    mixBlendMode: "multiply",
+  },
+  modeIconArtworkActive: {
+    opacity: 0.9,
+    filter:
+      "brightness(0.76) sepia(0.28) saturate(0.9) hue-rotate(350deg) contrast(1.12) drop-shadow(0 1px 0 rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(196,140,58,.22))",
+    mixBlendMode: "normal",
   },
   askDock: {
     display: "grid",
