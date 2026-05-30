@@ -1,10 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Plan">
-  <g stroke="#e2ac5c" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M21 8.5h22l8 8.2v38.8H21V8.5z" stroke-width="2.35"/>
-    <path d="M43 8.5V17h8" stroke-width="2.15"/>
-    <path d="M27 26h16M27 34h16M27 42h10" stroke-width="2.15"/>
-    <path d="M14 17.5v38h28" stroke-width="1.8" opacity=".66"/>
-    <path d="M32 18.3l2 5.9 5.9 2-5.9 2-2 5.9-2-5.9-5.9-2 5.9-2 2-5.9z" stroke-width="1.2" opacity=".52"/>
-    <path d="M17.2 9.8c2.2-3.5 6.4-4.4 9.2-2M49.8 54.2c-2.2 3.5-6.4 4.4-9.2 2" stroke-width="1.05" opacity=".45"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Plan">
+  <defs>
+    <linearGradient id="planGold" x1="20" y1="14" x2="108" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff2c4"/>
+      <stop offset="0.35" stop-color="#f3c977"/>
+      <stop offset="0.72" stop-color="#bd6f39"/>
+      <stop offset="1" stop-color="#ffe2a4"/>
+    </linearGradient>
+    <radialGradient id="planGlow" cx="52%" cy="48%" r="62%">
+      <stop offset="0" stop-color="#f3c977" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#05070c" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="planShadow" x="-16" y="-16" width="160" height="160" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#070509" flood-opacity="0.58"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#e2ac5c" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  <circle cx="64" cy="64" r="54" fill="url(#planGlow)"/>
+  <g filter="url(#planShadow)" fill="none" stroke="url(#planGold)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M43 15.5h44.5L104 32.4v79.9H43Z" stroke-width="4.7"/>
+    <path d="M87.5 15.5v17.6H104" stroke-width="4.2"/>
+    <path d="M54.5 52.5h32M54.5 68.5h32M54.5 84.5h20.5" stroke-width="4.1"/>
+    <path d="M27.5 33.5v79h57" stroke-width="3.1" opacity="0.63"/>
+    <path d="M66.5 32.1 70.2 43l11 3.7-11 3.8-3.7 11-3.8-11-11-3.8 11-3.7Z" stroke-width="2" opacity="0.58"/>
+    <path d="M34.5 17.8c7.2-9.2 18.6-10.6 28.3-3.4M101.8 110c-7.3 9.3-18.8 10.7-28.6 3.5" stroke-width="1.9" opacity="0.45"/>
+    <path d="M36 48.5c-10.5 8.4-12.7 18.9-6.6 31.5" stroke-width="1.5" opacity="0.36"/>
+    <path d="M51 100.5h36" stroke-width="1.6" opacity="0.34"/>
+  </g>
+  <g fill="#ffd98d" opacity="0.78">
+    <circle cx="25.5" cy="34" r="2.3"/>
+    <circle cx="103.2" cy="109.4" r="2.1"/>
   </g>
 </svg>
