@@ -316,37 +316,21 @@ export default function RomeoAtlasWindowPage({
           .romeo-atlas-nav-art {
             display: block;
             width: 100%;
+            max-width: 100%;
             height: auto;
-            opacity: 0.74;
+            object-fit: contain;
+            opacity: 0.78;
             filter:
               saturate(1.04)
-              brightness(0.92)
+              brightness(0.94)
               drop-shadow(0 0 10px rgba(226, 150, 72, 0.16))
               drop-shadow(0 0 24px rgba(226, 150, 72, 0.08));
             pointer-events: none;
             user-select: none;
-            transition: opacity 180ms ease, filter 180ms ease;
           }
           .romeo-atlas-nav-hit {
             -webkit-tap-highlight-color: transparent;
             outline: none;
-          }
-          .romeo-atlas-nav-hit::before {
-            content: "";
-            position: absolute;
-            inset: 10% 6% 8%;
-            border-radius: 999px;
-            background: radial-gradient(circle, rgba(255, 212, 137, 0.32), rgba(232, 156, 74, 0.13) 46%, transparent 73%);
-            filter: blur(10px);
-            opacity: 0;
-            transform: scale(0.92);
-            transition: opacity 180ms ease, transform 180ms ease;
-          }
-          .romeo-atlas-nav-hit:hover::before,
-          .romeo-atlas-nav-hit:focus-visible::before,
-          .romeo-atlas-nav-hit[data-active="true"]::before {
-            opacity: 1;
-            transform: scale(1.03);
           }
           .romeo-atlas-nav-hit:focus-visible {
             box-shadow: inset 0 0 0 1px rgba(255, 224, 166, 0.46);
@@ -359,47 +343,6 @@ export default function RomeoAtlasWindowPage({
           .romeo-atlas-nav-hit[data-active="true"] {
             cursor: default;
           }
-          .romeo-atlas-nav-active-slice {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 180ms ease, filter 180ms ease;
-          }
-          .romeo-atlas-nav-hit:hover .romeo-atlas-nav-active-slice,
-          .romeo-atlas-nav-hit:focus-visible .romeo-atlas-nav-active-slice {
-            opacity: 0.76;
-            filter:
-              brightness(1.18)
-              saturate(1.08)
-              drop-shadow(0 0 9px rgba(255, 208, 126, 0.36))
-              drop-shadow(0 0 20px rgba(226, 150, 72, 0.2));
-          }
-          .romeo-atlas-nav-hit[data-active="true"] .romeo-atlas-nav-active-slice {
-            opacity: 1;
-            filter:
-              brightness(1.36)
-              saturate(1.14)
-              drop-shadow(0 0 10px rgba(255, 216, 139, 0.58))
-              drop-shadow(0 0 24px rgba(247, 184, 95, 0.34))
-              drop-shadow(0 0 42px rgba(226, 150, 72, 0.2));
-          }
-          .romeo-atlas-nav-active-slice img {
-            position: absolute;
-            top: 0;
-            width: 500%;
-            height: 100%;
-            max-width: none;
-            object-fit: fill;
-            pointer-events: none;
-            user-select: none;
-          }
-          .romeo-atlas-nav-hit:nth-of-type(1) .romeo-atlas-nav-active-slice img { left: 0%; }
-          .romeo-atlas-nav-hit:nth-of-type(2) .romeo-atlas-nav-active-slice img { left: -100%; }
-          .romeo-atlas-nav-hit:nth-of-type(3) .romeo-atlas-nav-active-slice img { left: -200%; }
-          .romeo-atlas-nav-hit:nth-of-type(4) .romeo-atlas-nav-active-slice img { left: -300%; }
-          .romeo-atlas-nav-hit:nth-of-type(5) .romeo-atlas-nav-active-slice img { left: -400%; }
         `}</style>
       <section
         style={styles.stage}
@@ -497,14 +440,6 @@ export default function RomeoAtlasWindowPage({
                   data-active={isActive ? "true" : "false"}
                   title={mode.label}
                 >
-                  <span className="romeo-atlas-nav-active-slice" aria-hidden="true">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/ui/atlas-nav.svg"
-                      alt=""
-                      draggable={false}
-                    />
-                  </span>
                   <span style={styles.visuallyHidden}>{mode.label}</span>
                 </button>
               );
