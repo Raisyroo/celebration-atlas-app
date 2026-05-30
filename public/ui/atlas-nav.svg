@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 210" width="1200" height="210" fill="none">
+  <defs>
+    <radialGradient id="goldGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(600 78) rotate(90) scale(140 530)">
+      <stop stop-color="#ffd990" stop-opacity="0.34"/>
+      <stop offset="0.52" stop-color="#e2ac5c" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#080b12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rail" x1="78" y1="38" x2="1122" y2="172" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1a1620" stop-opacity="0.86"/>
+      <stop offset="0.5" stop-color="#302333" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#151620" stop-opacity="0.88"/>
+    </linearGradient>
+    <linearGradient id="goldStroke" x1="95" y1="46" x2="1106" y2="164" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffe5b0" stop-opacity="0.52"/>
+      <stop offset="0.28" stop-color="#e2ac5c" stop-opacity="0.76"/>
+      <stop offset="0.7" stop-color="#f3c977" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#b76c36" stop-opacity="0.5"/>
+    </linearGradient>
+    <filter id="softShadow" x="0" y="0" width="1200" height="210" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.42"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#e29648" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <rect x="54" y="30" width="1092" height="150" rx="75" fill="url(#rail)"/>
+    <rect x="57" y="33" width="1086" height="144" rx="72" fill="url(#goldGlow)"/>
+    <rect x="58" y="34" width="1084" height="142" rx="71" stroke="url(#goldStroke)" stroke-width="4"/>
+    <rect x="80" y="55" width="1040" height="100" rx="50" stroke="#ffd88e" stroke-opacity="0.13" stroke-width="2"/>
+
+    <g stroke="#e2ac5c" stroke-opacity="0.28" stroke-width="1.5">
+      <path d="M272 50v110"/>
+      <path d="M436 50v110"/>
+      <path d="M600 50v110"/>
+      <path d="M764 50v110"/>
+      <path d="M928 50v110"/>
+    </g>
+
+    <g font-family="Georgia, 'Times New Roman', serif" font-size="30" letter-spacing="3" text-anchor="middle" fill="#f7d596">
+      <text x="164" y="126">Highlights</text>
+      <text x="382" y="126">Schedule</text>
+      <text x="600" y="126">Maps</text>
+      <text x="818" y="126">Gallery</text>
+      <text x="1036" y="126">Plan</text>
+    </g>
+
+    <g stroke="#f5cc7d" stroke-linecap="round" stroke-linejoin="round" opacity="0.86">
+      <path d="M164 63l7 20 20 7-20 7-7 20-7-20-20-7 20-7 7-20z" stroke-width="3"/>
+      <path d="M382 66v50M357 85h50M360 109h44" stroke-width="3"/>
+      <path d="M357 70h50v50h-50z" stroke-width="2" opacity="0.58"/>
+      <path d="M600 64l36 13-12 51-24-10-24 10-12-51 36-13z" stroke-width="3"/>
+      <path d="M600 64v54M576 128l24-64 24 64" stroke-width="1.8" opacity="0.55"/>
+      <path d="M792 72h52v38h-52z" stroke-width="3"/>
+      <path d="M792 110l15-15 12 10 13-17 12 22" stroke-width="2.4" opacity="0.72"/>
+      <path d="M1012 72h48v46h-48zM1022 86h28M1022 100h28" stroke-width="3"/>
+      <path d="M1036 118v14" stroke-width="2" opacity="0.55"/>
+    </g>
+  </g>
+</svg>
