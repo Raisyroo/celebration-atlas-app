@@ -313,31 +313,29 @@ export default function RomeoAtlasWindowPage({
           .romeo-atlas-back-link:active {
             transform: scale(0.995);
           }
-          .romeo-atlas-nav-art {
+          .romeo-atlas-nav-image {
             display: block;
             width: 100%;
-            max-width: 100%;
             height: auto;
-            min-height: 80px;
             object-fit: contain;
-            outline: 1px solid red;
-            background: rgba(255, 0, 0, 0.05);
+            filter: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            mask-image: none;
+            -webkit-mask-image: none;
+            opacity: 1;
+            mix-blend-mode: normal;
             pointer-events: none;
             user-select: none;
           }
-          .romeo-atlas-nav-hit {
+          .romeo-atlas-nav-absolute-button {
             -webkit-tap-highlight-color: transparent;
             outline: none;
           }
-          .romeo-atlas-nav-hit:focus-visible {
+          .romeo-atlas-nav-absolute-button:focus-visible {
             box-shadow: inset 0 0 0 1px rgba(255, 224, 166, 0.46);
           }
-          .romeo-atlas-nav-hit:nth-of-type(1) { left: 0%; }
-          .romeo-atlas-nav-hit:nth-of-type(2) { left: 20%; }
-          .romeo-atlas-nav-hit:nth-of-type(3) { left: 40%; }
-          .romeo-atlas-nav-hit:nth-of-type(4) { left: 60%; }
-          .romeo-atlas-nav-hit:nth-of-type(5) { left: 80%; }
-          .romeo-atlas-nav-hit[data-active="true"] {
+          .romeo-atlas-nav-absolute-button[data-active="true"] {
             cursor: default;
           }
         `}</style>
@@ -414,32 +412,44 @@ export default function RomeoAtlasWindowPage({
           style={styles.bottomZone}
           aria-label="Atlas controls and Ask Anything"
         >
-          <nav style={styles.atlasNavShell} aria-label="Atlas controls">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/ui/atlas-nav.svg"
-              alt="Atlas lens navigation"
-              draggable={false}
-              className="romeo-atlas-nav-art"
-            />
-            {MODE_OPTIONS.map((mode) => {
-              const isActive = mode.id === activeMode;
-              return (
-                <button
-                  key={mode.id}
-                  type="button"
-                  onClick={() => setActiveMode(mode.id)}
-                  className="romeo-atlas-nav-hit"
-                  style={styles.atlasNavHit}
-                  aria-label={`${mode.label} lens`}
-                  aria-pressed={isActive}
-                  data-active={isActive ? "true" : "false"}
-                  title={mode.label}
-                >
-                  <span style={styles.visuallyHidden}>{mode.label}</span>
-                </button>
-              );
-            })}
+          <nav
+            className="romeo-atlas-nav-clean-room"
+            style={styles.romeoAtlasNavCleanRoom}
+            aria-label="Atlas controls"
+          >
+            <div
+              className="romeo-atlas-nav-image-frame"
+              style={styles.romeoAtlasNavImageFrame}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/ui/atlas-nav.svg"
+                alt="Atlas navigation"
+                className="romeo-atlas-nav-image"
+              />
+              {MODE_OPTIONS.map((mode, index) => {
+                const isActive = mode.id === activeMode;
+                return (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => setActiveMode(mode.id)}
+                    className="romeo-atlas-nav-absolute-button"
+                    style={{
+                      ...styles.romeoAtlasNavAbsoluteButton,
+                      left: `${index * 20}%`,
+                    }}
+                    aria-label={`${mode.label} lens`}
+                    aria-pressed={isActive}
+                    data-active={isActive ? "true" : "false"}
+                    title={mode.label}
+                  >
+                    <span style={styles.visuallyHidden}>{mode.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p style={styles.romeoAtlasNavLoadedFallback}>NAV SVG LOADED</p>
           </nav>
 
           <form style={styles.askDock} onSubmit={handleAskSubmit}>
@@ -826,29 +836,77 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     gap: "0.62rem",
   },
-  atlasNavShell: {
+  romeoAtlasNavCleanRoom: {
     position: "relative",
     width: "100%",
-    maxWidth: "min(100%, 36rem)",
+    maxWidth: "760px",
     margin: "0 auto",
+    zIndex: 20,
+    filter: "none",
+    backdropFilter: "none",
+    WebkitBackdropFilter: "none",
+    maskImage: "none",
+    WebkitMaskImage: "none",
+    opacity: 1,
+    mixBlendMode: "normal",
+    background: "transparent",
     border: 0,
     outline: "none",
-    background: "transparent",
     boxShadow: "none",
-    overflow: "hidden",
-    borderRadius: "1.05rem",
-    isolation: "isolate",
+    overflow: "visible",
   },
-  atlasNavHit: {
+  romeoAtlasNavImageFrame: {
+    position: "relative",
+    width: "100%",
+    filter: "none",
+    backdropFilter: "none",
+    WebkitBackdropFilter: "none",
+    maskImage: "none",
+    WebkitMaskImage: "none",
+    opacity: 1,
+    mixBlendMode: "normal",
+    background: "transparent",
+    border: 0,
+    outline: "none",
+    boxShadow: "none",
+    overflow: "visible",
+  },
+  romeoAtlasNavAbsoluteButton: {
     all: "unset",
     position: "absolute",
     top: 0,
     bottom: 0,
     width: "20%",
     cursor: "pointer",
-    borderRadius: "0.82rem",
-    overflow: "hidden",
     touchAction: "manipulation",
+    background: "transparent",
+    border: 0,
+    outline: "none",
+    boxShadow: "none",
+    color: "transparent",
+    filter: "none",
+    backdropFilter: "none",
+    WebkitBackdropFilter: "none",
+    maskImage: "none",
+    WebkitMaskImage: "none",
+    opacity: 1,
+    mixBlendMode: "normal",
+  },
+  romeoAtlasNavLoadedFallback: {
+    margin: "0.28rem 0 0",
+    color: "rgba(255, 238, 207, 0.72)",
+    fontSize: "0.58rem",
+    fontWeight: 700,
+    letterSpacing: "0.2em",
+    textAlign: "center",
+    textTransform: "uppercase",
+    filter: "none",
+    backdropFilter: "none",
+    WebkitBackdropFilter: "none",
+    maskImage: "none",
+    WebkitMaskImage: "none",
+    opacity: 1,
+    mixBlendMode: "normal",
   },
   visuallyHidden: {
     position: "absolute",
