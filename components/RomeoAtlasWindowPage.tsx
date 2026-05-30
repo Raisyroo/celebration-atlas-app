@@ -442,7 +442,6 @@ export default function RomeoAtlasWindowPage({
                   title={mode.label}
                 >
                   <ModeIcon mode={mode} />
-                  <span style={styles.modeLabel}>{mode.label}</span>
                 </button>
               );
             })}
@@ -861,18 +860,6 @@ const styles: Record<string, CSSProperties> = {
   },
   modeButtonActive: {
     color: "rgba(255,229,168,0.98)",
-  },
-  modeLabel: {
-    position: "relative",
-    zIndex: 1,
-    color: "currentColor",
-    fontSize: "0.58rem",
-    fontWeight: 600,
-    letterSpacing: "0.11em",
-    lineHeight: 1,
-    textTransform: "uppercase",
-    userSelect: "none",
-    pointerEvents: "none",
   },
   modeIconStack: {
     position: "relative",
