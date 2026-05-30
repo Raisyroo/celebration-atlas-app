@@ -411,6 +411,7 @@ export default function RomeoAtlasWindowPage({
           aria-label="Atlas controls and Ask Anything"
         >
           <nav style={styles.modeRail} aria-label="Atlas controls">
+            <span style={styles.modeRailAtmosphere} aria-hidden="true" />
             {MODE_OPTIONS.map((mode) => {
               const isActive = mode.id === activeMode;
               return (
@@ -836,7 +837,22 @@ const styles: Record<string, CSSProperties> = {
     justifyItems: "stretch",
     padding: "0.24rem clamp(0.16rem, 1.2vw, 0.46rem) 0.18rem",
     background: "transparent",
+    isolation: "isolate",
     overflow: "visible",
+  },
+  modeRailAtmosphere: {
+    position: "absolute",
+    left: "-0.32rem",
+    right: "-0.32rem",
+    top: "-0.22rem",
+    bottom: "-0.12rem",
+    zIndex: 0,
+    pointerEvents: "none",
+    background:
+      "radial-gradient(ellipse 72% 64% at 50% 58%, rgba(2,4,9,0.22), rgba(2,4,9,0.12) 45%, rgba(2,4,9,0.045) 68%, transparent 86%), linear-gradient(180deg, transparent 0%, rgba(2,4,9,0.11) 36%, rgba(2,4,9,0.18) 62%, transparent 100%)",
+    filter: "blur(10px)",
+    mixBlendMode: "multiply",
+    opacity: 0.9,
   },
   modeButton: {
     all: "unset",
@@ -887,11 +903,12 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: "Forum, Georgia, serif",
     fontSize: "9px",
     fontWeight: 400,
-    letterSpacing: "0.18em",
+    letterSpacing: "0.08em",
     lineHeight: 1.1,
     textAlign: "center",
     textTransform: "uppercase",
     whiteSpace: "nowrap",
+    wordBreak: "keep-all",
     opacity: 0.6,
     textShadow: "0 1px 0 rgba(0,0,0,0.62)",
     userSelect: "none",
