@@ -17,6 +17,11 @@ type GalleryMoment = {
   tone: string;
 };
 
+type AtlasAnswer = {
+  question: string;
+  answer: string;
+};
+
 type RomeoAtlasWindowPageProps = {
   eventName: string;
   backHref: string;
@@ -90,6 +95,71 @@ const PLAN_ITEMS = [
   ],
 ] as const;
 
+const ANSWER_MATCHERS: readonly {
+  keywords: readonly string[];
+  answer: string;
+}[] = [
+  {
+    keywords: ["parking", "park", "lot"],
+    answer:
+      "Aim for outer lots and side-street parking before afternoon traffic builds, then walk into the downtown core for the easiest Romeo Peach Festival arrival.",
+  },
+  {
+    keywords: ["food", "eat", "dessert", "peach", "vendor", "vendors"],
+    answer:
+      "The best food move is to grab peach desserts, cold drinks, and vendor specials before the dinner rush, when lines around Main Street get longer.",
+  },
+  {
+    keywords: ["parade", "route", "main street"],
+    answer:
+      "For the parade, use Main Street as your anchor and claim a viewing spot early because the route starts filling well before the late-afternoon crowd peak.",
+  },
+  {
+    keywords: ["schedule", "time", "when", "times", "events"],
+    answer:
+      "Plan around a midday opening window, busier food lines in the afternoon, parade crowds near 4:00 PM, and a softer evening walk-through after sunset.",
+  },
+  {
+    keywords: ["map", "maps", "where", "directions", "downtown"],
+    answer:
+      "Use Main Street as the orientation line, side streets for crowd breaks, and outer lots as the calmer parking targets before walking downtown.",
+  },
+  {
+    keywords: ["photos", "photo", "picture", "pictures", "gallery", "camera"],
+    answer:
+      "For photos, try the parade corridor on Main Street, peach stands in warm afternoon light, and storefronts after sunset when the downtown glow is strongest.",
+  },
+  {
+    keywords: ["family", "families", "kids", "children", "parents"],
+    answer:
+      "For families, choose a side-street meeting point, take breaks away from Main Street, and arrive early if you want an easier parade-viewing spot.",
+  },
+  {
+    keywords: [
+      "accessibility",
+      "accessible",
+      "wheelchair",
+      "stroller",
+      "mobility",
+      "ada",
+    ],
+    answer:
+      "For accessibility, arrive early for calmer movement, expect curb changes and crowded sidewalks, and use side streets when Main Street gets tight.",
+  },
+] as const;
+
+const GENERAL_ATLAS_ANSWER =
+  "Romeo Peach Festival is easiest when you treat Main Street as your anchor: arrive early, park outside the busiest core, sample peach food before peak lines, and save time for the parade, photos, and an evening stroll.";
+
+function getAtlasAnswer(question: string) {
+  const normalizedQuestion = question.toLowerCase();
+  return (
+    ANSWER_MATCHERS.find(({ keywords }) =>
+      keywords.some((keyword) => normalizedQuestion.includes(keyword)),
+    )?.answer ?? GENERAL_ATLAS_ANSWER
+  );
+}
+
 const HIGHLIGHT_ITEMS = [
   [
     "Parade route",
@@ -116,6 +186,21 @@ function MemorySeparator() {
       <span style={styles.memorySeparatorGlyph}>atlas / memory</span>
       <span style={styles.memorySeparatorStar}>✧</span>
     </div>
+  );
+}
+
+function RomeoAtlasAnswerContent({ answer }: { answer: AtlasAnswer }) {
+  return (
+    <section
+      className="romeo-memory-scroll"
+      style={styles.memoryContent}
+      aria-label="Atlas Answer"
+    >
+      <p style={styles.windowEyebrow}>ATLAS ANSWER</p>
+      <h2 style={styles.answerQuestion}>{answer.question}</h2>
+      <MemorySeparator />
+      <p style={styles.answerText}>{answer.answer}</p>
+    </section>
   );
 }
 
@@ -277,6 +362,8 @@ export default function RomeoAtlasWindowPage({
 }: RomeoAtlasWindowPageProps) {
   const [activeMode, setActiveMode] = useState<RomeoAtlasMode>("highlights");
   const [activeGalleryId, setActiveGalleryId] = useState(GALLERY_MOMENTS[0].id);
+  const [askQuestion, setAskQuestion] = useState("");
+  const [atlasAnswer, setAtlasAnswer] = useState<AtlasAnswer | null>(null);
   const activeGallery = useMemo(
     () =>
       GALLERY_MOMENTS.find((item) => item.id === activeGalleryId) ??
@@ -286,6 +373,22 @@ export default function RomeoAtlasWindowPage({
 
   const handleAskSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    const trimmedQuestion = askQuestion.trim();
+    if (!trimmedQuestion) {
+      return;
+    }
+
+    setAtlasAnswer({
+      question: trimmedQuestion,
+      answer: getAtlasAnswer(trimmedQuestion),
+    });
+    setAskQuestion("");
+  };
+
+  const handleModeSelect = (mode: RomeoAtlasMode) => {
+    setAtlasAnswer(null);
+    setActiveMode(mode);
   };
 
   return (
@@ -398,12 +501,19 @@ export default function RomeoAtlasWindowPage({
           aria-live="polite"
           aria-label="Atlas memory content"
         >
-          <RomeoMemoryContent
-            key={activeMode}
-            activeMode={activeMode}
-            activeGallery={activeGallery}
-            setActiveGallery={setActiveGalleryId}
-          />
+          {atlasAnswer ? (
+            <RomeoAtlasAnswerContent
+              key={atlasAnswer.question}
+              answer={atlasAnswer}
+            />
+          ) : (
+            <RomeoMemoryContent
+              key={activeMode}
+              activeMode={activeMode}
+              activeGallery={activeGallery}
+              setActiveGallery={setActiveGalleryId}
+            />
+          )}
         </section>
 
         <section
@@ -418,7 +528,7 @@ export default function RomeoAtlasWindowPage({
                 <button
                   key={mode.id}
                   type="button"
-                  onClick={() => setActiveMode(mode.id)}
+                  onClick={() => handleModeSelect(mode.id)}
                   className="romeo-mode-lens"
                   style={{
                     ...styles.modeButton,
@@ -453,6 +563,8 @@ export default function RomeoAtlasWindowPage({
               className="atlas-ask-input"
               placeholder="Ask Anything"
               aria-label="Ask Anything"
+              value={askQuestion}
+              onChange={(event) => setAskQuestion(event.target.value)}
             />
             <button
               type="submit"
@@ -650,6 +762,24 @@ const styles: Record<string, CSSProperties> = {
     margin: 0,
     color: "rgba(237,221,193,0.92)",
     fontSize: "0.9rem",
+    lineHeight: 1.58,
+    maxWidth: "34rem",
+  },
+  answerQuestion: {
+    margin: 0,
+    color: "rgba(255,238,207,0.98)",
+    fontFamily: "Georgia, Times New Roman, serif",
+    fontWeight: 400,
+    fontSize: "clamp(1.34rem, 5.8vw, 2.42rem)",
+    lineHeight: 1.08,
+    maxWidth: "34rem",
+    textShadow:
+      "0 3px 24px rgba(0,0,0,0.72), 0 0 20px rgba(227,146,76,0.2)",
+  },
+  answerText: {
+    margin: 0,
+    color: "rgba(237,221,193,0.92)",
+    fontSize: "clamp(1rem, 3.7vw, 1.2rem)",
     lineHeight: 1.58,
     maxWidth: "34rem",
   },
