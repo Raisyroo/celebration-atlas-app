@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 
@@ -31,10 +32,12 @@ function useMediaQuery(query: string, serverSnapshot: boolean) {
 
 export default function CinematicIntro({ children }: CinematicIntroProps) {
   const [hasIntroFinished, setHasIntroFinished] = useState(false);
+  const searchParams = useSearchParams();
   const isReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)', false);
   const isMobile = useMediaQuery('(max-width: 767px)', true);
 
-  const shouldRenderOverlay = !hasIntroFinished && !isMobile;
+  const isVerificationMode = searchParams.get('verify') === '1';
+  const shouldRenderOverlay = !hasIntroFinished && !isMobile && !isVerificationMode;
   const introDurationMs = isReducedMotion ? REDUCED_MOTION_DURATION_MS : INTRO_DURATION_MS;
 
   useEffect(() => {

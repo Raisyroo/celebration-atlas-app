@@ -265,6 +265,8 @@ export default function AtlasMap() {
   const [calibrationCopyStatus, setCalibrationCopyStatus] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
+  const isVerificationMode = searchParams.get('verify') === '1';
+  const shouldShowCalibration = showAtlasCalibration && !isVerificationMode;
   const initialEventParamHandledRef = useRef(false);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
@@ -293,7 +295,7 @@ export default function AtlasMap() {
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
   const highlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
 
-  const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
+  const selected = !isVerificationMode ? ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null : null;
   const startElectricForestTransition = useCallback((eventId: string) => {
     router.push(`/events/${eventId}?intro=cinematic`);
   }, [router]);
@@ -640,7 +642,7 @@ export default function AtlasMap() {
       <div
         ref={mapFrameRef}
         className="atlas-map-frame"
-        style={{ ...styles.mapFrame, ...(isDesktop ? styles.mapFrameDesktop : null) }}
+        style={{ ...styles.mapFrame, ...(isDesktop && !isVerificationMode ? styles.mapFrameDesktop : null) }}
         onPointerMove={handleDepthPointerMove}
         onPointerLeave={handleDepthPointerLeave}
       >
@@ -663,7 +665,7 @@ export default function AtlasMap() {
 
           <div style={{ ...styles.baseMapGrade, transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.28}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.28}px, 0)` }} />
 
-          {!showAtlasCalibration ? (
+          {!shouldShowCalibration && !isVerificationMode ? (
             <>
               <AtmosphereLayer
                 events={ATLAS_EVENTS}
@@ -683,7 +685,7 @@ export default function AtlasMap() {
             </>
           ) : null}
 
-          {showAtlasCalibration ? (
+          {shouldShowCalibration ? (
             <AtlasCalibrationLayer
               anchors={calibrationAnchors}
               draggingAnchorName={draggingAnchorName}
@@ -694,7 +696,7 @@ export default function AtlasMap() {
             />
           ) : null}
 
-          {!showAtlasCalibration ? ATLAS_EVENTS.map((event, index) => {
+          {!shouldShowCalibration ? ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
             const isSelected = selectedId === event.id;
             const isDimmed = highlightedIds.size > 0 && !isHighlighted;
@@ -706,46 +708,52 @@ export default function AtlasMap() {
 
             return (
               <div key={event.id} style={{ ...styles.markerWrap, left: `${markerPosition.x}%`, top: `${markerPosition.y}%` }}>
-                <button
-                  type="button"
-                  className="marker-pulse"
-                  aria-label={event.name}
-                  onClick={() => setSelectedId(event.id)}
-                  style={({
-                    ...styles.marker,
-                    opacity: isDimmed ? 0.28 : 1,
-                    '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : isFeaturedMarker ? 1.08 : 1,
-                    '--marker-shadow-idle': isHighlighted
-                      ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
-                      : isSelected
-                        ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
-                        : isFeaturedMarker
-                          ? '0 0 10px rgba(248,209,124,.9), 0 0 22px rgba(248,209,124,.76)'
-                          : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
-                    '--marker-shadow-peak': isHighlighted
-                      ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
-                      : isSelected
-                        ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
-                        : isFeaturedMarker
-                          ? '0 0 16px rgba(255,233,176,.95), 0 0 33px rgba(253,208,120,.93)'
-                          : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
-                    animationDuration: `${pulseDuration}s`,
-                    animationDelay: `${pulseDelay}s`,
-                  } as CSSProperties)}
-                />
-                <button
-                  type="button"
-                  aria-label={`Open ${event.name}`}
-                  onClick={() => setSelectedId(event.id)}
-                  style={{
-                    ...styles.markerLabel,
-                    opacity: isHighlighted ? 1 : 0,
-                    transform: isHighlighted ? 'translate(-50%, -122%)' : 'translate(-50%, -116%)',
-                    pointerEvents: isHighlighted ? 'auto' : 'none',
-                  }}
-                >
-                  {event.name}
-                </button>
+                {isVerificationMode ? (
+                  <span aria-hidden="true" style={styles.verificationMarker} />
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="marker-pulse"
+                      aria-label={event.name}
+                      onClick={() => setSelectedId(event.id)}
+                      style={({
+                        ...styles.marker,
+                        opacity: isDimmed ? 0.28 : 1,
+                        '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : isFeaturedMarker ? 1.08 : 1,
+                        '--marker-shadow-idle': isHighlighted
+                          ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
+                          : isSelected
+                            ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
+                            : isFeaturedMarker
+                              ? '0 0 10px rgba(248,209,124,.9), 0 0 22px rgba(248,209,124,.76)'
+                              : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
+                        '--marker-shadow-peak': isHighlighted
+                          ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
+                          : isSelected
+                            ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
+                            : isFeaturedMarker
+                              ? '0 0 16px rgba(255,233,176,.95), 0 0 33px rgba(253,208,120,.93)'
+                              : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
+                        animationDuration: `${pulseDuration}s`,
+                        animationDelay: `${pulseDelay}s`,
+                      } as CSSProperties)}
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Open ${event.name}`}
+                      onClick={() => setSelectedId(event.id)}
+                      style={{
+                        ...styles.markerLabel,
+                        opacity: isHighlighted ? 1 : 0,
+                        transform: isHighlighted ? 'translate(-50%, -122%)' : 'translate(-50%, -116%)',
+                        pointerEvents: isHighlighted ? 'auto' : 'none',
+                      }}
+                    >
+                      {event.name}
+                    </button>
+                  </>
+                )}
               </div>
             );
           }) : null}
@@ -754,7 +762,7 @@ export default function AtlasMap() {
         </div>
       </div>
 
-      {showAtlasCalibration ? (
+      {shouldShowCalibration ? (
         <AtlasCalibrationPanel
           anchors={calibrationAnchors}
           copyStatus={calibrationCopyStatus}
@@ -763,7 +771,7 @@ export default function AtlasMap() {
         />
       ) : null}
 
-      {!showAtlasCalibration && isDesktop ? (
+      {!shouldShowCalibration && !isVerificationMode && isDesktop ? (
         <aside style={styles.desktopIntroPanel} aria-label="Atlas desktop introduction">
           <p style={styles.desktopKicker}>Atlas Preview</p>
           <h1 style={styles.desktopTitle}>A cinematic entry to Michigan&apos;s celebration atlas.</h1>
@@ -775,7 +783,7 @@ export default function AtlasMap() {
       ) : null}
 
 
-      {!showAtlasCalibration && renderedEvent ? (
+      {!shouldShowCalibration && !isVerificationMode && renderedEvent ? (
         <article
           ref={cardRef}
           className="atlas-card"
@@ -868,7 +876,7 @@ export default function AtlasMap() {
         </article>
       ) : null}
 
-      {!showAtlasCalibration ? (
+      {!shouldShowCalibration && !isVerificationMode ? (
         <>
           <div className="atlas-search-dock" style={{ ...styles.searchDock, ...(isDesktop ? styles.searchDockDesktop : null) }}>
         <button
@@ -1263,6 +1271,20 @@ const styles: Record<string, CSSProperties> = {
     width: 1,
     height: 1,
     zIndex: Z_INDEX.markers,
+  },
+  verificationMarker: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    width: 12,
+    height: 12,
+    transform: 'translate(-50%, -50%)',
+    borderRadius: 999,
+    border: '1px solid rgba(255, 250, 230, 0.98)',
+    background: '#ff3b30',
+    boxShadow: '0 0 0 2px rgba(5, 7, 12, 0.76), 0 0 10px rgba(255, 59, 48, 0.85)',
+    zIndex: Z_INDEX.markers,
+    pointerEvents: 'none',
   },
   markerLabel: {
     position: 'absolute',
