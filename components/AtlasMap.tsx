@@ -264,6 +264,52 @@ function AtlasCalibrationPanel({
   );
 }
 
+function AtlasCalibrationDebugModal({
+  calibrationJson,
+  onClose,
+}: {
+  calibrationJson: string;
+  onClose: () => void;
+}) {
+  return (
+    <div style={styles.calibrationDebugModalBackdrop} role="presentation">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calibration-debug-modal-title"
+        style={styles.calibrationDebugModal}
+      >
+        <div style={styles.calibrationDebugModalHeader}>
+          <div>
+            <p style={styles.calibrationDebugModalKicker}>Temporary debug output</p>
+            <h2 id="calibration-debug-modal-title" style={styles.calibrationDebugModalTitle}>
+              Calibration JSON
+            </h2>
+          </div>
+          <button type="button" onClick={onClose} style={styles.calibrationDebugModalCloseButton} aria-label="Close calibration JSON debug modal">
+            ×
+          </button>
+        </div>
+        <p style={styles.calibrationDebugModalBody}>
+          Clipboard copy was attempted. If iPhone clipboard access fails, select and copy the JSON below manually.
+        </p>
+        <textarea
+          readOnly
+          value={calibrationJson}
+          style={styles.calibrationDebugModalTextarea}
+          aria-label="Calibration JSON debug output"
+          onFocus={(event) => event.currentTarget.select()}
+        />
+        <div style={styles.calibrationDebugModalActions}>
+          <button type="button" onClick={onClose} style={styles.calibrationCopyButton}>
+            Done
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function AtlasMap() {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -277,6 +323,7 @@ export default function AtlasMap() {
   const [calibrationAnchors, setCalibrationAnchors] = useState<MichiganMapAnchor[]>(createCalibrationAnchors);
   const [draggingAnchorName, setDraggingAnchorName] = useState<string | null>(null);
   const [calibrationCopyStatus, setCalibrationCopyStatus] = useState<string | null>(null);
+  const [calibrationDebugJson, setCalibrationDebugJson] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const initialEventParamHandledRef = useRef(false);
@@ -406,8 +453,11 @@ export default function AtlasMap() {
       calibrationCopyStatusTimerRef.current = null;
     }
 
+    const calibrationJson = formatCalibrationJson(calibrationAnchors);
+    setCalibrationDebugJson(calibrationJson);
+
     try {
-      await copyTextToClipboard(formatCalibrationJson(calibrationAnchors));
+      await copyTextToClipboard(calibrationJson);
       setCalibrationCopyStatus('Copied updated anchor array.');
     } catch {
       setCalibrationCopyStatus('Copy failed. Select and copy from console fallback unavailable.');
@@ -773,6 +823,10 @@ export default function AtlasMap() {
           onCopy={handleCopyCalibrationJson}
           onReset={handleResetCalibrationAnchors}
         />
+      ) : null}
+
+      {showAtlasCalibration && calibrationDebugJson ? (
+        <AtlasCalibrationDebugModal calibrationJson={calibrationDebugJson} onClose={() => setCalibrationDebugJson(null)} />
       ) : null}
 
       {!showAtlasCalibration && isDesktop ? (
@@ -1294,6 +1348,91 @@ const styles: Record<string, CSSProperties> = {
     color: '#fef08a',
     fontSize: 10,
     lineHeight: 1.25,
+  },
+  calibrationDebugModalBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 50,
+    display: 'grid',
+    placeItems: 'center',
+    padding: 'max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom))',
+    background: 'rgba(0, 0, 0, 0.62)',
+    backdropFilter: 'blur(5px)',
+    WebkitBackdropFilter: 'blur(5px)',
+  },
+  calibrationDebugModal: {
+    width: 'min(680px, 100%)',
+    maxHeight: 'min(76vh, 760px)',
+    display: 'grid',
+    gridTemplateRows: 'auto auto minmax(180px, 1fr) auto',
+    gap: 12,
+    padding: 16,
+    borderRadius: 18,
+    border: '1px solid rgba(254, 240, 138, 0.52)',
+    background: 'linear-gradient(180deg, rgba(8, 20, 30, 0.97), rgba(4, 9, 17, 0.96))',
+    boxShadow: '0 20px 70px rgba(0, 0, 0, 0.58), inset 0 0 0 1px rgba(255, 255, 255, 0.06)',
+    color: '#dffbff',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+  },
+  calibrationDebugModalHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  calibrationDebugModalKicker: {
+    margin: '0 0 4px',
+    color: '#fef08a',
+    fontSize: 11,
+    fontWeight: 900,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+  },
+  calibrationDebugModalTitle: {
+    margin: 0,
+    color: '#ffffff',
+    fontSize: 20,
+    lineHeight: 1.1,
+  },
+  calibrationDebugModalCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    background: 'rgba(255, 255, 255, 0.08)',
+    color: '#ffffff',
+    fontSize: 24,
+    lineHeight: 1,
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+  },
+  calibrationDebugModalBody: {
+    margin: 0,
+    color: '#a5f3fc',
+    fontSize: 12,
+    lineHeight: 1.45,
+  },
+  calibrationDebugModalTextarea: {
+    width: '100%',
+    minHeight: 180,
+    height: '100%',
+    resize: 'none',
+    overflow: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    padding: 12,
+    borderRadius: 12,
+    border: '1px solid rgba(103, 232, 249, 0.42)',
+    background: 'rgba(1, 9, 14, 0.88)',
+    color: '#ecfeff',
+    fontSize: 12,
+    lineHeight: 1.55,
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    whiteSpace: 'pre',
+  },
+  calibrationDebugModalActions: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: 8,
   },
   marker: {
     position: 'absolute',
