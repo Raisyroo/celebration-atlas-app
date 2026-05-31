@@ -170,6 +170,16 @@ const copyTextToClipboard = async (text: string) => {
   document.body.removeChild(textarea);
 };
 
+const createCalibrationAnchors = () =>
+  MICHIGAN_MAP_ANCHORS.map((anchor) => {
+    if (anchor.name !== 'Marquette') return { ...anchor };
+
+    const isNearUpperPeninsula = anchor.mapX >= 10 && anchor.mapX <= 38 && anchor.mapY >= 2 && anchor.mapY <= 18;
+    if (isNearUpperPeninsula) return { ...anchor };
+
+    return { ...anchor, mapX: 23, mapY: 8 };
+  });
+
 function AtlasCalibrationLayer({
   anchors,
   draggingAnchorName,
@@ -185,25 +195,9 @@ function AtlasCalibrationLayer({
   onAnchorDragEnd: (event: PointerEvent<HTMLButtonElement>) => void;
   layerRef: RefObject<HTMLDivElement | null>;
 }) {
-  const gridLines = Array.from({ length: 11 }, (_, index) => index * 10);
-
   return (
     <div ref={layerRef} style={styles.calibrationLayer} aria-label="Atlas calibration anchors">
       {/* Invisible map = geographic calibration overlay; visible map = artwork below. */}
-      {gridLines.map((percent) => (
-        <span
-          key={`grid-x-${percent}`}
-          aria-hidden="true"
-          style={{ ...styles.calibrationGridLine, left: `${percent}%`, top: 0, width: 1, height: '100%' }}
-        />
-      ))}
-      {gridLines.map((percent) => (
-        <span
-          key={`grid-y-${percent}`}
-          aria-hidden="true"
-          style={{ ...styles.calibrationGridLine, left: 0, top: `${percent}%`, width: '100%', height: 1 }}
-        />
-      ))}
       {anchors.map((anchor) => {
         const isDragging = draggingAnchorName === anchor.name;
 
@@ -243,20 +237,30 @@ function AtlasCalibrationPanel({
   anchors,
   copyStatus,
   onCopy,
+  onReset,
 }: {
   anchors: MichiganMapAnchor[];
   copyStatus: string | null;
   onCopy: () => void;
+  onReset: () => void;
 }) {
   return (
-    <aside style={styles.calibrationPanel} aria-label="Atlas calibration tools">
-      <p style={styles.calibrationPanelKicker}>Calibration debug</p>
-      <p style={styles.calibrationPanelBody}>{anchors.length} editable anchors · changes are temporary</p>
-      <button type="button" onClick={onCopy} style={styles.calibrationCopyButton}>
-        Copy Calibration JSON
-      </button>
+    <details style={styles.calibrationPanel} aria-label="Atlas calibration tools">
+      <summary style={styles.calibrationPanelSummary}>
+        <span style={styles.calibrationPanelKicker}>Calibration tools</span>
+        <span style={styles.calibrationPanelSummaryHint}>{anchors.length} anchors</span>
+      </summary>
+      <p style={styles.calibrationPanelBody}>Drag anchors only. Event markers, event labels, and grid are hidden in calibration mode.</p>
+      <div style={styles.calibrationPanelActions}>
+        <button type="button" onClick={onReset} style={styles.calibrationResetButton}>
+          Reset Anchors
+        </button>
+        <button type="button" onClick={onCopy} style={styles.calibrationCopyButton}>
+          Copy Calibration JSON
+        </button>
+      </div>
       {copyStatus ? <p style={styles.calibrationCopyStatus}>{copyStatus}</p> : null}
-    </aside>
+    </details>
   );
 }
 
@@ -270,9 +274,7 @@ export default function AtlasMap() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [parallaxOffset, setParallaxOffset] = useState({ x: 0, y: 0 });
-  const [calibrationAnchors, setCalibrationAnchors] = useState<MichiganMapAnchor[]>(() =>
-    MICHIGAN_MAP_ANCHORS.map((anchor) => ({ ...anchor })),
-  );
+  const [calibrationAnchors, setCalibrationAnchors] = useState<MichiganMapAnchor[]>(createCalibrationAnchors);
   const [draggingAnchorName, setDraggingAnchorName] = useState<string | null>(null);
   const [calibrationCopyStatus, setCalibrationCopyStatus] = useState<string | null>(null);
 
@@ -416,6 +418,21 @@ export default function AtlasMap() {
       calibrationCopyStatusTimerRef.current = null;
     }, 2400);
   }, [calibrationAnchors]);
+
+  const handleResetCalibrationAnchors = useCallback(() => {
+    setDraggingAnchorName(null);
+    setCalibrationAnchors(createCalibrationAnchors());
+    setCalibrationCopyStatus('Anchors reset to saved defaults.');
+
+    if (calibrationCopyStatusTimerRef.current) {
+      clearTimeout(calibrationCopyStatusTimerRef.current);
+    }
+
+    calibrationCopyStatusTimerRef.current = setTimeout(() => {
+      setCalibrationCopyStatus(null);
+      calibrationCopyStatusTimerRef.current = null;
+    }, 2400);
+  }, []);
 
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (!selectedId) return;
@@ -658,21 +675,25 @@ export default function AtlasMap() {
 
           <div style={{ ...styles.baseMapGrade, transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.28}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.28}px, 0)` }} />
 
-          <AtmosphereLayer
-            events={ATLAS_EVENTS}
-            selectedEvent={selected}
-            depthOffsetX={parallaxOffset.x}
-            depthOffsetY={parallaxOffset.y}
-            prefersReducedMotion={prefersReducedMotion}
-          />
+          {!showAtlasCalibration ? (
+            <>
+              <AtmosphereLayer
+                events={ATLAS_EVENTS}
+                selectedEvent={selected}
+                depthOffsetX={parallaxOffset.x}
+                depthOffsetY={parallaxOffset.y}
+                prefersReducedMotion={prefersReducedMotion}
+              />
 
-          <div
-            aria-hidden
-            style={{
-              ...styles.particleDepthVeil,
-              transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.9}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.9}px, 0)`,
-            }}
-          />
+              <div
+                aria-hidden
+                style={{
+                  ...styles.particleDepthVeil,
+                  transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.9}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.9}px, 0)`,
+                }}
+              />
+            </>
+          ) : null}
 
           {showAtlasCalibration ? (
             <AtlasCalibrationLayer
@@ -685,7 +706,7 @@ export default function AtlasMap() {
             />
           ) : null}
 
-          {ATLAS_EVENTS.map((event, index) => {
+          {!showAtlasCalibration ? ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
             const isSelected = selectedId === event.id;
             const isDimmed = highlightedIds.size > 0 && !isHighlighted;
@@ -730,21 +751,16 @@ export default function AtlasMap() {
                   onClick={() => setSelectedId(event.id)}
                   style={{
                     ...styles.markerLabel,
-                    opacity: showAtlasCalibration || isHighlighted ? 1 : 0,
-                    transform: showAtlasCalibration || isHighlighted ? 'translate(-50%, -122%)' : 'translate(-50%, -116%)',
-                    pointerEvents: showAtlasCalibration || isHighlighted ? 'auto' : 'none',
+                    opacity: isHighlighted ? 1 : 0,
+                    transform: isHighlighted ? 'translate(-50%, -122%)' : 'translate(-50%, -116%)',
+                    pointerEvents: isHighlighted ? 'auto' : 'none',
                   }}
                 >
                   {event.name}
                 </button>
-                {showAtlasCalibration ? (
-                  <span style={styles.debugMarkerLabel}>
-                    {event.name}
-                  </span>
-                ) : null}
               </div>
             );
-          })}
+          }) : null}
 
           <div style={styles.vignette} />
         </div>
@@ -755,10 +771,11 @@ export default function AtlasMap() {
           anchors={calibrationAnchors}
           copyStatus={calibrationCopyStatus}
           onCopy={handleCopyCalibrationJson}
+          onReset={handleResetCalibrationAnchors}
         />
       ) : null}
 
-      {isDesktop ? (
+      {!showAtlasCalibration && isDesktop ? (
         <aside style={styles.desktopIntroPanel} aria-label="Atlas desktop introduction">
           <p style={styles.desktopKicker}>Atlas Preview</p>
           <h1 style={styles.desktopTitle}>A cinematic entry to Michigan&apos;s celebration atlas.</h1>
@@ -770,7 +787,7 @@ export default function AtlasMap() {
       ) : null}
 
 
-      {renderedEvent ? (
+      {!showAtlasCalibration && renderedEvent ? (
         <article
           ref={cardRef}
           className="atlas-card"
@@ -863,7 +880,9 @@ export default function AtlasMap() {
         </article>
       ) : null}
 
-      <div className="atlas-search-dock" style={{ ...styles.searchDock, ...(isDesktop ? styles.searchDockDesktop : null) }}>
+      {!showAtlasCalibration ? (
+        <>
+          <div className="atlas-search-dock" style={{ ...styles.searchDock, ...(isDesktop ? styles.searchDockDesktop : null) }}>
         <button
           type="button"
           onClick={() => setSelectedId(featuredEvent.id)}
@@ -926,7 +945,7 @@ export default function AtlasMap() {
           />
         </div>
       </div>
-      <style jsx>{`
+          <style jsx>{`
         .atlas-search-input--pulse {
           animation: searchAcceptPulse 360ms ease-out;
         }
@@ -1021,6 +1040,8 @@ export default function AtlasMap() {
         }
 
       `}</style>
+        </>
+      ) : null}
     </section>
   );
 }
@@ -1201,39 +1222,68 @@ const styles: Record<string, CSSProperties> = {
   calibrationPanel: {
     position: 'fixed',
     right: 12,
-    top: 12,
+    bottom: 'calc(12px + env(safe-area-inset-bottom))',
     zIndex: 30,
-    width: 'min(280px, calc(100vw - 24px))',
-    padding: '12px',
+    width: 'min(300px, calc(100vw - 24px))',
+    padding: '8px 10px',
     borderRadius: 14,
     border: '1px solid rgba(103, 232, 249, 0.46)',
-    background: 'linear-gradient(180deg, rgba(7, 19, 28, 0.9), rgba(4, 10, 18, 0.82))',
-    boxShadow: '0 14px 36px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
+    background: 'linear-gradient(180deg, rgba(7, 19, 28, 0.86), rgba(4, 10, 18, 0.76))',
+    boxShadow: '0 10px 26px rgba(0, 0, 0, 0.34), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
     backdropFilter: 'blur(8px)',
     WebkitBackdropFilter: 'blur(8px)',
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
   },
+  calibrationPanelSummary: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    cursor: 'pointer',
+    listStyle: 'none',
+  },
   calibrationPanelKicker: {
-    margin: '0 0 4px',
     color: '#dffbff',
     fontSize: 11,
     fontWeight: 900,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
+  calibrationPanelSummaryHint: {
+    color: '#a5f3fc',
+    fontSize: 10,
+    fontWeight: 800,
+  },
   calibrationPanelBody: {
-    margin: '0 0 10px',
+    margin: '8px 0 10px',
     color: '#a5f3fc',
     fontSize: 10,
     lineHeight: 1.35,
   },
+  calibrationPanelActions: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: 8,
+  },
   calibrationCopyButton: {
     width: '100%',
-    minHeight: 38,
+    minHeight: 34,
     borderRadius: 10,
     border: '1px solid rgba(254, 240, 138, 0.62)',
     background: 'linear-gradient(180deg, rgba(254, 240, 138, 0.22), rgba(103, 232, 249, 0.12))',
     color: '#fff7cc',
+    fontSize: 12,
+    fontWeight: 900,
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+  },
+  calibrationResetButton: {
+    width: '100%',
+    minHeight: 34,
+    borderRadius: 10,
+    border: '1px solid rgba(103, 232, 249, 0.58)',
+    background: 'linear-gradient(180deg, rgba(103, 232, 249, 0.18), rgba(125, 211, 252, 0.08))',
+    color: '#dffbff',
     fontSize: 12,
     fontWeight: 900,
     cursor: 'pointer',
@@ -1293,28 +1343,6 @@ const styles: Record<string, CSSProperties> = {
     WebkitAppearance: 'none',
     outline: 'none',
     textAlign: 'center',
-  },
-  debugMarkerLabel: {
-    position: 'absolute',
-    left: 13,
-    top: -9,
-    zIndex: Z_INDEX.calibration,
-    maxWidth: 170,
-    padding: '3px 6px',
-    borderRadius: 5,
-    color: '#fff7ed',
-    background: 'rgba(24, 10, 4, 0.78)',
-    border: '1px solid rgba(251, 146, 60, 0.62)',
-    boxShadow: '0 0 12px rgba(249, 115, 22, 0.28)',
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-    fontSize: 10,
-    fontWeight: 800,
-    lineHeight: 1.15,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    textShadow: '0 1px 2px rgba(0, 0, 0, 0.78)',
-    pointerEvents: 'none',
   },
   searchDock: {
     position: 'absolute',
