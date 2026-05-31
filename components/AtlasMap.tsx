@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
-import { MICHIGAN_MAP_ANCHORS, resolveMapPosition } from '../data/mapCalibration';
+import { MICHIGAN_MAP_ANCHORS, latLngToAtlasPosition } from '../data/mapCalibration';
 import type { MichiganMapAnchor } from '../data/mapCalibration';
 import AtmosphereLayer from './AtmosphereLayer';
 
@@ -36,7 +36,7 @@ const MEDIA_MASKS: Record<'romeoPeach', string> = {
 const BASE_SCALE = 1.03;
 
 // Layer order contract (low -> high): map art (1), decorative atmosphere (2-4 in effects),
-// interactive markers (5), optional calibration debug (6), event card (15),
+// interactive markers (5), optional calibration anchors (6), event card (15),
 // search + featured discovery dock (20).
 const Z_INDEX = {
   mapImage: 1,
@@ -51,7 +51,7 @@ const Z_INDEX = {
 
 // Debug mode for the invisible geographic layer. Set to true while tuning
 // anchors; keep false in normal use so the painterly artwork remains unchanged.
-const showAtlasCalibration = true;
+const showAtlasCalibration = false;
 const CARD_THEME_BY_CATEGORY: Record<(typeof ATLAS_EVENTS)[number]['category'], { edge: string; glow: string; wash: string }> = {
   Festivals: { edge: 'rgba(255,228,166,.52)', glow: 'rgba(255,202,102,.24)', wash: 'rgba(255,194,112,.14)' },
   Music: { edge: 'rgba(186,208,255,.55)', glow: 'rgba(120,175,255,.24)', wash: 'rgba(132,152,245,.14)' },
@@ -170,15 +170,7 @@ const copyTextToClipboard = async (text: string) => {
   document.body.removeChild(textarea);
 };
 
-const createCalibrationAnchors = () =>
-  MICHIGAN_MAP_ANCHORS.map((anchor) => {
-    if (anchor.name !== 'Marquette') return { ...anchor };
-
-    const isNearUpperPeninsula = anchor.mapX >= 10 && anchor.mapX <= 38 && anchor.mapY >= 2 && anchor.mapY <= 18;
-    if (isNearUpperPeninsula) return { ...anchor };
-
-    return { ...anchor, mapX: 23, mapY: 8 };
-  });
+const createCalibrationAnchors = () => MICHIGAN_MAP_ANCHORS.map((anchor) => ({ ...anchor }));
 
 function AtlasCalibrationLayer({
   anchors,
@@ -220,12 +212,6 @@ function AtlasCalibrationLayer({
               onPointerCancel={onAnchorDragEnd}
               style={{ ...styles.calibrationAnchorDot, ...(isDragging ? styles.calibrationAnchorDotDragging : null) }}
             />
-            <span style={{ ...styles.calibrationLabel, ...(isDragging ? styles.calibrationLabelDragging : null) }}>
-              <strong style={styles.calibrationLabelName}>{anchor.name}</strong>
-              <span style={styles.calibrationLabelCoordinates}>
-                mapX {formatCalibrationPercent(anchor.mapX)}% · mapY {formatCalibrationPercent(anchor.mapY)}%
-              </span>
-            </span>
           </span>
         );
       })}
@@ -264,52 +250,6 @@ function AtlasCalibrationPanel({
   );
 }
 
-function AtlasCalibrationDebugModal({
-  calibrationJson,
-  onClose,
-}: {
-  calibrationJson: string;
-  onClose: () => void;
-}) {
-  return (
-    <div style={styles.calibrationDebugModalBackdrop} role="presentation">
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="calibration-debug-modal-title"
-        style={styles.calibrationDebugModal}
-      >
-        <div style={styles.calibrationDebugModalHeader}>
-          <div>
-            <p style={styles.calibrationDebugModalKicker}>Temporary debug output</p>
-            <h2 id="calibration-debug-modal-title" style={styles.calibrationDebugModalTitle}>
-              Calibration JSON
-            </h2>
-          </div>
-          <button type="button" onClick={onClose} style={styles.calibrationDebugModalCloseButton} aria-label="Close calibration JSON debug modal">
-            ×
-          </button>
-        </div>
-        <p style={styles.calibrationDebugModalBody}>
-          Clipboard copy was attempted. If iPhone clipboard access fails, select and copy the JSON below manually.
-        </p>
-        <textarea
-          readOnly
-          value={calibrationJson}
-          style={styles.calibrationDebugModalTextarea}
-          aria-label="Calibration JSON debug output"
-          onFocus={(event) => event.currentTarget.select()}
-        />
-        <div style={styles.calibrationDebugModalActions}>
-          <button type="button" onClick={onClose} style={styles.calibrationCopyButton}>
-            Done
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 export default function AtlasMap() {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -323,7 +263,6 @@ export default function AtlasMap() {
   const [calibrationAnchors, setCalibrationAnchors] = useState<MichiganMapAnchor[]>(createCalibrationAnchors);
   const [draggingAnchorName, setDraggingAnchorName] = useState<string | null>(null);
   const [calibrationCopyStatus, setCalibrationCopyStatus] = useState<string | null>(null);
-  const [calibrationDebugJson, setCalibrationDebugJson] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const initialEventParamHandledRef = useRef(false);
@@ -454,7 +393,6 @@ export default function AtlasMap() {
     }
 
     const calibrationJson = formatCalibrationJson(calibrationAnchors);
-    setCalibrationDebugJson(calibrationJson);
 
     try {
       await copyTextToClipboard(calibrationJson);
@@ -764,7 +702,7 @@ export default function AtlasMap() {
             const isFeaturedMarker = !isSearchActive && featuredEvent.id === event.id;
             const pulseDuration = 2.4 + (index % 3) * 0.35;
             const pulseDelay = index * 0.26;
-            const markerPosition = resolveMapPosition(event);
+            const markerPosition = latLngToAtlasPosition(event.latitude, event.longitude);
 
             return (
               <div key={event.id} style={{ ...styles.markerWrap, left: `${markerPosition.x}%`, top: `${markerPosition.y}%` }}>
@@ -823,10 +761,6 @@ export default function AtlasMap() {
           onCopy={handleCopyCalibrationJson}
           onReset={handleResetCalibrationAnchors}
         />
-      ) : null}
-
-      {showAtlasCalibration && calibrationDebugJson ? (
-        <AtlasCalibrationDebugModal calibrationJson={calibrationDebugJson} onClose={() => setCalibrationDebugJson(null)} />
       ) : null}
 
       {!showAtlasCalibration && isDesktop ? (
@@ -1208,11 +1142,6 @@ const styles: Record<string, CSSProperties> = {
     pointerEvents: 'none',
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
   },
-  calibrationGridLine: {
-    position: 'absolute',
-    background: 'rgba(90, 220, 255, 0.24)',
-    boxShadow: '0 0 8px rgba(90, 220, 255, 0.18)',
-  },
   calibrationAnchor: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
@@ -1239,39 +1168,6 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: '0 0 16px rgba(254, 240, 138, 0.95), 0 0 28px rgba(103, 232, 249, 0.72)',
     cursor: 'grabbing',
     transform: 'scale(1.18)',
-  },
-  calibrationLabel: {
-    position: 'absolute',
-    left: 8,
-    top: -7,
-    padding: '2px 5px',
-    borderRadius: 4,
-    color: '#dffbff',
-    background: 'rgba(4, 16, 24, 0.76)',
-    border: '1px solid rgba(103, 232, 249, 0.5)',
-    fontSize: 10,
-    lineHeight: 1.1,
-    whiteSpace: 'nowrap',
-    textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
-    pointerEvents: 'none',
-  },
-  calibrationLabelDragging: {
-    color: '#fef9c3',
-    background: 'rgba(35, 23, 4, 0.84)',
-    border: '1px solid rgba(254, 240, 138, 0.72)',
-    boxShadow: '0 0 14px rgba(254, 240, 138, 0.28)',
-  },
-  calibrationLabelName: {
-    display: 'block',
-    color: '#ffffff',
-    fontWeight: 800,
-  },
-  calibrationLabelCoordinates: {
-    display: 'block',
-    marginTop: 2,
-    color: '#a5f3fc',
-    fontSize: 9,
-    fontWeight: 700,
   },
   calibrationPanel: {
     position: 'fixed',
@@ -1348,91 +1244,6 @@ const styles: Record<string, CSSProperties> = {
     color: '#fef08a',
     fontSize: 10,
     lineHeight: 1.25,
-  },
-  calibrationDebugModalBackdrop: {
-    position: 'fixed',
-    inset: 0,
-    zIndex: 50,
-    display: 'grid',
-    placeItems: 'center',
-    padding: 'max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom))',
-    background: 'rgba(0, 0, 0, 0.62)',
-    backdropFilter: 'blur(5px)',
-    WebkitBackdropFilter: 'blur(5px)',
-  },
-  calibrationDebugModal: {
-    width: 'min(680px, 100%)',
-    maxHeight: 'min(76vh, 760px)',
-    display: 'grid',
-    gridTemplateRows: 'auto auto minmax(180px, 1fr) auto',
-    gap: 12,
-    padding: 16,
-    borderRadius: 18,
-    border: '1px solid rgba(254, 240, 138, 0.52)',
-    background: 'linear-gradient(180deg, rgba(8, 20, 30, 0.97), rgba(4, 9, 17, 0.96))',
-    boxShadow: '0 20px 70px rgba(0, 0, 0, 0.58), inset 0 0 0 1px rgba(255, 255, 255, 0.06)',
-    color: '#dffbff',
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-  },
-  calibrationDebugModalHeader: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  calibrationDebugModalKicker: {
-    margin: '0 0 4px',
-    color: '#fef08a',
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: 0.7,
-    textTransform: 'uppercase',
-  },
-  calibrationDebugModalTitle: {
-    margin: 0,
-    color: '#ffffff',
-    fontSize: 20,
-    lineHeight: 1.1,
-  },
-  calibrationDebugModalCloseButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    background: 'rgba(255, 255, 255, 0.08)',
-    color: '#ffffff',
-    fontSize: 24,
-    lineHeight: 1,
-    cursor: 'pointer',
-    touchAction: 'manipulation',
-  },
-  calibrationDebugModalBody: {
-    margin: 0,
-    color: '#a5f3fc',
-    fontSize: 12,
-    lineHeight: 1.45,
-  },
-  calibrationDebugModalTextarea: {
-    width: '100%',
-    minHeight: 180,
-    height: '100%',
-    resize: 'none',
-    overflow: 'auto',
-    WebkitOverflowScrolling: 'touch',
-    padding: 12,
-    borderRadius: 12,
-    border: '1px solid rgba(103, 232, 249, 0.42)',
-    background: 'rgba(1, 9, 14, 0.88)',
-    color: '#ecfeff',
-    fontSize: 12,
-    lineHeight: 1.55,
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-    whiteSpace: 'pre',
-  },
-  calibrationDebugModalActions: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: 8,
   },
   marker: {
     position: 'absolute',

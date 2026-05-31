@@ -19,17 +19,17 @@ export type AtlasPosition = {
 // Gold Artifacts, nearby events, Cartographer routes, vendor locations, and
 // entrance locations can all share the same lat/lng -> atlas positioning path.
 export const MICHIGAN_MAP_ANCHORS: MichiganMapAnchor[] = [
-  { name: 'Detroit', latitude: 42.3314, longitude: -83.0458, mapX: 75, mapY: 44 },
-  { name: 'Port Huron', latitude: 42.9709, longitude: -82.4249, mapX: 82, mapY: 34 },
-  { name: 'Romeo', latitude: 42.8028, longitude: -83.01299, mapX: 66, mapY: 40 },
-  { name: 'Lansing', latitude: 42.7325, longitude: -84.5555, mapX: 47, mapY: 50 },
-  { name: 'Grand Rapids', latitude: 42.9634, longitude: -85.6681, mapX: 34, mapY: 48 },
-  { name: 'Traverse City', latitude: 44.7631, longitude: -85.6206, mapX: 30, mapY: 28 },
-  { name: 'Mackinaw City', latitude: 45.7775, longitude: -84.7278, mapX: 49, mapY: 14 },
-  { name: 'Sault Ste. Marie', latitude: 46.4953, longitude: -84.3453, mapX: 55, mapY: 5 },
-  { name: 'Marquette', latitude: 46.5436, longitude: -87.3954, mapX: 23, mapY: 5 },
-  { name: 'Escanaba', latitude: 45.7452, longitude: -87.0646, mapX: 34, mapY: 8 },
-  { name: 'Alpena', latitude: 45.0617, longitude: -83.4328, mapX: 58, mapY: 21 },
+  { name: 'Detroit', latitude: 42.3314, longitude: -83.0458, mapX: 83.78, mapY: 73.28 },
+  { name: 'Port Huron', latitude: 42.9709, longitude: -82.4249, mapX: 94.7, mapY: 67.54 },
+  { name: 'Romeo', latitude: 42.8028, longitude: -83.01299, mapX: 85.6, mapY: 65.66 },
+  { name: 'Lansing', latitude: 42.7325, longitude: -84.5555, mapX: 50.91, mapY: 64.22 },
+  { name: 'Grand Rapids', latitude: 42.9634, longitude: -85.6681, mapX: 38.77, mapY: 56.93 },
+  { name: 'Traverse City', latitude: 44.7631, longitude: -85.6206, mapX: 48.79, mapY: 40.36 },
+  { name: 'Mackinaw City', latitude: 45.7775, longitude: -84.7278, mapX: 64.66, mapY: 28.77 },
+  { name: 'Sault Ste. Marie', latitude: 46.4953, longitude: -84.3453, mapX: 74.47, mapY: 20.55 },
+  { name: 'Marquette', latitude: 46.5436, longitude: -87.3954, mapX: 38.67, mapY: 17.32 },
+  { name: 'Escanaba', latitude: 45.7452, longitude: -87.0646, mapX: 40.09, mapY: 26.57 },
+  { name: 'Alpena', latitude: 45.0617, longitude: -83.4328, mapX: 78.01, mapY: 34.72 },
 ];
 
 const EXACT_ANCHOR_MATCH_EPSILON = 0.0001;
