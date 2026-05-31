@@ -1,4 +1,4 @@
-export type AtlasCategory = 'Festivals' | 'Music' | 'Fairs';
+export type AtlasCategory = 'Festivals' | 'Music' | 'Fairs' | 'Arts & Culture';
 
 export type AtmosphereEffect =
   | 'geese'
@@ -18,6 +18,7 @@ export type AtlasEvent = {
   atmosphereLabel: string;
   blurb: string;
   category: AtlasCategory;
+  cardTag?: string;
   x: number;
   y: number;
   atlasNotes?: string[];
@@ -207,6 +208,38 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   { id: 'faster-horses', name: 'Faster Horses Festival', location: 'Brooklyn, MI', atmosphereLabel: 'Speedway campfire chorus', blurb: 'A major country music weekend at Michigan International Speedway with camping crowds.', category: 'Music', iconType: 'music', x: 56, y: 57, regionAtmosphere: 'urban' },
   { id: 'common-ground-lansing', name: 'Common Ground Music Festival', location: 'Lansing, MI', atmosphereLabel: 'Capital city night sets', blurb: 'Downtown Lansing welcomes national acts and local favorites in a summer concert series.', category: 'Music', iconType: 'music', x: 47, y: 50, regionAtmosphere: 'urban' },
   { id: 'allendale-balloon-fest', name: 'Allendale Balloon Festival', location: 'Allendale, MI', atmosphereLabel: 'Sky lantern uplift', blurb: 'Colorful hot-air balloons, evening glows, and family food stands fill open summer skies.', category: 'Festivals', iconType: 'fair', x: 27, y: 46, atmosphere: atmosphere(['balloons'], 'medium'), regionAtmosphere: 'lakeshore' },
+
+  // Test event for on-site validation of event cards and Atlas Scout/artifact workflow.
+  {
+    id: 'black-river-tattoo',
+    name: 'Black River Tattoo Convention',
+    location: 'Port Huron, MI',
+    atmosphereLabel: 'Event-floor discovery',
+    blurb: 'A tattoo, art, and culture convention in Port Huron featuring artists, vendors, live energy, and event-floor discovery.',
+    category: 'Arts & Culture',
+    cardTag: 'Arts & Culture',
+    iconType: 'art',
+    searchAliases: ['Black River Tattoo Convention', 'Port Huron tattoo convention', 'Blue Water tattoo convention'],
+    x: 82,
+    y: 34,
+    atmosphere: atmosphere([], 'subtle'),
+    regionAtmosphere: 'urban',
+    detailPage: {
+      shortStory: 'A temporary test entry for validating the on-site Atlas Scout and artifact workflow around an indoor tattoo, art, and culture convention in the Port Huron / Blue Water area.',
+      atmosphereLine: 'Indoor convention-floor energy, artist booths, vendors, and discovery cues in the Blue Water area.',
+      detailIntro: 'Black River Tattoo Convention is staged here as a test event for validating the Atlas event-card and artifact-capture experience on site.',
+      storySections: [
+        'Use this placeholder detail page to walk the event-floor flow, confirm the Enter Event path, and test how Atlas Scout prompts can guide discovery at vendor tables, artist booths, and indoor culture moments.',
+      ],
+      archivalNote: 'Approximate Port Huron / Blue Water placement only until exact venue coordinates are confirmed.',
+      visitorMood: 'High-energy, creative, and built for event-floor discovery.',
+      eventSnapshot: {
+        setting: 'Indoor tattoo, art, and culture convention in the Port Huron / Blue Water area',
+        bestFor: 'Testing event cards, Atlas Scout prompts, and artifact workflow validation',
+        signatureMoment: 'Finding the first artist booth or vendor story worth capturing as an Atlas artifact',
+      },
+    },
+  },
 
   {
     id: 'goodells-fair',
