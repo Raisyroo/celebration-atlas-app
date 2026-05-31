@@ -1019,8 +1019,8 @@ const styles: Record<string, CSSProperties> = {
   },
   modeIconImage: {
     display: "block",
-    width: "clamp(2.7rem, 10vw, 3.7rem)",
-    height: "clamp(2.7rem, 10vw, 3.7rem)",
+    width: "clamp(2.25rem, 8vw, 3.05rem)",
+    height: "clamp(2.25rem, 8vw, 3.05rem)",
     objectFit: "contain",
   },
   modeLabel: {
