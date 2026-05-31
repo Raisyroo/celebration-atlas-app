@@ -15,8 +15,8 @@ export type AtlasEvent = {
   id: string;
   name: string;
   location: string;
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
   atmosphereLabel: string;
   blurb: string;
   category: AtlasCategory;
