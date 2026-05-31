@@ -50,7 +50,7 @@ const Z_INDEX = {
 
 // Debug mode for the invisible geographic layer. Set to true while tuning
 // anchors; keep false in normal use so the painterly artwork remains unchanged.
-const showAtlasCalibration = false;
+const showAtlasCalibration = true;
 const CARD_THEME_BY_CATEGORY: Record<(typeof ATLAS_EVENTS)[number]['category'], { edge: string; glow: string; wash: string }> = {
   Festivals: { edge: 'rgba(255,228,166,.52)', glow: 'rgba(255,202,102,.24)', wash: 'rgba(255,194,112,.14)' },
   Music: { edge: 'rgba(186,208,255,.55)', glow: 'rgba(120,175,255,.24)', wash: 'rgba(132,152,245,.14)' },
@@ -138,7 +138,7 @@ const getHighlightedIdsFromQuery = (queryText: string) => {
   return ids;
 };
 
-function AtlasCalibrationLayer({ events }: { events: typeof ATLAS_EVENTS }) {
+function AtlasCalibrationLayer() {
   const gridLines = Array.from({ length: 11 }, (_, index) => index * 10);
 
   return (
@@ -162,26 +162,14 @@ function AtlasCalibrationLayer({ events }: { events: typeof ATLAS_EVENTS }) {
           style={{ ...styles.calibrationAnchor, left: `${anchor.mapX}%`, top: `${anchor.mapY}%` }}
         >
           <span style={styles.calibrationAnchorDot} />
-          <span style={styles.calibrationLabel}>{anchor.name}</span>
-        </span>
-      ))}
-      {events.map((event) => {
-        const position = resolveMapPosition(event);
-        const hasCoordinates = typeof event.latitude === 'number' && typeof event.longitude === 'number';
-
-        return (
-          <span
-            key={`event-coordinate-${event.id}`}
-            style={{ ...styles.calibrationEventCoordinate, left: `${position.x}%`, top: `${position.y}%` }}
-          >
-            <span style={styles.calibrationEventDot} />
-            <span style={styles.calibrationEventLabel}>
-              {event.name}
-              {hasCoordinates ? ` (${event.latitude?.toFixed(4)}, ${event.longitude?.toFixed(4)})` : ' (legacy x/y)'}
+          <span style={styles.calibrationLabel}>
+            <strong style={styles.calibrationLabelName}>{anchor.name}</strong>
+            <span style={styles.calibrationLabelCoordinates}>
+              mapX {anchor.mapX}% · mapY {anchor.mapY}%
             </span>
           </span>
-        );
-      })}
+        </span>
+      ))}
     </div>
   );
 }
@@ -526,7 +514,7 @@ export default function AtlasMap() {
             }}
           />
 
-          {showAtlasCalibration ? <AtlasCalibrationLayer events={ATLAS_EVENTS} /> : null}
+          {showAtlasCalibration ? <AtlasCalibrationLayer /> : null}
 
           {ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
@@ -580,6 +568,11 @@ export default function AtlasMap() {
                 >
                   {event.name}
                 </button>
+                {showAtlasCalibration ? (
+                  <span style={styles.debugMarkerLabel}>
+                    {event.name}
+                  </span>
+                ) : null}
               </div>
             );
           })}
@@ -997,36 +990,17 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
     textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
   },
-  calibrationEventCoordinate: {
-    position: 'absolute',
-    transform: 'translate(-50%, -50%)',
+  calibrationLabelName: {
+    display: 'block',
+    color: '#ffffff',
+    fontWeight: 800,
   },
-  calibrationEventDot: {
-    position: 'absolute',
-    left: -3,
-    top: -3,
-    width: 6,
-    height: 6,
-    borderRadius: 999,
-    background: '#f97316',
-    boxShadow: '0 0 10px rgba(249, 115, 22, 0.95)',
-  },
-  calibrationEventLabel: {
-    position: 'absolute',
-    left: 6,
-    top: 5,
-    padding: '2px 4px',
-    borderRadius: 4,
-    color: '#fff7ed',
-    background: 'rgba(24, 10, 4, 0.74)',
-    border: '1px solid rgba(251, 146, 60, 0.5)',
+  calibrationLabelCoordinates: {
+    display: 'block',
+    marginTop: 2,
+    color: '#a5f3fc',
     fontSize: 9,
-    lineHeight: 1.1,
-    maxWidth: 180,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    textShadow: '0 1px 2px rgba(0, 0, 0, 0.78)',
+    fontWeight: 700,
   },
   marker: {
     position: 'absolute',
@@ -1076,6 +1050,28 @@ const styles: Record<string, CSSProperties> = {
     WebkitAppearance: 'none',
     outline: 'none',
     textAlign: 'center',
+  },
+  debugMarkerLabel: {
+    position: 'absolute',
+    left: 13,
+    top: -9,
+    zIndex: Z_INDEX.calibration,
+    maxWidth: 170,
+    padding: '3px 6px',
+    borderRadius: 5,
+    color: '#fff7ed',
+    background: 'rgba(24, 10, 4, 0.78)',
+    border: '1px solid rgba(251, 146, 60, 0.62)',
+    boxShadow: '0 0 12px rgba(249, 115, 22, 0.28)',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    fontSize: 10,
+    fontWeight: 800,
+    lineHeight: 1.15,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    textShadow: '0 1px 2px rgba(0, 0, 0, 0.78)',
+    pointerEvents: 'none',
   },
   searchDock: {
     position: 'absolute',
