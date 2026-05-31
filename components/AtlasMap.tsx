@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
+import { resolveMapPosition } from '../data/mapCalibration';
 import AtmosphereLayer from './AtmosphereLayer';
 
 const ATMOSPHERIC_SUGGESTIONS = [
@@ -479,9 +480,10 @@ export default function AtlasMap() {
             const isFeaturedMarker = !isSearchActive && featuredEvent.id === event.id;
             const pulseDuration = 2.4 + (index % 3) * 0.35;
             const pulseDelay = index * 0.26;
+            const markerPosition = resolveMapPosition(event);
 
             return (
-              <div key={event.id} style={{ ...styles.markerWrap, left: `${event.x}%`, top: `${event.y}%` }}>
+              <div key={event.id} style={{ ...styles.markerWrap, left: `${markerPosition.x}%`, top: `${markerPosition.y}%` }}>
                 <button
                   type="button"
                   className="marker-pulse"
