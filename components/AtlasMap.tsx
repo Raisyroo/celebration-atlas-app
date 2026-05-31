@@ -48,6 +48,7 @@ const CARD_THEME_BY_CATEGORY: Record<(typeof ATLAS_EVENTS)[number]['category'], 
   Festivals: { edge: 'rgba(255,228,166,.52)', glow: 'rgba(255,202,102,.24)', wash: 'rgba(255,194,112,.14)' },
   Music: { edge: 'rgba(186,208,255,.55)', glow: 'rgba(120,175,255,.24)', wash: 'rgba(132,152,245,.14)' },
   Fairs: { edge: 'rgba(255,203,170,.54)', glow: 'rgba(255,151,106,.24)', wash: 'rgba(255,168,122,.14)' },
+  'Arts & Culture': { edge: 'rgba(232,198,255,.55)', glow: 'rgba(181,118,255,.24)', wash: 'rgba(183,122,255,.14)' },
 };
 
 
@@ -184,6 +185,12 @@ export default function AtlasMap() {
   const shouldSimplifyRomeoPeachCard = renderedEvent?.id === 'romeo-peach';
   const cardCue = !shouldSimplifyRomeoPeachCard && renderedEvent?.iconType ? CARD_CUE_BY_ICON_TYPE[renderedEvent.iconType] : null;
   const cardMemoryExcerpt = shouldSimplifyRomeoPeachCard ? undefined : renderedEvent?.atlasMemories?.[0]?.trim();
+  const shouldShowEnterEvent = Boolean(
+    renderedEvent?.id === 'romeo-peach' ||
+      renderedEvent?.id === 'electric-forest' ||
+      renderedEvent?.id === 'goodells-fair' ||
+      renderedEvent?.id === 'black-river-tattoo'
+  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -604,11 +611,12 @@ export default function AtlasMap() {
             </div>
           ) : null}
           <p style={styles.cardLocation}>{renderedEvent.location}</p>
+          {renderedEvent.cardTag ? <p style={styles.cardCategoryTag}>{renderedEvent.cardTag}</p> : null}
           {cardCue ? <p style={styles.cardIconCue}>{`${cardCue.sigil} ${cardCue.label}`}</p> : null}
           <p style={styles.cardAtmosphere}>{selectedMedia?.atmosphereTitle ?? renderedEvent.atmosphereLabel}</p>
           {cardMemoryExcerpt ? <p style={styles.cardMemoryExcerpt}>Field note: {cardMemoryExcerpt}</p> : null}
           <p style={styles.cardBody}>{renderedEvent.blurb}</p>
-          {renderedEvent.id === 'romeo-peach' || renderedEvent.id === 'electric-forest' || renderedEvent.id === 'goodells-fair' ? (
+          {shouldShowEnterEvent ? (
             renderedEvent.id === 'electric-forest' ? (
               <button
                 type="button"
@@ -1134,6 +1142,23 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     color: 'rgba(255,238,203,.88)',
     textShadow: '0 1px 2px rgba(3,4,8,.8)',
+  },
+  cardCategoryTag: {
+    position: 'relative',
+    zIndex: 1,
+    display: 'inline-flex',
+    width: 'fit-content',
+    margin: '0 0 8px',
+    padding: '4px 9px',
+    borderRadius: 999,
+    border: '1px solid rgba(235, 205, 255, 0.34)',
+    background: 'rgba(88, 48, 130, 0.18)',
+    color: 'rgba(248, 229, 255, 0.86)',
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    textShadow: '0 1px 2px rgba(3,4,8,.72)',
   },
   cardIconCue: {
     position: 'relative',
