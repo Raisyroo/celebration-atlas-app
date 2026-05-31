@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
-import { resolveMapPosition } from '../data/mapCalibration';
+import { MICHIGAN_MAP_ANCHORS, resolveMapPosition } from '../data/mapCalibration';
 import AtmosphereLayer from './AtmosphereLayer';
 
 const ATMOSPHERIC_SUGGESTIONS = [
@@ -35,7 +35,8 @@ const MEDIA_MASKS: Record<'romeoPeach', string> = {
 const BASE_SCALE = 1.03;
 
 // Layer order contract (low -> high): map art (1), decorative atmosphere (2-4 in effects),
-// interactive markers (5), event card (15), search + featured discovery dock (20).
+// interactive markers (5), optional calibration debug (6), event card (15),
+// search + featured discovery dock (20).
 const Z_INDEX = {
   mapImage: 1,
   atmosphere: 3,
@@ -43,8 +44,13 @@ const Z_INDEX = {
   particles: 4,
   markers: 5,
   card: 15,
+  calibration: 6,
   searchDock: 20,
 } as const;
+
+// Debug mode for the invisible geographic layer. Set to true while tuning
+// anchors; keep false in normal use so the painterly artwork remains unchanged.
+const showAtlasCalibration = false;
 const CARD_THEME_BY_CATEGORY: Record<(typeof ATLAS_EVENTS)[number]['category'], { edge: string; glow: string; wash: string }> = {
   Festivals: { edge: 'rgba(255,228,166,.52)', glow: 'rgba(255,202,102,.24)', wash: 'rgba(255,194,112,.14)' },
   Music: { edge: 'rgba(186,208,255,.55)', glow: 'rgba(120,175,255,.24)', wash: 'rgba(132,152,245,.14)' },
@@ -131,6 +137,54 @@ const getHighlightedIdsFromQuery = (queryText: string) => {
 
   return ids;
 };
+
+function AtlasCalibrationLayer({ events }: { events: typeof ATLAS_EVENTS }) {
+  const gridLines = Array.from({ length: 11 }, (_, index) => index * 10);
+
+  return (
+    <div style={styles.calibrationLayer} aria-hidden="true">
+      {/* Invisible map = geographic calibration overlay; visible map = artwork below. */}
+      {gridLines.map((percent) => (
+        <span
+          key={`grid-x-${percent}`}
+          style={{ ...styles.calibrationGridLine, left: `${percent}%`, top: 0, width: 1, height: '100%' }}
+        />
+      ))}
+      {gridLines.map((percent) => (
+        <span
+          key={`grid-y-${percent}`}
+          style={{ ...styles.calibrationGridLine, left: 0, top: `${percent}%`, width: '100%', height: 1 }}
+        />
+      ))}
+      {MICHIGAN_MAP_ANCHORS.map((anchor) => (
+        <span
+          key={anchor.name}
+          style={{ ...styles.calibrationAnchor, left: `${anchor.mapX}%`, top: `${anchor.mapY}%` }}
+        >
+          <span style={styles.calibrationAnchorDot} />
+          <span style={styles.calibrationLabel}>{anchor.name}</span>
+        </span>
+      ))}
+      {events.map((event) => {
+        const position = resolveMapPosition(event);
+        const hasCoordinates = typeof event.latitude === 'number' && typeof event.longitude === 'number';
+
+        return (
+          <span
+            key={`event-coordinate-${event.id}`}
+            style={{ ...styles.calibrationEventCoordinate, left: `${position.x}%`, top: `${position.y}%` }}
+          >
+            <span style={styles.calibrationEventDot} />
+            <span style={styles.calibrationEventLabel}>
+              {event.name}
+              {hasCoordinates ? ` (${event.latitude?.toFixed(4)}, ${event.longitude?.toFixed(4)})` : ' (legacy x/y)'}
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function AtlasMap() {
   const router = useRouter();
@@ -471,6 +525,8 @@ export default function AtlasMap() {
               transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.9}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.9}px, 0)`,
             }}
           />
+
+          {showAtlasCalibration ? <AtlasCalibrationLayer events={ATLAS_EVENTS} /> : null}
 
           {ATLAS_EVENTS.map((event, index) => {
             const isHighlighted = highlightedIds.has(event.id);
@@ -899,6 +955,78 @@ const styles: Record<string, CSSProperties> = {
     userSelect: 'none',
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
+  },
+  calibrationLayer: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: Z_INDEX.calibration,
+    pointerEvents: 'none',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+  },
+  calibrationGridLine: {
+    position: 'absolute',
+    background: 'rgba(90, 220, 255, 0.24)',
+    boxShadow: '0 0 8px rgba(90, 220, 255, 0.18)',
+  },
+  calibrationAnchor: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+  },
+  calibrationAnchorDot: {
+    position: 'absolute',
+    left: -5,
+    top: -5,
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    background: '#67e8f9',
+    border: '1px solid rgba(255, 255, 255, 0.86)',
+    boxShadow: '0 0 12px rgba(103, 232, 249, 0.9)',
+  },
+  calibrationLabel: {
+    position: 'absolute',
+    left: 8,
+    top: -7,
+    padding: '2px 5px',
+    borderRadius: 4,
+    color: '#dffbff',
+    background: 'rgba(4, 16, 24, 0.76)',
+    border: '1px solid rgba(103, 232, 249, 0.5)',
+    fontSize: 10,
+    lineHeight: 1.1,
+    whiteSpace: 'nowrap',
+    textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+  },
+  calibrationEventCoordinate: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+  },
+  calibrationEventDot: {
+    position: 'absolute',
+    left: -3,
+    top: -3,
+    width: 6,
+    height: 6,
+    borderRadius: 999,
+    background: '#f97316',
+    boxShadow: '0 0 10px rgba(249, 115, 22, 0.95)',
+  },
+  calibrationEventLabel: {
+    position: 'absolute',
+    left: 6,
+    top: 5,
+    padding: '2px 4px',
+    borderRadius: 4,
+    color: '#fff7ed',
+    background: 'rgba(24, 10, 4, 0.74)',
+    border: '1px solid rgba(251, 146, 60, 0.5)',
+    fontSize: 9,
+    lineHeight: 1.1,
+    maxWidth: 180,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    textShadow: '0 1px 2px rgba(0, 0, 0, 0.78)',
   },
   marker: {
     position: 'absolute',
