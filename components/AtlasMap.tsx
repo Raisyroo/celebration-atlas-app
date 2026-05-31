@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
+import type { AtlasEvent } from '../data/events';
 import { MICHIGAN_MAP_ANCHORS, latLngToAtlasPosition } from '../data/mapCalibration';
 import type { MichiganMapAnchor } from '../data/mapCalibration';
 import AtmosphereLayer from './AtmosphereLayer';
@@ -140,6 +141,84 @@ const getHighlightedIdsFromQuery = (queryText: string) => {
 };
 
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
+
+const MARKER_EDGE_INSET_PERCENT = 6;
+const MARKER_COLLISION_DISTANCE_PERCENT = 3.25;
+const MARKER_COLLISION_RADIUS_PERCENT = 2.35;
+
+type AtlasMarkerLayout = {
+  event: AtlasEvent;
+  x: number;
+  y: number;
+};
+
+type AtlasMarkerLayoutCandidate = AtlasMarkerLayout & {
+  baseX: number;
+  baseY: number;
+};
+
+const clampMarkerPercent = (value: number) =>
+  Math.min(100 - MARKER_EDGE_INSET_PERCENT, Math.max(MARKER_EDGE_INSET_PERCENT, value));
+
+const getAtlasMarkerLayouts = (events: AtlasEvent[]): AtlasMarkerLayout[] => {
+  const candidates = events.map((event) => {
+    const realPosition = latLngToAtlasPosition(event.latitude, event.longitude);
+    return {
+      event,
+      baseX: clampMarkerPercent(realPosition.x),
+      baseY: clampMarkerPercent(realPosition.y),
+      x: clampMarkerPercent(realPosition.x),
+      y: clampMarkerPercent(realPosition.y),
+    };
+  });
+
+  const ungroupedIds = new Set(candidates.map((candidate) => candidate.event.id));
+  const groups: AtlasMarkerLayoutCandidate[][] = [];
+
+  for (const candidate of candidates) {
+    if (!ungroupedIds.has(candidate.event.id)) continue;
+
+    const group: AtlasMarkerLayoutCandidate[] = [];
+    const stack = [candidate];
+    ungroupedIds.delete(candidate.event.id);
+
+    while (stack.length) {
+      const current = stack.pop();
+      if (!current) continue;
+      group.push(current);
+
+      for (const nearby of candidates) {
+        if (!ungroupedIds.has(nearby.event.id)) continue;
+
+        const distance = Math.hypot(current.baseX - nearby.baseX, current.baseY - nearby.baseY);
+        if (distance <= MARKER_COLLISION_DISTANCE_PERCENT) {
+          ungroupedIds.delete(nearby.event.id);
+          stack.push(nearby);
+        }
+      }
+    }
+
+    groups.push(group);
+  }
+
+  return groups.flatMap((group) => {
+    if (group.length === 1) return group;
+
+    const centerX = group.reduce((total, marker) => total + marker.baseX, 0) / group.length;
+    const centerY = group.reduce((total, marker) => total + marker.baseY, 0) / group.length;
+    const radius = Math.min(4.4, MARKER_COLLISION_RADIUS_PERCENT + Math.max(0, group.length - 2) * 0.28);
+    const startAngle = group.length === 2 ? -Math.PI / 2 : -Math.PI / 2 - Math.PI / group.length;
+
+    return group.map((marker, index) => {
+      const angle = startAngle + (index / group.length) * Math.PI * 2;
+      return {
+        ...marker,
+        x: clampMarkerPercent(centerX + Math.cos(angle) * radius),
+        y: clampMarkerPercent(centerY + Math.sin(angle) * radius),
+      };
+    });
+  });
+};
 
 const formatCalibrationCoordinate = (value: number) => Number(value.toFixed(5)).toString();
 const formatCalibrationPercent = (value: number) => Number(value.toFixed(2)).toString();
@@ -292,6 +371,7 @@ export default function AtlasMap() {
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
   const highlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
+  const markerLayouts = useMemo(() => getAtlasMarkerLayouts(ATLAS_EVENTS), []);
 
   const selected = ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null;
   const startElectricForestTransition = useCallback((eventId: string) => {
@@ -694,7 +774,7 @@ export default function AtlasMap() {
             />
           ) : null}
 
-          {!showAtlasCalibration ? ATLAS_EVENTS.map((event, index) => {
+          {!showAtlasCalibration ? markerLayouts.map(({ event, x, y }, index) => {
             const isHighlighted = highlightedIds.has(event.id);
             const isSelected = selectedId === event.id;
             const isDimmed = highlightedIds.size > 0 && !isHighlighted;
@@ -702,37 +782,41 @@ export default function AtlasMap() {
             const isFeaturedMarker = !isSearchActive && featuredEvent.id === event.id;
             const pulseDuration = 2.4 + (index % 3) * 0.35;
             const pulseDelay = index * 0.26;
-            const markerPosition = latLngToAtlasPosition(event.latitude, event.longitude);
 
             return (
-              <div key={event.id} style={{ ...styles.markerWrap, left: `${markerPosition.x}%`, top: `${markerPosition.y}%` }}>
+              <div key={event.id} style={{ ...styles.markerWrap, left: `${x}%`, top: `${y}%`, zIndex: isSelected ? Z_INDEX.markers + 1 : Z_INDEX.markers }}>
                 <button
                   type="button"
-                  className="marker-pulse"
                   aria-label={event.name}
                   onClick={() => setSelectedId(event.id)}
-                  style={({
-                    ...styles.marker,
-                    opacity: isDimmed ? 0.28 : 1,
-                    '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : isFeaturedMarker ? 1.08 : 1,
-                    '--marker-shadow-idle': isHighlighted
+                  style={styles.markerHitArea}
+                >
+                  <span
+                    aria-hidden
+                    className="marker-pulse"
+                    style={({
+                      ...styles.marker,
+                      opacity: isDimmed ? 0.28 : 1,
+                      '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : isFeaturedMarker ? 1.08 : 1,
+                      '--marker-shadow-idle': isHighlighted
                       ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
                       : isSelected
                         ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
                         : isFeaturedMarker
                           ? '0 0 10px rgba(248,209,124,.9), 0 0 22px rgba(248,209,124,.76)'
                           : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
-                    '--marker-shadow-peak': isHighlighted
+                      '--marker-shadow-peak': isHighlighted
                       ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
                       : isSelected
                         ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
                         : isFeaturedMarker
                           ? '0 0 16px rgba(255,233,176,.95), 0 0 33px rgba(253,208,120,.93)'
                           : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
-                    animationDuration: `${pulseDuration}s`,
-                    animationDelay: `${pulseDelay}s`,
-                  } as CSSProperties)}
-                />
+                      animationDuration: `${pulseDuration}s`,
+                      animationDelay: `${pulseDelay}s`,
+                    } as CSSProperties)}
+                  />
+                </button>
                 <button
                   type="button"
                   aria-label={`Open ${event.name}`}
@@ -1245,6 +1329,23 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 10,
     lineHeight: 1.25,
   },
+  markerHitArea: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    width: 44,
+    height: 44,
+    padding: 0,
+    border: 0,
+    borderRadius: 999,
+    background: 'transparent',
+    zIndex: Z_INDEX.markers,
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    transform: 'translate(-50%, -50%)',
+  },
   marker: {
     position: 'absolute',
     left: '50%',
@@ -1255,8 +1356,7 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid rgba(255,228,170,.95)',
     background: 'radial-gradient(circle, #ffebba 8%, #f2c66a 55%, rgba(242,198,106,.15) 100%)',
     zIndex: Z_INDEX.markers,
-    cursor: 'pointer',
-    touchAction: 'none',
+    pointerEvents: 'none',
   },
   markerWrap: {
     position: 'absolute',
