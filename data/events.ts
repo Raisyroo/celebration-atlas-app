@@ -15,6 +15,8 @@ export type AtlasEvent = {
   id: string;
   name: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   atmosphereLabel: string;
   blurb: string;
   category: AtlasCategory;
@@ -72,6 +74,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     id: 'romeo-peach',
     name: 'Romeo Peach Festival',
     location: 'Romeo, MI',
+    latitude: 42.8028,
+    longitude: -83.01299,
     atmosphereLabel: 'First Peach Queen',
     blurb: 'A hometown peach celebration with orchard charm, live performances, and summer food traditions.',
     category: 'Festivals',
@@ -130,6 +134,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     id: 'detroit-jazz',
     name: 'Detroit Jazz Weekend',
     location: 'Detroit, MI',
+    latitude: 42.3314,
+    longitude: -83.0458,
     atmosphereLabel: 'Midnight jazz haze',
     blurb: 'Open-air stages and night sets bring Michigan jazz scenes together near downtown Detroit.',
     category: 'Music',
@@ -140,12 +146,14 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     regionAtmosphere: 'urban',
   },
   {
-    id: 'armada-fair', name: 'Armada Fair', location: 'Armada, MI', atmosphereLabel: 'Midway lights', blurb: 'Classic fair rides, livestock showcases, and local midway favorites in late summer.', category: 'Fairs', iconType: 'fair', x: 70, y: 35, atmosphere: atmosphere(['ferrisGlow'], 'medium'), regionAtmosphere: 'harvest' },
-  { id: 'mackinac-lilac', name: 'Mackinac Island Lilac Festival', location: 'Mackinac Island, MI', atmosphereLabel: 'Harbor bloom breeze', blurb: 'Historic waterfront streets and harbor breezes framed by lilac blooms and island traditions.', category: 'Festivals', iconType: 'flower', x: 49, y: 14, atmosphere: atmosphere([], 'subtle'), regionAtmosphere: 'lakeshore', cardMedia: { atmosphereTitle: 'Harbor bloom breeze', mediaPosition: '50% 32%', mediaScale: 1.03, mediaDelayMs: 1100, mediaFadeDurationMs: 1400 } },
+    id: 'armada-fair', name: 'Armada Fair', location: 'Armada, MI', latitude: 42.8442, longitude: -82.8841, atmosphereLabel: 'Midway lights', blurb: 'Classic fair rides, livestock showcases, and local midway favorites in late summer.', category: 'Fairs', iconType: 'fair', x: 70, y: 35, atmosphere: atmosphere(['ferrisGlow'], 'medium'), regionAtmosphere: 'harvest' },
+  { id: 'mackinac-lilac', name: 'Mackinac Island Lilac Festival', location: 'Mackinac Island, MI', latitude: 45.8492, longitude: -84.6189, atmosphereLabel: 'Harbor bloom breeze', blurb: 'Historic waterfront streets and harbor breezes framed by lilac blooms and island traditions.', category: 'Festivals', iconType: 'flower', x: 49, y: 14, atmosphere: atmosphere([], 'subtle'), regionAtmosphere: 'lakeshore', cardMedia: { atmosphereTitle: 'Harbor bloom breeze', mediaPosition: '50% 32%', mediaScale: 1.03, mediaDelayMs: 1100, mediaFadeDurationMs: 1400 } },
   {
     id: 'electric-forest',
     name: 'Electric Forest',
     location: 'Rothbury, MI',
+    latitude: 43.5061,
+    longitude: -86.3487,
     atmosphereLabel: 'Neon woodland pulse',
     blurb: 'A glowing woodland music gathering with immersive art and all-night festival energy.',
     category: 'Music',
@@ -198,22 +206,24 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       'Barefoot hammock circles humming with distant basslines.',
     ],
   },
-  { id: 'traverse-city-cherry', name: 'National Cherry Festival', location: 'Traverse City, MI', atmosphereLabel: 'Bayfront summer glow', blurb: 'A week of cherry treats, parades, and bayfront gatherings in Traverse City each summer.', category: 'Festivals', iconType: 'food', x: 30, y: 28, regionAtmosphere: 'lakeshore' },
-  { id: 'west-michigan-coast-guard', name: 'Coast Guard Festival', location: 'Grand Haven, MI', atmosphereLabel: 'Shoreline honor lights', blurb: 'Grand Haven hosts ship tours, concerts, and shoreline fireworks honoring Coast Guard heritage.', category: 'Festivals', iconType: 'heritage', x: 24, y: 44, atmosphere: atmosphere(['fireworks'], 'medium'), regionAtmosphere: 'lakeshore' },
-  { id: 'holland-tulip-time', name: 'Tulip Time Festival', location: 'Holland, MI', atmosphereLabel: 'Spring street color', blurb: 'Spring blooms, Dutch dance, and family street events color downtown Holland.', category: 'Festivals', iconType: 'flower', x: 30, y: 49, regionAtmosphere: 'lakeshore' },
-  { id: 'alpena-brown-trout', name: 'Brown Trout Festival', location: 'Alpena, MI', atmosphereLabel: 'Riverfront carnival dusk', blurb: 'A Northeast Michigan tradition with carnival rides, food booths, and riverfront festivities.', category: 'Festivals', iconType: 'fair', x: 58, y: 21, atmosphere: atmosphere(['ferrisGlow'], 'subtle'), regionAtmosphere: 'lakeshore' },
-  { id: 'charlevoix-venetian', name: 'Charlevoix Venetian Festival', location: 'Charlevoix, MI', atmosphereLabel: 'Marina twilight rhythm', blurb: 'A harbor-centered summer celebration featuring waterfront music and a boat parade.', category: 'Festivals', iconType: 'waterfront', x: 40, y: 22, atmosphere: atmosphere([], 'subtle'), regionAtmosphere: 'lakeshore' },
-  { id: 'cheboygan-4th-fireworks', name: 'Cheboygan Independence Day Festival', location: 'Cheboygan, MI', atmosphereLabel: 'Patriotic night burst', blurb: 'Holiday crowds gather for parades, family activities, and fireworks by the water.', category: 'Festivals', iconType: 'fireworks', x: 50, y: 16, atmosphere: atmosphere(['fireworks'], 'signature'), regionAtmosphere: 'lakeshore' },
-  { id: 'muskegon-summer-celebration', name: 'Muskegon Summer Celebration', location: 'Muskegon, MI', atmosphereLabel: 'Lakefront stage energy', blurb: 'Lakefront performances and food vendors keep this multi-day event lively into the night.', category: 'Music', iconType: 'music', x: 24, y: 42, atmosphere: atmosphere([], 'medium'), regionAtmosphere: 'lakeshore' },
-  { id: 'faster-horses', name: 'Faster Horses Festival', location: 'Brooklyn, MI', atmosphereLabel: 'Speedway campfire chorus', blurb: 'A major country music weekend at Michigan International Speedway with camping crowds.', category: 'Music', iconType: 'music', x: 56, y: 57, regionAtmosphere: 'urban' },
-  { id: 'common-ground-lansing', name: 'Common Ground Music Festival', location: 'Lansing, MI', atmosphereLabel: 'Capital city night sets', blurb: 'Downtown Lansing welcomes national acts and local favorites in a summer concert series.', category: 'Music', iconType: 'music', x: 47, y: 50, regionAtmosphere: 'urban' },
-  { id: 'allendale-balloon-fest', name: 'Allendale Balloon Festival', location: 'Allendale, MI', atmosphereLabel: 'Sky lantern uplift', blurb: 'Colorful hot-air balloons, evening glows, and family food stands fill open summer skies.', category: 'Festivals', iconType: 'fair', x: 27, y: 46, atmosphere: atmosphere(['balloons'], 'medium'), regionAtmosphere: 'lakeshore' },
+  { id: 'traverse-city-cherry', name: 'National Cherry Festival', location: 'Traverse City, MI', latitude: 44.7631, longitude: -85.6206, atmosphereLabel: 'Bayfront summer glow', blurb: 'A week of cherry treats, parades, and bayfront gatherings in Traverse City each summer.', category: 'Festivals', iconType: 'food', x: 30, y: 28, regionAtmosphere: 'lakeshore' },
+  { id: 'west-michigan-coast-guard', name: 'Coast Guard Festival', location: 'Grand Haven, MI', latitude: 43.0631, longitude: -86.2284, atmosphereLabel: 'Shoreline honor lights', blurb: 'Grand Haven hosts ship tours, concerts, and shoreline fireworks honoring Coast Guard heritage.', category: 'Festivals', iconType: 'heritage', x: 24, y: 44, atmosphere: atmosphere(['fireworks'], 'medium'), regionAtmosphere: 'lakeshore' },
+  { id: 'holland-tulip-time', name: 'Tulip Time Festival', location: 'Holland, MI', latitude: 42.7875, longitude: -86.1089, atmosphereLabel: 'Spring street color', blurb: 'Spring blooms, Dutch dance, and family street events color downtown Holland.', category: 'Festivals', iconType: 'flower', x: 30, y: 49, regionAtmosphere: 'lakeshore' },
+  { id: 'alpena-brown-trout', name: 'Brown Trout Festival', location: 'Alpena, MI', latitude: 45.0617, longitude: -83.4328, atmosphereLabel: 'Riverfront carnival dusk', blurb: 'A Northeast Michigan tradition with carnival rides, food booths, and riverfront festivities.', category: 'Festivals', iconType: 'fair', x: 58, y: 21, atmosphere: atmosphere(['ferrisGlow'], 'subtle'), regionAtmosphere: 'lakeshore' },
+  { id: 'charlevoix-venetian', name: 'Charlevoix Venetian Festival', location: 'Charlevoix, MI', latitude: 45.3181, longitude: -85.2584, atmosphereLabel: 'Marina twilight rhythm', blurb: 'A harbor-centered summer celebration featuring waterfront music and a boat parade.', category: 'Festivals', iconType: 'waterfront', x: 40, y: 22, atmosphere: atmosphere([], 'subtle'), regionAtmosphere: 'lakeshore' },
+  { id: 'cheboygan-4th-fireworks', name: 'Cheboygan Independence Day Festival', location: 'Cheboygan, MI', latitude: 45.6469, longitude: -84.4745, atmosphereLabel: 'Patriotic night burst', blurb: 'Holiday crowds gather for parades, family activities, and fireworks by the water.', category: 'Festivals', iconType: 'fireworks', x: 50, y: 16, atmosphere: atmosphere(['fireworks'], 'signature'), regionAtmosphere: 'lakeshore' },
+  { id: 'muskegon-summer-celebration', name: 'Muskegon Summer Celebration', location: 'Muskegon, MI', latitude: 43.2342, longitude: -86.2484, atmosphereLabel: 'Lakefront stage energy', blurb: 'Lakefront performances and food vendors keep this multi-day event lively into the night.', category: 'Music', iconType: 'music', x: 24, y: 42, atmosphere: atmosphere([], 'medium'), regionAtmosphere: 'lakeshore' },
+  { id: 'faster-horses', name: 'Faster Horses Festival', location: 'Brooklyn, MI', latitude: 42.1059, longitude: -84.2483, atmosphereLabel: 'Speedway campfire chorus', blurb: 'A major country music weekend at Michigan International Speedway with camping crowds.', category: 'Music', iconType: 'music', x: 56, y: 57, regionAtmosphere: 'urban' },
+  { id: 'common-ground-lansing', name: 'Common Ground Music Festival', location: 'Lansing, MI', latitude: 42.7325, longitude: -84.5555, atmosphereLabel: 'Capital city night sets', blurb: 'Downtown Lansing welcomes national acts and local favorites in a summer concert series.', category: 'Music', iconType: 'music', x: 47, y: 50, regionAtmosphere: 'urban' },
+  { id: 'allendale-balloon-fest', name: 'Allendale Balloon Festival', location: 'Allendale, MI', latitude: 42.9723, longitude: -85.9537, atmosphereLabel: 'Sky lantern uplift', blurb: 'Colorful hot-air balloons, evening glows, and family food stands fill open summer skies.', category: 'Festivals', iconType: 'fair', x: 27, y: 46, atmosphere: atmosphere(['balloons'], 'medium'), regionAtmosphere: 'lakeshore' },
 
   // Test event for on-site validation of event cards and Atlas Scout/artifact workflow.
   {
     id: 'black-river-tattoo',
     name: 'Black River Tattoo Convention',
     location: 'Port Huron, MI',
+    latitude: 42.9709,
+    longitude: -82.4249,
     atmosphereLabel: 'Event-floor discovery',
     blurb: 'A tattoo, art, and culture convention in Port Huron featuring artists, vendors, live energy, and event-floor discovery.',
     category: 'Arts & Culture',
@@ -245,6 +255,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     id: 'goodells-fair',
     name: 'St. Clair County 4-H & Youth Fair',
     location: 'Goodells, Michigan',
+    latitude: 42.9811,
+    longitude: -82.6677,
     atmosphereLabel: 'Barn-lantern midway glow',
     blurb: 'A St. Clair County tradition featuring 4-H exhibits, youth showcases, livestock judging, and evening midway lights.',
     category: 'Fairs',
@@ -262,6 +274,6 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       mediaSrc: '/event-media/goodells/goodells-fair-intro.mp4',
     },
   },
-  { id: 'shiawassee-fair', name: 'Shiawassee County Fair', location: 'Corunna, MI', atmosphereLabel: 'County fair nostalgia', blurb: 'A classic county fair with agricultural exhibits, midway rides, and grandstand entertainment.', category: 'Fairs', iconType: 'fair', x: 54, y: 49, atmosphere: atmosphere(['ferrisGlow'], 'medium'), regionAtmosphere: 'harvest' },
-  { id: 'upper-peninsula-state-fair', name: 'Upper Peninsula State Fair', location: 'Escanaba, MI', atmosphereLabel: 'Northern midway glow', blurb: 'Escanaba hosts livestock shows, rides, and regional food traditions each August.', category: 'Fairs', iconType: 'fair', x: 34, y: 8, atmosphere: atmosphere(['ferrisGlow'], 'medium'), regionAtmosphere: 'northwoods' },
+  { id: 'shiawassee-fair', name: 'Shiawassee County Fair', location: 'Corunna, MI', latitude: 42.9819, longitude: -84.1177, atmosphereLabel: 'County fair nostalgia', blurb: 'A classic county fair with agricultural exhibits, midway rides, and grandstand entertainment.', category: 'Fairs', iconType: 'fair', x: 54, y: 49, atmosphere: atmosphere(['ferrisGlow'], 'medium'), regionAtmosphere: 'harvest' },
+  { id: 'upper-peninsula-state-fair', name: 'Upper Peninsula State Fair', location: 'Escanaba, MI', latitude: 45.7452, longitude: -87.0646, atmosphereLabel: 'Northern midway glow', blurb: 'Escanaba hosts livestock shows, rides, and regional food traditions each August.', category: 'Fairs', iconType: 'fair', x: 34, y: 8, atmosphere: atmosphere(['ferrisGlow'], 'medium'), regionAtmosphere: 'northwoods' },
 ];

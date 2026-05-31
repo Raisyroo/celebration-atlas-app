@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { AtlasEvent } from '../data/events';
+import { resolveMapPosition } from '../data/mapCalibration';
 import CloudEffect from './effects/CloudEffect';
 import FireworksEffect from './effects/FireworksEffect';
 import GeeseEffect from './effects/GeeseEffect';
@@ -24,11 +25,19 @@ export default function AtmosphereLayer({
 }: AtmosphereLayerProps) {
   const fireworksPoints = events
     .filter((event) => event.atmosphere?.effects?.includes('fireworks'))
-    .map((event) => ({ id: event.id, x: event.x, y: event.y, intensity: event.atmosphere?.intensity ?? 'subtle' }));
+    .map((event) => {
+      const position = resolveMapPosition(event);
+
+      return { id: event.id, x: position.x, y: position.y, intensity: event.atmosphere?.intensity ?? 'subtle' };
+    });
 
   const ferrisGlowPoints = events
     .filter((event) => event.atmosphere?.effects?.includes('ferrisGlow'))
-    .map((event) => ({ id: event.id, x: event.x, y: event.y }));
+    .map((event) => {
+      const position = resolveMapPosition(event);
+
+      return { id: event.id, x: position.x, y: position.y };
+    });
 
   const effectRegistry: Record<EffectName, ReactNode | null> = {
     geese: <GeeseEffect key="geese" />,
