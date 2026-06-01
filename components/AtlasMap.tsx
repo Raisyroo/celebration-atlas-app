@@ -195,11 +195,16 @@ const REGIONAL_MARKER_CORRECTION_CONFIG: {
   };
 } = {
   regions: {
+    // Upper Peninsula: preserve the existing Escanaba/fair placement.
     upperPeninsula: { label: 'Upper Peninsula', deltaX: -0.8, deltaY: 1 },
-    northernLowerPeninsula: { label: 'Northern Lower Peninsula', deltaX: 0.6, deltaY: -0.5 },
-    midMichigan: { label: 'Mid Michigan', deltaX: 0.2, deltaY: 0.4 },
-    southeastMichiganThumb: { label: 'Southeast Michigan / Thumb', deltaX: 0.3, deltaY: 0.2 },
-    westMichigan: { label: 'West Michigan', deltaX: -0.5, deltaY: 0.3 },
+    // Traverse City / northern lower + Mackinac/straits: nudge up and slightly left.
+    northernLowerPeninsula: { label: 'Northern Lower Peninsula', deltaX: -0.8, deltaY: -2 },
+    // Lansing / Corunna / Shiawassee: lift the cluster toward the capitol area.
+    midMichigan: { label: 'Mid Michigan', deltaX: 0.2, deltaY: -3 },
+    // Southeast Michigan / Detroit / Thumb: gentle left correction to keep edge markers tappable.
+    southeastMichiganThumb: { label: 'Southeast Michigan / Thumb', deltaX: -1, deltaY: 0.2 },
+    // West Michigan: move the lower-left festival cluster up and slightly left.
+    westMichigan: { label: 'West Michigan', deltaX: -1.2, deltaY: -2 },
   },
   thresholds: {
     upperPeninsulaMinLatitude: 45.55,
