@@ -535,15 +535,9 @@ export default function RomeoAtlasWindowPage({
           .romeo-cinematic-video-memory {
             animation: romeo-video-memory-appear 1300ms ease-out both;
             -webkit-mask-image:
-              radial-gradient(ellipse 62% 52% at 50% 50%, #000 0 62%, rgba(0, 0, 0, 0.86) 70%, rgba(0, 0, 0, 0.61) 80%, transparent 89%),
-              linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%),
-              linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
-            -webkit-mask-composite: source-in, source-in;
+              radial-gradient(ellipse 112% 74% at 50% 50%, #000 0 68%, rgba(0, 0, 0, 0.92) 78%, rgba(0, 0, 0, 0.68) 87%, transparent 96%);
             mask-image:
-              radial-gradient(ellipse 62% 52% at 50% 50%, #000 0 62%, rgba(0, 0, 0, 0.86) 70%, rgba(0, 0, 0, 0.61) 80%, transparent 89%),
-              linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%),
-              linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
-            mask-composite: intersect;
+              radial-gradient(ellipse 112% 74% at 50% 50%, #000 0 68%, rgba(0, 0, 0, 0.92) 78%, rgba(0, 0, 0, 0.68) 87%, transparent 96%);
           }
           .romeo-cinematic-video-memory[data-intro-state="dissolving"] {
             animation: romeo-video-memory-dissolve 1300ms ease-in forwards;
@@ -574,10 +568,10 @@ export default function RomeoAtlasWindowPage({
           }
           @keyframes romeo-cinematic-ken-burns {
             0% {
-              transform: scale(1.04) translate3d(-1.4%, -1.2%, 0);
+              transform: scale(1.02) translate3d(-0.8%, -0.7%, 0);
             }
             100% {
-              transform: scale(1.16) translate3d(1.6%, 1.3%, 0);
+              transform: scale(1.08) translate3d(0.9%, 0.8%, 0);
             }
           }
           @media (prefers-reduced-motion: reduce) {
@@ -588,7 +582,7 @@ export default function RomeoAtlasWindowPage({
               animation-duration: 1ms;
             }
             .romeo-cinematic-intro-video {
-              transform: scale(1.06);
+              transform: scale(1.03);
             }
           }
         `}</style>
@@ -878,24 +872,21 @@ const styles: Record<string, CSSProperties> = {
   },
   cinematicVideoFrame: {
     position: "relative",
-    width: "100%",
+    width: "calc(100% + clamp(1.64rem, 11.2vw, 4.7rem))",
     maxWidth: "none",
-    justifySelf: "stretch",
-    margin: "clamp(0.35rem, 1.5svh, 0.9rem) auto 0",
-    height: "min(58svh, calc(100svh - 13.5rem))",
-    minHeight: "min(17rem, calc(100svh - 13.5rem))",
-    maxHeight: "calc(100svh - 13.5rem)",
+    justifySelf: "center",
+    margin: "clamp(0.35rem, 1.5svh, 0.9rem) 0 0",
     aspectRatio: "16 / 9",
     overflow: "hidden",
     borderRadius: 0,
     border: 0,
     background: "transparent",
-    boxShadow: "0 30px 76px rgba(0,0,0,0.34), 0 0 58px rgba(226,150,72,0.1)",
+    boxShadow: "0 30px 76px rgba(0,0,0,0.3), 0 0 58px rgba(226,150,72,0.1)",
     isolation: "isolate",
     WebkitMaskImage:
-      "radial-gradient(ellipse 62% 52% at 50% 50%, black 0 62%, rgba(0,0,0,0.86) 70%, rgba(0,0,0,0.61) 80%, transparent 89%)",
+      "radial-gradient(ellipse 112% 74% at 50% 50%, black 0 68%, rgba(0,0,0,0.92) 78%, rgba(0,0,0,0.68) 87%, transparent 96%)",
     maskImage:
-      "radial-gradient(ellipse 62% 52% at 50% 50%, black 0 62%, rgba(0,0,0,0.86) 70%, rgba(0,0,0,0.61) 80%, transparent 89%)",
+      "radial-gradient(ellipse 112% 74% at 50% 50%, black 0 68%, rgba(0,0,0,0.92) 78%, rgba(0,0,0,0.68) 87%, transparent 96%)",
   },
   cinematicIntroVideo: {
     position: "absolute",
@@ -907,7 +898,7 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: "none",
     objectFit: "cover",
     objectPosition: "50% 45%",
-    filter: "saturate(0.9) contrast(1.18) brightness(0.76)",
+    filter: "saturate(0.96) contrast(1.14) brightness(0.88)",
     willChange: "opacity, transform",
   },
   cinematicVideoOverlay: {
@@ -916,9 +907,9 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 3,
     pointerEvents: "none",
     background:
-      "radial-gradient(ellipse at center, rgba(1,3,8,0.14) 0%, rgba(1,3,8,0.23) 48%, rgba(2,4,9,0.42) 76%, rgba(2,4,9,0.49) 100%), linear-gradient(180deg, rgba(1,3,8,0.14) 0%, rgba(3,5,10,0.21) 52%, rgba(1,3,8,0.36) 100%), linear-gradient(90deg, rgba(2,4,9,0.44), rgba(2,4,9,0.11) 26%, rgba(2,4,9,0.11) 74%, rgba(2,4,9,0.44))",
+      "radial-gradient(ellipse at center, rgba(1,3,8,0.1) 0%, rgba(1,3,8,0.16) 48%, rgba(2,4,9,0.29) 76%, rgba(2,4,9,0.34) 100%), linear-gradient(180deg, rgba(1,3,8,0.1) 0%, rgba(3,5,10,0.15) 52%, rgba(1,3,8,0.25) 100%), linear-gradient(90deg, rgba(2,4,9,0.31), rgba(2,4,9,0.08) 26%, rgba(2,4,9,0.08) 74%, rgba(2,4,9,0.31))",
     boxShadow:
-      "inset 0 40px 72px rgba(1,3,8,0.33), inset 0 -52px 82px rgba(1,3,8,0.39), inset 44px 0 76px rgba(1,3,8,0.31), inset -44px 0 76px rgba(1,3,8,0.31)",
+      "inset 0 40px 72px rgba(1,3,8,0.23), inset 0 -52px 82px rgba(1,3,8,0.27), inset 44px 0 76px rgba(1,3,8,0.22), inset -44px 0 76px rgba(1,3,8,0.22)",
   },
   cinematicVideoFallback: {
     position: "absolute",
