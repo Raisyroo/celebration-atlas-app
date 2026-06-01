@@ -535,9 +535,9 @@ export default function RomeoAtlasWindowPage({
           .romeo-cinematic-video-memory {
             animation: romeo-video-memory-appear 1300ms ease-out both;
             -webkit-mask-image:
-              radial-gradient(ellipse 112% 74% at 50% 50%, #000 0 68%, rgba(0, 0, 0, 0.92) 78%, rgba(0, 0, 0, 0.68) 87%, transparent 96%);
+              radial-gradient(ellipse 116% 80% at 50% 50%, #000 0 56%, rgba(0, 0, 0, 0.82) 70%, rgba(0, 0, 0, 0.48) 84%, transparent 98%);
             mask-image:
-              radial-gradient(ellipse 112% 74% at 50% 50%, #000 0 68%, rgba(0, 0, 0, 0.92) 78%, rgba(0, 0, 0, 0.68) 87%, transparent 96%);
+              radial-gradient(ellipse 116% 80% at 50% 50%, #000 0 56%, rgba(0, 0, 0, 0.82) 70%, rgba(0, 0, 0, 0.48) 84%, transparent 98%);
           }
           .romeo-cinematic-video-memory[data-intro-state="dissolving"] {
             animation: romeo-video-memory-dissolve 1300ms ease-in forwards;
@@ -881,12 +881,12 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 0,
     border: 0,
     background: "transparent",
-    boxShadow: "0 30px 76px rgba(0,0,0,0.3), 0 0 58px rgba(226,150,72,0.1)",
+    boxShadow: "0 24px 68px rgba(0,0,0,0.18), 0 0 76px rgba(226,150,72,0.08)",
     isolation: "isolate",
     WebkitMaskImage:
-      "radial-gradient(ellipse 112% 74% at 50% 50%, black 0 68%, rgba(0,0,0,0.92) 78%, rgba(0,0,0,0.68) 87%, transparent 96%)",
+      "radial-gradient(ellipse 116% 80% at 50% 50%, black 0 56%, rgba(0,0,0,0.82) 70%, rgba(0,0,0,0.48) 84%, transparent 98%)",
     maskImage:
-      "radial-gradient(ellipse 112% 74% at 50% 50%, black 0 68%, rgba(0,0,0,0.92) 78%, rgba(0,0,0,0.68) 87%, transparent 96%)",
+      "radial-gradient(ellipse 116% 80% at 50% 50%, black 0 56%, rgba(0,0,0,0.82) 70%, rgba(0,0,0,0.48) 84%, transparent 98%)",
   },
   cinematicIntroVideo: {
     position: "absolute",
@@ -898,7 +898,9 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: "none",
     objectFit: "cover",
     objectPosition: "50% 45%",
-    filter: "saturate(0.96) contrast(1.14) brightness(0.88)",
+    opacity: 0.52,
+    mixBlendMode: "soft-light",
+    filter: "saturate(0.88) contrast(1.04) brightness(0.86)",
     willChange: "opacity, transform",
   },
   cinematicVideoOverlay: {
@@ -907,9 +909,10 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 3,
     pointerEvents: "none",
     background:
-      "radial-gradient(ellipse at center, rgba(1,3,8,0.1) 0%, rgba(1,3,8,0.16) 48%, rgba(2,4,9,0.29) 76%, rgba(2,4,9,0.34) 100%), linear-gradient(180deg, rgba(1,3,8,0.1) 0%, rgba(3,5,10,0.15) 52%, rgba(1,3,8,0.25) 100%), linear-gradient(90deg, rgba(2,4,9,0.31), rgba(2,4,9,0.08) 26%, rgba(2,4,9,0.08) 74%, rgba(2,4,9,0.31))",
+      "radial-gradient(ellipse at center, rgba(246,202,127,0.07) 0%, rgba(126,70,39,0.09) 44%, rgba(1,3,8,0.24) 78%, rgba(1,3,8,0.3) 100%), linear-gradient(180deg, rgba(1,3,8,0.16) 0%, rgba(78,49,34,0.12) 52%, rgba(1,3,8,0.31) 100%), linear-gradient(90deg, rgba(2,4,9,0.38), rgba(2,4,9,0.14) 28%, rgba(2,4,9,0.14) 72%, rgba(2,4,9,0.38))",
+    mixBlendMode: "multiply",
     boxShadow:
-      "inset 0 40px 72px rgba(1,3,8,0.23), inset 0 -52px 82px rgba(1,3,8,0.27), inset 44px 0 76px rgba(1,3,8,0.22), inset -44px 0 76px rgba(1,3,8,0.22)",
+      "inset 0 48px 88px rgba(1,3,8,0.3), inset 0 -64px 98px rgba(1,3,8,0.34), inset 56px 0 92px rgba(1,3,8,0.3), inset -56px 0 92px rgba(1,3,8,0.3)",
   },
   cinematicVideoFallback: {
     position: "absolute",
