@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type FormEvent,
@@ -229,6 +230,7 @@ function RomeoMemoryContent({
 }) {
   const [hasIntroVideoError, setHasIntroVideoError] = useState(false);
   const [introStatus, setIntroStatus] = useState<IntroStatus>("playing");
+  const highlightsScrollRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (activeMode !== "highlights") {
@@ -247,6 +249,19 @@ function RomeoMemoryContent({
       window.clearTimeout(completeTimer);
     };
   }, [activeMode, introVideoSrc]);
+
+  useEffect(() => {
+    if (introStatus !== "complete") {
+      return;
+    }
+
+    const highlightsScroll = highlightsScrollRef.current;
+    if (!highlightsScroll) {
+      return;
+    }
+
+    highlightsScroll.scrollTo({ top: 0, behavior: "instant" });
+  }, [introStatus]);
 
   if (activeMode === "schedule") {
     return (
@@ -368,8 +383,15 @@ function RomeoMemoryContent({
 
   return (
     <section
+      ref={highlightsScrollRef}
       className="romeo-memory-scroll"
-      style={{ ...styles.memoryContent, ...styles.highlightsMemoryContent }}
+      style={{
+        ...styles.memoryContent,
+        ...styles.highlightsMemoryContent,
+        ...(introStatus === "complete"
+          ? styles.highlightsPostIntroMemoryContent
+          : null),
+      }}
       aria-label="Highlights lens"
     >
       {introStatus !== "complete" ? (
@@ -512,6 +534,16 @@ export default function RomeoAtlasWindowPage({
           }
           .romeo-cinematic-video-memory {
             animation: romeo-video-memory-appear 1300ms ease-out both;
+            -webkit-mask-image:
+              radial-gradient(ellipse 58% 48% at 50% 50%, #000 0 42%, rgba(0, 0, 0, 0.72) 52%, rgba(0, 0, 0, 0.22) 64%, transparent 78%),
+              linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%),
+              linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+            -webkit-mask-composite: source-in, source-in;
+            mask-image:
+              radial-gradient(ellipse 58% 48% at 50% 50%, #000 0 42%, rgba(0, 0, 0, 0.72) 52%, rgba(0, 0, 0, 0.22) 64%, transparent 78%),
+              linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%),
+              linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+            mask-composite: intersect;
           }
           .romeo-cinematic-video-memory[data-intro-state="dissolving"] {
             animation: romeo-video-memory-dissolve 1300ms ease-in forwards;
@@ -531,8 +563,14 @@ export default function RomeoAtlasWindowPage({
             to { opacity: 0; }
           }
           @keyframes romeo-highlights-fade-in {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+              opacity: 0;
+              transform: translate3d(0, 1.15rem, 0);
+            }
+            to {
+              opacity: 1;
+              transform: translate3d(0, 0, 0);
+            }
           }
           @keyframes romeo-cinematic-ken-burns {
             0% {
@@ -829,6 +867,15 @@ const styles: Record<string, CSSProperties> = {
     paddingTop: "clamp(2rem, 8svh, 4.6rem)",
     paddingBottom: "clamp(1.1rem, 5svh, 3.2rem)",
   },
+  highlightsPostIntroMemoryContent: {
+    alignContent: "start",
+    paddingTop: "clamp(4.6rem, 13svh, 7.2rem)",
+    paddingBottom: "clamp(2.2rem, 7svh, 4.2rem)",
+    WebkitMaskImage:
+      "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
+    maskImage: "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
+    scrollPaddingTop: "clamp(4.6rem, 13svh, 7.2rem)",
+  },
   cinematicVideoFrame: {
     position: "relative",
     width: "min(100%, 34rem)",
@@ -843,9 +890,9 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: "0 30px 76px rgba(0,0,0,0.34), 0 0 58px rgba(226,150,72,0.1)",
     isolation: "isolate",
     WebkitMaskImage:
-      "radial-gradient(ellipse at center, black 54%, rgba(0,0,0,0.82) 68%, transparent 100%)",
+      "radial-gradient(ellipse 58% 48% at 50% 50%, black 0 42%, rgba(0,0,0,0.72) 52%, rgba(0,0,0,0.22) 64%, transparent 78%)",
     maskImage:
-      "radial-gradient(ellipse at center, black 54%, rgba(0,0,0,0.82) 68%, transparent 100%)",
+      "radial-gradient(ellipse 58% 48% at 50% 50%, black 0 42%, rgba(0,0,0,0.72) 52%, rgba(0,0,0,0.22) 64%, transparent 78%)",
   },
   cinematicIntroVideo: {
     position: "absolute",
@@ -857,7 +904,7 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: "none",
     objectFit: "cover",
     objectPosition: "50% 45%",
-    filter: "saturate(1.08) contrast(1.06) brightness(0.86)",
+    filter: "saturate(0.9) contrast(1.18) brightness(0.52)",
     willChange: "opacity, transform",
   },
   cinematicVideoOverlay: {
@@ -866,9 +913,9 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 3,
     pointerEvents: "none",
     background:
-      "radial-gradient(ellipse at center, transparent 43%, rgba(3,5,10,0.2) 75%, rgba(3,5,10,0.72) 100%), linear-gradient(180deg, rgba(255,219,166,0.08) 0%, rgba(3,5,10,0.03) 52%, rgba(3,5,10,0.32) 100%), linear-gradient(90deg, rgba(3,5,10,0.44), transparent 21%, transparent 79%, rgba(3,5,10,0.44))",
+      "radial-gradient(ellipse at center, rgba(1,3,8,0.28) 0%, rgba(1,3,8,0.46) 48%, rgba(2,4,9,0.84) 76%, rgba(2,4,9,0.98) 100%), linear-gradient(180deg, rgba(1,3,8,0.28) 0%, rgba(3,5,10,0.42) 52%, rgba(1,3,8,0.72) 100%), linear-gradient(90deg, rgba(2,4,9,0.88), rgba(2,4,9,0.22) 26%, rgba(2,4,9,0.22) 74%, rgba(2,4,9,0.88))",
     boxShadow:
-      "inset 0 32px 48px rgba(255,218,160,0.05), inset 0 -42px 56px rgba(2,4,8,0.5)",
+      "inset 0 40px 72px rgba(1,3,8,0.66), inset 0 -52px 82px rgba(1,3,8,0.78), inset 44px 0 76px rgba(1,3,8,0.62), inset -44px 0 76px rgba(1,3,8,0.62)",
   },
   cinematicVideoFallback: {
     position: "absolute",
@@ -972,6 +1019,7 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: "34rem",
     justifySelf: "center",
     opacity: 0,
+    willChange: "opacity, transform",
   },
   highlightGrid: {
     display: "grid",
