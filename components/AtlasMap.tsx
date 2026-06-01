@@ -145,6 +145,18 @@ const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
 const MARKER_EDGE_INSET_PERCENT = 6;
 
+const REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM = {
+  overlayScale: 0.82,
+  overlayTranslateX: -8,
+  overlayTranslateY: -10,
+} as const;
+
+const REAL_MICHIGAN_MARKER_OVERLAY_STYLE = {
+  transform: `translate3d(${REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayTranslateX}%, ${REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayTranslateY}%, 0) scale(${REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayScale})`,
+};
+
+const MARKER_OVERLAY_INVERSE_SCALE = 1 / REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayScale;
+
 type AtlasMarkerLayout = {
   event: (typeof ATLAS_EVENTS)[number];
   eventIndex: number;
@@ -739,82 +751,98 @@ export default function AtlasMap() {
             />
           ) : null}
 
-          {!shouldShowCalibration ? markerLayouts.map(({ event, eventIndex, position }) => {
-            const isHighlighted = highlightedIds.has(event.id);
-            const isSelected = selectedId === event.id;
-            const isDimmed = highlightedIds.size > 0 && !isHighlighted;
-            const isSearchActive = highlightedIds.size > 0;
-            const isFeaturedMarker = !isSearchActive && featuredEvent.id === event.id;
-            const pulseDuration = 2.4 + (eventIndex % 3) * 0.35;
-            const pulseDelay = eventIndex * 0.26;
-            const markerLayerLift = isSelected ? 30 : isHighlighted ? 20 : 0;
+          {!shouldShowCalibration ? (
+            <div
+              style={{
+                ...styles.markerOverlayLayer,
+                ...REAL_MICHIGAN_MARKER_OVERLAY_STYLE,
+              }}
+            >
+              {markerLayouts.map(({ event, eventIndex, position }) => {
+                const isHighlighted = highlightedIds.has(event.id);
+                const isSelected = selectedId === event.id;
+                const isDimmed = highlightedIds.size > 0 && !isHighlighted;
+                const isSearchActive = highlightedIds.size > 0;
+                const isFeaturedMarker = !isSearchActive && featuredEvent.id === event.id;
+                const pulseDuration = 2.4 + (eventIndex % 3) * 0.35;
+                const pulseDelay = eventIndex * 0.26;
+                const markerLayerLift = isSelected ? 30 : isHighlighted ? 20 : 0;
 
-            return (
-              <div
-                key={event.id}
-                style={{
-                  ...styles.markerWrap,
-                  left: `${position.x}%`,
-                  top: `${position.y}%`,
-                  zIndex: Z_INDEX.markers + markerLayerLift + eventIndex,
-                }}
-              >
-                {isVerificationMode ? (
-                  <span aria-hidden="true" style={styles.verificationMarker} />
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      aria-label={event.name}
-                      onClick={() => setSelectedId(event.id)}
+                return (
+                  <div
+                    key={event.id}
+                    style={{
+                      ...styles.markerWrap,
+                      left: `${position.x}%`,
+                      top: `${position.y}%`,
+                      zIndex: Z_INDEX.markers + markerLayerLift + eventIndex,
+                    }}
+                  >
+                    <div
                       style={{
-                        ...styles.markerTapTarget,
-                        opacity: isDimmed ? 0.28 : 1,
+                        ...styles.markerScaleCompensation,
+                        transform: `scale(${MARKER_OVERLAY_INVERSE_SCALE})`,
                       }}
                     >
-                      <span
-                        aria-hidden="true"
-                        className="marker-pulse"
-                        style={({
-                          ...styles.marker,
-                          '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : isFeaturedMarker ? 1.08 : 1,
-                          '--marker-shadow-idle': isHighlighted
-                            ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
-                            : isSelected
-                              ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
-                              : isFeaturedMarker
-                                ? '0 0 10px rgba(248,209,124,.9), 0 0 22px rgba(248,209,124,.76)'
-                                : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
-                          '--marker-shadow-peak': isHighlighted
-                            ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
-                            : isSelected
-                              ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
-                              : isFeaturedMarker
-                                ? '0 0 16px rgba(255,233,176,.95), 0 0 33px rgba(253,208,120,.93)'
-                                : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
-                          animationDuration: `${pulseDuration}s`,
-                          animationDelay: `${pulseDelay}s`,
-                        } as CSSProperties)}
-                      />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Open ${event.name}`}
-                      onClick={() => setSelectedId(event.id)}
-                      style={{
-                        ...styles.markerLabel,
-                        opacity: isHighlighted ? 1 : 0,
-                        transform: isHighlighted ? 'translate(-50%, -122%)' : 'translate(-50%, -116%)',
-                        pointerEvents: isHighlighted ? 'auto' : 'none',
-                      }}
-                    >
-                      {event.name}
-                    </button>
-                  </>
-                )}
-              </div>
-            );
-          }) : null}
+                      {isVerificationMode ? (
+                        <span aria-hidden="true" style={styles.verificationMarker} />
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            aria-label={event.name}
+                            onClick={() => setSelectedId(event.id)}
+                            style={{
+                              ...styles.markerTapTarget,
+                              opacity: isDimmed ? 0.28 : 1,
+                            }}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className="marker-pulse"
+                              style={({
+                                ...styles.marker,
+                                '--marker-scale-base': isHighlighted ? 1.45 : isSelected ? 1.25 : isFeaturedMarker ? 1.08 : 1,
+                                '--marker-shadow-idle': isHighlighted
+                                  ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
+                                  : isSelected
+                                    ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
+                                    : isFeaturedMarker
+                                      ? '0 0 10px rgba(248,209,124,.9), 0 0 22px rgba(248,209,124,.76)'
+                                      : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
+                                '--marker-shadow-peak': isHighlighted
+                                  ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
+                                  : isSelected
+                                    ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
+                                    : isFeaturedMarker
+                                      ? '0 0 16px rgba(255,233,176,.95), 0 0 33px rgba(253,208,120,.93)'
+                                      : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
+                                animationDuration: `${pulseDuration}s`,
+                                animationDelay: `${pulseDelay}s`,
+                              } as CSSProperties)}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Open ${event.name}`}
+                            onClick={() => setSelectedId(event.id)}
+                            style={{
+                              ...styles.markerLabel,
+                              opacity: isHighlighted ? 1 : 0,
+                              transform: isHighlighted ? 'translate(-50%, -122%)' : 'translate(-50%, -116%)',
+                              pointerEvents: isHighlighted ? 'auto' : 'none',
+                            }}
+                          >
+                            {event.name}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
 
           <div style={styles.vignette} />
         </div>
@@ -1329,6 +1357,22 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 10,
     lineHeight: 1.25,
   },
+  markerOverlayLayer: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: Z_INDEX.markers,
+    pointerEvents: 'none',
+    transformOrigin: 'center center',
+  },
+  markerScaleCompensation: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: 1,
+    height: 1,
+    pointerEvents: 'none',
+    transformOrigin: 'center center',
+  },
   markerTapTarget: {
     position: 'absolute',
     left: '50%',
@@ -1340,6 +1384,7 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 999,
     background: 'transparent',
     zIndex: Z_INDEX.markers,
+    pointerEvents: 'auto',
     cursor: 'pointer',
     touchAction: 'manipulation',
     appearance: 'none',
