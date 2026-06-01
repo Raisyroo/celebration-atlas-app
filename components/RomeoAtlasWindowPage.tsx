@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+} from "react";
 import Link from "next/link";
 
 type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
@@ -152,6 +158,11 @@ const ANSWER_MATCHERS: readonly {
 const GENERAL_ATLAS_ANSWER =
   "Romeo Peach Festival is easiest when you treat Main Street as your anchor: arrive early, park outside the busiest core, sample peach food before peak lines, and save time for the parade, photos, and an evening stroll.";
 
+const INTRO_VISIBLE_MS = 5000;
+const INTRO_DISSOLVE_MS = 1300;
+
+type IntroStatus = "playing" | "dissolving" | "complete";
+
 function getAtlasAnswer(question: string) {
   const normalizedQuestion = question.toLowerCase();
   return (
@@ -217,18 +228,24 @@ function RomeoMemoryContent({
   introVideoSrc: string;
 }) {
   const [hasIntroVideoError, setHasIntroVideoError] = useState(false);
-  const [showHighlightsContent, setShowHighlightsContent] = useState(false);
+  const [introStatus, setIntroStatus] = useState<IntroStatus>("playing");
 
   useEffect(() => {
     if (activeMode !== "highlights") {
       return;
     }
 
-    const fallbackTimer = window.setTimeout(() => {
-      setShowHighlightsContent(true);
-    }, 5000);
+    const dissolveTimer = window.setTimeout(() => {
+      setIntroStatus("dissolving");
+    }, INTRO_VISIBLE_MS);
+    const completeTimer = window.setTimeout(() => {
+      setIntroStatus("complete");
+    }, INTRO_VISIBLE_MS + INTRO_DISSOLVE_MS);
 
-    return () => window.clearTimeout(fallbackTimer);
+    return () => {
+      window.clearTimeout(dissolveTimer);
+      window.clearTimeout(completeTimer);
+    };
   }, [activeMode, introVideoSrc]);
 
   if (activeMode === "schedule") {
@@ -355,31 +372,39 @@ function RomeoMemoryContent({
       style={{ ...styles.memoryContent, ...styles.highlightsMemoryContent }}
       aria-label="Highlights lens"
     >
-      <figure style={styles.cinematicVideoFrame}>
-        <video
-          src={introVideoSrc}
-          autoPlay
-          muted
-          playsInline
-          preload="metadata"
-          aria-label="Romeo Peach Festival intro video"
-          className="romeo-cinematic-intro-video"
-          style={styles.cinematicIntroVideo}
-          onError={() => setHasIntroVideoError(true)}
-          onLoadedData={() => setHasIntroVideoError(false)}
-          onEnded={() => setShowHighlightsContent(true)}
+      {introStatus !== "complete" ? (
+        <figure
+          className="romeo-cinematic-video-memory"
+          style={styles.cinematicVideoFrame}
+          data-intro-state={introStatus}
         >
-          Romeo intro video unavailable
-        </video>
-        <span style={styles.cinematicVideoOverlay} aria-hidden="true" />
-        {hasIntroVideoError ? (
-          <p style={styles.cinematicVideoFallback}>
+          <video
+            src={introVideoSrc}
+            autoPlay
+            muted
+            playsInline
+            preload="metadata"
+            aria-label="Romeo Peach Festival intro video"
+            className="romeo-cinematic-intro-video"
+            style={styles.cinematicIntroVideo}
+            onError={() => setHasIntroVideoError(true)}
+            onLoadedData={() => setHasIntroVideoError(false)}
+          >
             Romeo intro video unavailable
-          </p>
-        ) : null}
-      </figure>
-      {showHighlightsContent ? (
-        <div className="romeo-highlights-content" style={styles.highlightsContentReveal}>
+          </video>
+          <span style={styles.cinematicVideoOverlay} aria-hidden="true" />
+          {hasIntroVideoError ? (
+            <p style={styles.cinematicVideoFallback}>
+              Romeo intro video unavailable
+            </p>
+          ) : null}
+        </figure>
+      ) : null}
+      {introStatus === "complete" ? (
+        <div
+          className="romeo-highlights-content"
+          style={styles.highlightsContentReveal}
+        >
           <p style={styles.windowEyebrow}>Highlights</p>
           <h2 style={styles.windowTitle}>Do not miss</h2>
           <MemorySeparator />
@@ -485,21 +510,29 @@ export default function RomeoAtlasWindowPage({
           .romeo-mode-lens[data-active="true"] > span {
             opacity: 1 !important;
           }
+          .romeo-cinematic-video-memory {
+            animation: romeo-video-memory-appear 1300ms ease-out both;
+          }
+          .romeo-cinematic-video-memory[data-intro-state="dissolving"] {
+            animation: romeo-video-memory-dissolve 1300ms ease-in forwards;
+          }
           .romeo-cinematic-intro-video {
             animation: romeo-cinematic-ken-burns 24s ease-in-out infinite alternate;
           }
           .romeo-highlights-content {
-            animation: romeo-highlights-fade-in 900ms ease forwards;
+            animation: romeo-highlights-fade-in 1050ms ease-out forwards;
+          }
+          @keyframes romeo-video-memory-appear {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes romeo-video-memory-dissolve {
+            from { opacity: 1; }
+            to { opacity: 0; }
           }
           @keyframes romeo-highlights-fade-in {
-            from {
-              opacity: 0;
-              transform: translate3d(0, 0.72rem, 0);
-            }
-            to {
-              opacity: 1;
-              transform: translate3d(0, 0, 0);
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
           }
           @keyframes romeo-cinematic-ken-burns {
             0% {
@@ -510,8 +543,13 @@ export default function RomeoAtlasWindowPage({
             }
           }
           @media (prefers-reduced-motion: reduce) {
+            .romeo-cinematic-video-memory,
+            .romeo-cinematic-video-memory[data-intro-state="dissolving"],
+            .romeo-cinematic-intro-video,
+            .romeo-highlights-content {
+              animation-duration: 1ms;
+            }
             .romeo-cinematic-intro-video {
-              animation: none;
               transform: scale(1.06);
             }
           }
@@ -584,7 +622,7 @@ export default function RomeoAtlasWindowPage({
             />
           ) : (
             <RomeoMemoryContent
-              key={activeMode}
+              key={`${activeMode}-${introVideoSrc}`}
               activeMode={activeMode}
               activeGallery={activeGallery}
               setActiveGallery={setActiveGalleryId}
@@ -799,12 +837,15 @@ const styles: Record<string, CSSProperties> = {
     minHeight: "clamp(11.4rem, 31svh, 17.5rem)",
     aspectRatio: "16 / 9",
     overflow: "hidden",
-    borderRadius: "1.06rem",
-    border: "1px solid rgba(246,202,127,0.24)",
-    background: "rgba(4,7,14,0.74)",
-    boxShadow:
-      "0 28px 54px rgba(0,0,0,0.52), 0 0 32px rgba(226,150,72,0.12), inset 0 1px 0 rgba(255,238,207,0.18)",
+    borderRadius: 0,
+    border: 0,
+    background: "transparent",
+    boxShadow: "0 30px 76px rgba(0,0,0,0.34), 0 0 58px rgba(226,150,72,0.1)",
     isolation: "isolate",
+    WebkitMaskImage:
+      "radial-gradient(ellipse at center, black 54%, rgba(0,0,0,0.82) 68%, transparent 100%)",
+    maskImage:
+      "radial-gradient(ellipse at center, black 54%, rgba(0,0,0,0.82) 68%, transparent 100%)",
   },
   cinematicIntroVideo: {
     position: "absolute",
@@ -817,7 +858,7 @@ const styles: Record<string, CSSProperties> = {
     objectFit: "cover",
     objectPosition: "50% 45%",
     filter: "saturate(1.08) contrast(1.06) brightness(0.86)",
-    willChange: "transform",
+    willChange: "opacity, transform",
   },
   cinematicVideoOverlay: {
     position: "absolute",
@@ -825,9 +866,9 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 3,
     pointerEvents: "none",
     background:
-      "radial-gradient(ellipse at center, transparent 48%, rgba(3,5,10,0.32) 100%), linear-gradient(180deg, rgba(255,219,166,0.08) 0%, rgba(3,5,10,0.04) 55%, rgba(3,5,10,0.34) 100%), linear-gradient(90deg, rgba(3,5,10,0.26), transparent 18%, transparent 82%, rgba(3,5,10,0.26))",
+      "radial-gradient(ellipse at center, transparent 43%, rgba(3,5,10,0.2) 75%, rgba(3,5,10,0.72) 100%), linear-gradient(180deg, rgba(255,219,166,0.08) 0%, rgba(3,5,10,0.03) 52%, rgba(3,5,10,0.32) 100%), linear-gradient(90deg, rgba(3,5,10,0.44), transparent 21%, transparent 79%, rgba(3,5,10,0.44))",
     boxShadow:
-      "inset 0 0 0 1px rgba(255,238,207,0.08), inset 0 22px 34px rgba(255,218,160,0.05), inset 0 -34px 42px rgba(2,4,8,0.48)",
+      "inset 0 32px 48px rgba(255,218,160,0.05), inset 0 -42px 56px rgba(2,4,8,0.5)",
   },
   cinematicVideoFallback: {
     position: "absolute",
@@ -836,8 +877,8 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     placeItems: "center",
     margin: 0,
-    borderRadius: "0.58rem",
-    background: "rgba(4,7,14,0.78)",
+    borderRadius: 0,
+    background: "rgba(4,7,14,0.68)",
     color: "rgba(255,239,212,0.96)",
     fontSize: "clamp(0.86rem, 3.4vw, 1rem)",
     letterSpacing: "0.02em",
@@ -907,8 +948,7 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "clamp(1.34rem, 5.8vw, 2.42rem)",
     lineHeight: 1.08,
     maxWidth: "34rem",
-    textShadow:
-      "0 3px 24px rgba(0,0,0,0.72), 0 0 20px rgba(227,146,76,0.2)",
+    textShadow: "0 3px 24px rgba(0,0,0,0.72), 0 0 20px rgba(227,146,76,0.2)",
   },
   answerText: {
     margin: 0,
