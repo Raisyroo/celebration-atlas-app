@@ -535,14 +535,14 @@ export default function RomeoAtlasWindowPage({
           .romeo-cinematic-video-memory {
             animation: romeo-video-memory-appear 1300ms ease-out both;
             -webkit-mask-image:
-              radial-gradient(ellipse 58% 48% at 50% 50%, #000 0 42%, rgba(0, 0, 0, 0.72) 52%, rgba(0, 0, 0, 0.22) 64%, transparent 78%),
-              linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%),
-              linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+              radial-gradient(ellipse 62% 52% at 50% 50%, #000 0 62%, rgba(0, 0, 0, 0.86) 70%, rgba(0, 0, 0, 0.61) 80%, transparent 89%),
+              linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%),
+              linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
             -webkit-mask-composite: source-in, source-in;
             mask-image:
-              radial-gradient(ellipse 58% 48% at 50% 50%, #000 0 42%, rgba(0, 0, 0, 0.72) 52%, rgba(0, 0, 0, 0.22) 64%, transparent 78%),
-              linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%),
-              linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+              radial-gradient(ellipse 62% 52% at 50% 50%, #000 0 62%, rgba(0, 0, 0, 0.86) 70%, rgba(0, 0, 0, 0.61) 80%, transparent 89%),
+              linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%),
+              linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
             mask-composite: intersect;
           }
           .romeo-cinematic-video-memory[data-intro-state="dissolving"] {
@@ -878,10 +878,13 @@ const styles: Record<string, CSSProperties> = {
   },
   cinematicVideoFrame: {
     position: "relative",
-    width: "min(100%, 34rem)",
-    justifySelf: "center",
-    margin: "clamp(1.4rem, 5svh, 3.4rem) auto clamp(0.2rem, 1.4svh, 0.62rem)",
-    minHeight: "clamp(11.4rem, 31svh, 17.5rem)",
+    width: "100%",
+    maxWidth: "none",
+    justifySelf: "stretch",
+    margin: "clamp(0.35rem, 1.5svh, 0.9rem) auto 0",
+    height: "min(58svh, calc(100svh - 13.5rem))",
+    minHeight: "min(17rem, calc(100svh - 13.5rem))",
+    maxHeight: "calc(100svh - 13.5rem)",
     aspectRatio: "16 / 9",
     overflow: "hidden",
     borderRadius: 0,
@@ -890,9 +893,9 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: "0 30px 76px rgba(0,0,0,0.34), 0 0 58px rgba(226,150,72,0.1)",
     isolation: "isolate",
     WebkitMaskImage:
-      "radial-gradient(ellipse 58% 48% at 50% 50%, black 0 42%, rgba(0,0,0,0.72) 52%, rgba(0,0,0,0.22) 64%, transparent 78%)",
+      "radial-gradient(ellipse 62% 52% at 50% 50%, black 0 62%, rgba(0,0,0,0.86) 70%, rgba(0,0,0,0.61) 80%, transparent 89%)",
     maskImage:
-      "radial-gradient(ellipse 58% 48% at 50% 50%, black 0 42%, rgba(0,0,0,0.72) 52%, rgba(0,0,0,0.22) 64%, transparent 78%)",
+      "radial-gradient(ellipse 62% 52% at 50% 50%, black 0 62%, rgba(0,0,0,0.86) 70%, rgba(0,0,0,0.61) 80%, transparent 89%)",
   },
   cinematicIntroVideo: {
     position: "absolute",
@@ -904,7 +907,7 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: "none",
     objectFit: "cover",
     objectPosition: "50% 45%",
-    filter: "saturate(0.9) contrast(1.18) brightness(0.52)",
+    filter: "saturate(0.9) contrast(1.18) brightness(0.76)",
     willChange: "opacity, transform",
   },
   cinematicVideoOverlay: {
@@ -913,9 +916,9 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 3,
     pointerEvents: "none",
     background:
-      "radial-gradient(ellipse at center, rgba(1,3,8,0.28) 0%, rgba(1,3,8,0.46) 48%, rgba(2,4,9,0.84) 76%, rgba(2,4,9,0.98) 100%), linear-gradient(180deg, rgba(1,3,8,0.28) 0%, rgba(3,5,10,0.42) 52%, rgba(1,3,8,0.72) 100%), linear-gradient(90deg, rgba(2,4,9,0.88), rgba(2,4,9,0.22) 26%, rgba(2,4,9,0.22) 74%, rgba(2,4,9,0.88))",
+      "radial-gradient(ellipse at center, rgba(1,3,8,0.14) 0%, rgba(1,3,8,0.23) 48%, rgba(2,4,9,0.42) 76%, rgba(2,4,9,0.49) 100%), linear-gradient(180deg, rgba(1,3,8,0.14) 0%, rgba(3,5,10,0.21) 52%, rgba(1,3,8,0.36) 100%), linear-gradient(90deg, rgba(2,4,9,0.44), rgba(2,4,9,0.11) 26%, rgba(2,4,9,0.11) 74%, rgba(2,4,9,0.44))",
     boxShadow:
-      "inset 0 40px 72px rgba(1,3,8,0.66), inset 0 -52px 82px rgba(1,3,8,0.78), inset 44px 0 76px rgba(1,3,8,0.62), inset -44px 0 76px rgba(1,3,8,0.62)",
+      "inset 0 40px 72px rgba(1,3,8,0.33), inset 0 -52px 82px rgba(1,3,8,0.39), inset 44px 0 76px rgba(1,3,8,0.31), inset -44px 0 76px rgba(1,3,8,0.31)",
   },
   cinematicVideoFallback: {
     position: "absolute",
