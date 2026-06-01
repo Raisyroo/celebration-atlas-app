@@ -22,7 +22,7 @@ const ATMOSPHERIC_SUGGESTIONS = [
 const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
 const MEDIA_MASKS: Record<'romeoPeach', string> = {
   romeoPeach:
-    'linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.42) 22%, rgba(0,0,0,.84) 42%, rgba(0,0,0,.98) 60%, rgba(0,0,0,1) 100%), linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.52) 8%, rgba(0,0,0,.9) 16%, rgba(0,0,0,1) 26%, rgba(0,0,0,1) 100%), linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.5) 14%, rgba(0,0,0,.9) 30%, rgba(0,0,0,1) 44%, rgba(0,0,0,1) 100%), linear-gradient(270deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.96) 6%, rgba(0,0,0,1) 14%, rgba(0,0,0,1) 100%)',
+    'radial-gradient(ellipse 96% 88% at 43% 46%, rgba(0,0,0,1) 0%, rgba(0,0,0,.98) 45%, rgba(0,0,0,.76) 61%, rgba(0,0,0,.34) 77%, rgba(0,0,0,0) 100%), radial-gradient(ellipse 72% 76% at 63% 39%, rgba(0,0,0,1) 0%, rgba(0,0,0,.92) 48%, rgba(0,0,0,.52) 70%, rgba(0,0,0,0) 100%), linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.06) 7%, rgba(0,0,0,.28) 17%, rgba(0,0,0,.64) 31%, rgba(0,0,0,.94) 44%, rgba(0,0,0,1) 54%, rgba(0,0,0,.93) 63%, rgba(0,0,0,.58) 76%, rgba(0,0,0,.18) 90%, rgba(0,0,0,0) 100%), linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.3) 8%, rgba(0,0,0,.72) 18%, rgba(0,0,0,.96) 30%, rgba(0,0,0,1) 76%, rgba(0,0,0,.96) 88%, rgba(0,0,0,.7) 96%, rgba(0,0,0,.22) 100%)',
 };
 
 // Current interaction policy:
