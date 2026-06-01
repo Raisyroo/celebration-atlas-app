@@ -2,7 +2,6 @@
 
 import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
-import Image from "next/image";
 
 type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 
@@ -27,7 +26,7 @@ type RomeoAtlasWindowPageProps = {
   eventName: string;
   backHref: string;
   memoryImageSrc: string;
-  introStillImageSrc: string;
+  introVideoSrc: string;
 };
 
 const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
@@ -210,12 +209,12 @@ function RomeoMemoryContent({
   activeMode,
   activeGallery,
   setActiveGallery,
-  introStillImageSrc,
+  introVideoSrc,
 }: {
   activeMode: RomeoAtlasMode;
   activeGallery: GalleryMoment;
   setActiveGallery: (id: string) => void;
-  introStillImageSrc: string;
+  introVideoSrc: string;
 }) {
   if (activeMode === "schedule") {
     return (
@@ -341,19 +340,20 @@ function RomeoMemoryContent({
       style={{ ...styles.memoryContent, ...styles.highlightsMemoryContent }}
       aria-label="Highlights lens"
     >
-      <figure style={styles.cinematicStillFrame}>
-        <Image
-          src={introStillImageSrc}
-          alt="Aerial view over downtown Romeo and a red brick church tower"
-          fill
-          sizes="(max-width: 760px) 100vw, 760px"
-          priority
-          className="romeo-cinematic-still-image"
-          style={styles.cinematicStillImage}
-          draggable={false}
+      <figure style={styles.cinematicVideoFrame}>
+        <video
+          src={introVideoSrc}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-label="Entering Romeo Peach Festival video"
+          className="romeo-cinematic-intro-video"
+          style={styles.cinematicIntroVideo}
         />
-        <span style={styles.cinematicStillOverlay} aria-hidden="true" />
-        <figcaption style={styles.cinematicStillCaption}>
+        <span style={styles.cinematicVideoOverlay} aria-hidden="true" />
+        <figcaption style={styles.cinematicVideoCaption}>
           Entering Romeo Peach Festival
         </figcaption>
       </figure>
@@ -379,7 +379,7 @@ export default function RomeoAtlasWindowPage({
   eventName,
   backHref,
   memoryImageSrc,
-  introStillImageSrc,
+  introVideoSrc,
 }: RomeoAtlasWindowPageProps) {
   const [activeMode, setActiveMode] = useState<RomeoAtlasMode>("highlights");
   const [activeGalleryId, setActiveGalleryId] = useState(GALLERY_MOMENTS[0].id);
@@ -460,7 +460,7 @@ export default function RomeoAtlasWindowPage({
           .romeo-mode-lens[data-active="true"] > span {
             opacity: 1 !important;
           }
-          .romeo-cinematic-still-image {
+          .romeo-cinematic-intro-video {
             animation: romeo-cinematic-ken-burns 24s ease-in-out infinite alternate;
           }
           @keyframes romeo-cinematic-ken-burns {
@@ -472,7 +472,7 @@ export default function RomeoAtlasWindowPage({
             }
           }
           @media (prefers-reduced-motion: reduce) {
-            .romeo-cinematic-still-image {
+            .romeo-cinematic-intro-video {
               animation: none;
               transform: scale(1.06);
             }
@@ -550,7 +550,7 @@ export default function RomeoAtlasWindowPage({
               activeMode={activeMode}
               activeGallery={activeGallery}
               setActiveGallery={setActiveGalleryId}
-              introStillImageSrc={introStillImageSrc}
+              introVideoSrc={introVideoSrc}
             />
           )}
         </section>
@@ -752,7 +752,7 @@ const styles: Record<string, CSSProperties> = {
     alignContent: "start",
     paddingTop: "clamp(0.78rem, 3.3vw, 1.2rem)",
   },
-  cinematicStillFrame: {
+  cinematicVideoFrame: {
     position: "relative",
     width: "100%",
     margin: "0 0 clamp(0.22rem, 1.4svh, 0.64rem)",
@@ -766,7 +766,7 @@ const styles: Record<string, CSSProperties> = {
       "0 24px 45px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,238,207,0.16)",
     isolation: "isolate",
   },
-  cinematicStillImage: {
+  cinematicIntroVideo: {
     position: "absolute",
     inset: "-3%",
     zIndex: 0,
@@ -778,7 +778,7 @@ const styles: Record<string, CSSProperties> = {
     filter: "saturate(1.08) contrast(1.04) brightness(0.9)",
     willChange: "transform",
   },
-  cinematicStillOverlay: {
+  cinematicVideoOverlay: {
     position: "absolute",
     inset: 0,
     zIndex: 1,
@@ -786,7 +786,7 @@ const styles: Record<string, CSSProperties> = {
     background:
       "linear-gradient(180deg, rgba(3,5,10,0.14) 0%, rgba(3,5,10,0.24) 54%, rgba(3,5,10,0.58) 100%), radial-gradient(ellipse at 50% 30%, transparent 34%, rgba(2,4,9,0.26) 100%)",
   },
-  cinematicStillCaption: {
+  cinematicVideoCaption: {
     position: "absolute",
     left: "clamp(0.86rem, 4vw, 1.4rem)",
     right: "clamp(0.86rem, 4vw, 1.4rem)",
