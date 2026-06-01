@@ -8,7 +8,11 @@ import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 import {
   MICHIGAN_GEO_POLYGONS,
+  MICHIGAN_REFERENCE_SVG,
+  MICHIGAN_SVG_REFERENCE_POINTS,
+  getMichiganSvgToArtworkCssTransform,
   latLngToMichiganMapPosition,
+  latLngToMichiganSvgPosition,
   michiganGeoPolygonToSvgPath,
 } from '../data/michiganGeoMap';
 import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
@@ -222,32 +226,7 @@ const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
 const MARKER_EDGE_INSET_PERCENT = 6;
 const CLUSTER_RADIUS_PERCENT = 7.2;
-
-// A single shared projection-to-artwork fit keeps the real Michigan coordinate
-// layer aligned with the painterly basemap without per-region calibration hacks.
-const MICHIGAN_PROJECTION_TO_ARTWORK_FIT = {
-  scaleX: 0.95,
-  scaleY: 0.82,
-  translateX: -6,
-  translateY: -8,
-} as const;
-
-const applyMichiganProjectionToArtworkFit = (position: {
-  x: number;
-  y: number;
-}) => ({
-  x:
-    50 +
-    (position.x - 50) * MICHIGAN_PROJECTION_TO_ARTWORK_FIT.scaleX +
-    MICHIGAN_PROJECTION_TO_ARTWORK_FIT.translateX,
-  y:
-    50 +
-    (position.y - 50) * MICHIGAN_PROJECTION_TO_ARTWORK_FIT.scaleY +
-    MICHIGAN_PROJECTION_TO_ARTWORK_FIT.translateY,
-});
-
-const getMichiganProjectionFitCssTransform = () =>
-  `translate(${MICHIGAN_PROJECTION_TO_ARTWORK_FIT.translateX}%, ${MICHIGAN_PROJECTION_TO_ARTWORK_FIT.translateY}%) scale(${MICHIGAN_PROJECTION_TO_ARTWORK_FIT.scaleX}, ${MICHIGAN_PROJECTION_TO_ARTWORK_FIT.scaleY})`;
+const SHOW_CLUSTER_LABELS = false;
 
 type AtlasEvent = (typeof ATLAS_EVENTS)[number];
 type MarkerPosition = { x: number; y: number };
@@ -274,12 +253,10 @@ const clampMarkerPercent = (value: number, offset = 0) => {
 const projectEventToMichiganArtworkPosition = (
   event: AtlasEvent,
 ): MarkerPosition => {
-  const projectedPosition = latLngToMichiganMapPosition(
+  const artworkPosition = latLngToMichiganMapPosition(
     event.latitude,
     event.longitude,
   );
-  const artworkPosition =
-    applyMichiganProjectionToArtworkFit(projectedPosition);
 
   return {
     x: clampMarkerPercent(artworkPosition.x),
@@ -351,7 +328,7 @@ const resolveAtlasMarkerClusters = (
   return clusters;
 };
 
-function MichiganGeoMapLayer() {
+function MichiganGeoMapLayer({ isVerificationMode }: { isVerificationMode: boolean }) {
   return (
     <svg
       aria-hidden="true"
@@ -360,9 +337,11 @@ function MichiganGeoMapLayer() {
       preserveAspectRatio="none"
       style={{
         ...styles.geographicMapLayer,
-        transform: getMichiganProjectionFitCssTransform(),
+        opacity: isVerificationMode ? 0.58 : 0,
+        transform: getMichiganSvgToArtworkCssTransform(),
       }}
     >
+      <title>{`Hidden reference: ${MICHIGAN_REFERENCE_SVG.sourceName}`}</title>
       {MICHIGAN_GEO_POLYGONS.map((polygon) => (
         <path
           key={polygon.id}
@@ -371,6 +350,30 @@ function MichiganGeoMapLayer() {
         />
       ))}
     </svg>
+  );
+}
+
+function VerificationReferenceLayer() {
+  return (
+    <div aria-label="Michigan SVG reference points" style={styles.verificationReferenceLayer}>
+      {MICHIGAN_SVG_REFERENCE_POINTS.map((point) => (
+        <div
+          key={point.name}
+          style={{
+            ...styles.verificationReferenceWrap,
+            left: `${point.artworkPosition.x}%`,
+            top: `${point.artworkPosition.y}%`,
+          }}
+        >
+          <span aria-hidden="true" style={styles.verificationReferencePoint} />
+          <span style={styles.verificationReferenceLabel}>
+            {point.name}
+            <br />
+            SVG {point.svgPosition.x.toFixed(1)}, {point.svgPosition.y.toFixed(1)}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -1031,7 +1034,7 @@ export default function AtlasMap() {
             style={styles.mapImage}
           />
 
-          <MichiganGeoMapLayer />
+          <MichiganGeoMapLayer isVerificationMode={isVerificationMode} />
 
           <div
             style={{
@@ -1115,6 +1118,12 @@ export default function AtlasMap() {
                       : isFeaturedMarker
                         ? 1.08
                         : 1;
+                const svgPosition = isVerificationMode
+                  ? latLngToMichiganSvgPosition(
+                      primaryEvent.latitude,
+                      primaryEvent.longitude,
+                    )
+                  : null;
 
                 return (
                   <div
@@ -1129,10 +1138,19 @@ export default function AtlasMap() {
                   >
                     <div style={styles.markerScaleCompensation}>
                       {isVerificationMode ? (
-                        <span
-                          aria-hidden="true"
-                          style={styles.verificationMarker}
-                        />
+                        <>
+                          <span
+                            aria-hidden="true"
+                            style={styles.verificationMarker}
+                          />
+                          <span style={styles.verificationMarkerLabel}>
+                            {primaryEvent.location.replace(/,\s*(MI|Michigan)$/i, '')}
+                            <br />
+                            projected {position.x.toFixed(1)}, {position.y.toFixed(1)}
+                            <br />
+                            SVG {svgPosition?.x.toFixed(1)}, {svgPosition?.y.toFixed(1)}
+                          </span>
+                        </>
                       ) : (
                         <>
                           <button
@@ -1186,7 +1204,7 @@ export default function AtlasMap() {
                                 } as CSSProperties
                               }
                             />
-                            {isCluster ? (
+                            {SHOW_CLUSTER_LABELS && isCluster ? (
                               <span style={styles.clusterCount}>
                                 {events.length}
                               </span>
@@ -1212,13 +1230,13 @@ export default function AtlasMap() {
                             style={{
                               ...styles.markerLabel,
                               ...(isCluster ? styles.clusterLabel : null),
-                              opacity: isHighlighted || isCluster ? 1 : 0,
+                              opacity: !isCluster && isHighlighted ? 1 : 0,
                               transform:
-                                isHighlighted || isCluster
+                                !isCluster && isHighlighted
                                   ? 'translate(-50%, -122%)'
                                   : 'translate(-50%, -116%)',
                               pointerEvents:
-                                isHighlighted || isCluster ? 'auto' : 'none',
+                                !isCluster && isHighlighted ? 'auto' : 'none',
                             }}
                           >
                             {isCluster
@@ -1233,6 +1251,8 @@ export default function AtlasMap() {
               })}
             </div>
           ) : null}
+
+          {isVerificationMode ? <VerificationReferenceLayer /> : null}
 
           <div style={styles.vignette} />
         </div>
@@ -1943,6 +1963,46 @@ const styles: Record<string, CSSProperties> = {
     pointerEvents: 'none',
     transformOrigin: 'center center',
   },
+  verificationReferenceLayer: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: Z_INDEX.calibration,
+    pointerEvents: 'none',
+  },
+  verificationReferenceWrap: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    pointerEvents: 'none',
+  },
+  verificationReferencePoint: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    width: 18,
+    height: 18,
+    borderRadius: 999,
+    border: '2px solid rgba(67, 214, 255, 0.95)',
+    transform: 'translate(-50%, -50%)',
+    boxShadow: '0 0 0 2px rgba(2, 6, 12, 0.7), 0 0 14px rgba(67, 214, 255, 0.8)',
+    background: 'rgba(67, 214, 255, 0.12)',
+  },
+  verificationReferenceLabel: {
+    position: 'absolute',
+    left: 12,
+    top: 8,
+    minWidth: 106,
+    padding: '4px 7px',
+    borderRadius: 8,
+    border: '1px solid rgba(67, 214, 255, 0.5)',
+    background: 'rgba(3, 10, 18, 0.72)',
+    color: 'rgba(205, 246, 255, 0.96)',
+    fontSize: 10,
+    lineHeight: 1.22,
+    fontWeight: 800,
+    textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)',
+    whiteSpace: 'nowrap',
+  },
   markerScaleCompensation: {
     position: 'absolute',
     left: 0,
@@ -2032,6 +2092,24 @@ const styles: Record<string, CSSProperties> = {
     boxShadow:
       '0 0 0 2px rgba(5, 7, 12, 0.76), 0 0 10px rgba(255, 59, 48, 0.85)',
     zIndex: Z_INDEX.markers,
+    pointerEvents: 'none',
+  },
+  verificationMarkerLabel: {
+    position: 'absolute',
+    left: 10,
+    top: -6,
+    minWidth: 128,
+    padding: '4px 7px',
+    borderRadius: 8,
+    border: '1px solid rgba(255, 93, 80, 0.58)',
+    background: 'rgba(12, 5, 5, 0.78)',
+    color: 'rgba(255, 238, 226, 0.98)',
+    fontSize: 10,
+    lineHeight: 1.24,
+    fontWeight: 850,
+    textShadow: '0 1px 3px rgba(0, 0, 0, 0.84)',
+    whiteSpace: 'nowrap',
+    zIndex: Z_INDEX.markers + 2,
     pointerEvents: 'none',
   },
   markerLabel: {
