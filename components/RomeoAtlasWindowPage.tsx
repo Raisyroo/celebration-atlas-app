@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
 
 type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
@@ -217,6 +217,19 @@ function RomeoMemoryContent({
   introVideoSrc: string;
 }) {
   const [hasIntroVideoError, setHasIntroVideoError] = useState(false);
+  const [showHighlightsContent, setShowHighlightsContent] = useState(false);
+
+  useEffect(() => {
+    if (activeMode !== "highlights") {
+      return;
+    }
+
+    const fallbackTimer = window.setTimeout(() => {
+      setShowHighlightsContent(true);
+    }, 5000);
+
+    return () => window.clearTimeout(fallbackTimer);
+  }, [activeMode, introVideoSrc]);
 
   if (activeMode === "schedule") {
     return (
@@ -347,16 +360,14 @@ function RomeoMemoryContent({
           src={introVideoSrc}
           autoPlay
           muted
-          loop
           playsInline
           preload="metadata"
-          // Temporary debugging controls for verifying the Romeo intro video load.
-          controls
-          aria-label="Entering Romeo Peach Festival video"
+          aria-label="Romeo Peach Festival intro video"
           className="romeo-cinematic-intro-video"
           style={styles.cinematicIntroVideo}
           onError={() => setHasIntroVideoError(true)}
           onLoadedData={() => setHasIntroVideoError(false)}
+          onEnded={() => setShowHighlightsContent(true)}
         >
           Romeo intro video unavailable
         </video>
@@ -366,24 +377,25 @@ function RomeoMemoryContent({
             Romeo intro video unavailable
           </p>
         ) : null}
-        <figcaption style={styles.cinematicVideoCaption}>
-          Entering Romeo Peach Festival
-        </figcaption>
       </figure>
-      <p style={styles.windowEyebrow}>Highlights</p>
-      <h2 style={styles.windowTitle}>Do not miss</h2>
-      <MemorySeparator />
-      <div style={styles.highlightGrid}>
-        {HIGHLIGHT_ITEMS.map(([title, text]) => (
-          <article key={title} style={styles.highlightCard}>
-            <h3 style={styles.highlightTitle}>
-              <span style={styles.highlightSigil}>✦</span>
-              {title}
-            </h3>
-            <p style={styles.highlightText}>{text}</p>
-          </article>
-        ))}
-      </div>
+      {showHighlightsContent ? (
+        <div className="romeo-highlights-content" style={styles.highlightsContentReveal}>
+          <p style={styles.windowEyebrow}>Highlights</p>
+          <h2 style={styles.windowTitle}>Do not miss</h2>
+          <MemorySeparator />
+          <div style={styles.highlightGrid}>
+            {HIGHLIGHT_ITEMS.map(([title, text]) => (
+              <article key={title} style={styles.highlightCard}>
+                <h3 style={styles.highlightTitle}>
+                  <span style={styles.highlightSigil}>✦</span>
+                  {title}
+                </h3>
+                <p style={styles.highlightText}>{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -475,6 +487,19 @@ export default function RomeoAtlasWindowPage({
           }
           .romeo-cinematic-intro-video {
             animation: romeo-cinematic-ken-burns 24s ease-in-out infinite alternate;
+          }
+          .romeo-highlights-content {
+            animation: romeo-highlights-fade-in 900ms ease forwards;
+          }
+          @keyframes romeo-highlights-fade-in {
+            from {
+              opacity: 0;
+              transform: translate3d(0, 0.72rem, 0);
+            }
+            to {
+              opacity: 1;
+              transform: translate3d(0, 0, 0);
+            }
           }
           @keyframes romeo-cinematic-ken-burns {
             0% {
@@ -762,21 +787,23 @@ const styles: Record<string, CSSProperties> = {
     textShadow: "0 2px 18px rgba(0,0,0,0.58), 0 0 26px rgba(226,150,72,0.12)",
   },
   highlightsMemoryContent: {
-    alignContent: "start",
-    paddingTop: "clamp(0.78rem, 3.3vw, 1.2rem)",
+    alignContent: "center",
+    paddingTop: "clamp(2rem, 8svh, 4.6rem)",
+    paddingBottom: "clamp(1.1rem, 5svh, 3.2rem)",
   },
   cinematicVideoFrame: {
     position: "relative",
-    width: "100%",
-    margin: "0 0 clamp(0.22rem, 1.4svh, 0.64rem)",
-    minHeight: "clamp(10rem, 28svh, 15.5rem)",
-    aspectRatio: "16 / 8.8",
+    width: "min(100%, 34rem)",
+    justifySelf: "center",
+    margin: "clamp(1.4rem, 5svh, 3.4rem) auto clamp(0.2rem, 1.4svh, 0.62rem)",
+    minHeight: "clamp(11.4rem, 31svh, 17.5rem)",
+    aspectRatio: "16 / 9",
     overflow: "hidden",
-    borderRadius: "0.76rem",
-    border: "1px solid rgba(246,202,127,0.2)",
-    background: "rgba(4,7,14,0.7)",
+    borderRadius: "1.06rem",
+    border: "1px solid rgba(246,202,127,0.24)",
+    background: "rgba(4,7,14,0.74)",
     boxShadow:
-      "0 24px 45px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,238,207,0.16)",
+      "0 28px 54px rgba(0,0,0,0.52), 0 0 32px rgba(226,150,72,0.12), inset 0 1px 0 rgba(255,238,207,0.18)",
     isolation: "isolate",
   },
   cinematicIntroVideo: {
@@ -788,17 +815,19 @@ const styles: Record<string, CSSProperties> = {
     height: "100%",
     maxWidth: "none",
     objectFit: "cover",
-    objectPosition: "50% 42%",
-    filter: "saturate(1.08) contrast(1.04) brightness(0.9)",
+    objectPosition: "50% 45%",
+    filter: "saturate(1.08) contrast(1.06) brightness(0.86)",
     willChange: "transform",
   },
   cinematicVideoOverlay: {
     position: "absolute",
     inset: 0,
-    zIndex: 1,
+    zIndex: 3,
     pointerEvents: "none",
     background:
-      "linear-gradient(180deg, rgba(255,219,166,0.08) 0%, rgba(3,5,10,0.04) 62%, rgba(3,5,10,0.14) 100%)",
+      "radial-gradient(ellipse at center, transparent 48%, rgba(3,5,10,0.32) 100%), linear-gradient(180deg, rgba(255,219,166,0.08) 0%, rgba(3,5,10,0.04) 55%, rgba(3,5,10,0.34) 100%), linear-gradient(90deg, rgba(3,5,10,0.26), transparent 18%, transparent 82%, rgba(3,5,10,0.26))",
+    boxShadow:
+      "inset 0 0 0 1px rgba(255,238,207,0.08), inset 0 22px 34px rgba(255,218,160,0.05), inset 0 -34px 42px rgba(2,4,8,0.48)",
   },
   cinematicVideoFallback: {
     position: "absolute",
@@ -813,20 +842,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "clamp(0.86rem, 3.4vw, 1rem)",
     letterSpacing: "0.02em",
     textAlign: "center",
-  },
-  cinematicVideoCaption: {
-    position: "absolute",
-    left: "clamp(0.86rem, 4vw, 1.4rem)",
-    right: "clamp(0.86rem, 4vw, 1.4rem)",
-    bottom: "clamp(0.78rem, 3.6vw, 1.25rem)",
-    zIndex: 3,
-    margin: 0,
-    color: "rgba(255,239,212,0.96)",
-    fontFamily: "Georgia, Times New Roman, serif",
-    fontSize: "clamp(1.24rem, 5.8vw, 2.18rem)",
-    lineHeight: 1,
-    letterSpacing: "0.015em",
-    textShadow: "0 4px 18px rgba(0,0,0,0.82), 0 0 18px rgba(226,150,72,0.2)",
   },
   floatingMemoryStars: {
     position: "absolute",
@@ -909,6 +924,14 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.48,
     fontStyle: "italic",
     maxWidth: "32rem",
+  },
+  highlightsContentReveal: {
+    display: "grid",
+    gap: "clamp(1.05rem, 3svh, 1.55rem)",
+    width: "100%",
+    maxWidth: "34rem",
+    justifySelf: "center",
+    opacity: 0,
   },
   highlightGrid: {
     display: "grid",
