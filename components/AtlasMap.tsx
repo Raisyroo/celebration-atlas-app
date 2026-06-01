@@ -146,16 +146,22 @@ const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 const MARKER_EDGE_INSET_PERCENT = 6;
 
 const REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM = {
-  overlayScale: 0.82,
-  overlayTranslateX: -8,
-  overlayTranslateY: -10,
+  overlayScaleX: 0.95,
+  overlayScaleY: 0.82,
+  overlayTranslateX: -6,
+  overlayTranslateY: -8,
 } as const;
 
-const REAL_MICHIGAN_MARKER_OVERLAY_STYLE = {
-  transform: `translate3d(${REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayTranslateX}%, ${REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayTranslateY}%, 0) scale(${REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayScale})`,
-};
-
-const MARKER_OVERLAY_INVERSE_SCALE = 1 / REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayScale;
+const applyRealMichiganMarkerOverlayTransform = (position: { x: number; y: number }) => ({
+  x:
+    50 +
+    (position.x - 50) * REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayScaleX +
+    REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayTranslateX,
+  y:
+    50 +
+    (position.y - 50) * REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayScaleY +
+    REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayTranslateY,
+});
 
 type AtlasMarkerLayout = {
   event: (typeof ATLAS_EVENTS)[number];
@@ -176,10 +182,10 @@ const resolveAtlasMarkerLayouts = (events: typeof ATLAS_EVENTS): AtlasMarkerLayo
     return {
       event,
       eventIndex,
-      position: {
+      position: applyRealMichiganMarkerOverlayTransform({
         x: clampMarkerPercent(rawPosition.x),
         y: clampMarkerPercent(rawPosition.y),
-      },
+      }),
     };
   });
 
@@ -752,12 +758,7 @@ export default function AtlasMap() {
           ) : null}
 
           {!shouldShowCalibration ? (
-            <div
-              style={{
-                ...styles.markerOverlayLayer,
-                ...REAL_MICHIGAN_MARKER_OVERLAY_STYLE,
-              }}
-            >
+            <div style={styles.markerOverlayLayer}>
               {markerLayouts.map(({ event, eventIndex, position }) => {
                 const isHighlighted = highlightedIds.has(event.id);
                 const isSelected = selectedId === event.id;
@@ -778,12 +779,7 @@ export default function AtlasMap() {
                       zIndex: Z_INDEX.markers + markerLayerLift + eventIndex,
                     }}
                   >
-                    <div
-                      style={{
-                        ...styles.markerScaleCompensation,
-                        transform: `scale(${MARKER_OVERLAY_INVERSE_SCALE})`,
-                      }}
-                    >
+                    <div style={styles.markerScaleCompensation}>
                       {isVerificationMode ? (
                         <span aria-hidden="true" style={styles.verificationMarker} />
                       ) : (
