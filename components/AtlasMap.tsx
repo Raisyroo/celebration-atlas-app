@@ -221,6 +221,14 @@ const MARKER_EDGE_INSET_PERCENT = 6;
 const CLUSTER_RADIUS_PERCENT = 7.2;
 const SHOW_CLUSTER_LABELS = false;
 
+// Central post-projection adjustment for the visible homepage marker/cluster
+// layer. Keep event lat/lng, anchor data, clustering, and marker styling
+// untouched; tune only translateX/translateY to shift the whole projected layer.
+const ATLAS_MARKER_PROJECTION_TRANSFORM = {
+  translateX: -7,
+  translateY: 0,
+} as const;
+
 type AtlasEvent = (typeof ATLAS_EVENTS)[number];
 type MarkerPosition = { x: number; y: number };
 
@@ -252,8 +260,12 @@ const projectEventToMichiganArtworkPosition = (
   );
 
   return {
-    x: clampMarkerPercent(artworkPosition.x),
-    y: clampMarkerPercent(artworkPosition.y),
+    x: clampMarkerPercent(
+      artworkPosition.x + ATLAS_MARKER_PROJECTION_TRANSFORM.translateX,
+    ),
+    y: clampMarkerPercent(
+      artworkPosition.y + ATLAS_MARKER_PROJECTION_TRANSFORM.translateY,
+    ),
   };
 };
 
