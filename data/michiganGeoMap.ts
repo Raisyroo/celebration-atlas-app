@@ -11,6 +11,13 @@ export type MichiganMapPosition = {
   y: number;
 };
 
+export type MichiganMapRegionalCorrection = {
+  label: string;
+  matches: (input: { latitude: number; longitude: number }) => boolean;
+  translateX: number;
+  translateY: number;
+};
+
 export type MichiganSvgReferencePoint = {
   name: string;
   latitude: number;
@@ -119,23 +126,101 @@ export const MICHIGAN_GEO_POLYGONS: readonly MichiganGeoPolygon[] = [
 
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
-// One shared fit aligns the real SVG coordinate system to the painterly atlas.
-// Marker placement still starts exclusively from event latitude/longitude; this
-// transform only places the hidden SVG scaffold over the existing artwork.
-export const MICHIGAN_SVG_TO_ARTWORK_FIT = {
-  scaleX: 0.9,
-  scaleY: 0.78,
-  translateX: -5.2,
-  translateY: -4.8,
+// One centralized fit aligns the hidden SVG coordinate system to the painterly
+// atlas. Tune only these values (and the regional corrections below) when using
+// /?verify=1; event data and cluster/card interactions should stay untouched.
+export const MICHIGAN_ARTWORK_OVERLAY_TRANSFORM = {
+  overlayScaleX: 1.089,
+  overlayScaleY: 0.715,
+  overlayTranslateX: -21.16,
+  overlayTranslateY: -27.92,
 } as const;
 
-const applyMichiganSvgToArtworkFit = (position: MichiganMapPosition): MichiganMapPosition => ({
-  x: clampPercent(50 + (position.x - 50) * MICHIGAN_SVG_TO_ARTWORK_FIT.scaleX + MICHIGAN_SVG_TO_ARTWORK_FIT.translateX),
-  y: clampPercent(50 + (position.y - 50) * MICHIGAN_SVG_TO_ARTWORK_FIT.scaleY + MICHIGAN_SVG_TO_ARTWORK_FIT.translateY),
-});
+// Small artwork-specific nudges for regions where the illustrated map bends away
+// from the flat SVG reference. They are intentionally geography-based rather than
+// event-based so future city markers inherit the same hidden overlay behavior.
+export const MICHIGAN_ARTWORK_REGIONAL_CORRECTIONS: readonly MichiganMapRegionalCorrection[] = [
+  {
+    label: 'west-lower-peninsula-lakeshore',
+    matches: ({ latitude, longitude }) =>
+      latitude < 44.1 && longitude < -85.3 && longitude > -86.6,
+    translateX: -9.4,
+    translateY: 6.4,
+  },
+  {
+    label: 'northwest-lower-peninsula',
+    matches: ({ latitude, longitude }) =>
+      latitude >= 44.1 && latitude < 45.55 && longitude < -84.9,
+    translateX: -9.6,
+    translateY: 6.8,
+  },
+  {
+    label: 'northeast-lower-peninsula',
+    matches: ({ latitude, longitude }) =>
+      latitude >= 44.4 && latitude < 45.55 && longitude >= -84.9,
+    translateX: -8.3,
+    translateY: 4.8,
+  },
+  {
+    label: 'straits-and-mackinac',
+    matches: ({ latitude }) => latitude >= 45.55 && latitude < 46.0,
+    translateX: -8.2,
+    translateY: 5.9,
+  },
+  {
+    label: 'southeast-thumb',
+    matches: ({ latitude, longitude }) => latitude < 43.35 && longitude > -83.3,
+    translateX: 1.4,
+    translateY: -2.8,
+  },
+  {
+    label: 'south-central-lower-peninsula',
+    matches: ({ latitude, longitude }) =>
+      latitude < 43.15 && longitude <= -83.3 && longitude > -85.1,
+    translateX: -2.1,
+    translateY: 5.0,
+  },
+  {
+    label: 'upper-peninsula',
+    matches: ({ latitude }) => latitude >= 46.0,
+    translateX: 0.2,
+    translateY: -0.8,
+  },
+] as const;
 
+const getMichiganArtworkRegionalCorrection = (latitude: number, longitude: number) =>
+  MICHIGAN_ARTWORK_REGIONAL_CORRECTIONS.find((correction) =>
+    correction.matches({ latitude, longitude }),
+  );
+
+const applyMichiganSvgToArtworkFit = (
+  position: MichiganMapPosition,
+  latitude: number,
+  longitude: number,
+): MichiganMapPosition => {
+  const correction = getMichiganArtworkRegionalCorrection(latitude, longitude);
+
+  return {
+    x: clampPercent(
+      50 +
+        (position.x - 50) * MICHIGAN_ARTWORK_OVERLAY_TRANSFORM.overlayScaleX +
+        MICHIGAN_ARTWORK_OVERLAY_TRANSFORM.overlayTranslateX +
+        (correction?.translateX ?? 0),
+    ),
+    y: clampPercent(
+      50 +
+        (position.y - 50) * MICHIGAN_ARTWORK_OVERLAY_TRANSFORM.overlayScaleY +
+        MICHIGAN_ARTWORK_OVERLAY_TRANSFORM.overlayTranslateY +
+        (correction?.translateY ?? 0),
+    ),
+  };
+};
+
+// The full visual overlay is no longer a single CSS transform because regional
+// corrections are applied per point. This transform is still used to render the
+// verification scaffold and keeps the global fit values visible in one place.
 export const getMichiganSvgToArtworkCssTransform = () =>
-  `translate(${MICHIGAN_SVG_TO_ARTWORK_FIT.translateX}%, ${MICHIGAN_SVG_TO_ARTWORK_FIT.translateY}%) scale(${MICHIGAN_SVG_TO_ARTWORK_FIT.scaleX}, ${MICHIGAN_SVG_TO_ARTWORK_FIT.scaleY})`;
+  `translate(${MICHIGAN_ARTWORK_OVERLAY_TRANSFORM.overlayTranslateX}%, ${MICHIGAN_ARTWORK_OVERLAY_TRANSFORM.overlayTranslateY}%) scale(${MICHIGAN_ARTWORK_OVERLAY_TRANSFORM.overlayScaleX}, ${MICHIGAN_ARTWORK_OVERLAY_TRANSFORM.overlayScaleY})`;
 
 export function latLngToMichiganSvgPosition(latitude: number, longitude: number): MichiganMapPosition {
   const x = ((longitude - MICHIGAN_GEO_BOUNDS.west) / (MICHIGAN_GEO_BOUNDS.east - MICHIGAN_GEO_BOUNDS.west)) * 100;
@@ -148,7 +233,11 @@ export function latLngToMichiganSvgPosition(latitude: number, longitude: number)
 }
 
 export function latLngToMichiganMapPosition(latitude: number, longitude: number): MichiganMapPosition {
-  return applyMichiganSvgToArtworkFit(latLngToMichiganSvgPosition(latitude, longitude));
+  return applyMichiganSvgToArtworkFit(
+    latLngToMichiganSvgPosition(latitude, longitude),
+    latitude,
+    longitude,
+  );
 }
 
 export const MICHIGAN_SVG_REFERENCE_POINTS: readonly MichiganSvgReferencePoint[] = [
@@ -162,7 +251,11 @@ export const MICHIGAN_SVG_REFERENCE_POINTS: readonly MichiganSvgReferencePoint[]
   return {
     ...point,
     svgPosition,
-    artworkPosition: applyMichiganSvgToArtworkFit(svgPosition),
+    artworkPosition: applyMichiganSvgToArtworkFit(
+      svgPosition,
+      point.latitude,
+      point.longitude,
+    ),
   };
 });
 
