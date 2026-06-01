@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 
@@ -26,6 +27,7 @@ type RomeoAtlasWindowPageProps = {
   eventName: string;
   backHref: string;
   memoryImageSrc: string;
+  introStillImageSrc: string;
 };
 
 const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
@@ -208,10 +210,12 @@ function RomeoMemoryContent({
   activeMode,
   activeGallery,
   setActiveGallery,
+  introStillImageSrc,
 }: {
   activeMode: RomeoAtlasMode;
   activeGallery: GalleryMoment;
   setActiveGallery: (id: string) => void;
+  introStillImageSrc: string;
 }) {
   if (activeMode === "schedule") {
     return (
@@ -334,9 +338,25 @@ function RomeoMemoryContent({
   return (
     <section
       className="romeo-memory-scroll"
-      style={styles.memoryContent}
+      style={{ ...styles.memoryContent, ...styles.highlightsMemoryContent }}
       aria-label="Highlights lens"
     >
+      <figure style={styles.cinematicStillFrame}>
+        <Image
+          src={introStillImageSrc}
+          alt="Aerial view over downtown Romeo and a red brick church tower"
+          fill
+          sizes="(max-width: 760px) 100vw, 760px"
+          priority
+          className="romeo-cinematic-still-image"
+          style={styles.cinematicStillImage}
+          draggable={false}
+        />
+        <span style={styles.cinematicStillOverlay} aria-hidden="true" />
+        <figcaption style={styles.cinematicStillCaption}>
+          Entering Romeo Peach Festival
+        </figcaption>
+      </figure>
       <p style={styles.windowEyebrow}>Highlights</p>
       <h2 style={styles.windowTitle}>Do not miss</h2>
       <MemorySeparator />
@@ -359,6 +379,7 @@ export default function RomeoAtlasWindowPage({
   eventName,
   backHref,
   memoryImageSrc,
+  introStillImageSrc,
 }: RomeoAtlasWindowPageProps) {
   const [activeMode, setActiveMode] = useState<RomeoAtlasMode>("highlights");
   const [activeGalleryId, setActiveGalleryId] = useState(GALLERY_MOMENTS[0].id);
@@ -439,6 +460,23 @@ export default function RomeoAtlasWindowPage({
           .romeo-mode-lens[data-active="true"] > span {
             opacity: 1 !important;
           }
+          .romeo-cinematic-still-image {
+            animation: romeo-cinematic-ken-burns 24s ease-in-out infinite alternate;
+          }
+          @keyframes romeo-cinematic-ken-burns {
+            0% {
+              transform: scale(1.04) translate3d(-1.4%, -1.2%, 0);
+            }
+            100% {
+              transform: scale(1.16) translate3d(1.6%, 1.3%, 0);
+            }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .romeo-cinematic-still-image {
+              animation: none;
+              transform: scale(1.06);
+            }
+          }
         `}</style>
       <section
         style={styles.stage}
@@ -512,6 +550,7 @@ export default function RomeoAtlasWindowPage({
               activeMode={activeMode}
               activeGallery={activeGallery}
               setActiveGallery={setActiveGalleryId}
+              introStillImageSrc={introStillImageSrc}
             />
           )}
         </section>
@@ -708,6 +747,58 @@ const styles: Record<string, CSSProperties> = {
     scrollbarWidth: "none",
     msOverflowStyle: "none",
     textShadow: "0 2px 18px rgba(0,0,0,0.58), 0 0 26px rgba(226,150,72,0.12)",
+  },
+  highlightsMemoryContent: {
+    alignContent: "start",
+    paddingTop: "clamp(0.78rem, 3.3vw, 1.2rem)",
+  },
+  cinematicStillFrame: {
+    position: "relative",
+    width: "100%",
+    margin: "0 0 clamp(0.22rem, 1.4svh, 0.64rem)",
+    minHeight: "clamp(10rem, 28svh, 15.5rem)",
+    aspectRatio: "16 / 8.8",
+    overflow: "hidden",
+    borderRadius: "0.76rem",
+    border: "1px solid rgba(246,202,127,0.2)",
+    background: "rgba(4,7,14,0.7)",
+    boxShadow:
+      "0 24px 45px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,238,207,0.16)",
+    isolation: "isolate",
+  },
+  cinematicStillImage: {
+    position: "absolute",
+    inset: "-3%",
+    zIndex: 0,
+    width: "106%",
+    height: "106%",
+    maxWidth: "none",
+    objectFit: "cover",
+    objectPosition: "50% 42%",
+    filter: "saturate(1.08) contrast(1.04) brightness(0.9)",
+    willChange: "transform",
+  },
+  cinematicStillOverlay: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 1,
+    pointerEvents: "none",
+    background:
+      "linear-gradient(180deg, rgba(3,5,10,0.14) 0%, rgba(3,5,10,0.24) 54%, rgba(3,5,10,0.58) 100%), radial-gradient(ellipse at 50% 30%, transparent 34%, rgba(2,4,9,0.26) 100%)",
+  },
+  cinematicStillCaption: {
+    position: "absolute",
+    left: "clamp(0.86rem, 4vw, 1.4rem)",
+    right: "clamp(0.86rem, 4vw, 1.4rem)",
+    bottom: "clamp(0.78rem, 3.6vw, 1.25rem)",
+    zIndex: 2,
+    margin: 0,
+    color: "rgba(255,239,212,0.96)",
+    fontFamily: "Georgia, Times New Roman, serif",
+    fontSize: "clamp(1.24rem, 5.8vw, 2.18rem)",
+    lineHeight: 1,
+    letterSpacing: "0.015em",
+    textShadow: "0 4px 18px rgba(0,0,0,0.82), 0 0 18px rgba(226,150,72,0.2)",
   },
   floatingMemoryStars: {
     position: "absolute",

@@ -150,6 +150,7 @@ export default function EventDetailPage() {
         eventName={event.name}
         // Expected public asset path: /event-media/romeo/romeo-peach-memory-bg-v1.webp
         memoryImageSrc="/event-media/romeo/romeo-peach-memory-bg-v1.webp"
+        introStillImageSrc="/event-media/romeo/romeo-aerial-intro.jpg"
         backHref={`/?event=${event.id}`}
       />
     );
