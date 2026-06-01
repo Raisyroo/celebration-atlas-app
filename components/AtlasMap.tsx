@@ -6,7 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
-import { MICHIGAN_MAP_ANCHORS, latLngToAtlasPosition } from '../data/mapCalibration';
+import { MICHIGAN_GEO_POLYGONS, latLngToMichiganMapPosition, michiganGeoPolygonToSvgPath } from '../data/michiganGeoMap';
+import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
 import type { MichiganMapAnchor } from '../data/mapCalibration';
 import AtmosphereLayer from './AtmosphereLayer';
 
@@ -35,11 +36,12 @@ const MEDIA_MASKS: Record<'romeoPeach', string> = {
 // clustering thresholds can be tuned without rewriting marker rendering logic.
 const BASE_SCALE = 1.03;
 
-// Layer order contract (low -> high): map art (1), decorative atmosphere (2-4 in effects),
-// interactive markers (5), optional calibration anchors (6), event card (15),
-// search + featured discovery dock (20).
+// Layer order contract (low -> high): map art (1), real Michigan geography (2),
+// decorative atmosphere (3-4 in effects), interactive markers (5), optional
+// calibration anchors (6), event card (15), search + featured discovery dock (20).
 const Z_INDEX = {
   mapImage: 1,
+  geographicMap: 2,
   atmosphere: 3,
   depthVeil: 4,
   particles: 4,
@@ -49,8 +51,8 @@ const Z_INDEX = {
   searchDock: 20,
 } as const;
 
-// Debug mode for the invisible geographic layer. Set to true while tuning
-// anchors; keep false in normal use so the painterly artwork remains unchanged.
+// Legacy calibration debug mode. Homepage marker placement no longer uses these
+// anchors; it uses the real Michigan SVG/GeoJSON layer in data/michiganGeoMap.ts.
 const showAtlasCalibration = false;
 const CARD_THEME_BY_CATEGORY: Record<(typeof ATLAS_EVENTS)[number]['category'], { edge: string; glow: string; wash: string }> = {
   Festivals: { edge: 'rgba(255,228,166,.52)', glow: 'rgba(255,202,102,.24)', wash: 'rgba(255,194,112,.14)' },
@@ -142,16 +144,11 @@ const getHighlightedIdsFromQuery = (queryText: string) => {
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
 const MARKER_EDGE_INSET_PERCENT = 6;
-const MARKER_COLLISION_DISTANCE_PERCENT = 4;
-const MARKER_COLLISION_OFFSET_PERCENT = 3.4;
-const MARKER_COLLISION_OFFSET_GROWTH_PERCENT = 0.22;
-const MARKER_COLLISION_MAX_OFFSET_PERCENT = 4.25;
 
 type AtlasMarkerLayout = {
   event: (typeof ATLAS_EVENTS)[number];
   eventIndex: number;
   position: { x: number; y: number };
-  collisionCount: number;
 };
 
 const clampMarkerPercent = (value: number, offset = 0) => {
@@ -160,98 +157,29 @@ const clampMarkerPercent = (value: number, offset = 0) => {
   return Math.min(upperBound, Math.max(lowerBound, value));
 };
 
-const getMarkerDistance = (first: { x: number; y: number }, second: { x: number; y: number }) =>
-  Math.hypot(first.x - second.x, first.y - second.y);
-
-const getCollisionOffsetRadius = (collisionCount: number) =>
-  Math.min(
-    MARKER_COLLISION_MAX_OFFSET_PERCENT,
-    MARKER_COLLISION_OFFSET_PERCENT + Math.max(0, collisionCount - 2) * MARKER_COLLISION_OFFSET_GROWTH_PERCENT,
-  );
-
-const resolveAtlasMarkerLayouts = (events: typeof ATLAS_EVENTS): AtlasMarkerLayout[] => {
-  const markers = events.map((event, eventIndex) => {
-    const rawPosition = latLngToAtlasPosition(event.latitude, event.longitude);
+const resolveAtlasMarkerLayouts = (events: typeof ATLAS_EVENTS): AtlasMarkerLayout[] =>
+  events.map((event, eventIndex) => {
+    const rawPosition = latLngToMichiganMapPosition(event.latitude, event.longitude);
 
     return {
       event,
       eventIndex,
-      basePosition: {
+      position: {
         x: clampMarkerPercent(rawPosition.x),
         y: clampMarkerPercent(rawPosition.y),
       },
     };
   });
 
-  const layouts: AtlasMarkerLayout[] = [];
-  const visitedMarkerIndexes = new Set<number>();
-
-  markers.forEach((marker, markerIndex) => {
-    if (visitedMarkerIndexes.has(markerIndex)) return;
-
-    const clusterIndexes: number[] = [];
-    const queue = [markerIndex];
-    visitedMarkerIndexes.add(markerIndex);
-
-    while (queue.length > 0) {
-      const currentIndex = queue.shift();
-      if (typeof currentIndex !== 'number') continue;
-
-      clusterIndexes.push(currentIndex);
-      const currentMarker = markers[currentIndex];
-
-      markers.forEach((candidateMarker, candidateIndex) => {
-        if (visitedMarkerIndexes.has(candidateIndex)) return;
-        if (getMarkerDistance(currentMarker.basePosition, candidateMarker.basePosition) > MARKER_COLLISION_DISTANCE_PERCENT) return;
-
-        visitedMarkerIndexes.add(candidateIndex);
-        queue.push(candidateIndex);
-      });
-    }
-
-    const clusterMarkers = clusterIndexes.map((index) => markers[index]).sort((first, second) => first.eventIndex - second.eventIndex);
-
-    if (clusterMarkers.length === 1) {
-      const [singleMarker] = clusterMarkers;
-      layouts.push({
-        event: singleMarker.event,
-        eventIndex: singleMarker.eventIndex,
-        position: singleMarker.basePosition,
-        collisionCount: 1,
-      });
-      return;
-    }
-
-    const offsetRadius = getCollisionOffsetRadius(clusterMarkers.length);
-    const clusterCenter = clusterMarkers.reduce(
-      (center, clusterMarker) => ({
-        x: center.x + clusterMarker.basePosition.x / clusterMarkers.length,
-        y: center.y + clusterMarker.basePosition.y / clusterMarkers.length,
-      }),
-      { x: 0, y: 0 },
-    );
-    const centerX = clampMarkerPercent(clusterCenter.x, offsetRadius);
-    const centerY = clampMarkerPercent(clusterCenter.y, offsetRadius);
-    const angleStep = (Math.PI * 2) / clusterMarkers.length;
-    const startAngle = clusterMarkers.length === 2 ? 0 : -Math.PI / 2;
-
-    clusterMarkers.forEach((clusterMarker, clusterIndex) => {
-      const angle = startAngle + angleStep * clusterIndex;
-
-      layouts.push({
-        event: clusterMarker.event,
-        eventIndex: clusterMarker.eventIndex,
-        position: {
-          x: clampMarkerPercent(centerX + Math.cos(angle) * offsetRadius),
-          y: clampMarkerPercent(centerY + Math.sin(angle) * offsetRadius),
-        },
-        collisionCount: clusterMarkers.length,
-      });
-    });
-  });
-
-  return layouts.sort((first, second) => first.eventIndex - second.eventIndex);
-};
+function MichiganGeoMapLayer() {
+  return (
+    <svg aria-hidden="true" focusable="false" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.geographicMapLayer}>
+      {MICHIGAN_GEO_POLYGONS.map((polygon) => (
+        <path key={polygon.id} d={michiganGeoPolygonToSvgPath(polygon.coordinates)} style={styles.geographicMapPath} />
+      ))}
+    </svg>
+  );
+}
 
 const formatCalibrationCoordinate = (value: number) => Number(value.toFixed(5)).toString();
 const formatCalibrationPercent = (value: number) => Number(value.toFixed(2)).toString();
@@ -776,6 +704,8 @@ export default function AtlasMap() {
         >
           <img src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas" draggable={false} style={styles.mapImage} />
 
+          <MichiganGeoMapLayer />
+
           <div style={{ ...styles.baseMapGrade, transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.28}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.28}px, 0)` }} />
 
           {!shouldShowCalibration && !isVerificationMode ? (
@@ -809,7 +739,7 @@ export default function AtlasMap() {
             />
           ) : null}
 
-          {!shouldShowCalibration ? markerLayouts.map(({ event, eventIndex, position, collisionCount }) => {
+          {!shouldShowCalibration ? markerLayouts.map(({ event, eventIndex, position }) => {
             const isHighlighted = highlightedIds.has(event.id);
             const isSelected = selectedId === event.id;
             const isDimmed = highlightedIds.size > 0 && !isHighlighted;
@@ -817,7 +747,7 @@ export default function AtlasMap() {
             const isFeaturedMarker = !isSearchActive && featuredEvent.id === event.id;
             const pulseDuration = 2.4 + (eventIndex % 3) * 0.35;
             const pulseDelay = eventIndex * 0.26;
-            const markerLayerLift = isSelected ? 30 : isHighlighted ? 20 : collisionCount > 1 ? 10 : 0;
+            const markerLayerLift = isSelected ? 30 : isHighlighted ? 20 : 0;
 
             return (
               <div
@@ -1239,6 +1169,24 @@ const styles: Record<string, CSSProperties> = {
     pointerEvents: 'none',
   },
 
+  geographicMapLayer: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: Z_INDEX.geographicMap,
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none',
+    opacity: 0.2,
+    mixBlendMode: 'screen',
+    filter: 'drop-shadow(0 0 8px rgba(242, 198, 106, 0.34))',
+  },
+  geographicMapPath: {
+    fill: 'rgba(242, 198, 106, 0.025)',
+    stroke: 'rgba(255, 219, 145, 0.58)',
+    strokeWidth: 0.42,
+    vectorEffect: 'non-scaling-stroke',
+  },
+
   baseMapGrade: {
     position: 'absolute',
     inset: 0,
@@ -1385,8 +1333,8 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: '50%',
     top: '50%',
-    width: 34,
-    height: 34,
+    width: 44,
+    height: 44,
     padding: 0,
     border: 'none',
     borderRadius: 999,
