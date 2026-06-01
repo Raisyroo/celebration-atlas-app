@@ -216,6 +216,8 @@ function RomeoMemoryContent({
   setActiveGallery: (id: string) => void;
   introVideoSrc: string;
 }) {
+  const [hasIntroVideoError, setHasIntroVideoError] = useState(false);
+
   if (activeMode === "schedule") {
     return (
       <section
@@ -348,11 +350,22 @@ function RomeoMemoryContent({
           loop
           playsInline
           preload="metadata"
+          // Temporary debugging controls for verifying the Romeo intro video load.
+          controls
           aria-label="Entering Romeo Peach Festival video"
           className="romeo-cinematic-intro-video"
           style={styles.cinematicIntroVideo}
-        />
+          onError={() => setHasIntroVideoError(true)}
+          onLoadedData={() => setHasIntroVideoError(false)}
+        >
+          Romeo intro video unavailable
+        </video>
         <span style={styles.cinematicVideoOverlay} aria-hidden="true" />
+        {hasIntroVideoError ? (
+          <p style={styles.cinematicVideoFallback}>
+            Romeo intro video unavailable
+          </p>
+        ) : null}
         <figcaption style={styles.cinematicVideoCaption}>
           Entering Romeo Peach Festival
         </figcaption>
@@ -768,10 +781,11 @@ const styles: Record<string, CSSProperties> = {
   },
   cinematicIntroVideo: {
     position: "absolute",
-    inset: "-3%",
-    zIndex: 0,
-    width: "106%",
-    height: "106%",
+    inset: 0,
+    zIndex: 2,
+    display: "block",
+    width: "100%",
+    height: "100%",
     maxWidth: "none",
     objectFit: "cover",
     objectPosition: "50% 42%",
@@ -784,14 +798,28 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 1,
     pointerEvents: "none",
     background:
-      "linear-gradient(180deg, rgba(3,5,10,0.14) 0%, rgba(3,5,10,0.24) 54%, rgba(3,5,10,0.58) 100%), radial-gradient(ellipse at 50% 30%, transparent 34%, rgba(2,4,9,0.26) 100%)",
+      "linear-gradient(180deg, rgba(255,219,166,0.08) 0%, rgba(3,5,10,0.04) 62%, rgba(3,5,10,0.14) 100%)",
+  },
+  cinematicVideoFallback: {
+    position: "absolute",
+    inset: "clamp(0.9rem, 4vw, 1.35rem)",
+    zIndex: 4,
+    display: "grid",
+    placeItems: "center",
+    margin: 0,
+    borderRadius: "0.58rem",
+    background: "rgba(4,7,14,0.78)",
+    color: "rgba(255,239,212,0.96)",
+    fontSize: "clamp(0.86rem, 3.4vw, 1rem)",
+    letterSpacing: "0.02em",
+    textAlign: "center",
   },
   cinematicVideoCaption: {
     position: "absolute",
     left: "clamp(0.86rem, 4vw, 1.4rem)",
     right: "clamp(0.86rem, 4vw, 1.4rem)",
     bottom: "clamp(0.78rem, 3.6vw, 1.25rem)",
-    zIndex: 2,
+    zIndex: 3,
     margin: 0,
     color: "rgba(255,239,212,0.96)",
     fontFamily: "Georgia, Times New Roman, serif",
