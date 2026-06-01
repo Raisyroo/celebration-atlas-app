@@ -163,10 +163,93 @@ const applyRealMichiganMarkerOverlayTransform = (position: { x: number; y: numbe
     REAL_MICHIGAN_MARKER_OVERLAY_TRANSFORM.overlayTranslateY,
 });
 
+type AtlasEvent = (typeof ATLAS_EVENTS)[number];
+type MarkerPosition = { x: number; y: number };
+type MichiganMarkerCorrectionRegion =
+  | 'upperPeninsula'
+  | 'northernLowerPeninsula'
+  | 'midMichigan'
+  | 'southeastMichiganThumb'
+  | 'westMichigan';
+
+// The painterly Michigan artwork is intentionally stylized rather than a
+// survey-accurate basemap. Markers still start from real lat/lng geometry and
+// the global overlay transform, then receive tiny region corrections so the
+// points visually settle onto the hand-painted land shapes.
+const REGIONAL_MARKER_CORRECTION_CONFIG: {
+  regions: Record<
+    MichiganMarkerCorrectionRegion,
+    {
+      label: string;
+      deltaX: number;
+      deltaY: number;
+    }
+  >;
+  thresholds: {
+    upperPeninsulaMinLatitude: number;
+    upperPeninsulaMaxLongitude: number;
+    northernLowerMinLatitude: number;
+    westMichiganMaxLongitude: number;
+    southeastThumbMinLongitude: number;
+    midMichiganMinLatitude: number;
+  };
+} = {
+  regions: {
+    upperPeninsula: { label: 'Upper Peninsula', deltaX: -0.8, deltaY: 1 },
+    northernLowerPeninsula: { label: 'Northern Lower Peninsula', deltaX: 0.6, deltaY: -0.5 },
+    midMichigan: { label: 'Mid Michigan', deltaX: 0.2, deltaY: 0.4 },
+    southeastMichiganThumb: { label: 'Southeast Michigan / Thumb', deltaX: 0.3, deltaY: 0.2 },
+    westMichigan: { label: 'West Michigan', deltaX: -0.5, deltaY: 0.3 },
+  },
+  thresholds: {
+    upperPeninsulaMinLatitude: 45.55,
+    upperPeninsulaMaxLongitude: -84.75,
+    northernLowerMinLatitude: 44.2,
+    westMichiganMaxLongitude: -85.35,
+    southeastThumbMinLongitude: -84,
+    midMichiganMinLatitude: 42.55,
+  },
+} as const;
+
+const getRegionalMarkerCorrection = (event: AtlasEvent) => {
+  const { thresholds, regions } = REGIONAL_MARKER_CORRECTION_CONFIG;
+
+  if (event.latitude >= thresholds.upperPeninsulaMinLatitude && event.longitude <= thresholds.upperPeninsulaMaxLongitude) {
+    return regions.upperPeninsula;
+  }
+
+  if (event.latitude >= thresholds.northernLowerMinLatitude) {
+    return regions.northernLowerPeninsula;
+  }
+
+  if (event.longitude <= thresholds.westMichiganMaxLongitude) {
+    return regions.westMichigan;
+  }
+
+  if (event.longitude >= thresholds.southeastThumbMinLongitude) {
+    return regions.southeastMichiganThumb;
+  }
+
+  if (event.latitude >= thresholds.midMichiganMinLatitude) {
+    return regions.midMichigan;
+  }
+
+  return regions.southeastMichiganThumb;
+};
+
+const applyRegionalMarkerCorrection = (event: AtlasEvent, position: MarkerPosition): MarkerPosition => {
+  const correction = getRegionalMarkerCorrection(event);
+
+  return {
+    x: position.x + correction.deltaX,
+    y: position.y + correction.deltaY,
+  };
+};
+
 type AtlasMarkerLayout = {
-  event: (typeof ATLAS_EVENTS)[number];
+  event: AtlasEvent;
   eventIndex: number;
-  position: { x: number; y: number };
+  position: MarkerPosition;
 };
 
 const clampMarkerPercent = (value: number, offset = 0) => {
@@ -179,13 +262,19 @@ const resolveAtlasMarkerLayouts = (events: typeof ATLAS_EVENTS): AtlasMarkerLayo
   events.map((event, eventIndex) => {
     const rawPosition = latLngToMichiganMapPosition(event.latitude, event.longitude);
 
+    const globallyTransformedPosition = applyRealMichiganMarkerOverlayTransform({
+      x: clampMarkerPercent(rawPosition.x),
+      y: clampMarkerPercent(rawPosition.y),
+    });
+    const regionallyCorrectedPosition = applyRegionalMarkerCorrection(event, globallyTransformedPosition);
+
     return {
       event,
       eventIndex,
-      position: applyRealMichiganMarkerOverlayTransform({
-        x: clampMarkerPercent(rawPosition.x),
-        y: clampMarkerPercent(rawPosition.y),
-      }),
+      position: {
+        x: clampMarkerPercent(regionallyCorrectedPosition.x),
+        y: clampMarkerPercent(regionallyCorrectedPosition.y),
+      },
     };
   });
 
