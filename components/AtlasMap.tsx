@@ -7,15 +7,9 @@ import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 import {
-  MICHIGAN_GEO_POLYGONS,
-  MICHIGAN_REFERENCE_SVG,
-  MICHIGAN_SVG_REFERENCE_POINTS,
-  getMichiganSvgToArtworkCssTransform,
-  latLngToMichiganMapPosition,
-  latLngToMichiganSvgPosition,
-  michiganGeoPolygonToSvgPath,
-} from '../data/michiganGeoMap';
-import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
+  MICHIGAN_MAP_ANCHORS,
+  latLngToAtlasPosition,
+} from '../data/mapCalibration';
 import type { MichiganMapAnchor } from '../data/mapCalibration';
 import AtmosphereLayer from './AtmosphereLayer';
 
@@ -36,18 +30,17 @@ const MEDIA_MASKS: Record<'romeoPeach', string> = {
 // - This intentionally avoids mobile gesture edge-cases to preserve tap reliability.
 //
 // Active homepage marker path:
-// app/page.tsx renders <AtlasMap />, which projects event latitude/longitude
-// through data/michiganGeoMap.ts and then clusters dense projected positions here.
-// The painterly image remains the visible basemap; the SVG geography layer is the
-// coordinate/projection scaffold behind the magical marker system.
+// app/page.tsx renders <AtlasMap />. Marker x/y is computed by
+// projectEventToMichiganArtworkPosition below, which delegates latitude/longitude
+// projection to the anchor-based latLngToAtlasPosition function in
+// data/mapCalibration.ts. The painterly image remains the visible basemap.
 const BASE_SCALE = 1.03;
 
-// Layer order contract (low -> high): map art (1), real Michigan geography (2),
-// decorative atmosphere (3-4 in effects), interactive markers (5), optional
+// Layer order contract (low -> high): map art (1), decorative atmosphere
+// (3-4 in effects), interactive markers (5), optional
 // calibration anchors (6), event card (15), search + featured discovery dock (20).
 const Z_INDEX = {
   mapImage: 1,
-  geographicMap: 2,
   atmosphere: 3,
   depthVeil: 4,
   particles: 4,
@@ -57,8 +50,8 @@ const Z_INDEX = {
   searchDock: 20,
 } as const;
 
-// Legacy calibration debug mode. Homepage marker placement no longer uses these
-// anchors; it uses the real Michigan SVG/GeoJSON layer in data/michiganGeoMap.ts.
+// Legacy calibration debug mode. Homepage marker placement uses the fixed
+// anchors in data/mapCalibration.ts; keep this off for production.
 const showAtlasCalibration = false;
 const CARD_THEME_BY_CATEGORY: Record<
   (typeof ATLAS_EVENTS)[number]['category'],
@@ -253,7 +246,7 @@ const clampMarkerPercent = (value: number, offset = 0) => {
 const projectEventToMichiganArtworkPosition = (
   event: AtlasEvent,
 ): MarkerPosition => {
-  const artworkPosition = latLngToMichiganMapPosition(
+  const artworkPosition = latLngToAtlasPosition(
     event.latitude,
     event.longitude,
   );
@@ -328,48 +321,26 @@ const resolveAtlasMarkerClusters = (
   return clusters;
 };
 
-function MichiganGeoMapLayer({ isVerificationMode }: { isVerificationMode: boolean }) {
-  return (
-    <svg
-      aria-hidden="true"
-      focusable="false"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
-      style={{
-        ...styles.geographicMapLayer,
-        opacity: isVerificationMode ? 0.58 : 0,
-        transform: getMichiganSvgToArtworkCssTransform(),
-      }}
-    >
-      <title>{`Hidden reference: ${MICHIGAN_REFERENCE_SVG.sourceName}`}</title>
-      {MICHIGAN_GEO_POLYGONS.map((polygon) => (
-        <path
-          key={polygon.id}
-          d={michiganGeoPolygonToSvgPath(polygon.coordinates)}
-          style={styles.geographicMapPath}
-        />
-      ))}
-    </svg>
-  );
-}
-
 function VerificationReferenceLayer() {
   return (
-    <div aria-label="Michigan SVG reference points" style={styles.verificationReferenceLayer}>
-      {MICHIGAN_SVG_REFERENCE_POINTS.map((point) => (
+    <div
+      aria-label="Michigan anchor city reference points"
+      style={styles.verificationReferenceLayer}
+    >
+      {MICHIGAN_MAP_ANCHORS.map((anchor) => (
         <div
-          key={point.name}
+          key={anchor.name}
           style={{
             ...styles.verificationReferenceWrap,
-            left: `${point.artworkPosition.x}%`,
-            top: `${point.artworkPosition.y}%`,
+            left: `${anchor.mapX}%`,
+            top: `${anchor.mapY}%`,
           }}
         >
           <span aria-hidden="true" style={styles.verificationReferencePoint} />
           <span style={styles.verificationReferenceLabel}>
-            {point.name}
+            {anchor.name}
             <br />
-            SVG {point.svgPosition.x.toFixed(1)}, {point.svgPosition.y.toFixed(1)}
+            anchor {anchor.mapX.toFixed(1)}, {anchor.mapY.toFixed(1)}
           </span>
         </div>
       ))}
@@ -1034,8 +1005,6 @@ export default function AtlasMap() {
             style={styles.mapImage}
           />
 
-          <MichiganGeoMapLayer isVerificationMode={isVerificationMode} />
-
           <div
             style={{
               ...styles.baseMapGrade,
@@ -1118,13 +1087,6 @@ export default function AtlasMap() {
                       : isFeaturedMarker
                         ? 1.08
                         : 1;
-                const svgPosition = isVerificationMode
-                  ? latLngToMichiganSvgPosition(
-                      primaryEvent.latitude,
-                      primaryEvent.longitude,
-                    )
-                  : null;
-
                 return (
                   <div
                     key={id}
@@ -1144,11 +1106,9 @@ export default function AtlasMap() {
                             style={styles.verificationMarker}
                           />
                           <span style={styles.verificationMarkerLabel}>
-                            {primaryEvent.location.replace(/,\s*(MI|Michigan)$/i, '')}
+                            {primaryEvent.name}
                             <br />
                             projected {position.x.toFixed(1)}, {position.y.toFixed(1)}
-                            <br />
-                            SVG {svgPosition?.x.toFixed(1)}, {svgPosition?.y.toFixed(1)}
                           </span>
                         </>
                       ) : (
@@ -1722,23 +1682,6 @@ const styles: Record<string, CSSProperties> = {
     pointerEvents: 'none',
   },
 
-  geographicMapLayer: {
-    position: 'absolute',
-    inset: 0,
-    zIndex: Z_INDEX.geographicMap,
-    width: '100%',
-    height: '100%',
-    pointerEvents: 'none',
-    opacity: 0.2,
-    mixBlendMode: 'screen',
-    filter: 'drop-shadow(0 0 8px rgba(242, 198, 106, 0.34))',
-  },
-  geographicMapPath: {
-    fill: 'rgba(242, 198, 106, 0.025)',
-    stroke: 'rgba(255, 219, 145, 0.58)',
-    strokeWidth: 0.42,
-    vectorEffect: 'non-scaling-stroke',
-  },
 
   baseMapGrade: {
     position: 'absolute',
