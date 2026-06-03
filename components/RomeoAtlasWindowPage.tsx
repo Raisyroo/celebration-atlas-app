@@ -17,16 +17,6 @@ type RomeoAtlasModeOption = {
   iconSrc: string;
 };
 
-type GalleryMoment = {
-  id: string;
-  title: string;
-  caption: string;
-  note: string;
-  tone: string;
-  aspectRatio: string;
-  imageSrc?: string;
-};
-
 type AtlasAnswer = {
   question: string;
   answer: string;
@@ -45,41 +35,6 @@ const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
   { id: "maps", label: "Maps", iconSrc: "/ui/maps-icon.svg" },
   { id: "gallery", label: "Gallery", iconSrc: "/ui/gallery-icon.svg" },
   { id: "plan", label: "Plan", iconSrc: "/ui/plan-icon.svg" },
-] as const;
-
-const GALLERY_MOMENTS: readonly GalleryMoment[] = [
-  {
-    id: "parade-light",
-    title: "Parade light",
-    caption: "Main Street parade route.",
-    note: "A wide memory for banners, curbside crowds, and the warm line of storefronts anchoring the festival.",
-    aspectRatio: "16 / 10",
-    tone: "radial-gradient(circle at 46% 24%, rgba(255,194,125,0.48), rgba(126,70,39,0.48) 38%, rgba(13,13,18,0.94) 100%)",
-  },
-  {
-    id: "sugar-stand",
-    title: "Peach stand",
-    caption: "Peach dessert stand.",
-    note: "A square artifact for the details: handwritten signs, cobbler trays, paper boats, and the soft glow around the food line.",
-    aspectRatio: "1 / 1",
-    tone: "radial-gradient(circle at 35% 30%, rgba(255,173,112,0.46), rgba(101,56,39,0.5) 42%, rgba(12,12,17,0.94) 100%)",
-  },
-  {
-    id: "downtown-bluehour",
-    title: "Blue-hour storefronts",
-    caption: "Downtown after sunset.",
-    note: "A portrait-friendly panel for vertical phone photos, keeping the whole frame visible instead of cropping out lights or people.",
-    aspectRatio: "3 / 4",
-    tone: "radial-gradient(circle at 54% 28%, rgba(239,179,103,0.38), rgba(61,57,76,0.45) 42%, rgba(9,12,20,0.95) 100%)",
-  },
-  {
-    id: "family-route",
-    title: "Family route",
-    caption: "Family walking route.",
-    note: "A tall memory card for walking snapshots and full-body festival photos, with breathing room around the image.",
-    aspectRatio: "4 / 5",
-    tone: "radial-gradient(circle at 44% 26%, rgba(250,202,141,0.42), rgba(85,55,39,0.48) 43%, rgba(12,10,15,0.94) 100%)",
-  },
 ] as const;
 
 const SCHEDULE_ITEMS = [
@@ -232,12 +187,100 @@ function RomeoAtlasAnswerContent({ answer }: { answer: AtlasAnswer }) {
   );
 }
 
+function PortalArtifact({
+  imageSrc,
+  videoSrc,
+}: {
+  imageSrc: string;
+  videoSrc: string;
+}) {
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [showFact, setShowFact] = useState(false);
+
+  const handleReveal = () => {
+    setIsRevealed(true);
+  };
+
+  const handleVideoMemory = () => {
+    setShowFact(true);
+  };
+
+  return (
+    <article
+      style={styles.portalArtifact}
+      aria-label="Romeo Peach Queen portal artifact"
+    >
+      <div
+        style={{
+          ...styles.portalMemoryBackdrop,
+          backgroundImage: `url(${imageSrc})`,
+        }}
+        aria-hidden="true"
+      />
+      <div style={styles.portalHalo} aria-hidden="true" />
+      <div style={styles.portalFrame}>
+        <div style={styles.portalAperture}>
+          <div
+            className={
+              isRevealed
+                ? "romeo-portal-question is-revealed"
+                : "romeo-portal-question"
+            }
+            style={styles.portalQuestionLayer}
+          >
+            <p style={styles.portalArtifactKicker}>Memory portal</p>
+            <h3 style={styles.portalQuestion}>
+              Want to see the first Peach Queen from 1931?
+            </h3>
+            <button
+              type="button"
+              className="romeo-portal-reveal"
+              style={styles.portalRevealButton}
+              onClick={handleReveal}
+              aria-label="Reveal the first Romeo Peach Festival Queen memory"
+            >
+              Reveal
+            </button>
+          </div>
+
+          {isRevealed ? (
+            <video
+              className="romeo-portal-video"
+              style={styles.portalVideo}
+              autoPlay
+              muted
+              playsInline
+              preload="metadata"
+              poster={imageSrc}
+              onPlay={handleVideoMemory}
+              onEnded={handleVideoMemory}
+              aria-label="Romeo Peach Festival Queen memory video"
+            >
+              <source src={videoSrc} type="video/mp4" />
+            </video>
+          ) : null}
+        </div>
+      </div>
+      <p
+        className={
+          showFact ? "romeo-portal-fact is-visible" : "romeo-portal-fact"
+        }
+        style={styles.portalFactNote}
+      >
+        Virginia Allor was crowned the first Romeo Peach Festival Queen in 1931.
+      </p>
+    </article>
+  );
+}
+
 function RomeoMemoryContent({
   activeMode,
   introVideoSrc,
+  memoryImageSrc,
 }: {
   activeMode: RomeoAtlasMode;
   introVideoSrc: string;
+  memoryImageSrc: string;
 }) {
   const [hasIntroVideoError, setHasIntroVideoError] = useState(false);
   const [introStatus, setIntroStatus] = useState<IntroStatus>("playing");
@@ -340,50 +383,11 @@ function RomeoMemoryContent({
           <h2 style={styles.windowTitle}>Atlas memory gallery</h2>
           <MemorySeparator />
           <p style={styles.galleryIntro}>
-            A vertical collection of Romeo Peach Festival memories, sized to
-            respect portrait, square, and landscape images inside the Atlas.
+            A single memory artifact opens inside the Atlas frame, keeping the
+            question quiet until the portal is ready to reveal the archive.
           </p>
         </div>
-        <div style={styles.galleryStack}>
-          {GALLERY_MOMENTS.map((item, index) => (
-            <figure key={item.id} style={styles.galleryArtifact}>
-              <div style={styles.galleryArtifactMeta}>
-                <span style={styles.galleryArtifactNumber}>
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <figcaption style={styles.galleryArtifactTitle}>
-                  {item.title}
-                </figcaption>
-              </div>
-              <div
-                style={{
-                  ...styles.galleryImageFrame,
-                  aspectRatio: item.aspectRatio,
-                }}
-              >
-                {item.imageSrc ? (
-                  <img
-                    src={item.imageSrc}
-                    alt={item.caption}
-                    style={styles.galleryImage}
-                    draggable={false}
-                  />
-                ) : (
-                  <span
-                    style={{
-                      ...styles.galleryImagePlaceholder,
-                      background: item.tone,
-                    }}
-                    role="img"
-                    aria-label={item.caption}
-                  />
-                )}
-              </div>
-              <p style={styles.galleryCaption}>{item.caption}</p>
-              <p style={styles.galleryNote}>{item.note}</p>
-            </figure>
-          ))}
-        </div>
+        <PortalArtifact imageSrc={memoryImageSrc} videoSrc={introVideoSrc} />
       </section>
     );
   }
@@ -565,6 +569,36 @@ export default function RomeoAtlasWindowPage({
           .romeo-highlights-content {
             animation: romeo-highlights-fade-in 1050ms ease-out forwards;
           }
+          .romeo-portal-question {
+            transition: opacity 760ms ease, transform 760ms ease, filter 760ms ease;
+          }
+          .romeo-portal-question.is-revealed {
+            opacity: 0;
+            transform: translate3d(0, -0.35rem, 0) scale(0.985);
+            filter: blur(6px);
+            pointer-events: none;
+          }
+          .romeo-portal-reveal {
+            transition: transform 180ms ease, box-shadow 180ms ease, color 180ms ease, border-color 180ms ease;
+          }
+          .romeo-portal-reveal:hover,
+          .romeo-portal-reveal:focus-visible {
+            color: rgba(255, 240, 213, 0.98);
+            border-color: rgba(246, 202, 127, 0.72);
+            box-shadow: 0 0 22px rgba(226, 150, 72, 0.18), inset 0 1px 0 rgba(255,255,255,0.16);
+            outline: none;
+            transform: translateY(-1px);
+          }
+          .romeo-portal-video {
+            animation: romeo-portal-video-reveal 980ms ease-out forwards;
+          }
+          .romeo-portal-fact {
+            transition: opacity 720ms ease 260ms, transform 720ms ease 260ms;
+          }
+          .romeo-portal-fact.is-visible {
+            opacity: 1 !important;
+            transform: translate3d(0, 0, 0) !important;
+          }
           @keyframes romeo-video-memory-appear {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -572,6 +606,18 @@ export default function RomeoAtlasWindowPage({
           @keyframes romeo-video-memory-dissolve {
             from { opacity: 1; }
             to { opacity: 0; }
+          }
+          @keyframes romeo-portal-video-reveal {
+            from {
+              opacity: 0;
+              transform: scale(1.018);
+              filter: blur(10px) brightness(0.74) saturate(0.82);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1);
+              filter: brightness(0.88) saturate(0.92) contrast(1.04);
+            }
           }
           @keyframes romeo-highlights-fade-in {
             from {
@@ -592,7 +638,8 @@ export default function RomeoAtlasWindowPage({
             .romeo-cinematic-video-memory,
             .romeo-cinematic-video-memory[data-intro-state="dissolving"],
             .romeo-cinematic-intro-video,
-            .romeo-highlights-content {
+            .romeo-highlights-content,
+            .romeo-portal-video {
               animation-duration: 1ms;
             }
             .romeo-cinematic-intro-video {
@@ -671,6 +718,7 @@ export default function RomeoAtlasWindowPage({
               key={`${activeMode}-${introVideoSrc}`}
               activeMode={activeMode}
               introVideoSrc={introVideoSrc}
+              memoryImageSrc={memoryImageSrc}
             />
           )}
         </section>
@@ -1140,88 +1188,138 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.55,
     maxWidth: "31rem",
   },
-  galleryStack: {
-    display: "grid",
-    gap: "clamp(1rem, 3svh, 1.45rem)",
-    width: "100%",
-    maxWidth: "36rem",
-    justifySelf: "center",
-  },
-  galleryArtifact: {
+  portalArtifact: {
     position: "relative",
     display: "grid",
-    gap: "0.72rem",
-    margin: 0,
-    padding: "clamp(0.72rem, 3.4vw, 1rem)",
-    border: 0,
-    borderRadius: "1.08rem",
+    gap: "clamp(0.78rem, 2.4svh, 1.08rem)",
+    width: "100%",
+    maxWidth: "38rem",
+    justifySelf: "center",
+    marginTop: "clamp(0.2rem, 1svh, 0.5rem)",
+    padding: "clamp(0.72rem, 3.2vw, 1rem)",
+    borderRadius: "1.35rem",
     overflow: "hidden",
     background:
-      "linear-gradient(160deg, rgba(18,24,35,0.72), rgba(8,12,20,0.58)), radial-gradient(circle at 24% 0%, rgba(226,172,92,0.14), transparent 38%)",
+      "linear-gradient(160deg, rgba(17,23,34,0.76), rgba(5,8,15,0.66)), radial-gradient(circle at 52% 6%, rgba(246,202,127,0.18), transparent 42%)",
     boxShadow:
-      "0 18px 42px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,238,207,0.1)",
-    backdropFilter: "blur(14px)",
+      "0 24px 62px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,238,207,0.1)",
+    backdropFilter: "blur(16px)",
+    isolation: "isolate",
   },
-  galleryArtifactMeta: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.8rem",
+  portalMemoryBackdrop: {
+    position: "absolute",
+    inset: "-10%",
+    zIndex: 0,
+    backgroundSize: "cover",
+    backgroundPosition: "50% 42%",
+    opacity: 0.24,
+    filter: "blur(18px) saturate(1.05) brightness(0.9)",
+    transform: "scale(1.08)",
+    pointerEvents: "none",
   },
-  galleryArtifactNumber: {
-    color: "rgba(246,202,127,0.58)",
-    fontSize: "0.58rem",
-    letterSpacing: "0.16em",
+  portalHalo: {
+    position: "absolute",
+    inset: "8% 9% 17%",
+    zIndex: 1,
+    borderRadius: "999px",
+    background:
+      "radial-gradient(ellipse at center, rgba(246,202,127,0.2), rgba(226,150,72,0.08) 38%, transparent 71%)",
+    filter: "blur(8px)",
+    pointerEvents: "none",
   },
-  galleryArtifactTitle: {
-    margin: 0,
-    color: "rgba(250,224,183,0.95)",
-    fontSize: "0.68rem",
-    letterSpacing: "0.13em",
-    textTransform: "uppercase",
-    textAlign: "right",
+  portalFrame: {
+    position: "relative",
+    zIndex: 2,
+    padding: "clamp(0.42rem, 2.2vw, 0.72rem)",
+    borderRadius: "1.12rem",
+    background:
+      "linear-gradient(145deg, rgba(255,238,207,0.11), rgba(255,238,207,0.025)), linear-gradient(180deg, rgba(2,5,11,0.34), rgba(2,5,11,0.58))",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,238,207,0.13), inset 0 -42px 78px rgba(1,3,8,0.24), 0 0 42px rgba(226,150,72,0.1)",
   },
-  galleryImageFrame: {
+  portalAperture: {
     position: "relative",
     display: "grid",
     placeItems: "center",
+    minHeight: "clamp(22rem, 62svh, 36rem)",
+    aspectRatio: "3 / 4",
     width: "100%",
-    minHeight: "10.5rem",
-    maxHeight: "min(58svh, 31rem)",
-    borderRadius: "0.86rem",
+    maxHeight: "min(68svh, 39rem)",
+    justifySelf: "center",
     overflow: "hidden",
+    borderRadius: "0.92rem",
     background:
-      "radial-gradient(circle at 50% 20%, rgba(255,238,207,0.08), transparent 40%), rgba(2,5,10,0.44)",
+      "radial-gradient(ellipse at 50% 28%, rgba(246,202,127,0.14), transparent 44%), linear-gradient(180deg, rgba(3,6,13,0.64), rgba(4,7,14,0.86))",
     boxShadow:
-      "inset 0 1px 0 rgba(255,238,207,0.08), inset 0 -32px 58px rgba(1,3,8,0.16)",
+      "inset 0 0 0 1px rgba(255,238,207,0.06), inset 0 0 84px rgba(1,3,8,0.48)",
   },
-  galleryImage: {
-    display: "block",
-    width: "100%",
-    height: "100%",
-    objectFit: "contain",
-    objectPosition: "center",
+  portalQuestionLayer: {
+    position: "absolute",
+    inset: "clamp(1rem, 5vw, 2rem)",
+    zIndex: 3,
+    display: "grid",
+    alignContent: "center",
+    justifyItems: "center",
+    gap: "clamp(0.9rem, 2.7svh, 1.2rem)",
+    textAlign: "center",
+    padding: "clamp(1rem, 5vw, 2rem)",
+    borderRadius: "1rem",
+    background:
+      "radial-gradient(ellipse at 50% 38%, rgba(6,9,16,0.72), rgba(6,9,16,0.34) 48%, transparent 78%)",
   },
-  galleryImagePlaceholder: {
-    display: "block",
-    width: "100%",
-    height: "100%",
-    minHeight: "inherit",
-    borderRadius: "inherit",
-    boxShadow:
-      "inset 0 0 48px rgba(255,238,207,0.08), inset 0 -46px 72px rgba(1,3,8,0.18)",
-  },
-  galleryCaption: {
+  portalArtifactKicker: {
     margin: 0,
-    color: "rgba(255,238,207,0.92)",
-    fontSize: "clamp(0.86rem, 3.4vw, 1rem)",
-    lineHeight: 1.38,
+    color: "rgba(246,202,127,0.68)",
+    fontSize: "0.58rem",
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
   },
-  galleryNote: {
-    margin: "-0.38rem 0 0",
-    color: "rgba(232,217,190,0.76)",
-    fontSize: "0.76rem",
+  portalQuestion: {
+    margin: 0,
+    maxWidth: "17rem",
+    color: "rgba(255,239,213,0.98)",
+    fontFamily: "Georgia, Times New Roman, serif",
+    fontSize: "clamp(1.45rem, 8vw, 2.55rem)",
+    lineHeight: 1.02,
+    fontWeight: 400,
+    textShadow: "0 3px 24px rgba(0,0,0,0.72), 0 0 28px rgba(226,150,72,0.18)",
+  },
+  portalRevealButton: {
+    appearance: "none",
+    border: "1px solid rgba(246,202,127,0.42)",
+    borderRadius: "999px",
+    padding: "0.62rem 1.1rem",
+    background:
+      "linear-gradient(180deg, rgba(246,202,127,0.14), rgba(226,150,72,0.08))",
+    color: "rgba(250,224,183,0.94)",
+    fontSize: "0.68rem",
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    cursor: "pointer",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1)",
+  },
+  portalVideo: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 2,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    objectPosition: "center",
+    filter: "brightness(0.88) saturate(0.92) contrast(1.04)",
+  },
+  portalFactNote: {
+    position: "relative",
+    zIndex: 2,
+    margin: 0,
+    padding: "0 clamp(0.2rem, 1.6vw, 0.45rem)",
+    color: "rgba(255,238,207,0.86)",
+    fontSize: "clamp(0.78rem, 3.2vw, 0.92rem)",
     lineHeight: 1.5,
+    textAlign: "center",
+    textShadow: "0 2px 18px rgba(0,0,0,0.52)",
+    opacity: 0,
+    transform: "translate3d(0, 0.35rem, 0)",
   },
   planList: {
     margin: 0,
