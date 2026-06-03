@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -20,8 +19,12 @@ type RomeoAtlasModeOption = {
 
 type GalleryMoment = {
   id: string;
+  title: string;
   caption: string;
+  note: string;
   tone: string;
+  aspectRatio: string;
+  imageSrc?: string;
 };
 
 type AtlasAnswer = {
@@ -47,22 +50,34 @@ const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
 const GALLERY_MOMENTS: readonly GalleryMoment[] = [
   {
     id: "parade-light",
+    title: "Parade light",
     caption: "Main Street parade route.",
+    note: "A wide memory for banners, curbside crowds, and the warm line of storefronts anchoring the festival.",
+    aspectRatio: "16 / 10",
     tone: "radial-gradient(circle at 46% 24%, rgba(255,194,125,0.48), rgba(126,70,39,0.48) 38%, rgba(13,13,18,0.94) 100%)",
   },
   {
     id: "sugar-stand",
+    title: "Peach stand",
     caption: "Peach dessert stand.",
+    note: "A square artifact for the details: handwritten signs, cobbler trays, paper boats, and the soft glow around the food line.",
+    aspectRatio: "1 / 1",
     tone: "radial-gradient(circle at 35% 30%, rgba(255,173,112,0.46), rgba(101,56,39,0.5) 42%, rgba(12,12,17,0.94) 100%)",
   },
   {
     id: "downtown-bluehour",
+    title: "Blue-hour storefronts",
     caption: "Downtown after sunset.",
+    note: "A portrait-friendly panel for vertical phone photos, keeping the whole frame visible instead of cropping out lights or people.",
+    aspectRatio: "3 / 4",
     tone: "radial-gradient(circle at 54% 28%, rgba(239,179,103,0.38), rgba(61,57,76,0.45) 42%, rgba(9,12,20,0.95) 100%)",
   },
   {
     id: "family-route",
+    title: "Family route",
     caption: "Family walking route.",
+    note: "A tall memory card for walking snapshots and full-body festival photos, with breathing room around the image.",
+    aspectRatio: "4 / 5",
     tone: "radial-gradient(circle at 44% 26%, rgba(250,202,141,0.42), rgba(85,55,39,0.48) 43%, rgba(12,10,15,0.94) 100%)",
   },
 ] as const;
@@ -219,13 +234,9 @@ function RomeoAtlasAnswerContent({ answer }: { answer: AtlasAnswer }) {
 
 function RomeoMemoryContent({
   activeMode,
-  activeGallery,
-  setActiveGallery,
   introVideoSrc,
 }: {
   activeMode: RomeoAtlasMode;
-  activeGallery: GalleryMoment;
-  setActiveGallery: (id: string) => void;
   introVideoSrc: string;
 }) {
   const [hasIntroVideoError, setHasIntroVideoError] = useState(false);
@@ -321,41 +332,58 @@ function RomeoMemoryContent({
     return (
       <section
         className="romeo-memory-scroll"
-        style={styles.memoryContent}
+        style={{ ...styles.memoryContent, ...styles.galleryMemoryContent }}
         aria-label="Gallery lens"
       >
-        <p style={styles.windowEyebrow}>Gallery</p>
-        <h2 style={styles.windowTitle}>Image notes</h2>
-        <MemorySeparator />
-        <article style={styles.galleryFeature}>
-          <div
-            style={{ ...styles.galleryImage, background: activeGallery.tone }}
-            aria-hidden="true"
-          />
-        </article>
-        <div style={styles.galleryRail} aria-label="Gallery thumbnails">
-          {GALLERY_MOMENTS.map((item) => {
-            const isSelected = item.id === activeGallery.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveGallery(item.id)}
-                style={{
-                  ...styles.galleryThumbButton,
-                  ...(isSelected ? styles.galleryThumbButtonActive : null),
-                }}
-                aria-pressed={isSelected}
-                aria-label={item.caption}
-              >
-                <span
-                  style={{ ...styles.galleryThumbTone, background: item.tone }}
-                />
-              </button>
-            );
-          })}
+        <div style={styles.galleryHeader}>
+          <p style={styles.windowEyebrow}>Gallery</p>
+          <h2 style={styles.windowTitle}>Atlas memory gallery</h2>
+          <MemorySeparator />
+          <p style={styles.galleryIntro}>
+            A vertical collection of Romeo Peach Festival memories, sized to
+            respect portrait, square, and landscape images inside the Atlas.
+          </p>
         </div>
-        <p style={styles.galleryCaption}>{activeGallery.caption}</p>
+        <div style={styles.galleryStack}>
+          {GALLERY_MOMENTS.map((item, index) => (
+            <figure key={item.id} style={styles.galleryArtifact}>
+              <div style={styles.galleryArtifactMeta}>
+                <span style={styles.galleryArtifactNumber}>
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <figcaption style={styles.galleryArtifactTitle}>
+                  {item.title}
+                </figcaption>
+              </div>
+              <div
+                style={{
+                  ...styles.galleryImageFrame,
+                  aspectRatio: item.aspectRatio,
+                }}
+              >
+                {item.imageSrc ? (
+                  <img
+                    src={item.imageSrc}
+                    alt={item.caption}
+                    style={styles.galleryImage}
+                    draggable={false}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      ...styles.galleryImagePlaceholder,
+                      background: item.tone,
+                    }}
+                    role="img"
+                    aria-label={item.caption}
+                  />
+                )}
+              </div>
+              <p style={styles.galleryCaption}>{item.caption}</p>
+              <p style={styles.galleryNote}>{item.note}</p>
+            </figure>
+          ))}
+        </div>
       </section>
     );
   }
@@ -454,15 +482,8 @@ export default function RomeoAtlasWindowPage({
   introVideoSrc,
 }: RomeoAtlasWindowPageProps) {
   const [activeMode, setActiveMode] = useState<RomeoAtlasMode>("highlights");
-  const [activeGalleryId, setActiveGalleryId] = useState(GALLERY_MOMENTS[0].id);
   const [askQuestion, setAskQuestion] = useState("");
   const [atlasAnswer, setAtlasAnswer] = useState<AtlasAnswer | null>(null);
-  const activeGallery = useMemo(
-    () =>
-      GALLERY_MOMENTS.find((item) => item.id === activeGalleryId) ??
-      GALLERY_MOMENTS[0],
-    [activeGalleryId],
-  );
 
   const handleAskSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -649,8 +670,6 @@ export default function RomeoAtlasWindowPage({
             <RomeoMemoryContent
               key={`${activeMode}-${introVideoSrc}`}
               activeMode={activeMode}
-              activeGallery={activeGallery}
-              setActiveGallery={setActiveGalleryId}
               introVideoSrc={introVideoSrc}
             />
           )}
@@ -1097,61 +1116,112 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "1.8rem",
     textShadow: "0 0 18px rgba(226,150,72,0.28)",
   },
-  galleryFeature: {
-    overflow: "visible",
+  galleryMemoryContent: {
+    alignContent: "start",
+    gap: "clamp(1rem, 2.8svh, 1.35rem)",
+    paddingTop: "clamp(4.5rem, 12svh, 6.8rem)",
+    paddingBottom: "clamp(2.3rem, 7svh, 4.4rem)",
+    WebkitMaskImage:
+      "linear-gradient(to bottom, black 0%, black 91%, transparent 100%)",
+    maskImage: "linear-gradient(to bottom, black 0%, black 91%, transparent 100%)",
+    scrollPaddingTop: "clamp(4.5rem, 12svh, 6.8rem)",
+  },
+  galleryHeader: {
+    display: "grid",
+    gap: "0.72rem",
+    width: "100%",
+    maxWidth: "36rem",
+    justifySelf: "center",
+  },
+  galleryIntro: {
+    margin: 0,
+    color: "rgba(237,221,193,0.82)",
+    fontSize: "clamp(0.82rem, 3.2vw, 0.95rem)",
+    lineHeight: 1.55,
+    maxWidth: "31rem",
+  },
+  galleryStack: {
+    display: "grid",
+    gap: "clamp(1rem, 3svh, 1.45rem)",
+    width: "100%",
+    maxWidth: "36rem",
+    justifySelf: "center",
+  },
+  galleryArtifact: {
+    position: "relative",
+    display: "grid",
+    gap: "0.72rem",
+    margin: 0,
+    padding: "clamp(0.72rem, 3.4vw, 1rem)",
     border: 0,
-    outline: "none",
-    transform: "rotate(-2.2deg)",
-    boxShadow: "0 24px 42px rgba(0,0,0,0.36)",
+    borderRadius: "1.08rem",
+    overflow: "hidden",
+    background:
+      "linear-gradient(160deg, rgba(18,24,35,0.72), rgba(8,12,20,0.58)), radial-gradient(circle at 24% 0%, rgba(226,172,92,0.14), transparent 38%)",
+    boxShadow:
+      "0 18px 42px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,238,207,0.1)",
+    backdropFilter: "blur(14px)",
+  },
+  galleryArtifactMeta: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "0.8rem",
+  },
+  galleryArtifactNumber: {
+    color: "rgba(246,202,127,0.58)",
+    fontSize: "0.58rem",
+    letterSpacing: "0.16em",
+  },
+  galleryArtifactTitle: {
+    margin: 0,
+    color: "rgba(250,224,183,0.95)",
+    fontSize: "0.68rem",
+    letterSpacing: "0.13em",
+    textTransform: "uppercase",
+    textAlign: "right",
+  },
+  galleryImageFrame: {
+    position: "relative",
+    display: "grid",
+    placeItems: "center",
+    width: "100%",
+    minHeight: "10.5rem",
+    maxHeight: "min(58svh, 31rem)",
+    borderRadius: "0.86rem",
+    overflow: "hidden",
+    background:
+      "radial-gradient(circle at 50% 20%, rgba(255,238,207,0.08), transparent 40%), rgba(2,5,10,0.44)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,238,207,0.08), inset 0 -32px 58px rgba(1,3,8,0.16)",
   },
   galleryImage: {
-    minHeight: "12rem",
-    aspectRatio: "16 / 10",
-    borderRadius: "0.18rem",
-    boxShadow:
-      "0 3px 0 rgba(255,238,207,0.38) inset, 0 -3px 0 rgba(54,31,18,0.32) inset",
-  },
-  galleryRail: {
-    display: "flex",
-    gap: "0.62rem",
-    overflowX: "auto",
-    padding: "0.1rem 0 0.3rem",
-    scrollbarWidth: "none",
-  },
-  galleryThumbButton: {
-    all: "unset",
-    flex: "0 0 auto",
-    cursor: "pointer",
-    width: "3.7rem",
-    height: "2.68rem",
-    padding: 0,
-    border: 0,
-    outline: "none",
-    background: "transparent",
-    opacity: 0.54,
-    transform: "rotate(2deg)",
-    filter: "drop-shadow(0 12px 14px rgba(0,0,0,0.24))",
-  },
-  galleryThumbButtonActive: {
-    opacity: 1,
-    transform: "rotate(-2deg)",
-    filter:
-      "drop-shadow(0 0 16px rgba(226,150,72,0.34)) drop-shadow(0 14px 18px rgba(0,0,0,0.28))",
-  },
-  galleryThumbTone: {
     display: "block",
     width: "100%",
     height: "100%",
-    borderRadius: "0.12rem",
+    objectFit: "contain",
+    objectPosition: "center",
+  },
+  galleryImagePlaceholder: {
+    display: "block",
+    width: "100%",
+    height: "100%",
+    minHeight: "inherit",
+    borderRadius: "inherit",
     boxShadow:
-      "0 2px 0 rgba(255,238,207,0.35) inset, 0 -2px 0 rgba(54,31,18,0.28) inset",
+      "inset 0 0 48px rgba(255,238,207,0.08), inset 0 -46px 72px rgba(1,3,8,0.18)",
   },
   galleryCaption: {
     margin: 0,
-    color: "rgba(232,217,190,0.86)",
+    color: "rgba(255,238,207,0.92)",
+    fontSize: "clamp(0.86rem, 3.4vw, 1rem)",
+    lineHeight: 1.38,
+  },
+  galleryNote: {
+    margin: "-0.38rem 0 0",
+    color: "rgba(232,217,190,0.76)",
     fontSize: "0.76rem",
-    lineHeight: 1.42,
-    transform: "rotate(-0.6deg)",
+    lineHeight: 1.5,
   },
   planList: {
     margin: 0,
