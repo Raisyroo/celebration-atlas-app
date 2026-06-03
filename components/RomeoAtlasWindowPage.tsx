@@ -1170,18 +1170,23 @@ const styles: Record<string, CSSProperties> = {
     textShadow: "0 0 18px rgba(226,150,72,0.28)",
   },
   galleryFloatingMemoryLayout: {
-    overflow: "hidden",
+    overflowX: "hidden",
+    overflowY: "auto",
+    overscrollBehavior: "contain",
+    WebkitOverflowScrolling: "touch",
+    touchAction: "pan-y",
   },
   galleryMemoryContent: {
+    position: "relative",
+    inset: "auto",
     alignContent: "start",
-    height: "100%",
-    minHeight: 0,
+    minHeight: "100%",
     gap: "clamp(1rem, 2.8svh, 1.35rem)",
     paddingTop: "clamp(4.5rem, 12svh, 6.8rem)",
     paddingBottom:
       "calc(clamp(7.5rem, 24svh, 11rem) + env(safe-area-inset-bottom, 0px))",
-    overflowY: "auto",
-    touchAction: "pan-y",
+    overflowX: "visible",
+    overflowY: "visible",
     WebkitMaskImage:
       "linear-gradient(to bottom, black 0%, black 93%, transparent 100%)",
     maskImage: "linear-gradient(to bottom, black 0%, black 93%, transparent 100%)",
