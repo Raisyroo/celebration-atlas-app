@@ -567,11 +567,8 @@ export default function RomeoAtlasWindowPage({
             }
           }
           @keyframes romeo-cinematic-ken-burns {
-            0% {
-              transform: scale(1.02) translate3d(-0.8%, -0.7%, 0);
-            }
-            100% {
-              transform: scale(1.08) translate3d(0.9%, 0.8%, 0);
+            0%, 100% {
+              transform: none;
             }
           }
           @media (prefers-reduced-motion: reduce) {
@@ -582,7 +579,7 @@ export default function RomeoAtlasWindowPage({
               animation-duration: 1ms;
             }
             .romeo-cinematic-intro-video {
-              transform: scale(1.03);
+              transform: none;
             }
           }
         `}</style>
@@ -872,11 +869,11 @@ const styles: Record<string, CSSProperties> = {
   },
   cinematicVideoFrame: {
     position: "relative",
-    width: "calc(100% + clamp(1.64rem, 11.2vw, 4.7rem))",
-    maxWidth: "none",
+    width: "min(100%, 34rem)",
+    maxWidth: "100%",
     justifySelf: "center",
     margin: "clamp(0.35rem, 1.5svh, 0.9rem) 0 0",
-    aspectRatio: "16 / 9",
+    aspectRatio: "4 / 3",
     overflow: "hidden",
     borderRadius: 0,
     border: 0,
@@ -896,8 +893,8 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     height: "100%",
     maxWidth: "none",
-    objectFit: "cover",
-    objectPosition: "50% 45%",
+    objectFit: "contain",
+    objectPosition: "50% 50%",
     opacity: 0.52,
     mixBlendMode: "soft-light",
     filter: "saturate(0.88) contrast(1.04) brightness(0.86)",
