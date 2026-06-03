@@ -390,7 +390,7 @@ function RomeoMemoryContent({
         ...styles.highlightsMemoryContent,
         ...(introStatus === "complete"
           ? styles.highlightsPostIntroMemoryContent
-          : null),
+          : styles.highlightsIntroMemoryContent),
       }}
       aria-label="Highlights lens"
     >
@@ -858,6 +858,10 @@ const styles: Record<string, CSSProperties> = {
     paddingTop: "clamp(2rem, 8svh, 4.6rem)",
     paddingBottom: "clamp(1.1rem, 5svh, 3.2rem)",
   },
+  highlightsIntroMemoryContent: {
+    paddingRight: 0,
+    paddingLeft: 0,
+  },
   highlightsPostIntroMemoryContent: {
     alignContent: "start",
     paddingTop: "clamp(4.6rem, 13svh, 7.2rem)",
@@ -869,9 +873,8 @@ const styles: Record<string, CSSProperties> = {
   },
   cinematicVideoFrame: {
     position: "relative",
-    width: "min(100%, 34rem)",
-    maxWidth: "100%",
-    justifySelf: "center",
+    width: "100%",
+    justifySelf: "stretch",
     margin: "clamp(0.35rem, 1.5svh, 0.9rem) 0 0",
     aspectRatio: "4 / 3",
     overflow: "hidden",
@@ -886,13 +889,12 @@ const styles: Record<string, CSSProperties> = {
       "radial-gradient(ellipse 116% 80% at 50% 50%, black 0 56%, rgba(0,0,0,0.82) 70%, rgba(0,0,0,0.48) 84%, transparent 98%)",
   },
   cinematicIntroVideo: {
-    position: "absolute",
-    inset: 0,
+    position: "relative",
     zIndex: 2,
     display: "block",
     width: "100%",
-    height: "100%",
-    maxWidth: "none",
+    height: "auto",
+    aspectRatio: "4 / 3",
     objectFit: "contain",
     objectPosition: "50% 50%",
     opacity: 0.52,
@@ -906,10 +908,10 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 3,
     pointerEvents: "none",
     background:
-      "radial-gradient(ellipse at center, rgba(246,202,127,0.07) 0%, rgba(126,70,39,0.09) 44%, rgba(1,3,8,0.24) 78%, rgba(1,3,8,0.3) 100%), linear-gradient(180deg, rgba(1,3,8,0.16) 0%, rgba(78,49,34,0.12) 52%, rgba(1,3,8,0.31) 100%), linear-gradient(90deg, rgba(2,4,9,0.38), rgba(2,4,9,0.14) 28%, rgba(2,4,9,0.14) 72%, rgba(2,4,9,0.38))",
+      "radial-gradient(ellipse at center, rgba(246,202,127,0.07) 0%, rgba(126,70,39,0.09) 44%, rgba(1,3,8,0.16) 82%, rgba(1,3,8,0.2) 100%), linear-gradient(180deg, rgba(1,3,8,0.16) 0%, rgba(78,49,34,0.12) 52%, rgba(1,3,8,0.31) 100%)",
     mixBlendMode: "multiply",
     boxShadow:
-      "inset 0 48px 88px rgba(1,3,8,0.3), inset 0 -64px 98px rgba(1,3,8,0.34), inset 56px 0 92px rgba(1,3,8,0.3), inset -56px 0 92px rgba(1,3,8,0.3)",
+      "inset 0 48px 88px rgba(1,3,8,0.3), inset 0 -64px 98px rgba(1,3,8,0.34)",
   },
   cinematicVideoFallback: {
     position: "absolute",
