@@ -704,7 +704,12 @@ export default function RomeoAtlasWindowPage({
         </div>
 
         <section
-          style={styles.floatingMemoryLayout}
+          style={{
+            ...styles.floatingMemoryLayout,
+            ...(activeMode === "gallery" && !atlasAnswer
+              ? styles.galleryFloatingMemoryLayout
+              : null),
+          }}
           aria-live="polite"
           aria-label="Atlas memory content"
         >
@@ -1164,15 +1169,25 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "1.8rem",
     textShadow: "0 0 18px rgba(226,150,72,0.28)",
   },
+  galleryFloatingMemoryLayout: {
+    overflow: "hidden",
+  },
   galleryMemoryContent: {
     alignContent: "start",
+    height: "100%",
+    minHeight: 0,
     gap: "clamp(1rem, 2.8svh, 1.35rem)",
     paddingTop: "clamp(4.5rem, 12svh, 6.8rem)",
-    paddingBottom: "clamp(2.3rem, 7svh, 4.4rem)",
+    paddingBottom:
+      "calc(clamp(7.5rem, 24svh, 11rem) + env(safe-area-inset-bottom, 0px))",
+    overflowY: "auto",
+    touchAction: "pan-y",
     WebkitMaskImage:
-      "linear-gradient(to bottom, black 0%, black 91%, transparent 100%)",
-    maskImage: "linear-gradient(to bottom, black 0%, black 91%, transparent 100%)",
+      "linear-gradient(to bottom, black 0%, black 93%, transparent 100%)",
+    maskImage: "linear-gradient(to bottom, black 0%, black 93%, transparent 100%)",
     scrollPaddingTop: "clamp(4.5rem, 12svh, 6.8rem)",
+    scrollPaddingBottom:
+      "calc(clamp(7.5rem, 24svh, 11rem) + env(safe-area-inset-bottom, 0px))",
   },
   galleryHeader: {
     display: "grid",
