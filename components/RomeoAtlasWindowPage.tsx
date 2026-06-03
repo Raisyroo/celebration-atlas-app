@@ -534,10 +534,6 @@ export default function RomeoAtlasWindowPage({
           }
           .romeo-cinematic-video-memory {
             animation: romeo-video-memory-appear 1300ms ease-out both;
-            -webkit-mask-image:
-              radial-gradient(ellipse 116% 80% at 50% 50%, #000 0 56%, rgba(0, 0, 0, 0.82) 70%, rgba(0, 0, 0, 0.48) 84%, transparent 98%);
-            mask-image:
-              radial-gradient(ellipse 116% 80% at 50% 50%, #000 0 56%, rgba(0, 0, 0, 0.82) 70%, rgba(0, 0, 0, 0.48) 84%, transparent 98%);
           }
           .romeo-cinematic-video-memory[data-intro-state="dissolving"] {
             animation: romeo-video-memory-dissolve 1300ms ease-in forwards;
@@ -876,17 +872,12 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     justifySelf: "stretch",
     margin: "clamp(0.35rem, 1.5svh, 0.9rem) 0 0",
-    aspectRatio: "4 / 3",
-    overflow: "hidden",
+    overflow: "visible",
     borderRadius: 0,
     border: 0,
     background: "transparent",
     boxShadow: "0 24px 68px rgba(0,0,0,0.18), 0 0 76px rgba(226,150,72,0.08)",
     isolation: "isolate",
-    WebkitMaskImage:
-      "radial-gradient(ellipse 116% 80% at 50% 50%, black 0 56%, rgba(0,0,0,0.82) 70%, rgba(0,0,0,0.48) 84%, transparent 98%)",
-    maskImage:
-      "radial-gradient(ellipse 116% 80% at 50% 50%, black 0 56%, rgba(0,0,0,0.82) 70%, rgba(0,0,0,0.48) 84%, transparent 98%)",
   },
   cinematicIntroVideo: {
     position: "relative",
@@ -894,9 +885,6 @@ const styles: Record<string, CSSProperties> = {
     display: "block",
     width: "100%",
     height: "auto",
-    aspectRatio: "4 / 3",
-    objectFit: "contain",
-    objectPosition: "50% 50%",
     opacity: 0.52,
     mixBlendMode: "soft-light",
     filter: "saturate(0.88) contrast(1.04) brightness(0.86)",
