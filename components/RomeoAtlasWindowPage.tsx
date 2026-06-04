@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import Link from "next/link";
+import ArtifactSymbol, { type ArtifactType } from "./artifacts/ArtifactSymbol";
 
 type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 
@@ -24,7 +25,7 @@ type AtlasAnswer = {
 
 type PortalArtifactProps = {
   ariaLabel: string;
-  kicker?: string;
+  artifactType: ArtifactType;
   question: string;
   revealAriaLabel: string;
   imageSrc?: string;
@@ -33,12 +34,45 @@ type PortalArtifactProps = {
   secondaryNote?: string;
 };
 
+type GalleryPortalArtifact = {
+  id: string;
+  ariaLabel: string;
+  artifactType: ArtifactType;
+  question: string;
+  revealAriaLabel: string;
+  fact: string;
+  secondaryNote?: string;
+  usesMemoryMedia?: boolean;
+};
+
 type RomeoAtlasWindowPageProps = {
   eventName: string;
   backHref: string;
   memoryImageSrc: string;
   introVideoSrc: string;
 };
+
+const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
+  {
+    id: "first-peach-queen",
+    ariaLabel: "Romeo Peach Queen portal artifact",
+    artifactType: "history",
+    question: "Want to see the first Peach Queen from 1931?",
+    revealAriaLabel: "Reveal the first Romeo Peach Festival Queen memory",
+    fact: "Virginia Allor was crowned the first Romeo Peach Festival Queen in 1931.",
+    usesMemoryMedia: true,
+  },
+  {
+    id: "romeo-name-origin",
+    ariaLabel: "Romeo name origin portal artifact",
+    artifactType: "origin",
+    question: "How did Romeo get its name?",
+    revealAriaLabel: "Reveal the Romeo name origin memory",
+    fact: "In 1838, the founders could not agree on a name. Laura Taylor selected 'Romeo' because she felt it was musical, classical, and uncommon.",
+    secondaryNote:
+      "Before Romeo, the settlement was known as Indian Village and later Hoxie's Settlement.",
+  },
+] as const;
 
 const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
   { id: "highlights", label: "Highlights", iconSrc: "/ui/highlights-icon.svg" },
@@ -200,7 +234,7 @@ function RomeoAtlasAnswerContent({ answer }: { answer: AtlasAnswer }) {
 
 function PortalArtifact({
   ariaLabel,
-  kicker = "Memory portal",
+  artifactType,
   question,
   revealAriaLabel,
   imageSrc,
@@ -243,7 +277,7 @@ function PortalArtifact({
             }
             style={styles.portalQuestionLayer}
           >
-            <p style={styles.portalArtifactKicker}>{kicker}</p>
+            <ArtifactSymbol type={artifactType} />
             <h3 style={styles.portalQuestion}>{question}</h3>
             <button
               type="button"
@@ -419,22 +453,19 @@ function RomeoMemoryContent({
             question quiet until the portal is ready to reveal the archive.
           </p>
         </div>
-        <PortalArtifact
-          ariaLabel="Romeo Peach Queen portal artifact"
-          question="Want to see the first Peach Queen from 1931?"
-          revealAriaLabel="Reveal the first Romeo Peach Festival Queen memory"
-          imageSrc={memoryImageSrc}
-          videoSrc={introVideoSrc}
-          fact="Virginia Allor was crowned the first Romeo Peach Festival Queen in 1931."
-        />
-        <PortalArtifact
-          ariaLabel="Romeo name origin portal artifact"
-          kicker="MEMORY PORTAL"
-          question="How did Romeo get its name?"
-          revealAriaLabel="Reveal the Romeo name origin memory"
-          fact="In 1838, the founders could not agree on a name. Laura Taylor selected 'Romeo' because she felt it was musical, classical, and uncommon."
-          secondaryNote="Before Romeo, the settlement was known as Indian Village and later Hoxie's Settlement."
-        />
+        {GALLERY_PORTAL_ARTIFACTS.map((artifact) => (
+          <PortalArtifact
+            key={artifact.id}
+            ariaLabel={artifact.ariaLabel}
+            artifactType={artifact.artifactType}
+            question={artifact.question}
+            revealAriaLabel={artifact.revealAriaLabel}
+            imageSrc={artifact.usesMemoryMedia ? memoryImageSrc : undefined}
+            videoSrc={artifact.usesMemoryMedia ? introVideoSrc : undefined}
+            fact={artifact.fact}
+            secondaryNote={artifact.secondaryNote}
+          />
+        ))}
       </section>
     );
   }
@@ -1338,13 +1369,6 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: "1rem",
     background:
       "radial-gradient(ellipse at 50% 38%, rgba(6,9,16,0.72), rgba(6,9,16,0.34) 48%, transparent 78%)",
-  },
-  portalArtifactKicker: {
-    margin: 0,
-    color: "rgba(246,202,127,0.68)",
-    fontSize: "0.58rem",
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
   },
   portalQuestion: {
     margin: 0,
