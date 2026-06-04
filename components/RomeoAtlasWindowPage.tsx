@@ -457,12 +457,6 @@ function RomeoMemoryContent({
       >
         <div style={styles.galleryHeader}>
           <p style={styles.windowEyebrow}>Gallery</p>
-          <h2 style={styles.windowTitle}>Atlas memory gallery</h2>
-          <MemorySeparator />
-          <p style={styles.galleryIntro}>
-            A single memory artifact opens inside the Atlas frame, keeping the
-            question quiet until the portal is ready to reveal the archive.
-          </p>
         </div>
         {GALLERY_PORTAL_ARTIFACTS.map((artifact) => (
           <PortalArtifact
@@ -1329,13 +1323,6 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     maxWidth: "36rem",
     justifySelf: "center",
-  },
-  galleryIntro: {
-    margin: 0,
-    color: "rgba(237,221,193,0.82)",
-    fontSize: "clamp(0.82rem, 3.2vw, 0.95rem)",
-    lineHeight: 1.55,
-    maxWidth: "31rem",
   },
   portalArtifact: {
     position: "relative",
