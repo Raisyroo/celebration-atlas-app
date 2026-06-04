@@ -305,12 +305,23 @@ function PortalArtifact({
   );
 }
 
+function getHighlightsHeroTitleStyle(eventName: string): CSSProperties {
+  const isLongTitle = eventName.trim().length > 40;
+
+  return {
+    ...styles.highlightsHeroTitle,
+    ...(isLongTitle ? styles.highlightsHeroTitleLong : null),
+  };
+}
+
 function RomeoMemoryContent({
   activeMode,
+  eventName,
   introVideoSrc,
   memoryImageSrc,
 }: {
   activeMode: RomeoAtlasMode;
+  eventName: string;
   introVideoSrc: string;
   memoryImageSrc: string;
 }) {
@@ -506,19 +517,23 @@ function RomeoMemoryContent({
           className="romeo-highlights-content"
           style={styles.highlightsContentReveal}
         >
-          <p style={styles.windowEyebrow}>Highlights</p>
-          <h2 style={styles.windowTitle}>Do not miss</h2>
-          <MemorySeparator />
-          <div style={styles.highlightGrid}>
-            {HIGHLIGHT_ITEMS.map(([title, text]) => (
-              <article key={title} style={styles.highlightCard}>
-                <h3 style={styles.highlightTitle}>
-                  <span style={styles.highlightSigil}>✦</span>
-                  {title}
-                </h3>
-                <p style={styles.highlightText}>{text}</p>
-              </article>
-            ))}
+          <div style={styles.highlightsHeroHeader}>
+            <p style={styles.windowEyebrow}>Highlights</p>
+            <h2 style={getHighlightsHeroTitleStyle(eventName)}>{eventName}</h2>
+            <MemorySeparator />
+          </div>
+          <div style={styles.highlightsCardsFrame}>
+            <div style={styles.highlightGrid}>
+              {HIGHLIGHT_ITEMS.map(([title, text]) => (
+                <article key={title} style={styles.highlightCard}>
+                  <h3 style={styles.highlightTitle}>
+                    <span style={styles.highlightSigil}>✦</span>
+                    {title}
+                  </h3>
+                  <p style={styles.highlightText}>{text}</p>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       ) : null}
@@ -769,6 +784,7 @@ export default function RomeoAtlasWindowPage({
             <RomeoMemoryContent
               key={`${activeMode}-${introVideoSrc}`}
               activeMode={activeMode}
+              eventName={eventName}
               introVideoSrc={introVideoSrc}
               memoryImageSrc={memoryImageSrc}
             />
@@ -1119,10 +1135,46 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     gap: "clamp(1.05rem, 3svh, 1.55rem)",
     width: "100%",
-    maxWidth: "34rem",
-    justifySelf: "center",
+    maxWidth: "100%",
+    justifySelf: "stretch",
     opacity: 0,
     willChange: "opacity, transform",
+  },
+  highlightsHeroHeader: {
+    display: "grid",
+    gap: "clamp(0.72rem, 2.2svh, 1.05rem)",
+    width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
+    justifySelf: "stretch",
+  },
+  highlightsHeroTitle: {
+    margin: 0,
+    width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
+    color: "rgba(255,238,207,0.98)",
+    fontFamily: "Georgia, Times New Roman, serif",
+    fontWeight: 400,
+    fontSize: "clamp(2rem, 7vw, 4.5rem)",
+    lineHeight: 0.92,
+    letterSpacing: "-0.04em",
+    overflowWrap: "anywhere",
+    wordBreak: "normal",
+    hyphens: "auto",
+    textWrap: "balance",
+    textShadow: "0 4px 28px rgba(0,0,0,0.78), 0 0 24px rgba(227,146,76,0.22)",
+  },
+  highlightsHeroTitleLong: {
+    fontSize: "clamp(1.82rem, 6.1vw, 3.85rem)",
+    lineHeight: 0.96,
+    letterSpacing: "-0.035em",
+    textWrap: "pretty",
+  },
+  highlightsCardsFrame: {
+    width: "100%",
+    maxWidth: "34rem",
+    justifySelf: "center",
   },
   highlightGrid: {
     display: "grid",
