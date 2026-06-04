@@ -22,6 +22,17 @@ type AtlasAnswer = {
   answer: string;
 };
 
+type PortalArtifactProps = {
+  ariaLabel: string;
+  kicker?: string;
+  question: string;
+  revealAriaLabel: string;
+  imageSrc?: string;
+  videoSrc?: string;
+  fact: string;
+  secondaryNote?: string;
+};
+
 type RomeoAtlasWindowPageProps = {
   eventName: string;
   backHref: string;
@@ -188,17 +199,24 @@ function RomeoAtlasAnswerContent({ answer }: { answer: AtlasAnswer }) {
 }
 
 function PortalArtifact({
+  ariaLabel,
+  kicker = "Memory portal",
+  question,
+  revealAriaLabel,
   imageSrc,
   videoSrc,
-}: {
-  imageSrc: string;
-  videoSrc: string;
-}) {
+  fact,
+  secondaryNote,
+}: PortalArtifactProps) {
   const [isRevealed, setIsRevealed] = useState(false);
   const [showFact, setShowFact] = useState(false);
 
   const handleReveal = () => {
     setIsRevealed(true);
+
+    if (!videoSrc) {
+      window.setTimeout(() => setShowFact(true), 420);
+    }
   };
 
   const handleVideoMemory = () => {
@@ -206,14 +224,11 @@ function PortalArtifact({
   };
 
   return (
-    <article
-      style={styles.portalArtifact}
-      aria-label="Romeo Peach Queen portal artifact"
-    >
+    <article style={styles.portalArtifact} aria-label={ariaLabel}>
       <div
         style={{
           ...styles.portalMemoryBackdrop,
-          backgroundImage: `url(${imageSrc})`,
+          ...(imageSrc ? { backgroundImage: `url(${imageSrc})` } : null),
         }}
         aria-hidden="true"
       />
@@ -228,22 +243,20 @@ function PortalArtifact({
             }
             style={styles.portalQuestionLayer}
           >
-            <p style={styles.portalArtifactKicker}>Memory portal</p>
-            <h3 style={styles.portalQuestion}>
-              Want to see the first Peach Queen from 1931?
-            </h3>
+            <p style={styles.portalArtifactKicker}>{kicker}</p>
+            <h3 style={styles.portalQuestion}>{question}</h3>
             <button
               type="button"
               className="romeo-portal-reveal"
               style={styles.portalRevealButton}
               onClick={handleReveal}
-              aria-label="Reveal the first Romeo Peach Festival Queen memory"
+              aria-label={revealAriaLabel}
             >
               Reveal
             </button>
           </div>
 
-          {isRevealed ? (
+          {isRevealed && videoSrc ? (
             <video
               className="romeo-portal-video"
               style={styles.portalVideo}
@@ -254,21 +267,40 @@ function PortalArtifact({
               poster={imageSrc}
               onPlay={handleVideoMemory}
               onEnded={handleVideoMemory}
-              aria-label="Romeo Peach Festival Queen memory video"
+              aria-label={ariaLabel}
             >
               <source src={videoSrc} type="video/mp4" />
             </video>
           ) : null}
+
+          {isRevealed && !videoSrc ? (
+            <div
+              className="romeo-portal-video"
+              style={styles.portalIllustrationPlaceholder}
+              aria-label="Portrait illustration placeholder"
+              role="img"
+            >
+              <span style={styles.portalPortraitGlow} aria-hidden="true" />
+              <span style={styles.portalPortraitFrame} aria-hidden="true">
+                <span style={styles.portalPortraitHead} />
+                <span style={styles.portalPortraitShoulders} />
+              </span>
+              <span style={styles.portalPortraitCaption}>Portrait placeholder</span>
+            </div>
+          ) : null}
         </div>
       </div>
-      <p
+      <div
         className={
           showFact ? "romeo-portal-fact is-visible" : "romeo-portal-fact"
         }
-        style={styles.portalFactNote}
+        style={styles.portalFactStack}
       >
-        Virginia Allor was crowned the first Romeo Peach Festival Queen in 1931.
-      </p>
+        <p style={styles.portalFactNote}>{fact}</p>
+        {secondaryNote ? (
+          <p style={styles.portalSecondaryNote}>{secondaryNote}</p>
+        ) : null}
+      </div>
     </article>
   );
 }
@@ -387,7 +419,22 @@ function RomeoMemoryContent({
             question quiet until the portal is ready to reveal the archive.
           </p>
         </div>
-        <PortalArtifact imageSrc={memoryImageSrc} videoSrc={introVideoSrc} />
+        <PortalArtifact
+          ariaLabel="Romeo Peach Queen portal artifact"
+          question="Want to see the first Peach Queen from 1931?"
+          revealAriaLabel="Reveal the first Romeo Peach Festival Queen memory"
+          imageSrc={memoryImageSrc}
+          videoSrc={introVideoSrc}
+          fact="Virginia Allor was crowned the first Romeo Peach Festival Queen in 1931."
+        />
+        <PortalArtifact
+          ariaLabel="Romeo name origin portal artifact"
+          kicker="MEMORY PORTAL"
+          question="How did Romeo get its name?"
+          revealAriaLabel="Reveal the Romeo name origin memory"
+          fact="In 1838, the founders could not agree on a name. Laura Taylor selected 'Romeo' because she felt it was musical, classical, and uncommon."
+          secondaryNote="Before Romeo, the settlement was known as Indian Village and later Hoxie's Settlement."
+        />
       </section>
     );
   }
@@ -1333,9 +1380,71 @@ const styles: Record<string, CSSProperties> = {
     objectPosition: "center",
     filter: "brightness(0.88) saturate(0.92) contrast(1.04)",
   },
-  portalFactNote: {
+  portalIllustrationPlaceholder: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 2,
+    display: "grid",
+    placeItems: "center",
+    overflow: "hidden",
+    background:
+      "radial-gradient(circle at 50% 24%, rgba(246,202,127,0.18), transparent 34%), linear-gradient(180deg, rgba(21,28,40,0.95), rgba(5,8,15,0.98))",
+    filter: "brightness(0.88) saturate(0.92) contrast(1.04)",
+  },
+  portalPortraitGlow: {
+    position: "absolute",
+    width: "62%",
+    aspectRatio: "1",
+    borderRadius: "999px",
+    background:
+      "radial-gradient(circle, rgba(246,202,127,0.24), rgba(226,150,72,0.1) 42%, transparent 72%)",
+    filter: "blur(10px)",
+  },
+  portalPortraitFrame: {
+    position: "relative",
+    display: "grid",
+    justifyItems: "center",
+    alignContent: "center",
+    width: "58%",
+    aspectRatio: "3 / 4",
+    borderRadius: "999px 999px 1.4rem 1.4rem",
+    border: "1px solid rgba(246,202,127,0.32)",
+    background:
+      "linear-gradient(180deg, rgba(255,238,207,0.1), rgba(226,150,72,0.08)), radial-gradient(circle at 50% 30%, rgba(255,238,207,0.16), transparent 38%)",
+    boxShadow:
+      "0 0 38px rgba(226,150,72,0.16), inset 0 1px 0 rgba(255,238,207,0.12)",
+  },
+  portalPortraitHead: {
+    width: "28%",
+    aspectRatio: "1",
+    borderRadius: "999px",
+    background: "rgba(246,202,127,0.36)",
+    boxShadow: "0 0 24px rgba(246,202,127,0.18)",
+  },
+  portalPortraitShoulders: {
+    width: "54%",
+    height: "18%",
+    marginTop: "8%",
+    borderRadius: "999px 999px 0.7rem 0.7rem",
+    background: "rgba(246,202,127,0.22)",
+  },
+  portalPortraitCaption: {
+    position: "absolute",
+    bottom: "8%",
+    color: "rgba(246,202,127,0.58)",
+    fontSize: "0.58rem",
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+  },
+  portalFactStack: {
     position: "relative",
     zIndex: 2,
+    display: "grid",
+    gap: "0.42rem",
+    opacity: 0,
+    transform: "translate3d(0, 0.35rem, 0)",
+  },
+  portalFactNote: {
     margin: 0,
     padding: "0 clamp(0.2rem, 1.6vw, 0.45rem)",
     color: "rgba(255,238,207,0.86)",
@@ -1343,8 +1452,16 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.5,
     textAlign: "center",
     textShadow: "0 2px 18px rgba(0,0,0,0.52)",
-    opacity: 0,
-    transform: "translate3d(0, 0.35rem, 0)",
+  },
+  portalSecondaryNote: {
+    margin: 0,
+    padding: "0 clamp(0.2rem, 1.6vw, 0.45rem)",
+    color: "rgba(246,202,127,0.72)",
+    fontSize: "clamp(0.72rem, 2.8vw, 0.84rem)",
+    lineHeight: 1.48,
+    textAlign: "center",
+    fontStyle: "italic",
+    textShadow: "0 2px 16px rgba(0,0,0,0.48)",
   },
   planList: {
     margin: 0,
