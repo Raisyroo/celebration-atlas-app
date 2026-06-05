@@ -135,6 +135,7 @@ export default function EventDetailPage() {
   if (event?.pageArchetype === 'livingScrapbook' && event.detailPage) {
     return (
       <InteractiveArtworkPage
+        key={event.id}
         eventId={event.id}
         eventName={event.name}
         artworkSrc="/event-pages/goodells/goodells-master-page.webp"
@@ -147,6 +148,8 @@ export default function EventDetailPage() {
   if (event?.id === 'romeo-peach') {
     return (
       <RomeoAtlasWindowPage
+        key={event.id}
+        eventId={event.id}
         eventName={event.name}
         // Expected public asset path: /event-media/romeo/romeo-peach-memory-bg-v1.webp
         memoryImageSrc="/event-media/romeo/romeo-peach-memory-bg-v1.webp"

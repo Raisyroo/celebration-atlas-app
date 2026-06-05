@@ -52,6 +52,7 @@ const ATLAS_MODE_OPTIONS: readonly AtlasModeOption[] = [
   { id: 'schedule', label: 'Schedule' },
   { id: 'map', label: 'Map' },
   { id: 'gallery', label: 'Gallery' },
+  { id: 'plan', label: 'Plan' },
 ] as const;
 
 
@@ -133,6 +134,16 @@ function ModeIcon({ mode }: { mode: AtlasMode }) {
         <rect x="3.8" y="6.8" width="16.4" height="12.4" rx="2.4" />
         <path d="M9 6.8l1.2-2h3.6l1.2 2" />
         <circle cx="12" cy="13" r="3.1" />
+      </svg>
+    );
+  }
+
+  if (mode === 'plan') {
+    return (
+      <svg {...commonProps}>
+        <path d="M6.2 5.2h11.6v15H6.2z" />
+        <path d="M8.8 8.3h6.4M8.8 11.9h6.4M8.8 15.5h3.8" />
+        <path d="M9.3 3.8h5.4v2.8H9.3z" />
       </svg>
     );
   }
