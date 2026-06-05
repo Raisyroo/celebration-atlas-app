@@ -62,7 +62,7 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
   {
     id: "first-peach-queen",
     ariaLabel: "Romeo Peach Queen portal artifact",
-    artifactType: "history",
+    artifactType: "memory",
     question: "Want to see the first Peach Queen from 1931?",
     revealAriaLabel: "Reveal the first Romeo Peach Festival Queen memory",
     fact: "Virginia Allor was crowned the first Romeo Peach Festival Queen in 1931.",
@@ -252,7 +252,7 @@ function RomeoAtlasConversation({
   return (
     <section
       ref={historyRef}
-      className="romeo-memory-scroll"
+      className="romeo-memory-scroll romeo-mode-content-reveal"
       style={{ ...styles.memoryContent, ...styles.askAnythingMemoryContent }}
       aria-label="Atlas conversation history"
       aria-live="polite"
@@ -327,17 +327,25 @@ function PortalArtifact({
             }
             style={styles.portalQuestionLayer}
           >
-            <ArtifactSymbol type={artifactType} />
-            <h3 style={styles.portalQuestion}>{question}</h3>
-            <button
-              type="button"
-              className="romeo-portal-reveal"
-              style={styles.portalRevealButton}
-              onClick={handleReveal}
-              aria-label={revealAriaLabel}
-            >
-              Reveal
-            </button>
+            <p style={styles.portalArtifactLabel}>{artifactType} artifact</p>
+            <div style={styles.portalHeroStack}>
+              <h3 style={styles.portalQuestion}>{question}</h3>
+              <button
+                type="button"
+                className="romeo-portal-reveal"
+                style={styles.portalRevealButton}
+                onClick={handleReveal}
+                aria-label={revealAriaLabel}
+              >
+                Reveal
+              </button>
+            </div>
+            <ArtifactSymbol
+              type={artifactType}
+              variant="portal"
+              className="romeo-portal-symbol"
+              ariaLabel={`${artifactType} artifact symbol`}
+            />
           </div>
 
           {isRevealed && videoSrc ? (
@@ -471,7 +479,7 @@ function RomeoMemoryContent({
   if (activeMode === "schedule") {
     return (
       <section
-        className="romeo-memory-scroll"
+        className="romeo-memory-scroll romeo-mode-content-reveal"
         style={styles.memoryContent}
         aria-label="Schedule lens"
       >
@@ -493,7 +501,7 @@ function RomeoMemoryContent({
   if (activeMode === "maps") {
     return (
       <section
-        className="romeo-memory-scroll"
+        className="romeo-memory-scroll romeo-mode-content-reveal"
         style={styles.memoryContent}
         aria-label="Maps lens"
       >
@@ -525,7 +533,7 @@ function RomeoMemoryContent({
   if (activeMode === "gallery") {
     return (
       <section
-        className="romeo-memory-scroll"
+        className="romeo-memory-scroll romeo-mode-content-reveal"
         style={{ ...styles.memoryContent, ...styles.galleryMemoryContent }}
         aria-label="Gallery lens"
       >
@@ -552,7 +560,7 @@ function RomeoMemoryContent({
   if (activeMode === "plan") {
     return (
       <section
-        className="romeo-memory-scroll"
+        className="romeo-memory-scroll romeo-mode-content-reveal"
         style={styles.memoryContent}
         aria-label="Plan lens"
       >
@@ -615,7 +623,7 @@ function RomeoMemoryContent({
       ) : null}
       {introStatus === "complete" ? (
         <div
-          className="romeo-highlights-content"
+          className="romeo-mode-content-reveal romeo-highlights-content"
           style={styles.highlightsContentReveal}
         >
           <div style={styles.highlightsHeroHeader}>
@@ -773,8 +781,10 @@ export default function RomeoAtlasWindowPage({
           .romeo-cinematic-intro-video {
             animation: romeo-cinematic-ken-burns 24s ease-in-out infinite alternate;
           }
+          .romeo-mode-content-reveal,
           .romeo-highlights-content {
             animation: romeo-highlights-fade-in 1050ms ease-out forwards;
+            will-change: opacity, transform;
           }
           .romeo-portal-question {
             transition: opacity 760ms ease, transform 760ms ease, filter 760ms ease;
@@ -787,6 +797,9 @@ export default function RomeoAtlasWindowPage({
           }
           .romeo-portal-reveal {
             transition: transform 180ms ease, box-shadow 180ms ease, color 180ms ease, border-color 180ms ease;
+          }
+          .romeo-portal-symbol {
+            align-self: end;
           }
           .romeo-portal-reveal:hover,
           .romeo-portal-reveal:focus-visible {
@@ -845,6 +858,7 @@ export default function RomeoAtlasWindowPage({
             .romeo-cinematic-video-memory,
             .romeo-cinematic-video-memory[data-intro-state="dissolving"],
             .romeo-cinematic-intro-video,
+            .romeo-mode-content-reveal,
             .romeo-highlights-content,
             .romeo-portal-video {
               animation-duration: 1ms;
@@ -1582,14 +1596,31 @@ const styles: Record<string, CSSProperties> = {
     width: "auto",
     minWidth: 0,
     display: "grid",
-    alignContent: "center",
+    gridTemplateRows: "auto minmax(0, 1fr) auto",
+    alignContent: "stretch",
     justifyItems: "center",
-    gap: "clamp(0.68rem, 1.8svh, 0.95rem)",
+    gap: "clamp(0.58rem, 1.6svh, 0.88rem)",
     textAlign: "center",
     padding: "clamp(0.78rem, 3.7vw, 1.35rem)",
     borderRadius: "1rem",
     background:
       "radial-gradient(ellipse at 50% 38%, rgba(6,9,16,0.72), rgba(6,9,16,0.34) 48%, transparent 78%)",
+  },
+  portalArtifactLabel: {
+    margin: 0,
+    color: "rgba(246,202,127,0.62)",
+    fontSize: "0.58rem",
+    letterSpacing: "0.2em",
+    lineHeight: 1,
+    textTransform: "uppercase",
+    textShadow: "0 2px 14px rgba(0,0,0,0.58)",
+  },
+  portalHeroStack: {
+    display: "grid",
+    alignSelf: "center",
+    justifyItems: "center",
+    gap: "clamp(0.68rem, 1.8svh, 0.95rem)",
+    width: "100%",
   },
   portalQuestion: {
     margin: 0,
