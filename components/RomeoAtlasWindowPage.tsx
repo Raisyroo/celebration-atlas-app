@@ -355,6 +355,11 @@ function PortalArtifact({
     ...(isMemoryPortal ? styles.memoryPortalQuestionLayer : null),
   };
 
+  const portalHeroStackStyle: CSSProperties = {
+    ...styles.portalHeroStack,
+    ...(isMemoryPortal ? styles.memoryPortalHeroStack : null),
+  };
+
   const playRevealVideo = useCallback(() => {
     const video = videoRef.current;
 
@@ -462,7 +467,7 @@ function PortalArtifact({
               style={portalQuestionLayerStyle}
             >
               <p style={styles.portalArtifactLabel}>{portalLabel}</p>
-              <div style={styles.portalHeroStack}>
+              <div style={portalHeroStackStyle}>
                 <h3 style={styles.portalQuestion}>{question}</h3>
                 <button
                   type="button"
@@ -477,12 +482,14 @@ function PortalArtifact({
                   Reveal
                 </button>
               </div>
-              <ArtifactSymbol
-                type={artifactType}
-                variant="portal"
-                className="romeo-portal-symbol"
-                ariaLabel={`${artifactType} artifact symbol`}
-              />
+              {!isMemoryPortal ? (
+                <ArtifactSymbol
+                  type={artifactType}
+                  variant="portal"
+                  className="romeo-portal-symbol"
+                  ariaLabel={`${artifactType} artifact symbol`}
+                />
+              ) : null}
             </div>
           ) : null}
 
@@ -1804,9 +1811,10 @@ const styles: Record<string, CSSProperties> = {
   },
 
   memoryPortalQuestionLayer: {
-    gridTemplateRows: "auto auto minmax(0, 1fr)",
+    gridTemplateRows: "auto auto",
     alignContent: "start",
-    paddingTop: "clamp(1.02rem, 4.4vw, 1.55rem)",
+    gap: "clamp(1.18rem, 3.2svh, 1.72rem)",
+    paddingTop: "clamp(3.05rem, 10.8vw, 4.15rem)",
     background:
       "linear-gradient(180deg, rgba(3,5,10,0.5), rgba(3,5,10,0.22) 30%, transparent 58%, rgba(3,5,10,0.14) 82%, rgba(3,5,10,0.36) 100%)",
     boxShadow: "none",
@@ -1826,6 +1834,9 @@ const styles: Record<string, CSSProperties> = {
     justifyItems: "center",
     gap: "clamp(0.68rem, 1.8svh, 0.95rem)",
     width: "100%",
+  },
+  memoryPortalHeroStack: {
+    gap: "clamp(1.02rem, 2.7svh, 1.48rem)",
   },
   portalQuestion: {
     margin: 0,
