@@ -58,6 +58,8 @@ type RomeoAtlasWindowPageProps = {
   introVideoSrc: string;
 };
 
+const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal-bg.png";
+
 const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
   {
     id: "first-peach-queen",
@@ -294,6 +296,21 @@ function PortalArtifact({
 }: PortalArtifactProps) {
   const [isRevealed, setIsRevealed] = useState(false);
   const [showFact, setShowFact] = useState(false);
+  const isMemoryPortal = artifactType === "memory";
+  const portalLabel = isMemoryPortal
+    ? "MEMORY PORTAL"
+    : `${artifactType} artifact`;
+  const portalApertureStyle: CSSProperties = {
+    ...styles.portalAperture,
+    ...(isMemoryPortal
+      ? {
+          backgroundImage: `linear-gradient(180deg, rgba(2,5,12,0.44), rgba(2,5,12,0.66)), radial-gradient(ellipse at 50% 42%, rgba(6,9,16,0.18), rgba(2,5,12,0.58) 72%), url(${MEMORY_PORTAL_BACKGROUND_SRC})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }
+      : null),
+  };
 
   const handleReveal = () => {
     setIsRevealed(true);
@@ -318,7 +335,7 @@ function PortalArtifact({
       />
       <div style={styles.portalHalo} aria-hidden="true" />
       <div style={styles.portalFrame}>
-        <div style={styles.portalAperture}>
+        <div style={portalApertureStyle}>
           <div
             className={
               isRevealed
@@ -327,7 +344,7 @@ function PortalArtifact({
             }
             style={styles.portalQuestionLayer}
           >
-            <p style={styles.portalArtifactLabel}>{artifactType} artifact</p>
+            <p style={styles.portalArtifactLabel}>{portalLabel}</p>
             <div style={styles.portalHeroStack}>
               <h3 style={styles.portalQuestion}>{question}</h3>
               <button
