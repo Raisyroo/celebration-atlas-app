@@ -557,7 +557,9 @@ function RomeoMemoryContent({
   shouldAutoplayIntroVideo: boolean;
   onIntroVideoPlayback: () => void;
 }) {
-  const [hasIntroVideoError, setHasIntroVideoError] = useState(false);
+  const [introVideoReady, setIntroVideoReady] = useState(
+    !shouldAutoplayIntroVideo,
+  );
   const [introStatus, setIntroStatus] = useState<IntroStatus>(
     shouldAutoplayIntroVideo ? "playing" : "complete",
   );
@@ -569,12 +571,16 @@ function RomeoMemoryContent({
       return;
     }
 
+    if (shouldAutoplayIntroVideo) {
+      isIntroPlaybackInProgressRef.current = true;
+    }
+
     if (!shouldAutoplayIntroVideo && !isIntroPlaybackInProgressRef.current) {
       return;
     }
 
-    if (shouldAutoplayIntroVideo) {
-      isIntroPlaybackInProgressRef.current = true;
+    if (!introVideoReady) {
+      return;
     }
 
     const dissolveTimer = window.setTimeout(() => {
@@ -592,10 +598,21 @@ function RomeoMemoryContent({
     };
   }, [
     activeMode,
+    introVideoReady,
     introVideoSrc,
     onIntroVideoPlayback,
     shouldAutoplayIntroVideo,
   ]);
+
+  const handleIntroCanPlay = useCallback(() => {
+    setIntroVideoReady(true);
+  }, []);
+
+  const handleIntroVideoError = useCallback(() => {
+    isIntroPlaybackInProgressRef.current = false;
+    onIntroVideoPlayback();
+    setIntroStatus("complete");
+  }, [onIntroVideoPlayback]);
 
   useEffect(() => {
     if (introStatus !== "complete") {
@@ -729,8 +746,17 @@ function RomeoMemoryContent({
       {introStatus !== "complete" ? (
         <figure
           className="romeo-cinematic-video-memory"
-          style={styles.cinematicVideoFrame}
+          style={{
+            ...styles.cinematicVideoFrame,
+            ...(introVideoReady
+              ? styles.cinematicVideoFrameReady
+              : styles.cinematicVideoFrameHidden),
+            ...(introStatus === "dissolving"
+              ? styles.cinematicVideoFrameHidden
+              : null),
+          }}
           data-intro-state={introStatus}
+          data-ready={introVideoReady ? "true" : "false"}
         >
           <video
             src={introVideoSrc}
@@ -740,20 +766,18 @@ function RomeoMemoryContent({
             preload="metadata"
             aria-label="Romeo Peach Festival intro video"
             className="romeo-cinematic-intro-video"
-            style={styles.cinematicIntroVideo}
+            style={{
+              ...styles.cinematicIntroVideo,
+              ...(introVideoReady ? styles.cinematicIntroVideoReady : null),
+            }}
+            onCanPlay={handleIntroCanPlay}
             onPlay={onIntroVideoPlayback}
             onEnded={onIntroVideoPlayback}
-            onError={() => setHasIntroVideoError(true)}
-            onLoadedData={() => setHasIntroVideoError(false)}
+            onError={handleIntroVideoError}
           >
             Romeo intro video unavailable
           </video>
           <span style={styles.cinematicVideoOverlay} aria-hidden="true" />
-          {hasIntroVideoError ? (
-            <p style={styles.cinematicVideoFallback}>
-              Romeo intro video unavailable
-            </p>
-          ) : null}
         </figure>
       ) : null}
       {introStatus === "complete" ? (
@@ -908,10 +932,10 @@ export default function RomeoAtlasWindowPage({
             opacity: 1 !important;
           }
           .romeo-cinematic-video-memory {
-            animation: romeo-video-memory-appear 1300ms ease-out both;
+            transition: opacity 1300ms ease-out;
           }
           .romeo-cinematic-video-memory[data-intro-state="dissolving"] {
-            animation: romeo-video-memory-dissolve 1300ms ease-in forwards;
+            transition-timing-function: ease-in;
           }
           .romeo-cinematic-intro-video {
             animation: romeo-cinematic-ken-burns 24s ease-in-out infinite alternate;
@@ -965,14 +989,6 @@ export default function RomeoAtlasWindowPage({
           .romeo-portal-fact.is-visible {
             opacity: 1 !important;
             transform: translate3d(0, 0, 0) !important;
-          }
-          @keyframes romeo-video-memory-appear {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          @keyframes romeo-video-memory-dissolve {
-            from { opacity: 1; }
-            to { opacity: 0; }
           }
           @keyframes romeo-portal-video-reveal {
             from {
@@ -1333,7 +1349,15 @@ const styles: Record<string, CSSProperties> = {
     border: 0,
     background: "transparent",
     boxShadow: "0 24px 68px rgba(0,0,0,0.18), 0 0 76px rgba(226,150,72,0.08)",
+    opacity: 0,
+    transition: "opacity 1300ms ease-out",
     isolation: "isolate",
+  },
+  cinematicVideoFrameHidden: {
+    opacity: 0,
+  },
+  cinematicVideoFrameReady: {
+    opacity: 1,
   },
   cinematicIntroVideo: {
     position: "relative",
@@ -1341,10 +1365,14 @@ const styles: Record<string, CSSProperties> = {
     display: "block",
     width: "100%",
     height: "auto",
-    opacity: 0.52,
+    opacity: 0,
     mixBlendMode: "soft-light",
     filter: "saturate(0.88) contrast(1.04) brightness(0.86)",
     willChange: "opacity, transform",
+    transition: "opacity 1300ms ease-out",
+  },
+  cinematicIntroVideoReady: {
+    opacity: 0.52,
   },
   cinematicVideoOverlay: {
     position: "absolute",
@@ -1356,20 +1384,6 @@ const styles: Record<string, CSSProperties> = {
     mixBlendMode: "multiply",
     boxShadow:
       "inset 0 48px 88px rgba(1,3,8,0.3), inset 0 -64px 98px rgba(1,3,8,0.34)",
-  },
-  cinematicVideoFallback: {
-    position: "absolute",
-    inset: "clamp(0.9rem, 4vw, 1.35rem)",
-    zIndex: 4,
-    display: "grid",
-    placeItems: "center",
-    margin: 0,
-    borderRadius: 0,
-    background: "rgba(4,7,14,0.68)",
-    color: "rgba(255,239,212,0.96)",
-    fontSize: "clamp(0.86rem, 3.4vw, 1rem)",
-    letterSpacing: "0.02em",
-    textAlign: "center",
   },
   floatingMemoryStars: {
     position: "absolute",
