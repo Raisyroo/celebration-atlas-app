@@ -313,7 +313,6 @@ function PortalArtifact({
     ...styles.portalAperture,
     ...(isMemoryPortal
       ? {
-          ...styles.memoryPortalAperture,
           ...(!isRevealed || !revealVideo
             ? {
                 backgroundImage: `url(${
@@ -332,12 +331,10 @@ function PortalArtifact({
 
   const portalArtifactStyle: CSSProperties = {
     ...styles.portalArtifact,
-    ...(isMemoryPortal ? styles.memoryPortalArtifact : null),
   };
 
   const portalFrameStyle: CSSProperties = {
     ...styles.portalFrame,
-    ...(isMemoryPortal ? styles.memoryPortalFrame : null),
   };
 
   const portalQuestionLayerStyle: CSSProperties = {
@@ -455,14 +452,12 @@ function PortalArtifact({
                   Reveal
                 </button>
               </div>
-              {!isMemoryPortal ? (
-                <ArtifactSymbol
-                  type={artifactType}
-                  variant="portal"
-                  className="romeo-portal-symbol"
-                  ariaLabel={`${artifactType} artifact symbol`}
-                />
-              ) : null}
+              <ArtifactSymbol
+                type={artifactType}
+                variant="portal"
+                className="romeo-portal-symbol"
+                ariaLabel={`${artifactType} artifact symbol`}
+              />
             </div>
           ) : null}
 
@@ -1702,15 +1697,6 @@ const styles: Record<string, CSSProperties> = {
     backdropFilter: "blur(16px)",
     isolation: "isolate",
   },
-
-  memoryPortalArtifact: {
-    padding: "clamp(0.42rem, 1.8vw, 0.68rem)",
-    background:
-      "linear-gradient(155deg, rgba(232,232,226,0.09), rgba(232,232,226,0.035) 48%, rgba(232,232,226,0.015) 100%), radial-gradient(circle at 50% 4%, rgba(255,255,255,0.1), transparent 48%)",
-    boxShadow:
-      "0 24px 54px rgba(0,0,0,0.22), 0 0 0 1px rgba(235,235,226,0.16), inset 0 1px 0 rgba(255,255,255,0.22)",
-    backdropFilter: "none",
-  },
   portalMemoryBackdrop: {
     position: "absolute",
     inset: "-10%",
@@ -1745,14 +1731,6 @@ const styles: Record<string, CSSProperties> = {
     boxShadow:
       "inset 0 1px 0 rgba(255,238,207,0.13), inset 0 -42px 78px rgba(1,3,8,0.24), 0 0 42px rgba(226,150,72,0.1)",
   },
-
-  memoryPortalFrame: {
-    padding: "clamp(0.24rem, 1.25vw, 0.42rem)",
-    background:
-      "linear-gradient(145deg, rgba(245,247,242,0.34), rgba(220,224,220,0.16) 45%, rgba(220,224,220,0.055) 78%, rgba(220,224,220,0.018) 100%), linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.075) 52%, rgba(255,255,255,0.018) 100%)",
-    boxShadow:
-      "inset 0 1px 0 rgba(255,255,255,0.42), inset 0 0 0 1px rgba(238,240,235,0.24), inset 0 -30px 64px rgba(255,255,255,0.035), 0 0 34px rgba(235,238,232,0.12)",
-  },
   portalAperture: {
     position: "relative",
     display: "grid",
@@ -1768,12 +1746,6 @@ const styles: Record<string, CSSProperties> = {
       "radial-gradient(ellipse at 50% 28%, rgba(246,202,127,0.14), transparent 44%), linear-gradient(180deg, rgba(3,6,13,0.64), rgba(4,7,14,0.86))",
     boxShadow:
       "inset 0 0 0 1px rgba(255,238,207,0.06), inset 0 0 84px rgba(1,3,8,0.48)",
-  },
-
-  memoryPortalAperture: {
-    backgroundColor: "rgba(12,13,16,0.28)",
-    boxShadow:
-      "inset 0 0 0 1px rgba(238,240,235,0.18), inset 0 0 54px rgba(1,3,8,0.2), 0 0 22px rgba(235,238,232,0.08)",
   },
   portalQuestionLayer: {
     position: "absolute",
