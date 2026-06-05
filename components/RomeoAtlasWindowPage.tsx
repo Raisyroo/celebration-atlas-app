@@ -11,10 +11,11 @@ import {
 import Link from "next/link";
 import ArtifactSymbol, { type ArtifactType } from "./artifacts/ArtifactSymbol";
 
-type RomeoAtlasMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
+type RomeoContentMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
+type RomeoAtlasMode = RomeoContentMode | "ask";
 
 type RomeoAtlasModeOption = {
-  id: RomeoAtlasMode;
+  id: RomeoContentMode;
   label: string;
   iconSrc: string;
 };
@@ -389,7 +390,7 @@ function RomeoMemoryContent({
   introVideoSrc,
   memoryImageSrc,
 }: {
-  activeMode: RomeoAtlasMode;
+  activeMode: RomeoContentMode;
   eventName: string;
   introVideoSrc: string;
   memoryImageSrc: string;
@@ -614,11 +615,16 @@ export default function RomeoAtlasWindowPage({
   const chatHistoryRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    if (activeMode !== "ask") {
+      return;
+    }
+
     chatHistoryRef.current?.scrollTo({
       top: chatHistoryRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [chatMessages.length]);
+  }, [activeMode, chatMessages.length]);
+
 
   const handleAskSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -647,6 +653,7 @@ export default function RomeoAtlasWindowPage({
         createdAt: answeredAt,
       },
     ]);
+    setActiveMode("ask");
     setAskQuestion("");
   };
 
@@ -854,14 +861,12 @@ export default function RomeoAtlasWindowPage({
         <section
           style={{
             ...styles.floatingMemoryLayout,
-            ...(activeMode === "gallery" && chatMessages.length === 0
-              ? styles.galleryFloatingMemoryLayout
-              : null),
+            ...(activeMode === "gallery" ? styles.galleryFloatingMemoryLayout : null),
           }}
           aria-live="polite"
           aria-label="Atlas memory content"
         >
-          {chatMessages.length > 0 ? (
+          {activeMode === "ask" ? (
             <RomeoAtlasConversation
               messages={chatMessages}
               historyRef={chatHistoryRef}
