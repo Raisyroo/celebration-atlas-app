@@ -336,19 +336,28 @@ function PortalArtifact({
     ...(isMemoryPortal ? styles.memoryPortalQuestionLayer : null),
   };
 
-  const replayReveal = () => {
+  const playRevealVideo = useCallback(() => {
     const video = videoRef.current;
 
     if (!video) return;
 
     video.currentTime = 0;
+    video.muted = true;
     setHasVideoEnded(false);
+    setShowFact(false);
     void video.play();
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isRevealed || !revealVideo) return;
+
+    playRevealVideo();
+  }, [isRevealed, playRevealVideo, revealVideo]);
 
   const handleReveal = () => {
     setIsRevealed(true);
     setHasVideoEnded(false);
+    setShowFact(false);
 
     if (!revealVideo) {
       window.setTimeout(() => setShowFact(true), 420);
@@ -363,7 +372,7 @@ function PortalArtifact({
   const handlePortalReplay = () => {
     if (!isRevealed || !hasVideoEnded || !revealVideo) return;
 
-    replayReveal();
+    playRevealVideo();
   };
 
   return (
@@ -392,7 +401,7 @@ function PortalArtifact({
               revealVideo
             ) {
               event.preventDefault();
-              replayReveal();
+              playRevealVideo();
             }
           }}
           aria-label={
@@ -438,16 +447,14 @@ function PortalArtifact({
                 ref={videoRef}
                 className="romeo-portal-video"
                 style={styles.portalVideo}
+                src={revealVideo}
                 autoPlay
                 muted
                 playsInline
                 preload="metadata"
-                poster={imageSrc}
                 onEnded={handleVideoEnded}
                 aria-label={ariaLabel}
-              >
-                <source src={revealVideo} type="video/mp4" />
-              </video>
+              />
               {hasVideoEnded ? (
                 <button
                   type="button"
@@ -455,7 +462,7 @@ function PortalArtifact({
                   style={styles.portalReplayButton}
                   onClick={(event) => {
                     event.stopPropagation();
-                    replayReveal();
+                    playRevealVideo();
                   }}
                   aria-label={`Replay ${ariaLabel}`}
                 >
@@ -1667,9 +1674,9 @@ const styles: Record<string, CSSProperties> = {
   memoryPortalArtifact: {
     padding: "clamp(0.42rem, 1.8vw, 0.68rem)",
     background:
-      "linear-gradient(145deg, rgba(255,238,207,0.22), rgba(226,150,72,0.08)), radial-gradient(circle at 50% 4%, rgba(246,202,127,0.22), transparent 48%), rgba(16,13,10,0.78)",
+      "linear-gradient(155deg, rgba(15,19,27,0.8), rgba(4,7,12,0.74)), radial-gradient(circle at 50% 4%, rgba(96,62,31,0.18), transparent 48%)",
     boxShadow:
-      "0 28px 68px rgba(0,0,0,0.36), 0 0 0 1px rgba(255,238,207,0.13), inset 0 1px 0 rgba(255,238,207,0.22)",
+      "0 28px 68px rgba(0,0,0,0.4), 0 0 0 1px rgba(50,42,34,0.42), inset 0 1px 0 rgba(255,238,207,0.07)",
     backdropFilter: "none",
   },
   portalMemoryBackdrop: {
@@ -1710,9 +1717,9 @@ const styles: Record<string, CSSProperties> = {
   memoryPortalFrame: {
     padding: "clamp(0.28rem, 1.45vw, 0.48rem)",
     background:
-      "linear-gradient(145deg, rgba(255,238,207,0.2), rgba(255,238,207,0.04)), linear-gradient(180deg, rgba(246,202,127,0.1), rgba(6,4,2,0.08))",
+      "linear-gradient(145deg, rgba(38,32,27,0.2), rgba(5,7,12,0.34)), linear-gradient(180deg, rgba(2,5,11,0.24), rgba(2,5,11,0.52))",
     boxShadow:
-      "inset 0 1px 0 rgba(255,238,207,0.24), inset 0 0 0 1px rgba(255,238,207,0.1), 0 0 46px rgba(226,150,72,0.16)",
+      "inset 0 0 0 1px rgba(58,48,39,0.48), inset 0 -34px 68px rgba(1,3,8,0.26), 0 0 38px rgba(0,0,0,0.24)",
   },
   portalAperture: {
     position: "relative",
@@ -1732,9 +1739,9 @@ const styles: Record<string, CSSProperties> = {
   },
 
   memoryPortalAperture: {
-    backgroundColor: "rgba(36,25,15,0.72)",
+    backgroundColor: "rgba(12,13,16,0.64)",
     boxShadow:
-      "inset 0 0 0 1px rgba(255,238,207,0.16), inset 0 0 28px rgba(255,238,207,0.08), 0 0 30px rgba(226,150,72,0.12)",
+      "inset 0 0 0 1px rgba(58,48,39,0.54), inset 0 0 82px rgba(1,3,8,0.38), 0 0 26px rgba(0,0,0,0.2)",
   },
   portalQuestionLayer: {
     position: "absolute",
@@ -1755,8 +1762,11 @@ const styles: Record<string, CSSProperties> = {
   },
 
   memoryPortalQuestionLayer: {
+    gridTemplateRows: "auto auto minmax(0, 1fr)",
+    alignContent: "start",
+    paddingTop: "clamp(0.58rem, 2.3vw, 0.94rem)",
     background:
-      "linear-gradient(180deg, rgba(3,5,10,0.42), rgba(3,5,10,0.18) 17%, transparent 35%, transparent 56%, rgba(3,5,10,0.18) 76%, rgba(3,5,10,0.5) 100%)",
+      "linear-gradient(180deg, rgba(3,5,10,0.62), rgba(3,5,10,0.28) 24%, transparent 52%, rgba(3,5,10,0.18) 78%, rgba(3,5,10,0.48) 100%)",
     boxShadow: "none",
   },
   portalArtifactLabel: {
@@ -1770,7 +1780,7 @@ const styles: Record<string, CSSProperties> = {
   },
   portalHeroStack: {
     display: "grid",
-    alignSelf: "center",
+    alignSelf: "start",
     justifyItems: "center",
     gap: "clamp(0.68rem, 1.8svh, 0.95rem)",
     width: "100%",
