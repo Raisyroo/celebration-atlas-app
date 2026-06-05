@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -368,7 +369,9 @@ function PortalArtifact({
                 <span style={styles.portalPortraitHead} />
                 <span style={styles.portalPortraitShoulders} />
               </span>
-              <span style={styles.portalPortraitCaption}>Portrait placeholder</span>
+              <span style={styles.portalPortraitCaption}>
+                Portrait placeholder
+              </span>
             </div>
           ) : null}
         </div>
@@ -402,25 +405,42 @@ function RomeoMemoryContent({
   eventName,
   introVideoSrc,
   memoryImageSrc,
+  shouldAutoplayIntroVideo,
+  onIntroVideoPlayback,
 }: {
   activeMode: RomeoContentMode;
   eventName: string;
   introVideoSrc: string;
   memoryImageSrc: string;
+  shouldAutoplayIntroVideo: boolean;
+  onIntroVideoPlayback: () => void;
 }) {
   const [hasIntroVideoError, setHasIntroVideoError] = useState(false);
-  const [introStatus, setIntroStatus] = useState<IntroStatus>("playing");
+  const [introStatus, setIntroStatus] = useState<IntroStatus>(
+    shouldAutoplayIntroVideo ? "playing" : "complete",
+  );
   const highlightsScrollRef = useRef<HTMLElement | null>(null);
+  const isIntroPlaybackInProgressRef = useRef(false);
 
   useEffect(() => {
     if (activeMode !== "highlights") {
       return;
     }
 
+    if (!shouldAutoplayIntroVideo && !isIntroPlaybackInProgressRef.current) {
+      return;
+    }
+
+    if (shouldAutoplayIntroVideo) {
+      isIntroPlaybackInProgressRef.current = true;
+    }
+
     const dissolveTimer = window.setTimeout(() => {
       setIntroStatus("dissolving");
     }, INTRO_VISIBLE_MS);
     const completeTimer = window.setTimeout(() => {
+      isIntroPlaybackInProgressRef.current = false;
+      onIntroVideoPlayback();
       setIntroStatus("complete");
     }, INTRO_VISIBLE_MS + INTRO_DISSOLVE_MS);
 
@@ -428,7 +448,12 @@ function RomeoMemoryContent({
       window.clearTimeout(dissolveTimer);
       window.clearTimeout(completeTimer);
     };
-  }, [activeMode, introVideoSrc]);
+  }, [
+    activeMode,
+    introVideoSrc,
+    onIntroVideoPlayback,
+    shouldAutoplayIntroVideo,
+  ]);
 
   useEffect(() => {
     if (introStatus !== "complete") {
@@ -573,6 +598,8 @@ function RomeoMemoryContent({
             aria-label="Romeo Peach Festival intro video"
             className="romeo-cinematic-intro-video"
             style={styles.cinematicIntroVideo}
+            onPlay={onIntroVideoPlayback}
+            onEnded={onIntroVideoPlayback}
             onError={() => setHasIntroVideoError(true)}
             onLoadedData={() => setHasIntroVideoError(false)}
           >
@@ -625,7 +652,19 @@ export default function RomeoAtlasWindowPage({
   const [activeMode, setActiveMode] = useState<RomeoAtlasMode>("highlights");
   const [askQuestion, setAskQuestion] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [introPlaybackEventId, setIntroPlaybackEventId] = useState<
+    string | null
+  >(null);
   const chatHistoryRef = useRef<HTMLElement | null>(null);
+  const hasPlayedIntroVideo = introPlaybackEventId === eventId;
+
+  const handleIntroVideoPlayback = useCallback(() => {
+    setIntroPlaybackEventId(eventId);
+  }, [eventId]);
+
+  const handleAtlasExit = () => {
+    setIntroPlaybackEventId(null);
+  };
 
   useEffect(() => {
     if (activeMode !== "ask") {
@@ -637,7 +676,6 @@ export default function RomeoAtlasWindowPage({
       behavior: "smooth",
     });
   }, [activeMode, chatMessages.length]);
-
 
   const handleAskSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -675,7 +713,11 @@ export default function RomeoAtlasWindowPage({
   };
 
   return (
-    <main style={styles.page} className="atlas-event-shell" data-event-id={eventId}>
+    <main
+      style={styles.page}
+      className="atlas-event-shell"
+      data-event-id={eventId}
+    >
       <style>{`
           .romeo-memory-scroll::-webkit-scrollbar { display: none; }
           .romeo-atlas-back-link {
@@ -821,6 +863,7 @@ export default function RomeoAtlasWindowPage({
           href={backHref}
           className="romeo-atlas-back-link"
           style={styles.backLink}
+          onClick={handleAtlasExit}
         >
           ← ATLAS
         </Link>
@@ -871,7 +914,9 @@ export default function RomeoAtlasWindowPage({
         <section
           style={{
             ...styles.floatingMemoryLayout,
-            ...(activeMode === "gallery" ? styles.galleryFloatingMemoryLayout : null),
+            ...(activeMode === "gallery"
+              ? styles.galleryFloatingMemoryLayout
+              : null),
           }}
           aria-live="polite"
           aria-label="Atlas memory content"
@@ -883,10 +928,13 @@ export default function RomeoAtlasWindowPage({
             />
           ) : (
             <RomeoMemoryContent
+              key={`${eventId}:${activeMode}`}
               activeMode={activeMode}
               eventName={eventName}
               introVideoSrc={introVideoSrc}
               memoryImageSrc={memoryImageSrc}
+              shouldAutoplayIntroVideo={!hasPlayedIntroVideo}
+              onIntroVideoPlayback={handleIntroVideoPlayback}
             />
           )}
         </section>
@@ -1099,7 +1147,8 @@ const styles: Record<string, CSSProperties> = {
     paddingBottom: "clamp(2.2rem, 7svh, 4.2rem)",
     WebkitMaskImage:
       "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
-    maskImage: "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
+    maskImage:
+      "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
     scrollPaddingTop: "clamp(4.6rem, 13svh, 7.2rem)",
   },
   cinematicVideoFrame: {
@@ -1252,8 +1301,7 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.02,
     letterSpacing: "-0.035em",
     textWrap: "balance",
-    textShadow:
-      "0 4px 28px rgba(0,0,0,0.78), 0 0 24px rgba(227,146,76,0.22)",
+    textShadow: "0 4px 28px rgba(0,0,0,0.78), 0 0 24px rgba(227,146,76,0.22)",
   },
   askAnythingAnswer: {
     margin: 0,
@@ -1446,7 +1494,8 @@ const styles: Record<string, CSSProperties> = {
     overflowY: "auto",
     WebkitMaskImage:
       "linear-gradient(to bottom, black 0%, black 96%, transparent 100%)",
-    maskImage: "linear-gradient(to bottom, black 0%, black 96%, transparent 100%)",
+    maskImage:
+      "linear-gradient(to bottom, black 0%, black 96%, transparent 100%)",
     scrollPaddingTop: "clamp(3.2rem, 8svh, 4.7rem)",
     scrollPaddingBottom: "clamp(0.65rem, 2svh, 1rem)",
   },
