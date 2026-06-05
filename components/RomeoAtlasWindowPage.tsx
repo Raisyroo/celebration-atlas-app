@@ -1240,30 +1240,27 @@ const styles: Record<string, CSSProperties> = {
   },
   chatMessageStack: {
     display: "grid",
-    gap: "0.72rem",
+    gap: "0.95rem",
     paddingBottom: "0.42rem",
   },
   chatMessage: {
     display: "grid",
     gap: "0.34rem",
-    width: "min(88%, 31rem)",
-    padding: "0.72rem 0.78rem",
-    border: "1px solid rgba(255,238,207,0.1)",
-    borderRadius: "1.05rem",
-    background: "rgba(7,11,18,0.48)",
-    boxShadow: "inset 0 1px 0 rgba(255,238,207,0.05)",
+    width: "100%",
+    maxWidth: "100%",
+    justifySelf: "stretch",
+    padding: "0.08rem 0 0.95rem",
+    border: 0,
+    borderBottom: "1px solid rgba(255,238,207,0.095)",
+    borderRadius: 0,
+    background: "transparent",
+    boxShadow: "none",
   },
   chatUserMessage: {
-    justifySelf: "end",
-    borderColor: "rgba(226,172,92,0.28)",
-    background:
-      "linear-gradient(160deg, rgba(53,38,24,0.58), rgba(8,12,19,0.46))",
+    justifySelf: "stretch",
   },
   chatAssistantMessage: {
-    justifySelf: "start",
-    borderColor: "rgba(255,238,207,0.12)",
-    background:
-      "linear-gradient(160deg, rgba(9,14,22,0.64), rgba(4,7,13,0.48))",
+    justifySelf: "stretch",
   },
   chatMessageLabel: {
     margin: 0,
