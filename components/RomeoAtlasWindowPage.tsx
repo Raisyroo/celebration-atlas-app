@@ -62,7 +62,7 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
   {
     id: "first-peach-queen",
     ariaLabel: "Romeo Peach Queen portal artifact",
-    artifactType: "history",
+    artifactType: "memory",
     question: "Want to see the first Peach Queen from 1931?",
     revealAriaLabel: "Reveal the first Romeo Peach Festival Queen memory",
     fact: "Virginia Allor was crowned the first Romeo Peach Festival Queen in 1931.",
@@ -327,17 +327,24 @@ function PortalArtifact({
             }
             style={styles.portalQuestionLayer}
           >
-            <ArtifactSymbol type={artifactType} />
-            <h3 style={styles.portalQuestion}>{question}</h3>
-            <button
-              type="button"
-              className="romeo-portal-reveal"
-              style={styles.portalRevealButton}
-              onClick={handleReveal}
-              aria-label={revealAriaLabel}
-            >
-              Reveal
-            </button>
+            <p style={styles.portalArtifactLabel}>{artifactType} artifact</p>
+            <div style={styles.portalHeroStack}>
+              <h3 style={styles.portalQuestion}>{question}</h3>
+              <button
+                type="button"
+                className="romeo-portal-reveal"
+                style={styles.portalRevealButton}
+                onClick={handleReveal}
+                aria-label={revealAriaLabel}
+              >
+                Reveal
+              </button>
+            </div>
+            <ArtifactSymbol
+              type={artifactType}
+              className="romeo-portal-symbol"
+              ariaLabel={`${artifactType} artifact symbol`}
+            />
           </div>
 
           {isRevealed && videoSrc ? (
@@ -787,6 +794,13 @@ export default function RomeoAtlasWindowPage({
           }
           .romeo-portal-reveal {
             transition: transform 180ms ease, box-shadow 180ms ease, color 180ms ease, border-color 180ms ease;
+          }
+          .romeo-portal-symbol {
+            --artifact-symbol-size: clamp(1.65rem, 8vw, 2.35rem);
+            --artifact-symbol-color: rgba(226, 172, 92, 0.74);
+            --artifact-symbol-opacity: 0.38;
+            --artifact-symbol-filter: drop-shadow(0 0 18px rgba(226, 172, 92, 0.24));
+            align-self: end;
           }
           .romeo-portal-reveal:hover,
           .romeo-portal-reveal:focus-visible {
@@ -1582,14 +1596,31 @@ const styles: Record<string, CSSProperties> = {
     width: "auto",
     minWidth: 0,
     display: "grid",
-    alignContent: "center",
+    gridTemplateRows: "auto minmax(0, 1fr) auto",
+    alignContent: "stretch",
     justifyItems: "center",
-    gap: "clamp(0.68rem, 1.8svh, 0.95rem)",
+    gap: "clamp(0.58rem, 1.6svh, 0.88rem)",
     textAlign: "center",
     padding: "clamp(0.78rem, 3.7vw, 1.35rem)",
     borderRadius: "1rem",
     background:
       "radial-gradient(ellipse at 50% 38%, rgba(6,9,16,0.72), rgba(6,9,16,0.34) 48%, transparent 78%)",
+  },
+  portalArtifactLabel: {
+    margin: 0,
+    color: "rgba(246,202,127,0.62)",
+    fontSize: "0.58rem",
+    letterSpacing: "0.2em",
+    lineHeight: 1,
+    textTransform: "uppercase",
+    textShadow: "0 2px 14px rgba(0,0,0,0.58)",
+  },
+  portalHeroStack: {
+    display: "grid",
+    alignSelf: "center",
+    justifyItems: "center",
+    gap: "clamp(0.68rem, 1.8svh, 0.95rem)",
+    width: "100%",
   },
   portalQuestion: {
     margin: 0,
