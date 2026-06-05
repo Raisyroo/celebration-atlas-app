@@ -342,6 +342,7 @@ function PortalArtifact({
             </div>
             <ArtifactSymbol
               type={artifactType}
+              variant="portal"
               className="romeo-portal-symbol"
               ariaLabel={`${artifactType} artifact symbol`}
             />
@@ -796,10 +797,6 @@ export default function RomeoAtlasWindowPage({
             transition: transform 180ms ease, box-shadow 180ms ease, color 180ms ease, border-color 180ms ease;
           }
           .romeo-portal-symbol {
-            --artifact-symbol-size: clamp(1.65rem, 8vw, 2.35rem);
-            --artifact-symbol-color: rgba(226, 172, 92, 0.74);
-            --artifact-symbol-opacity: 0.38;
-            --artifact-symbol-filter: drop-shadow(0 0 18px rgba(226, 172, 92, 0.24));
             align-self: end;
           }
           .romeo-portal-reveal:hover,
