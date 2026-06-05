@@ -229,40 +229,53 @@ function RomeoAtlasConversation({
   messages: ChatMessage[];
   historyRef: RefObject<HTMLElement | null>;
 }) {
+  const conversationPairs = messages.reduce<
+    { id: string; question?: ChatMessage; answer?: ChatMessage }[]
+  >((pairs, message) => {
+    if (message.role === "user" || pairs.length === 0) {
+      pairs.push({ id: message.id, question: message });
+      return pairs;
+    }
+
+    const latestPair = pairs[pairs.length - 1];
+    if (!latestPair.answer) {
+      latestPair.answer = message;
+      latestPair.id = `${latestPair.id}-${message.id}`;
+      return pairs;
+    }
+
+    pairs.push({ id: message.id, answer: message });
+    return pairs;
+  }, []);
+
   return (
     <section
       ref={historyRef}
-      className="romeo-chat-history"
-      style={styles.chatHistoryWindow}
+      className="romeo-memory-scroll"
+      style={{ ...styles.memoryContent, ...styles.askAnythingMemoryContent }}
       aria-label="Atlas conversation history"
       aria-live="polite"
     >
-      <div style={styles.chatHistoryHeader}>
-        <p style={styles.windowEyebrow}>ASK ANYTHING</p>
-        <span style={styles.chatHistoryAccent} aria-hidden="true">
-          ✦ conversation
-        </span>
-      </div>
+      <div style={styles.askAnythingInner}>
+        <header style={styles.askAnythingHeader}>
+          <p style={styles.windowEyebrow}>ASK ANYTHING</p>
+          <p style={styles.askAnythingSecondaryLabel}>CONVERSATION</p>
+        </header>
 
-      <div style={styles.chatMessageStack}>
-        {messages.map((message) => {
-          const isUser = message.role === "user";
-
-          return (
-            <article
-              key={message.id}
-              style={{
-                ...styles.chatMessage,
-                ...(isUser ? styles.chatUserMessage : styles.chatAssistantMessage),
-              }}
-            >
-              <p style={styles.chatMessageLabel}>
-                {isUser ? "You asked" : "Atlas answered"}
-              </p>
-              <p style={styles.chatMessageText}>{message.content}</p>
+        <div style={styles.askAnythingStack}>
+          {conversationPairs.map((pair) => (
+            <article key={pair.id} style={styles.askAnythingEntry}>
+              {pair.question ? (
+                <p style={styles.askAnythingQuestion}>
+                  {pair.question.content}
+                </p>
+              ) : null}
+              {pair.answer ? (
+                <p style={styles.askAnythingAnswer}>{pair.answer.content}</p>
+              ) : null}
             </article>
-          );
-        })}
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -665,9 +678,6 @@ export default function RomeoAtlasWindowPage({
     <main style={styles.page} className="atlas-event-shell" data-event-id={eventId}>
       <style>{`
           .romeo-memory-scroll::-webkit-scrollbar { display: none; }
-          .romeo-chat-history::-webkit-scrollbar { width: 0.34rem; }
-          .romeo-chat-history::-webkit-scrollbar-track { background: rgba(255, 238, 207, 0.045); border-radius: 999px; }
-          .romeo-chat-history::-webkit-scrollbar-thumb { background: rgba(226, 172, 92, 0.32); border-radius: 999px; }
           .romeo-atlas-back-link {
             transition:
               color 180ms ease,
@@ -1196,90 +1206,63 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.58,
     maxWidth: "34rem",
   },
-  chatHistoryWindow: {
-    position: "absolute",
-    inset: 0,
-    zIndex: 3,
+  askAnythingMemoryContent: {
+    alignContent: "safe center",
+    justifyItems: "center",
+    paddingTop: "clamp(3.4rem, 10svh, 5.7rem)",
+    paddingBottom: "clamp(2.6rem, 8svh, 4.6rem)",
+  },
+  askAnythingInner: {
     display: "grid",
-    alignContent: "start",
-    gap: "clamp(0.76rem, 2.4svh, 1.08rem)",
-    padding: "clamp(1.05rem, 4.8vw, 2.05rem) clamp(0.78rem, 5.2vw, 2.05rem)",
-    boxSizing: "border-box",
-    overflowX: "hidden",
-    overflowY: "auto",
-    overscrollBehavior: "contain",
-    WebkitOverflowScrolling: "touch",
-    scrollbarWidth: "thin",
-    scrollbarColor: "rgba(226,172,92,0.34) rgba(255,238,207,0.05)",
-    border: "1px solid rgba(226,172,92,0.2)",
-    borderRadius: "1.55rem",
-    background:
-      "linear-gradient(180deg, rgba(5,8,15,0.58), rgba(4,6,12,0.36)), radial-gradient(ellipse at 50% 0%, rgba(226,172,92,0.12), transparent 42%)",
-    boxShadow:
-      "0 26px 70px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,238,207,0.08)",
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
-    maskImage:
-      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
-    WebkitMaskImage:
-      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
-    textShadow: "0 2px 18px rgba(0,0,0,0.58)",
+    gap: "clamp(1.25rem, 3.6svh, 2rem)",
+    width: "100%",
+    maxWidth: "34rem",
+    justifySelf: "center",
   },
-  chatHistoryHeader: {
-    position: "sticky",
-    top: 0,
-    zIndex: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "0.7rem",
-    paddingBottom: "0.15rem",
-    background:
-      "linear-gradient(180deg, rgba(6,9,16,0.88), rgba(6,9,16,0))",
+  askAnythingHeader: {
+    display: "grid",
+    gap: "0.32rem",
+    justifyItems: "center",
+    textAlign: "center",
   },
-  chatHistoryAccent: {
+  askAnythingSecondaryLabel: {
+    margin: 0,
     color: "rgba(246,202,127,0.46)",
     fontSize: "0.56rem",
     letterSpacing: "0.16em",
     textTransform: "uppercase",
-    whiteSpace: "nowrap",
   },
-  chatMessageStack: {
+  askAnythingStack: {
     display: "grid",
-    gap: "0.95rem",
-    paddingBottom: "0.42rem",
-  },
-  chatMessage: {
-    display: "grid",
-    gap: "0.34rem",
+    gap: "clamp(1.65rem, 4.5svh, 2.65rem)",
     width: "100%",
-    maxWidth: "100%",
-    justifySelf: "stretch",
-    padding: "0.08rem 0 0.95rem",
-    border: 0,
-    borderBottom: "1px solid rgba(255,238,207,0.095)",
-    borderRadius: 0,
-    background: "transparent",
-    boxShadow: "none",
   },
-  chatUserMessage: {
-    justifySelf: "stretch",
-  },
-  chatAssistantMessage: {
-    justifySelf: "stretch",
-  },
-  chatMessageLabel: {
+  askAnythingEntry: {
+    display: "grid",
+    gap: "clamp(0.62rem, 1.9svh, 0.95rem)",
+    width: "100%",
     margin: 0,
-    color: "rgba(246,202,127,0.66)",
-    fontSize: "0.58rem",
-    letterSpacing: "0.14em",
-    textTransform: "uppercase",
   },
-  chatMessageText: {
+  askAnythingQuestion: {
     margin: 0,
-    color: "rgba(242,226,197,0.94)",
-    fontSize: "clamp(0.88rem, 3.45vw, 1.02rem)",
-    lineHeight: 1.52,
+    color: "rgba(255,238,207,0.98)",
+    fontFamily: "Georgia, Times New Roman, serif",
+    fontWeight: 400,
+    fontSize: "clamp(1.58rem, 6.6vw, 2.92rem)",
+    lineHeight: 1.02,
+    letterSpacing: "-0.035em",
+    textWrap: "balance",
+    textShadow:
+      "0 4px 28px rgba(0,0,0,0.78), 0 0 24px rgba(227,146,76,0.22)",
+  },
+  askAnythingAnswer: {
+    margin: 0,
+    color: "rgba(237,221,193,0.92)",
+    fontFamily: "Georgia, Times New Roman, serif",
+    fontSize: "clamp(0.98rem, 3.5vw, 1.16rem)",
+    lineHeight: 1.62,
+    maxWidth: "32rem",
+    textShadow: "0 2px 18px rgba(0,0,0,0.58)",
   },
   answerQuestion: {
     margin: 0,
