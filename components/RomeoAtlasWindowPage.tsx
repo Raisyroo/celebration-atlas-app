@@ -49,6 +49,7 @@ type GalleryPortalArtifact = {
 };
 
 type RomeoAtlasWindowPageProps = {
+  eventId: string;
   eventName: string;
   backHref: string;
   memoryImageSrc: string;
@@ -601,6 +602,7 @@ function RomeoMemoryContent({
 }
 
 export default function RomeoAtlasWindowPage({
+  eventId,
   eventName,
   backHref,
   memoryImageSrc,
@@ -653,7 +655,7 @@ export default function RomeoAtlasWindowPage({
   };
 
   return (
-    <main style={styles.page} className="atlas-event-shell">
+    <main style={styles.page} className="atlas-event-shell" data-event-id={eventId}>
       <style>{`
           .romeo-memory-scroll::-webkit-scrollbar { display: none; }
           .romeo-chat-history::-webkit-scrollbar { width: 0.34rem; }
