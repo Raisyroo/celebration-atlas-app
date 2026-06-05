@@ -33,8 +33,9 @@ type PortalArtifactProps = {
   artifactType: ArtifactType;
   question: string;
   revealAriaLabel: string;
+  portalBackground?: string;
   imageSrc?: string;
-  videoSrc?: string;
+  revealVideo?: string;
   fact: string;
   secondaryNote?: string;
 };
@@ -45,6 +46,8 @@ type GalleryPortalArtifact = {
   artifactType: ArtifactType;
   question: string;
   revealAriaLabel: string;
+  portalBackground?: string;
+  revealVideo?: string;
   fact: string;
   secondaryNote?: string;
   usesMemoryMedia?: boolean;
@@ -67,6 +70,8 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
     artifactType: "memory",
     question: "Want to see the first Peach Queen from 1931?",
     revealAriaLabel: "Reveal the first Romeo Peach Festival Queen memory",
+    portalBackground: MEMORY_PORTAL_BACKGROUND_SRC,
+    revealVideo: "/artifact-reveals/romeo-peach/first-peach-queen-1931.mp4",
     fact: "Virginia Allor was crowned the first Romeo Peach Festival Queen in 1931.",
     usesMemoryMedia: true,
   },
@@ -289,12 +294,15 @@ function PortalArtifact({
   artifactType,
   question,
   revealAriaLabel,
+  portalBackground,
   imageSrc,
-  videoSrc,
+  revealVideo,
   fact,
   secondaryNote,
 }: PortalArtifactProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isRevealed, setIsRevealed] = useState(false);
+  const [hasVideoEnded, setHasVideoEnded] = useState(false);
   const [showFact, setShowFact] = useState(false);
   const isMemoryPortal = artifactType === "memory";
   const portalLabel = isMemoryPortal
@@ -305,7 +313,7 @@ function PortalArtifact({
     ...(isMemoryPortal
       ? {
           ...styles.memoryPortalAperture,
-          backgroundImage: `url(${MEMORY_PORTAL_BACKGROUND_SRC})`,
+          backgroundImage: `url(${portalBackground ?? MEMORY_PORTAL_BACKGROUND_SRC})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -328,16 +336,34 @@ function PortalArtifact({
     ...(isMemoryPortal ? styles.memoryPortalQuestionLayer : null),
   };
 
+  const replayReveal = () => {
+    const video = videoRef.current;
+
+    if (!video) return;
+
+    video.currentTime = 0;
+    setHasVideoEnded(false);
+    void video.play();
+  };
+
   const handleReveal = () => {
     setIsRevealed(true);
+    setHasVideoEnded(false);
 
-    if (!videoSrc) {
+    if (!revealVideo) {
       window.setTimeout(() => setShowFact(true), 420);
     }
   };
 
-  const handleVideoMemory = () => {
+  const handleVideoEnded = () => {
+    setHasVideoEnded(true);
     setShowFact(true);
+  };
+
+  const handlePortalReplay = () => {
+    if (!isRevealed || !hasVideoEnded || !revealVideo) return;
+
+    replayReveal();
   };
 
   return (
@@ -353,7 +379,28 @@ function PortalArtifact({
       ) : null}
       <div style={styles.portalHalo} aria-hidden="true" />
       <div style={portalFrameStyle}>
-        <div style={portalApertureStyle}>
+        <div
+          style={portalApertureStyle}
+          onClick={handlePortalReplay}
+          role={isRevealed && hasVideoEnded && revealVideo ? "button" : undefined}
+          tabIndex={isRevealed && hasVideoEnded && revealVideo ? 0 : undefined}
+          onKeyDown={(event) => {
+            if (
+              (event.key === "Enter" || event.key === " ") &&
+              isRevealed &&
+              hasVideoEnded &&
+              revealVideo
+            ) {
+              event.preventDefault();
+              replayReveal();
+            }
+          }}
+          aria-label={
+            isRevealed && hasVideoEnded && revealVideo
+              ? `${ariaLabel}. Replay reveal video.`
+              : undefined
+          }
+        >
           <div
             className={
               isRevealed
@@ -385,24 +432,40 @@ function PortalArtifact({
             ) : null}
           </div>
 
-          {isRevealed && videoSrc ? (
-            <video
-              className="romeo-portal-video"
-              style={styles.portalVideo}
-              autoPlay
-              muted
-              playsInline
-              preload="metadata"
-              poster={imageSrc}
-              onPlay={handleVideoMemory}
-              onEnded={handleVideoMemory}
-              aria-label={ariaLabel}
-            >
-              <source src={videoSrc} type="video/mp4" />
-            </video>
+          {isRevealed && revealVideo ? (
+            <>
+              <video
+                ref={videoRef}
+                className="romeo-portal-video"
+                style={styles.portalVideo}
+                autoPlay
+                muted
+                playsInline
+                preload="metadata"
+                poster={imageSrc}
+                onEnded={handleVideoEnded}
+                aria-label={ariaLabel}
+              >
+                <source src={revealVideo} type="video/mp4" />
+              </video>
+              {hasVideoEnded ? (
+                <button
+                  type="button"
+                  className="romeo-portal-replay"
+                  style={styles.portalReplayButton}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    replayReveal();
+                  }}
+                  aria-label={`Replay ${ariaLabel}`}
+                >
+                  Replay
+                </button>
+              ) : null}
+            </>
           ) : null}
 
-          {isRevealed && !videoSrc ? (
+          {isRevealed && !revealVideo ? (
             <div
               className="romeo-portal-video"
               style={styles.portalIllustrationPlaceholder}
@@ -584,8 +647,9 @@ function RomeoMemoryContent({
             artifactType={artifact.artifactType}
             question={artifact.question}
             revealAriaLabel={artifact.revealAriaLabel}
+            portalBackground={artifact.portalBackground}
             imageSrc={artifact.usesMemoryMedia ? memoryImageSrc : undefined}
-            videoSrc={artifact.usesMemoryMedia ? introVideoSrc : undefined}
+            revealVideo={artifact.revealVideo}
             fact={artifact.fact}
             secondaryNote={artifact.secondaryNote}
           />
@@ -849,6 +913,18 @@ export default function RomeoAtlasWindowPage({
           .romeo-portal-video {
             animation: romeo-portal-video-reveal 980ms ease-out forwards;
           }
+          .romeo-portal-replay {
+            animation: romeo-portal-replay-appear 720ms ease-out forwards;
+            transition: color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+          }
+          .romeo-portal-replay:hover,
+          .romeo-portal-replay:focus-visible {
+            color: rgba(255, 240, 213, 0.96);
+            border-color: rgba(246, 202, 127, 0.58);
+            box-shadow: 0 0 20px rgba(226, 150, 72, 0.2), inset 0 1px 0 rgba(255,255,255,0.14);
+            outline: none;
+            transform: translateX(-50%) translateY(-1px);
+          }
           .romeo-portal-fact {
             transition: opacity 720ms ease 260ms, transform 720ms ease 260ms;
           }
@@ -876,6 +952,16 @@ export default function RomeoAtlasWindowPage({
               filter: brightness(0.88) saturate(0.92) contrast(1.04);
             }
           }
+          @keyframes romeo-portal-replay-appear {
+            from {
+              opacity: 0;
+              transform: translateX(-50%) translateY(0.35rem);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(-50%) translateY(0);
+            }
+          }
           @keyframes romeo-highlights-fade-in {
             from {
               opacity: 0;
@@ -897,7 +983,8 @@ export default function RomeoAtlasWindowPage({
             .romeo-cinematic-intro-video,
             .romeo-mode-content-reveal,
             .romeo-highlights-content,
-            .romeo-portal-video {
+            .romeo-portal-video,
+            .romeo-portal-replay {
               animation-duration: 1ms;
             }
             .romeo-cinematic-intro-video {
@@ -1721,6 +1808,25 @@ const styles: Record<string, CSSProperties> = {
     objectFit: "cover",
     objectPosition: "center",
     filter: "brightness(0.88) saturate(0.92) contrast(1.04)",
+  },
+  portalReplayButton: {
+    appearance: "none",
+    position: "absolute",
+    left: "50%",
+    bottom: "clamp(0.72rem, 3vw, 1.05rem)",
+    zIndex: 4,
+    border: "1px solid rgba(246,202,127,0.36)",
+    borderRadius: "999px",
+    padding: "0.42rem 0.82rem",
+    background:
+      "linear-gradient(180deg, rgba(7,9,14,0.58), rgba(7,9,14,0.34))",
+    color: "rgba(250,224,183,0.82)",
+    fontSize: "0.58rem",
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    cursor: "pointer",
+    backdropFilter: "blur(10px)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
   },
   portalIllustrationPlaceholder: {
     position: "absolute",
