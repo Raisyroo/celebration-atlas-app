@@ -6,6 +6,7 @@ import {
   useState,
   type CSSProperties,
   type FormEvent,
+  type RefObject,
 } from "react";
 import Link from "next/link";
 import ArtifactSymbol, { type ArtifactType } from "./artifacts/ArtifactSymbol";
@@ -18,9 +19,11 @@ type RomeoAtlasModeOption = {
   iconSrc: string;
 };
 
-type AtlasAnswer = {
-  question: string;
-  answer: string;
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: Date;
 };
 
 type PortalArtifactProps = {
@@ -217,17 +220,48 @@ function MemorySeparator() {
   );
 }
 
-function RomeoAtlasAnswerContent({ answer }: { answer: AtlasAnswer }) {
+function RomeoAtlasConversation({
+  messages,
+  historyRef,
+}: {
+  messages: ChatMessage[];
+  historyRef: RefObject<HTMLElement | null>;
+}) {
   return (
     <section
-      className="romeo-memory-scroll"
-      style={styles.memoryContent}
-      aria-label="Atlas Answer"
+      ref={historyRef}
+      className="romeo-chat-history"
+      style={styles.chatHistoryWindow}
+      aria-label="Atlas conversation history"
+      aria-live="polite"
     >
-      <p style={styles.windowEyebrow}>ATLAS ANSWER</p>
-      <h2 style={styles.answerQuestion}>{answer.question}</h2>
-      <MemorySeparator />
-      <p style={styles.answerText}>{answer.answer}</p>
+      <div style={styles.chatHistoryHeader}>
+        <p style={styles.windowEyebrow}>ASK ANYTHING</p>
+        <span style={styles.chatHistoryAccent} aria-hidden="true">
+          ✦ conversation
+        </span>
+      </div>
+
+      <div style={styles.chatMessageStack}>
+        {messages.map((message) => {
+          const isUser = message.role === "user";
+
+          return (
+            <article
+              key={message.id}
+              style={{
+                ...styles.chatMessage,
+                ...(isUser ? styles.chatUserMessage : styles.chatAssistantMessage),
+              }}
+            >
+              <p style={styles.chatMessageLabel}>
+                {isUser ? "You asked" : "Atlas answered"}
+              </p>
+              <p style={styles.chatMessageText}>{message.content}</p>
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -574,7 +608,15 @@ export default function RomeoAtlasWindowPage({
 }: RomeoAtlasWindowPageProps) {
   const [activeMode, setActiveMode] = useState<RomeoAtlasMode>("highlights");
   const [askQuestion, setAskQuestion] = useState("");
-  const [atlasAnswer, setAtlasAnswer] = useState<AtlasAnswer | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const chatHistoryRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    chatHistoryRef.current?.scrollTo({
+      top: chatHistoryRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [chatMessages.length]);
 
   const handleAskSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -584,15 +626,29 @@ export default function RomeoAtlasWindowPage({
       return;
     }
 
-    setAtlasAnswer({
-      question: trimmedQuestion,
-      answer: getAtlasAnswer(trimmedQuestion),
-    });
+    const submittedAt = new Date();
+    const answeredAt = new Date(submittedAt.getTime() + 1);
+    const answer = getAtlasAnswer(trimmedQuestion);
+
+    setChatMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        id: `${submittedAt.getTime()}-${currentMessages.length}-user`,
+        role: "user",
+        content: trimmedQuestion,
+        createdAt: submittedAt,
+      },
+      {
+        id: `${answeredAt.getTime()}-${currentMessages.length}-assistant`,
+        role: "assistant",
+        content: answer,
+        createdAt: answeredAt,
+      },
+    ]);
     setAskQuestion("");
   };
 
   const handleModeSelect = (mode: RomeoAtlasMode) => {
-    setAtlasAnswer(null);
     setActiveMode(mode);
   };
 
@@ -600,6 +656,9 @@ export default function RomeoAtlasWindowPage({
     <main style={styles.page} className="atlas-event-shell">
       <style>{`
           .romeo-memory-scroll::-webkit-scrollbar { display: none; }
+          .romeo-chat-history::-webkit-scrollbar { width: 0.34rem; }
+          .romeo-chat-history::-webkit-scrollbar-track { background: rgba(255, 238, 207, 0.045); border-radius: 999px; }
+          .romeo-chat-history::-webkit-scrollbar-thumb { background: rgba(226, 172, 92, 0.32); border-radius: 999px; }
           .romeo-atlas-back-link {
             transition:
               color 180ms ease,
@@ -793,17 +852,17 @@ export default function RomeoAtlasWindowPage({
         <section
           style={{
             ...styles.floatingMemoryLayout,
-            ...(activeMode === "gallery" && !atlasAnswer
+            ...(activeMode === "gallery" && chatMessages.length === 0
               ? styles.galleryFloatingMemoryLayout
               : null),
           }}
           aria-live="polite"
           aria-label="Atlas memory content"
         >
-          {atlasAnswer ? (
-            <RomeoAtlasAnswerContent
-              key={atlasAnswer.question}
-              answer={atlasAnswer}
+          {chatMessages.length > 0 ? (
+            <RomeoAtlasConversation
+              messages={chatMessages}
+              historyRef={chatHistoryRef}
             />
           ) : (
             <RomeoMemoryContent
@@ -1130,6 +1189,94 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "0.9rem",
     lineHeight: 1.58,
     maxWidth: "34rem",
+  },
+  chatHistoryWindow: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 3,
+    display: "grid",
+    alignContent: "start",
+    gap: "clamp(0.76rem, 2.4svh, 1.08rem)",
+    padding: "clamp(1.05rem, 4.8vw, 2.05rem) clamp(0.78rem, 5.2vw, 2.05rem)",
+    boxSizing: "border-box",
+    overflowX: "hidden",
+    overflowY: "auto",
+    overscrollBehavior: "contain",
+    WebkitOverflowScrolling: "touch",
+    scrollbarWidth: "thin",
+    scrollbarColor: "rgba(226,172,92,0.34) rgba(255,238,207,0.05)",
+    border: "1px solid rgba(226,172,92,0.2)",
+    borderRadius: "1.55rem",
+    background:
+      "linear-gradient(180deg, rgba(5,8,15,0.58), rgba(4,6,12,0.36)), radial-gradient(ellipse at 50% 0%, rgba(226,172,92,0.12), transparent 42%)",
+    boxShadow:
+      "0 26px 70px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,238,207,0.08)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+    maskImage:
+      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
+    WebkitMaskImage:
+      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
+    textShadow: "0 2px 18px rgba(0,0,0,0.58)",
+  },
+  chatHistoryHeader: {
+    position: "sticky",
+    top: 0,
+    zIndex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "0.7rem",
+    paddingBottom: "0.15rem",
+    background:
+      "linear-gradient(180deg, rgba(6,9,16,0.88), rgba(6,9,16,0))",
+  },
+  chatHistoryAccent: {
+    color: "rgba(246,202,127,0.46)",
+    fontSize: "0.56rem",
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    whiteSpace: "nowrap",
+  },
+  chatMessageStack: {
+    display: "grid",
+    gap: "0.72rem",
+    paddingBottom: "0.42rem",
+  },
+  chatMessage: {
+    display: "grid",
+    gap: "0.34rem",
+    width: "min(88%, 31rem)",
+    padding: "0.72rem 0.78rem",
+    border: "1px solid rgba(255,238,207,0.1)",
+    borderRadius: "1.05rem",
+    background: "rgba(7,11,18,0.48)",
+    boxShadow: "inset 0 1px 0 rgba(255,238,207,0.05)",
+  },
+  chatUserMessage: {
+    justifySelf: "end",
+    borderColor: "rgba(226,172,92,0.28)",
+    background:
+      "linear-gradient(160deg, rgba(53,38,24,0.58), rgba(8,12,19,0.46))",
+  },
+  chatAssistantMessage: {
+    justifySelf: "start",
+    borderColor: "rgba(255,238,207,0.12)",
+    background:
+      "linear-gradient(160deg, rgba(9,14,22,0.64), rgba(4,7,13,0.48))",
+  },
+  chatMessageLabel: {
+    margin: 0,
+    color: "rgba(246,202,127,0.66)",
+    fontSize: "0.58rem",
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
+  },
+  chatMessageText: {
+    margin: 0,
+    color: "rgba(242,226,197,0.94)",
+    fontSize: "clamp(0.88rem, 3.45vw, 1.02rem)",
+    lineHeight: 1.52,
   },
   answerQuestion: {
     margin: 0,
