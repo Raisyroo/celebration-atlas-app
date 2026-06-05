@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getGoodellsMockConversation, type ConversationCard, type ConversationVisual } from '../data/goodellsConversation';
@@ -140,6 +140,15 @@ function ModeIcon({ mode }: { mode: AtlasMode }) {
   return null;
 }
 
+
+const PREVIEW_QUESTION_BY_MODE: Record<AtlasMode, string> = {
+  highlights: 'Show me the top Goodells highlights right now.',
+  schedule: 'What does a strong evening schedule look like at Goodells?',
+  map: 'Show me a quick map view for Goodells.',
+  gallery: 'Give me a quick gallery-style memory moodboard.',
+  plan: 'Build a simple family plan for Goodells.',
+};
+
 const FAIR_GUIDE_CARDS = {
   default: {
     title: 'Trail Start · Evening Fair Loop',
@@ -192,27 +201,16 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [activeMode, setActiveMode] = useState<AtlasMode>('highlights');
   const [activeGalleryId, setActiveGalleryId] = useState<string>(GALLERY_ITEMS[0].id);
+  const conversationScrollRef = useRef<HTMLDivElement | null>(null);
 
   const canSend = useMemo(() => draft.trim().length > 0, [draft]);
   const isGoodellsEvent = eventId === 'goodells-fair';
 
   const activeLayer = useMemo(() => layers.find((layer) => layer.id === activeLayerId) ?? layers.at(-1) ?? null, [layers, activeLayerId]);
-  const historyLayers = useMemo(() => {
-    if (!activeLayer) return [];
-    return layers.filter((layer) => layer.id !== activeLayer.id);
-  }, [activeLayer, layers]);
-  const previewQuestionByMode: Record<AtlasMode, string> = {
-    highlights: 'Show me the top Goodells highlights right now.',
-    schedule: 'What does a strong evening schedule look like at Goodells?',
-    map: 'Show me a quick map view for Goodells.',
-    gallery: 'Give me a quick gallery-style memory moodboard.',
-    plan: 'Build a simple family plan for Goodells.',
-  };
-
   const previewLayer = useMemo<ConversationLayer | null>(() => {
     if (activeLayer || !isConversationOpen || !isGoodellsEvent) return null;
 
-    const question = previewQuestionByMode[activeMode];
+    const question = PREVIEW_QUESTION_BY_MODE[activeMode];
     const atlasGuide = getMockResponse(eventId, question, mockResponses);
 
     return {
@@ -223,12 +221,20 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
       highlights: atlasGuide.highlights ?? [],
       visual: atlasGuide.visual,
     };
-  }, [activeLayer, activeMode, eventId, isConversationOpen, isGoodellsEvent]);
+  }, [activeLayer, activeMode, eventId, isConversationOpen, isGoodellsEvent, mockResponses]);
 
   const displayedLayer = activeLayer ?? previewLayer;
+  const conversationTurns = layers.length > 0 ? layers : previewLayer ? [previewLayer] : [];
   const isMapMode = activeMode === 'map';
   const showIdleModeRail = !isConversationOpen;
   const activeModeContent = modeContent ?? DEFAULT_MODE_CONTENT;
+
+  useEffect(() => {
+    const scrollRegion = conversationScrollRef.current;
+    if (!scrollRegion || !isConversationOpen) return;
+
+    scrollRegion.scrollTo({ top: scrollRegion.scrollHeight, behavior: 'smooth' });
+  }, [conversationTurns.length, isConversationOpen]);
   const galleryItems = activeModeContent.gallery?.length ? activeModeContent.gallery : GALLERY_ITEMS;
   const activeGalleryItem = useMemo(() => galleryItems.find((item) => item.id === activeGalleryId) ?? galleryItems[0], [activeGalleryId, galleryItems]);
 
@@ -335,106 +341,96 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
                     Minimize
                   </button>
                 </header>
-                {historyLayers.length > 0 ? (
-                  <div style={styles.panelHistoryRail}>
-                    <div style={styles.historyRail} aria-label="Atlas memory history">
-                      {historyLayers.map((layer, index) => {
-                        const compactLabel = layer.question.length > 22 ? `${layer.question.slice(0, 22).trimEnd()}…` : layer.question;
+                <div ref={conversationScrollRef} style={styles.activeScrollRegion}>
+                  {conversationTurns.map((layer) => {
+                    const isCurrentLayer = layer.id === displayedLayer.id;
 
-                        return (
-                          <button
-                            key={layer.id}
-                            type="button"
-                            onClick={() => setActiveLayerId(layer.id)}
-                            style={styles.historyTab}
-                            aria-pressed={false}
-                          >
-                            <span style={styles.historyTabIndex}>#{index + 1}</span>
-                            <span style={styles.historyTabLabel}>{compactLabel}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null}
-
-                <div style={styles.activeScrollRegion}>
-                  <p style={styles.userPromptLabel}>You asked</p>
-                  <p style={styles.userPrompt}>{displayedLayer.question}</p>
-
-                  {activeMode === 'highlights' ? (
-                    <section style={styles.modeSection}>
-                      <p style={styles.atlasCardTitle}>{displayedLayer.title}</p>
-                      <p style={styles.atlasCardText}>{displayedLayer.answer}</p>
-                      <ul style={styles.atlasHighlights}>
-                        {activeModeContent.highlights.map((item) => (<li key={item} style={styles.atlasHighlightItem}>{item}</li>))}
-                      </ul>
-                    </section>
-                  ) : null}
-
-                  {activeMode === 'schedule' ? (
-                    <section style={styles.modeSection}>
-                      <p style={styles.atlasCardTitle}>Evening Schedule Lens</p>
-                      <div style={styles.timelineStack}>
-                        {activeModeContent.schedule.map((entry) => (<div key={entry.time + entry.text} style={styles.timelineBlock}><span style={styles.timelineTime}>{entry.time}</span><p style={styles.timelineText}>{entry.text}</p></div>))}
-                      </div>
-                    </section>
-                  ) : null}
-
-                  {isMapMode ? (
-                    <section style={styles.modeSection}>
-                      <section style={styles.atlasVisualWrap} aria-label={displayedLayer.visual?.label}>
-                        <p style={styles.atlasVisualLabel}>{displayedLayer.visual?.label ?? activeModeContent.map.label}</p>
-                        <div style={styles.atlasMapInsert}>
-                          {(displayedLayer.visual?.src ?? activeModeContent.map.visual?.src) ? (
-                            <Image src={displayedLayer.visual?.src ?? activeModeContent.map.visual?.src ?? ''} alt="Goodells fairgrounds map field-note insert" fill sizes="(max-width: 720px) 100vw, 620px" style={styles.atlasMapImage} priority={false} />
-                          ) : null}
-                          <div style={styles.atlasMapOverlay} aria-hidden />
-                          <div style={styles.atlasMapFrameGlow} aria-hidden />
+                    return (
+                      <section key={layer.id} style={styles.conversationTurn} aria-label={`Conversation turn for ${layer.question}`}>
+                        <div style={styles.questionFieldNote}>
+                          <p style={styles.userPromptLabel}>You asked</p>
+                          <p style={styles.userPrompt}>{layer.question}</p>
                         </div>
-                        <p style={styles.atlasVisualCaption}>{displayedLayer.visual?.caption ?? activeModeContent.map.caption}</p>
-                        {(displayedLayer.visual?.localTip ?? activeModeContent.map.localTip) ? <p style={styles.atlasVisualTip}>{displayedLayer.visual?.localTip ?? activeModeContent.map.localTip}</p> : null}
+
+                        <div style={styles.answerFieldNote}>
+                          <p style={styles.userPromptLabel}>Atlas answered</p>
+                          {activeMode === 'highlights' || !isCurrentLayer ? (
+                            <section style={styles.modeSection}>
+                              <p style={styles.atlasCardTitle}>{layer.title}</p>
+                              <p style={styles.atlasCardText}>{layer.answer}</p>
+                              <ul style={styles.atlasHighlights}>
+                                {layer.highlights.map((item) => (<li key={item} style={styles.atlasHighlightItem}>{item}</li>))}
+                              </ul>
+                            </section>
+                          ) : null}
+
+                          {isCurrentLayer && activeMode === 'schedule' ? (
+                            <section style={styles.modeSection}>
+                              <p style={styles.atlasCardTitle}>Evening Schedule Lens</p>
+                              <div style={styles.timelineStack}>
+                                {activeModeContent.schedule.map((entry) => (<div key={entry.time + entry.text} style={styles.timelineBlock}><span style={styles.timelineTime}>{entry.time}</span><p style={styles.timelineText}>{entry.text}</p></div>))}
+                              </div>
+                            </section>
+                          ) : null}
+
+                          {isCurrentLayer && isMapMode ? (
+                            <section style={styles.modeSection}>
+                              <section style={styles.atlasVisualWrap} aria-label={layer.visual?.label}>
+                                <p style={styles.atlasVisualLabel}>{layer.visual?.label ?? activeModeContent.map.label}</p>
+                                <div style={styles.atlasMapInsert}>
+                                  {(layer.visual?.src ?? activeModeContent.map.visual?.src) ? (
+                                    <Image src={layer.visual?.src ?? activeModeContent.map.visual?.src ?? ''} alt="Goodells fairgrounds map field-note insert" fill sizes="(max-width: 720px) 100vw, 620px" style={styles.atlasMapImage} priority={false} />
+                                  ) : null}
+                                  <div style={styles.atlasMapOverlay} aria-hidden />
+                                  <div style={styles.atlasMapFrameGlow} aria-hidden />
+                                </div>
+                                <p style={styles.atlasVisualCaption}>{layer.visual?.caption ?? activeModeContent.map.caption}</p>
+                                {(layer.visual?.localTip ?? activeModeContent.map.localTip) ? <p style={styles.atlasVisualTip}>{layer.visual?.localTip ?? activeModeContent.map.localTip}</p> : null}
+                              </section>
+                            </section>
+                          ) : null}
+
+                          {isCurrentLayer && activeMode === 'gallery' ? (
+                            <section style={{ ...styles.modeSection, ...styles.galleryModeSection }}>
+                              <article style={styles.galleryFocusCard} aria-label="Gallery feature image">
+                                <div style={{ ...styles.galleryImageTone, ...styles.galleryFocusImageTone, background: activeGalleryItem.tone }} aria-hidden />
+                              </article>
+                              <div style={styles.galleryThumbRail} aria-label="Gallery thumbnails">
+                                {galleryItems.map((item) => {
+                                  const isSelected = item.id === activeGalleryItem.id;
+                                  return (
+                                    <button
+                                      key={item.id}
+                                      type="button"
+                                      onClick={() => setActiveGalleryId(item.id)}
+                                      style={{ ...styles.galleryThumbButton, ...(isSelected ? styles.galleryThumbButtonActive : null) }}
+                                      aria-pressed={isSelected}
+                                      aria-label={item.caption}
+                                    >
+                                      <span style={{ ...styles.galleryThumbTone, background: item.tone }} aria-hidden />
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <p style={styles.galleryCaption}>{activeGalleryItem.caption}</p>
+                            </section>
+                          ) : null}
+
+                          {isCurrentLayer && activeMode === 'plan' ? (
+                            <section style={styles.modeSection}>
+                              <p style={styles.atlasCardTitle}>Family Day Plan</p>
+                              <p style={styles.atlasCardText}>Start early for low-stress parking, build around barn showcases, then flow toward rides and fireworks with short walking loops.</p>
+                              <ul style={styles.atlasHighlights}>
+                                <li style={styles.atlasHighlightItem}>Parking: east lots before 5:30 PM, overflow + shuttle after.</li>
+                                <li style={styles.atlasHighlightItem}>Best visit window: 4:00 PM – 9:30 PM for mixed family pacing.</li>
+                                <li style={styles.atlasHighlightItem}>Route: Heritage Gate → 4-H barns → food lane → midway → fireworks lawn.</li>
+                              </ul>
+                            </section>
+                          ) : null}
+                        </div>
                       </section>
-                    </section>
-                  ) : null}
-
-                  {activeMode === 'gallery' ? (
-                    <section style={{ ...styles.modeSection, ...styles.galleryModeSection }}>
-                      <article style={styles.galleryFocusCard} aria-label="Gallery feature image">
-                        <div style={{ ...styles.galleryImageTone, ...styles.galleryFocusImageTone, background: activeGalleryItem.tone }} aria-hidden />
-                      </article>
-                      <div style={styles.galleryThumbRail} aria-label="Gallery thumbnails">
-                        {galleryItems.map((item) => {
-                          const isSelected = item.id === activeGalleryItem.id;
-                          return (
-                            <button
-                              key={item.id}
-                              type="button"
-                              onClick={() => setActiveGalleryId(item.id)}
-                              style={{ ...styles.galleryThumbButton, ...(isSelected ? styles.galleryThumbButtonActive : null) }}
-                              aria-pressed={isSelected}
-                              aria-label={item.caption}
-                            >
-                              <span style={{ ...styles.galleryThumbTone, background: item.tone }} aria-hidden />
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p style={styles.galleryCaption}>{activeGalleryItem.caption}</p>
-                    </section>
-                  ) : null}
-
-                  {activeMode === 'plan' ? (
-                    <section style={styles.modeSection}>
-                      <p style={styles.atlasCardTitle}>Family Day Plan</p>
-                      <p style={styles.atlasCardText}>Start early for low-stress parking, build around barn showcases, then flow toward rides and fireworks with short walking loops.</p>
-                      <ul style={styles.atlasHighlights}>
-                        <li style={styles.atlasHighlightItem}>Parking: east lots before 5:30 PM, overflow + shuttle after.</li>
-                        <li style={styles.atlasHighlightItem}>Best visit window: 4:00 PM – 9:30 PM for mixed family pacing.</li>
-                        <li style={styles.atlasHighlightItem}>Route: Heritage Gate → 4-H barns → food lane → midway → fireworks lawn.</li>
-                      </ul>
-                    </section>
-                  ) : null}
+                    );
+                  })}
                 </div>
               </article>
               </div>
@@ -488,24 +484,21 @@ const styles: Record<string, CSSProperties> = {
   askButton: { width: '2rem', height: '2rem', minWidth: '2rem', border: '1px solid rgba(233,191,120,0.34)', borderRadius: '999px', background: 'radial-gradient(circle at 35% 28%, rgba(165,121,72,0.45), rgba(67,46,27,0.58) 70%)', color: 'rgba(250,236,210,0.92)', padding: 0, fontSize: '0.83rem', letterSpacing: '0.01em', lineHeight: 1, whiteSpace: 'nowrap', display: 'grid', placeItems: 'center', boxShadow: '0 0 18px rgba(186,132,69,0.24), inset 0 1px 0 rgba(255,233,193,0.24)' },
   conversationLayers: { position: 'fixed', left: '4%', right: '4%', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.62rem)', zIndex: 6, height: 'min(68dvh, 37rem)', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.34rem', transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease' },
   goodellsConversationLayers: { left: 'calc(env(safe-area-inset-left, 0px) + 0.78rem)', right: 'calc(env(safe-area-inset-right, 0px) + 0.78rem)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.18rem)', height: 'min(70dvh, 38rem)' },
-  historyRail: { display: 'flex', gap: '0.38rem', overflowX: 'auto', overscrollBehaviorX: 'contain', paddingBottom: '0.15rem', scrollbarWidth: 'thin' },
-  historyTab: { all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.28rem', flexShrink: 0, maxWidth: '10.4rem', padding: '0.24rem 0.42rem', borderRadius: '0.58rem', border: '1px solid rgba(222,182,118,0.08)', background: 'rgba(13,19,29,0.34)', color: 'rgba(226,216,198,0.72)' },
-  historyTabActive: { border: '1px solid rgba(232,191,124,0.22)', background: 'rgba(25,33,46,0.5)', color: 'rgba(244,231,209,0.88)' },
-  historyTabIndex: { color: 'rgba(246,211,154,0.66)', fontSize: '0.55rem', letterSpacing: '0.06em' },
-  historyTabLabel: { color: 'inherit', fontSize: '0.64rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  activeCard: { width: '100%', borderRadius: '1.18rem', border: '1px solid rgba(229,187,120,0.3)', background: 'linear-gradient(180deg, rgba(12,18,29,0.93), rgba(10,14,22,0.84))', boxShadow: '0 28px 52px rgba(1,2,6,0.62), 0 0 0 1px rgba(46,35,23,0.28), inset 0 1px 0 rgba(253,227,185,0.2), inset 0 -14px 30px rgba(5,8,14,0.3)', display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden', backdropFilter: 'blur(9px)', WebkitBackdropFilter: 'blur(9px)' },
+  activeCard: { width: '100%', maxWidth: '100%', borderRadius: '1.18rem', border: '1px solid rgba(229,187,120,0.3)', background: 'radial-gradient(circle at 18% 0%, rgba(226,178,103,0.12), transparent 34%), linear-gradient(180deg, rgba(12,18,29,0.66), rgba(10,14,22,0.54))', boxShadow: '0 28px 52px rgba(1,2,6,0.54), 0 0 34px rgba(218,161,83,0.08), inset 0 1px 0 rgba(253,227,185,0.18)', display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden', backdropFilter: 'blur(9px)', WebkitBackdropFilter: 'blur(9px)' },
   panelHeader: { padding: '0.8rem 0.95rem 0.68rem', borderBottom: '1px solid rgba(220,178,111,0.22)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg, rgba(18,25,36,0.46), rgba(15,21,31,0.08))' },
-  panelHistoryRail: { padding: '0.42rem 0.78rem 0.45rem', borderBottom: '1px solid rgba(220,178,111,0.18)', background: 'linear-gradient(180deg, rgba(16,24,35,0.3), rgba(12,18,28,0.08))' },
   panelTitle: { margin: 0, color: 'rgba(242,210,157,0.95)', fontSize: '0.6rem', letterSpacing: '0.16em', textTransform: 'uppercase' },
   minimizeButton: { border: '1px solid rgba(220,179,114,0.34)', background: 'rgba(13,20,31,0.6)', color: 'rgba(236,215,183,0.9)', borderRadius: '999px', fontSize: '0.58rem', letterSpacing: '0.09em', padding: '0.33rem 0.62rem', textTransform: 'uppercase' },
   memoryLayerWrap: { display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.45rem', minHeight: 0 },
-  activeScrollRegion: { overflowY: 'auto', overscrollBehavior: 'contain', padding: '0.84rem 0.92rem 1rem', display: 'grid', alignContent: 'start', gap: '0.56rem' },
-  userPromptLabel: { margin: 0, color: 'rgba(203,182,147,0.78)', fontSize: '0.55rem', letterSpacing: '0.12em', textTransform: 'uppercase' },
-  userPrompt: { margin: 0, color: 'rgba(236,228,212,0.94)', fontSize: '0.83rem', lineHeight: 1.4, fontStyle: 'italic' },
-  atlasCardTitle: { margin: '0.28rem 0 0', color: 'rgba(246,211,154,0.94)', fontSize: '0.64rem', letterSpacing: '0.14em', textTransform: 'uppercase' },
-  atlasCardText: { margin: 0, color: 'rgba(243,234,220,0.96)', fontSize: '0.87rem', lineHeight: 1.5 },
-  atlasHighlights: { margin: '0.25rem 0 0', paddingLeft: '1.05rem', display: 'grid', gap: '0.3rem' },
-  atlasHighlightItem: { color: 'rgba(234,217,191,0.92)', fontSize: '0.77rem', lineHeight: 1.34 },
+  activeScrollRegion: { width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowY: 'auto', overscrollBehavior: 'contain', padding: '1.05rem 1rem 1.2rem', display: 'grid', alignContent: 'start', gap: '1.35rem' },
+  conversationTurn: { width: '100%', maxWidth: '100%', display: 'grid', gap: '0.86rem', padding: '0 0 1.18rem', borderBottom: '1px solid rgba(226,185,118,0.1)' },
+  questionFieldNote: { width: '100%', maxWidth: '100%', display: 'grid', gap: '0.26rem' },
+  answerFieldNote: { width: '100%', maxWidth: '100%', display: 'grid', gap: '0.42rem' },
+  userPromptLabel: { margin: 0, color: 'rgba(214,183,128,0.76)', fontSize: '0.56rem', letterSpacing: '0.16em', textTransform: 'uppercase' },
+  userPrompt: { margin: 0, color: 'rgba(240,232,216,0.96)', fontSize: 'clamp(0.98rem, 2.7vw, 1.18rem)', lineHeight: 1.48, fontStyle: 'italic' },
+  atlasCardTitle: { margin: 0, color: 'rgba(246,211,154,0.95)', fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase' },
+  atlasCardText: { margin: 0, color: 'rgba(246,237,221,0.97)', fontSize: 'clamp(1rem, 2.55vw, 1.16rem)', lineHeight: 1.56 },
+  atlasHighlights: { margin: '0.2rem 0 0', paddingLeft: '1.05rem', display: 'grid', gap: '0.34rem' },
+  atlasHighlightItem: { color: 'rgba(236,220,194,0.9)', fontSize: '0.86rem', lineHeight: 1.42 },
 
   openModeRailWrap: { padding: '0.02rem 0.03rem 0.06rem', pointerEvents: 'auto' },
   modeRail: { display: 'flex', gap: '0.34rem', overflowX: 'auto', overscrollBehaviorX: 'contain', padding: '0.04rem 0.01rem 0.1rem', scrollbarWidth: 'thin', justifyContent: 'center' },
