@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Witness artifact symbol">
+  <path d="M6 32s10-15 26-15 26 15 26 15-10 15-26 15S6 32 6 32z"/>
+  <circle cx="32" cy="32" r="8"/>
+  <circle cx="32" cy="32" r="2.5"/>
+  <path d="M32 8v6M32 50v6M14 14l4 4M46 46l4 4M50 14l-4 4M18 46l-4 4" opacity="0.45"/>
+  <path d="M32 22l2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6z" opacity="0.5"/>
+</svg>
