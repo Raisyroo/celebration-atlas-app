@@ -252,7 +252,7 @@ function RomeoAtlasConversation({
   return (
     <section
       ref={historyRef}
-      className="romeo-memory-scroll"
+      className="romeo-memory-scroll romeo-mode-content-reveal"
       style={{ ...styles.memoryContent, ...styles.askAnythingMemoryContent }}
       aria-label="Atlas conversation history"
       aria-live="polite"
@@ -479,7 +479,7 @@ function RomeoMemoryContent({
   if (activeMode === "schedule") {
     return (
       <section
-        className="romeo-memory-scroll"
+        className="romeo-memory-scroll romeo-mode-content-reveal"
         style={styles.memoryContent}
         aria-label="Schedule lens"
       >
@@ -501,7 +501,7 @@ function RomeoMemoryContent({
   if (activeMode === "maps") {
     return (
       <section
-        className="romeo-memory-scroll"
+        className="romeo-memory-scroll romeo-mode-content-reveal"
         style={styles.memoryContent}
         aria-label="Maps lens"
       >
@@ -533,7 +533,7 @@ function RomeoMemoryContent({
   if (activeMode === "gallery") {
     return (
       <section
-        className="romeo-memory-scroll"
+        className="romeo-memory-scroll romeo-mode-content-reveal"
         style={{ ...styles.memoryContent, ...styles.galleryMemoryContent }}
         aria-label="Gallery lens"
       >
@@ -560,7 +560,7 @@ function RomeoMemoryContent({
   if (activeMode === "plan") {
     return (
       <section
-        className="romeo-memory-scroll"
+        className="romeo-memory-scroll romeo-mode-content-reveal"
         style={styles.memoryContent}
         aria-label="Plan lens"
       >
@@ -623,7 +623,7 @@ function RomeoMemoryContent({
       ) : null}
       {introStatus === "complete" ? (
         <div
-          className="romeo-highlights-content"
+          className="romeo-mode-content-reveal romeo-highlights-content"
           style={styles.highlightsContentReveal}
         >
           <div style={styles.highlightsHeroHeader}>
@@ -781,8 +781,10 @@ export default function RomeoAtlasWindowPage({
           .romeo-cinematic-intro-video {
             animation: romeo-cinematic-ken-burns 24s ease-in-out infinite alternate;
           }
+          .romeo-mode-content-reveal,
           .romeo-highlights-content {
             animation: romeo-highlights-fade-in 1050ms ease-out forwards;
+            will-change: opacity, transform;
           }
           .romeo-portal-question {
             transition: opacity 760ms ease, transform 760ms ease, filter 760ms ease;
@@ -856,6 +858,7 @@ export default function RomeoAtlasWindowPage({
             .romeo-cinematic-video-memory,
             .romeo-cinematic-video-memory[data-intro-state="dissolving"],
             .romeo-cinematic-intro-video,
+            .romeo-mode-content-reveal,
             .romeo-highlights-content,
             .romeo-portal-video {
               animation-duration: 1ms;
