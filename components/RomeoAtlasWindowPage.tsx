@@ -868,7 +868,6 @@ export default function RomeoAtlasWindowPage({
             />
           ) : (
             <RomeoMemoryContent
-              key={`${activeMode}-${introVideoSrc}`}
               activeMode={activeMode}
               eventName={eventName}
               introVideoSrc={introVideoSrc}
