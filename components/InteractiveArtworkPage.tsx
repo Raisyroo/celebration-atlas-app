@@ -334,105 +334,108 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
 
             {displayedLayer ? (
               <div style={styles.memoryLayerWrap}>
-              <article style={styles.activeCard}>
-                <header style={styles.panelHeader}>
-                  <p style={styles.panelTitle}>Atlas Memory Layer</p>
-                  <button type="button" style={styles.minimizeButton} onClick={() => setIsConversationOpen(false)}>
-                    Minimize
-                  </button>
-                </header>
-                <div ref={conversationScrollRef} style={styles.activeScrollRegion}>
-                  {conversationTurns.map((layer) => {
-                    const isCurrentLayer = layer.id === displayedLayer.id;
+                <article style={styles.activeCard}>
+                  <header style={styles.panelHeader}>
+                    <div style={styles.panelMetadata}>
+                      <p style={styles.panelKicker}>Ask Anything</p>
+                      <p style={styles.panelTitle}>Conversation</p>
+                    </div>
+                    <button type="button" style={styles.minimizeButton} onClick={() => setIsConversationOpen(false)}>
+                      Minimize
+                    </button>
+                  </header>
+                  <div ref={conversationScrollRef} style={styles.activeScrollRegion}>
+                    {conversationTurns.map((layer) => {
+                      const isCurrentLayer = layer.id === displayedLayer.id;
 
-                    return (
-                      <section key={layer.id} style={styles.conversationTurn} aria-label={`Conversation turn for ${layer.question}`}>
-                        <div style={styles.questionFieldNote}>
-                          <p style={styles.userPromptLabel}>You asked</p>
-                          <p style={styles.userPrompt}>{layer.question}</p>
-                        </div>
+                      return (
+                        <section key={layer.id} style={styles.conversationTurn} aria-label={`Conversation turn for ${layer.question}`}>
+                          <div style={styles.questionFieldNote}>
+                            <p style={styles.userPromptLabel}>You asked</p>
+                            <p style={styles.userPrompt}>{layer.question}</p>
+                          </div>
 
-                        <div style={styles.answerFieldNote}>
-                          <p style={styles.userPromptLabel}>Atlas answered</p>
-                          {activeMode === 'highlights' || !isCurrentLayer ? (
-                            <section style={styles.modeSection}>
-                              <p style={styles.atlasCardTitle}>{layer.title}</p>
-                              <p style={styles.atlasCardText}>{layer.answer}</p>
-                              <ul style={styles.atlasHighlights}>
-                                {layer.highlights.map((item) => (<li key={item} style={styles.atlasHighlightItem}>{item}</li>))}
-                              </ul>
-                            </section>
-                          ) : null}
-
-                          {isCurrentLayer && activeMode === 'schedule' ? (
-                            <section style={styles.modeSection}>
-                              <p style={styles.atlasCardTitle}>Evening Schedule Lens</p>
-                              <div style={styles.timelineStack}>
-                                {activeModeContent.schedule.map((entry) => (<div key={entry.time + entry.text} style={styles.timelineBlock}><span style={styles.timelineTime}>{entry.time}</span><p style={styles.timelineText}>{entry.text}</p></div>))}
-                              </div>
-                            </section>
-                          ) : null}
-
-                          {isCurrentLayer && isMapMode ? (
-                            <section style={styles.modeSection}>
-                              <section style={styles.atlasVisualWrap} aria-label={layer.visual?.label}>
-                                <p style={styles.atlasVisualLabel}>{layer.visual?.label ?? activeModeContent.map.label}</p>
-                                <div style={styles.atlasMapInsert}>
-                                  {(layer.visual?.src ?? activeModeContent.map.visual?.src) ? (
-                                    <Image src={layer.visual?.src ?? activeModeContent.map.visual?.src ?? ''} alt="Goodells fairgrounds map field-note insert" fill sizes="(max-width: 720px) 100vw, 620px" style={styles.atlasMapImage} priority={false} />
-                                  ) : null}
-                                  <div style={styles.atlasMapOverlay} aria-hidden />
-                                  <div style={styles.atlasMapFrameGlow} aria-hidden />
-                                </div>
-                                <p style={styles.atlasVisualCaption}>{layer.visual?.caption ?? activeModeContent.map.caption}</p>
-                                {(layer.visual?.localTip ?? activeModeContent.map.localTip) ? <p style={styles.atlasVisualTip}>{layer.visual?.localTip ?? activeModeContent.map.localTip}</p> : null}
+                          <div style={styles.answerFieldNote}>
+                            <p style={styles.userPromptLabel}>Atlas answered</p>
+                            {activeMode === 'highlights' || !isCurrentLayer ? (
+                              <section style={styles.modeSection}>
+                                <p style={styles.atlasCardTitle}>{layer.title}</p>
+                                <p style={styles.atlasCardText}>{layer.answer}</p>
+                                <ul style={styles.atlasHighlights}>
+                                  {layer.highlights.map((item) => (<li key={item} style={styles.atlasHighlightItem}>{item}</li>))}
+                                </ul>
                               </section>
-                            </section>
-                          ) : null}
+                            ) : null}
 
-                          {isCurrentLayer && activeMode === 'gallery' ? (
-                            <section style={{ ...styles.modeSection, ...styles.galleryModeSection }}>
-                              <article style={styles.galleryFocusCard} aria-label="Gallery feature image">
-                                <div style={{ ...styles.galleryImageTone, ...styles.galleryFocusImageTone, background: activeGalleryItem.tone }} aria-hidden />
-                              </article>
-                              <div style={styles.galleryThumbRail} aria-label="Gallery thumbnails">
-                                {galleryItems.map((item) => {
-                                  const isSelected = item.id === activeGalleryItem.id;
-                                  return (
-                                    <button
-                                      key={item.id}
-                                      type="button"
-                                      onClick={() => setActiveGalleryId(item.id)}
-                                      style={{ ...styles.galleryThumbButton, ...(isSelected ? styles.galleryThumbButtonActive : null) }}
-                                      aria-pressed={isSelected}
-                                      aria-label={item.caption}
-                                    >
-                                      <span style={{ ...styles.galleryThumbTone, background: item.tone }} aria-hidden />
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                              <p style={styles.galleryCaption}>{activeGalleryItem.caption}</p>
-                            </section>
-                          ) : null}
+                            {isCurrentLayer && activeMode === 'schedule' ? (
+                              <section style={styles.modeSection}>
+                                <p style={styles.atlasCardTitle}>Evening Schedule Lens</p>
+                                <div style={styles.timelineStack}>
+                                  {activeModeContent.schedule.map((entry) => (<div key={entry.time + entry.text} style={styles.timelineBlock}><span style={styles.timelineTime}>{entry.time}</span><p style={styles.timelineText}>{entry.text}</p></div>))}
+                                </div>
+                              </section>
+                            ) : null}
 
-                          {isCurrentLayer && activeMode === 'plan' ? (
-                            <section style={styles.modeSection}>
-                              <p style={styles.atlasCardTitle}>Family Day Plan</p>
-                              <p style={styles.atlasCardText}>Start early for low-stress parking, build around barn showcases, then flow toward rides and fireworks with short walking loops.</p>
-                              <ul style={styles.atlasHighlights}>
-                                <li style={styles.atlasHighlightItem}>Parking: east lots before 5:30 PM, overflow + shuttle after.</li>
-                                <li style={styles.atlasHighlightItem}>Best visit window: 4:00 PM – 9:30 PM for mixed family pacing.</li>
-                                <li style={styles.atlasHighlightItem}>Route: Heritage Gate → 4-H barns → food lane → midway → fireworks lawn.</li>
-                              </ul>
-                            </section>
-                          ) : null}
-                        </div>
-                      </section>
-                    );
-                  })}
-                </div>
-              </article>
+                            {isCurrentLayer && isMapMode ? (
+                              <section style={styles.modeSection}>
+                                <section style={styles.atlasVisualWrap} aria-label={layer.visual?.label}>
+                                  <p style={styles.atlasVisualLabel}>{layer.visual?.label ?? activeModeContent.map.label}</p>
+                                  <div style={styles.atlasMapInsert}>
+                                    {(layer.visual?.src ?? activeModeContent.map.visual?.src) ? (
+                                      <Image src={layer.visual?.src ?? activeModeContent.map.visual?.src ?? ''} alt="Goodells fairgrounds map field-note insert" fill sizes="(max-width: 720px) 100vw, 620px" style={styles.atlasMapImage} priority={false} />
+                                    ) : null}
+                                    <div style={styles.atlasMapOverlay} aria-hidden />
+                                    <div style={styles.atlasMapFrameGlow} aria-hidden />
+                                  </div>
+                                  <p style={styles.atlasVisualCaption}>{layer.visual?.caption ?? activeModeContent.map.caption}</p>
+                                  {(layer.visual?.localTip ?? activeModeContent.map.localTip) ? <p style={styles.atlasVisualTip}>{layer.visual?.localTip ?? activeModeContent.map.localTip}</p> : null}
+                                </section>
+                              </section>
+                            ) : null}
+
+                            {isCurrentLayer && activeMode === 'gallery' ? (
+                              <section style={{ ...styles.modeSection, ...styles.galleryModeSection }}>
+                                <article style={styles.galleryFocusCard} aria-label="Gallery feature image">
+                                  <div style={{ ...styles.galleryImageTone, ...styles.galleryFocusImageTone, background: activeGalleryItem.tone }} aria-hidden />
+                                </article>
+                                <div style={styles.galleryThumbRail} aria-label="Gallery thumbnails">
+                                  {galleryItems.map((item) => {
+                                    const isSelected = item.id === activeGalleryItem.id;
+                                    return (
+                                      <button
+                                        key={item.id}
+                                        type="button"
+                                        onClick={() => setActiveGalleryId(item.id)}
+                                        style={{ ...styles.galleryThumbButton, ...(isSelected ? styles.galleryThumbButtonActive : null) }}
+                                        aria-pressed={isSelected}
+                                        aria-label={item.caption}
+                                      >
+                                        <span style={{ ...styles.galleryThumbTone, background: item.tone }} aria-hidden />
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <p style={styles.galleryCaption}>{activeGalleryItem.caption}</p>
+                              </section>
+                            ) : null}
+
+                            {isCurrentLayer && activeMode === 'plan' ? (
+                              <section style={styles.modeSection}>
+                                <p style={styles.atlasCardTitle}>Family Day Plan</p>
+                                <p style={styles.atlasCardText}>Start early for low-stress parking, build around barn showcases, then flow toward rides and fireworks with short walking loops.</p>
+                                <ul style={styles.atlasHighlights}>
+                                  <li style={styles.atlasHighlightItem}>Parking: east lots before 5:30 PM, overflow + shuttle after.</li>
+                                  <li style={styles.atlasHighlightItem}>Best visit window: 4:00 PM – 9:30 PM for mixed family pacing.</li>
+                                  <li style={styles.atlasHighlightItem}>Route: Heritage Gate → 4-H barns → food lane → midway → fireworks lawn.</li>
+                                </ul>
+                              </section>
+                            ) : null}
+                          </div>
+                        </section>
+                      );
+                    })}
+                  </div>
+                </article>
               </div>
             ) : null}
           </div>
@@ -484,13 +487,15 @@ const styles: Record<string, CSSProperties> = {
   askButton: { width: '2rem', height: '2rem', minWidth: '2rem', border: '1px solid rgba(233,191,120,0.34)', borderRadius: '999px', background: 'radial-gradient(circle at 35% 28%, rgba(165,121,72,0.45), rgba(67,46,27,0.58) 70%)', color: 'rgba(250,236,210,0.92)', padding: 0, fontSize: '0.83rem', letterSpacing: '0.01em', lineHeight: 1, whiteSpace: 'nowrap', display: 'grid', placeItems: 'center', boxShadow: '0 0 18px rgba(186,132,69,0.24), inset 0 1px 0 rgba(255,233,193,0.24)' },
   conversationLayers: { position: 'fixed', left: '4%', right: '4%', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.62rem)', zIndex: 6, height: 'min(68dvh, 37rem)', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.34rem', transition: 'transform 560ms cubic-bezier(0.18, 0.76, 0.24, 1), opacity 420ms ease' },
   goodellsConversationLayers: { left: 'calc(env(safe-area-inset-left, 0px) + 0.78rem)', right: 'calc(env(safe-area-inset-right, 0px) + 0.78rem)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.18rem)', height: 'min(70dvh, 38rem)' },
-  activeCard: { width: '100%', maxWidth: '100%', borderRadius: '1.18rem', border: '1px solid rgba(229,187,120,0.3)', background: 'radial-gradient(circle at 18% 0%, rgba(226,178,103,0.12), transparent 34%), linear-gradient(180deg, rgba(12,18,29,0.66), rgba(10,14,22,0.54))', boxShadow: '0 28px 52px rgba(1,2,6,0.54), 0 0 34px rgba(218,161,83,0.08), inset 0 1px 0 rgba(253,227,185,0.18)', display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden', backdropFilter: 'blur(9px)', WebkitBackdropFilter: 'blur(9px)' },
-  panelHeader: { padding: '0.8rem 0.95rem 0.68rem', borderBottom: '1px solid rgba(220,178,111,0.22)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg, rgba(18,25,36,0.46), rgba(15,21,31,0.08))' },
-  panelTitle: { margin: 0, color: 'rgba(242,210,157,0.95)', fontSize: '0.6rem', letterSpacing: '0.16em', textTransform: 'uppercase' },
-  minimizeButton: { border: '1px solid rgba(220,179,114,0.34)', background: 'rgba(13,20,31,0.6)', color: 'rgba(236,215,183,0.9)', borderRadius: '999px', fontSize: '0.58rem', letterSpacing: '0.09em', padding: '0.33rem 0.62rem', textTransform: 'uppercase' },
-  memoryLayerWrap: { display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.45rem', minHeight: 0 },
-  activeScrollRegion: { width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowY: 'auto', overscrollBehavior: 'contain', padding: '1.05rem 1rem 1.2rem', display: 'grid', alignContent: 'start', gap: '1.35rem' },
-  conversationTurn: { width: '100%', maxWidth: '100%', display: 'grid', gap: '0.86rem', padding: '0 0 1.18rem', borderBottom: '1px solid rgba(226,185,118,0.1)' },
+  activeCard: { width: '100%', maxWidth: '100%', minHeight: 0, display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', overflow: 'visible', border: 'none', background: 'transparent', boxShadow: 'none' },
+  panelHeader: { padding: '0 0.15rem 0.2rem', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'transparent' },
+  panelMetadata: { display: 'grid', gap: '0.12rem' },
+  panelKicker: { margin: 0, color: 'rgba(218,190,142,0.58)', fontSize: '0.52rem', letterSpacing: '0.18em', textTransform: 'uppercase' },
+  panelTitle: { margin: 0, color: 'rgba(242,210,157,0.78)', fontSize: '0.58rem', letterSpacing: '0.18em', textTransform: 'uppercase' },
+  minimizeButton: { border: 'none', background: 'transparent', color: 'rgba(236,215,183,0.68)', borderRadius: 0, fontSize: '0.56rem', letterSpacing: '0.12em', padding: '0.08rem 0', textTransform: 'uppercase' },
+  memoryLayerWrap: { display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: '0.45rem', minHeight: 0, width: '100%', maxWidth: '100%' },
+  activeScrollRegion: { width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowY: 'auto', overscrollBehavior: 'contain', padding: '0.85rem 0.15rem 1.2rem', display: 'grid', alignContent: 'start', gap: '1.35rem' },
+  conversationTurn: { width: '100%', maxWidth: '100%', display: 'grid', gap: '0.86rem', padding: '0 0 1.18rem' },
   questionFieldNote: { width: '100%', maxWidth: '100%', display: 'grid', gap: '0.26rem' },
   answerFieldNote: { width: '100%', maxWidth: '100%', display: 'grid', gap: '0.42rem' },
   userPromptLabel: { margin: 0, color: 'rgba(214,183,128,0.76)', fontSize: '0.56rem', letterSpacing: '0.16em', textTransform: 'uppercase' },
