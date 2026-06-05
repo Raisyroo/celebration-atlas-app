@@ -305,6 +305,7 @@ function PortalArtifact({
   const [hasVideoEnded, setHasVideoEnded] = useState(false);
   const [showFact, setShowFact] = useState(false);
   const [videoLoadFailed, setVideoLoadFailed] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const isMemoryPortal = artifactType === "memory";
   const portalLabel = isMemoryPortal
     ? "MEMORY PORTAL"
@@ -331,10 +332,22 @@ function PortalArtifact({
 
   const portalArtifactStyle: CSSProperties = {
     ...styles.portalArtifact,
+    ...(isRevealed && revealVideo ? styles.revealedPortalArtifact : null),
   };
 
   const portalFrameStyle: CSSProperties = {
     ...styles.portalFrame,
+    ...(isRevealed && revealVideo ? styles.revealedPortalFrame : null),
+  };
+
+  const portalHaloStyle: CSSProperties = {
+    ...styles.portalHalo,
+    ...(isRevealed && revealVideo ? styles.revealedPortalHalo : null),
+  };
+
+  const portalVideoStyle: CSSProperties = {
+    ...styles.portalVideo,
+    opacity: isVideoReady ? 1 : 0,
   };
 
   const portalQuestionLayerStyle: CSSProperties = {
@@ -352,6 +365,11 @@ function PortalArtifact({
     setHasVideoEnded(false);
     setShowFact(false);
     setVideoLoadFailed(false);
+    setIsVideoReady(false);
+
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      setIsVideoReady(true);
+    }
 
     const playPromise = video.play();
 
@@ -373,10 +391,16 @@ function PortalArtifact({
     setHasVideoEnded(false);
     setShowFact(false);
     setVideoLoadFailed(false);
+    setIsVideoReady(false);
 
     if (!revealVideo) {
       window.setTimeout(() => setShowFact(true), 420);
     }
+  };
+
+  const handleVideoReady = () => {
+    setIsVideoReady(true);
+    setVideoLoadFailed(false);
   };
 
   const handleVideoEnded = () => {
@@ -386,6 +410,7 @@ function PortalArtifact({
 
   const handleVideoError = () => {
     setVideoLoadFailed(true);
+    setIsVideoReady(false);
   };
 
   const handlePortalReplay = () => {
@@ -405,7 +430,7 @@ function PortalArtifact({
           aria-hidden="true"
         />
       ) : null}
-      <div style={styles.portalHalo} aria-hidden="true" />
+      <div style={portalHaloStyle} aria-hidden="true" />
       <div style={portalFrameStyle}>
         <div
           style={portalApertureStyle}
@@ -466,13 +491,15 @@ function PortalArtifact({
               <video
                 ref={videoRef}
                 className="romeo-portal-video"
-                style={styles.portalVideo}
+                style={portalVideoStyle}
                 src={revealVideo}
                 autoPlay
                 muted
                 playsInline
                 controls={false}
-                preload="metadata"
+                preload="auto"
+                onLoadedData={handleVideoReady}
+                onCanPlay={handleVideoReady}
                 onEnded={handleVideoEnded}
                 onError={handleVideoError}
                 aria-label={ariaLabel}
@@ -969,7 +996,7 @@ export default function RomeoAtlasWindowPage({
             transform: translateY(-1px);
           }
           .romeo-portal-video {
-            animation: romeo-portal-video-reveal 980ms ease-out forwards;
+            transition: opacity 220ms ease-out;
           }
           .romeo-portal-replay {
             animation: romeo-portal-replay-appear 720ms ease-out forwards;
@@ -989,18 +1016,6 @@ export default function RomeoAtlasWindowPage({
           .romeo-portal-fact.is-visible {
             opacity: 1 !important;
             transform: translate3d(0, 0, 0) !important;
-          }
-          @keyframes romeo-portal-video-reveal {
-            from {
-              opacity: 0;
-              transform: scale(1.018);
-              filter: blur(10px) brightness(0.74) saturate(0.82);
-            }
-            to {
-              opacity: 1;
-              transform: scale(1);
-              filter: brightness(0.88) saturate(0.92) contrast(1.04);
-            }
           }
           @keyframes romeo-portal-replay-appear {
             from {
@@ -1033,7 +1048,6 @@ export default function RomeoAtlasWindowPage({
             .romeo-cinematic-intro-video,
             .romeo-mode-content-reveal,
             .romeo-highlights-content,
-            .romeo-portal-video,
             .romeo-portal-replay {
               animation-duration: 1ms;
             }
@@ -1711,6 +1725,9 @@ const styles: Record<string, CSSProperties> = {
     backdropFilter: "blur(16px)",
     isolation: "isolate",
   },
+  revealedPortalArtifact: {
+    backdropFilter: "none",
+  },
   portalMemoryBackdrop: {
     position: "absolute",
     inset: "-10%",
@@ -1722,6 +1739,9 @@ const styles: Record<string, CSSProperties> = {
     transform: "scale(1.08)",
     pointerEvents: "none",
   },
+  revealedPortalFrame: {
+    boxShadow: "inset 0 1px 0 rgba(255,238,207,0.13)",
+  },
   portalHalo: {
     position: "absolute",
     inset: "8% 9% 17%",
@@ -1731,6 +1751,10 @@ const styles: Record<string, CSSProperties> = {
       "radial-gradient(ellipse at center, rgba(246,202,127,0.2), rgba(226,150,72,0.08) 38%, transparent 71%)",
     filter: "blur(8px)",
     pointerEvents: "none",
+  },
+  revealedPortalHalo: {
+    opacity: 0,
+    filter: "none",
   },
   portalFrame: {
     position: "relative",
@@ -1835,7 +1859,6 @@ const styles: Record<string, CSSProperties> = {
     height: "100%",
     objectFit: "cover",
     objectPosition: "center",
-    filter: "brightness(0.88) saturate(0.92) contrast(1.04)",
   },
   portalVideoFallback: {
     position: "absolute",
@@ -1881,7 +1904,6 @@ const styles: Record<string, CSSProperties> = {
     overflow: "hidden",
     background:
       "radial-gradient(circle at 50% 24%, rgba(246,202,127,0.18), transparent 34%), linear-gradient(180deg, rgba(21,28,40,0.95), rgba(5,8,15,0.98))",
-    filter: "brightness(0.88) saturate(0.92) contrast(1.04)",
   },
   portalPortraitGlow: {
     position: "absolute",
