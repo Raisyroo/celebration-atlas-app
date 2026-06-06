@@ -68,6 +68,7 @@ type RomeoAtlasWindowPageProps = {
 };
 
 const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal-bg.png";
+const ORIGIN_ARTIFACT_BACKGROUND_SRC = "/portal-backgrounds/origin-artifact.png";
 const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
   firstPeachQueen1931:
     "/artifact-reveals/romeo-peach/first-peach-queen-1931.mp4",
@@ -86,12 +87,11 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
   {
     id: "peach-queen-origins",
     ariaLabel: "Romeo Peach Queen origins portal artifact",
-    artifactType: "memory",
+    artifactType: "origin",
     question: "Want to see the first Peach Queen from 1931?",
-    revealAriaLabel: "Reveal the Romeo Peach Queen origins memory",
-    portalBackground: MEMORY_PORTAL_BACKGROUND_SRC,
+    revealAriaLabel: "Reveal the Romeo Peach Queen origins artifact",
+    portalBackground: ORIGIN_ARTIFACT_BACKGROUND_SRC,
     revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
-    usesMemoryMedia: true,
   },
   {
     id: "romeo-name-origin",
@@ -375,22 +375,25 @@ function PortalArtifact({
   const portalLabel = isMemoryPortal
     ? "MEMORY PORTAL"
     : `${artifactType.toUpperCase()} ARTIFACT`;
+  const closedPortalBackground =
+    portalBackground ?? (isMemoryPortal ? MEMORY_PORTAL_BACKGROUND_SRC : null);
+  const shouldShowPortalBackground =
+    Boolean(closedPortalBackground) && (!isRevealed || !revealVideo);
+  const portalBackgroundStyle: CSSProperties | null =
+    shouldShowPortalBackground && closedPortalBackground
+      ? {
+          backgroundImage: `url(${closedPortalBackground})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }
+      : null;
   const portalApertureStyle: CSSProperties = {
     ...styles.portalAperture,
-    ...(isMemoryPortal
+    ...(portalBackgroundStyle ?? null),
+    ...(isRevealed && revealVideo
       ? {
-          ...(!isRevealed || !revealVideo
-            ? {
-                backgroundImage: `url(${
-                  portalBackground ?? MEMORY_PORTAL_BACKGROUND_SRC
-                })`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-              }
-            : {
-                backgroundImage: "none",
-              }),
+          backgroundImage: "none",
         }
       : null),
   };
