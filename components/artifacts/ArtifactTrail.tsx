@@ -154,18 +154,19 @@ const styles: Record<string, CSSProperties> = {
   trail: {
     position: "relative",
     display: "grid",
-    gap: "clamp(0.48rem, 1.3svh, 0.72rem)",
+    gap: "clamp(0.82rem, 2.2svh, 1.18rem)",
     width: "100%",
     maxWidth: "36rem",
     justifySelf: "center",
-    marginTop: "clamp(0.72rem, 2.4svh, 1.08rem)",
+    marginTop: "clamp(1.28rem, 3.8svh, 1.95rem)",
     paddingBottom: "clamp(0.6rem, 2svh, 1rem)",
   },
   trailHeader: {
     display: "grid",
     gap: "0.18rem",
     padding: "0 clamp(0.52rem, 2.4vw, 0.82rem)",
-    textAlign: "left",
+    textAlign: "center",
+    justifyItems: "center",
   },
   trailTitle: {
     margin: 0,
@@ -179,7 +180,7 @@ const styles: Record<string, CSSProperties> = {
   trailLine: {
     position: "absolute",
     left: "clamp(1.14rem, 5vw, 1.78rem)",
-    top: "clamp(2.18rem, 5.8svh, 2.88rem)",
+    top: "clamp(3.08rem, 7.2svh, 3.92rem)",
     bottom: "0.8rem",
     width: "1px",
     background:
