@@ -67,17 +67,25 @@ type RomeoAtlasWindowPageProps = {
 };
 
 const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal-bg.png";
+const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
+  fiveCountyPageant:
+    "/artifact-reveals/romeo-peach/five-county-pageant.mp4",
+  lucillePlassey1933:
+    "/artifact-reveals/romeo-peach/lucille-plassey-1933.mp4",
+  romeoGrowersAssociation1950:
+    "/artifact-reveals/romeo-peach/romeo-growers-association-1950.mp4",
+} as const;
 
 const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
   {
-    id: "first-peach-queen-1931",
-    ariaLabel: "Romeo Peach Queen portal artifact",
+    id: "peach-queen-origins",
+    ariaLabel: "Romeo Peach Queen origins portal artifact",
     artifactType: "memory",
-    question: "Want to see the first Peach Queen from 1931?",
-    revealAriaLabel: "Reveal the first Romeo Peach Festival Queen memory",
+    question: "Want to open the Peach Queen origins trail?",
+    revealAriaLabel: "Reveal the Romeo Peach Queen origins memory",
     portalBackground: MEMORY_PORTAL_BACKGROUND_SRC,
-    revealVideo: "/artifact-reveals/romeo-peach/first-peach-queen-1931.mp4",
-    fact: "Virginia Allor was crowned the first Romeo Peach Festival Queen in 1931.",
+    revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.fiveCountyPageant,
+    fact: "Early Romeo Peach Queen pageants drew from five Michigan counties, connecting the festival to a wider orchard region.",
     usesMemoryMedia: true,
   },
   {
@@ -96,37 +104,28 @@ const GALLERY_ARTIFACT_TRAILS: readonly ArtifactTrailData[] = [
   {
     id: "peach-queen-origins",
     name: "Peach Queen Origins",
-    parentArtifactId: "first-peach-queen-1931",
+    parentArtifactId: "peach-queen-origins",
     artifacts: [
       {
         id: "five-county-pageant",
         title: "Five-County Pageant",
         caption:
           "When the Romeo Peach Festival began, the Peach Queen contest represented five Michigan counties, not only Romeo.",
-        videoSrc: "/artifact-reveals/romeo-peach/five-county-pageant.mp4",
+        videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.fiveCountyPageant,
       },
       {
         id: "lucille-plassey-1933",
         title: "Lucille Plassey, 1933",
         caption:
           "Lucille Plassey of Rochester was crowned Peach Queen in September 1933 before a crowd gathered outside the old Romeo High School.",
-        videoSrc: "/artifact-reveals/romeo-peach/lucille-plassey-1933.mp4",
+        videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.lucillePlassey1933,
       },
       {
         id: "romeo-growers-association-1950",
         title: "Romeo Peach Growers Association, 1950",
         caption:
           "Peach Queen Rosemary Murray appears with Jerome Schoff, president of the Romeo Peach Growers Association, in 1950.",
-        videoSrc:
-          "/artifact-reveals/romeo-peach/romeo-growers-association-1950.mp4",
-      },
-      {
-        id: "peaches-for-president-hoover",
-        title: "Peaches for President Hoover",
-        caption:
-          "Romeo peaches were promoted far beyond the village, including shipments associated with President Herbert Hoover.",
-        videoSrc:
-          "/artifact-reveals/romeo-peach/peaches-for-president-hoover.mp4",
+        videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.romeoGrowersAssociation1950,
       },
     ],
   },
