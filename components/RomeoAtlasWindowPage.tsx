@@ -373,7 +373,7 @@ function PortalArtifact({
   const isMemoryPortal = artifactType === "memory";
   const portalLabel = isMemoryPortal
     ? "MEMORY PORTAL"
-    : `${artifactType} artifact`;
+    : `${artifactType.toUpperCase()} ARTIFACT`;
   const portalApertureStyle: CSSProperties = {
     ...styles.portalAperture,
     ...(isMemoryPortal
@@ -633,7 +633,7 @@ function PortalArtifact({
           </div>
         ) : null}
       </article>
-      {revealedContent ? revealedContent : null}
+      {isRevealed && revealedContent ? revealedContent : null}
     </>
   );
 }
