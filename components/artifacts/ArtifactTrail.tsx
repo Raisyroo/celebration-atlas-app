@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
   type RefObject,
 } from "react";
 
@@ -24,6 +25,7 @@ export type ArtifactTrailData = {
 
 type ArtifactTrailProps = {
   trail: ArtifactTrailData;
+  showTitle?: boolean;
 };
 
 type OpenArtifactCardProps = {
@@ -34,23 +36,40 @@ type ArtifactVideoCardProps = {
   artifact: ArtifactTrailItem;
 };
 
-export default function ArtifactTrail({ trail }: ArtifactTrailProps) {
+export default function ArtifactTrail({
+  trail,
+  showTitle = true,
+}: ArtifactTrailProps) {
   return (
     <section
       className="artifact-trail"
       style={styles.trail}
       aria-label={trail.name}
     >
-      <div style={styles.trailHeader}>
-        <h3 style={styles.trailTitle}>{trail.name}</h3>
-      </div>
-      <div style={styles.trailLine} aria-hidden="true" />
+      {showTitle ? (
+        <ArtifactTrailTitle>{trail.name}</ArtifactTrailTitle>
+      ) : null}
+      <div
+        style={{
+          ...styles.trailLine,
+          ...(!showTitle ? styles.trailLineWithoutTitle : null),
+        }}
+        aria-hidden="true"
+      />
       <div style={styles.cardStack}>
         {trail.artifacts.map((artifact) => (
           <OpenArtifactCard key={artifact.id} artifact={artifact} />
         ))}
       </div>
     </section>
+  );
+}
+
+export function ArtifactTrailTitle({ children }: { children: ReactNode }) {
+  return (
+    <div style={styles.trailHeader}>
+      <h3 style={styles.trailTitle}>{children}</h3>
+    </div>
   );
 }
 
@@ -186,6 +205,9 @@ const styles: Record<string, CSSProperties> = {
     background:
       "linear-gradient(180deg, rgba(246,202,127,0.34), rgba(246,202,127,0.08), transparent)",
     boxShadow: "0 0 18px rgba(226,150,72,0.2)",
+  },
+  trailLineWithoutTitle: {
+    top: "clamp(1.08rem, 3svh, 1.56rem)",
   },
   cardStack: {
     display: "grid",

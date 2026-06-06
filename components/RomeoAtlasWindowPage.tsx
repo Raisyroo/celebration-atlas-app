@@ -12,6 +12,7 @@ import {
 } from "react";
 import Link from "next/link";
 import ArtifactTrail, {
+  ArtifactTrailTitle,
   type ArtifactTrailData,
 } from "./artifacts/ArtifactTrail";
 import ArtifactSymbol, { type ArtifactType } from "./artifacts/ArtifactSymbol";
@@ -802,21 +803,29 @@ function RomeoMemoryContent({
           );
 
           return (
-            <PortalArtifact
-              key={artifact.id}
-              ariaLabel={artifact.ariaLabel}
-              artifactType={artifact.artifactType}
-              question={artifact.question}
-              revealAriaLabel={artifact.revealAriaLabel}
-              portalBackground={artifact.portalBackground}
-              imageSrc={artifact.usesMemoryMedia ? memoryImageSrc : undefined}
-              revealVideo={artifact.revealVideo}
-              fact={artifact.fact}
-              secondaryNote={artifact.secondaryNote}
-              revealedContent={
-                trail ? <ArtifactTrail trail={trail} /> : undefined
-              }
-            />
+            <div key={artifact.id} style={styles.galleryArtifactGroup}>
+              {trail ? (
+                <ArtifactTrailTitle>{trail.name}</ArtifactTrailTitle>
+              ) : null}
+              <PortalArtifact
+                ariaLabel={artifact.ariaLabel}
+                artifactType={artifact.artifactType}
+                question={artifact.question}
+                revealAriaLabel={artifact.revealAriaLabel}
+                portalBackground={artifact.portalBackground}
+                imageSrc={
+                  artifact.usesMemoryMedia ? memoryImageSrc : undefined
+                }
+                revealVideo={artifact.revealVideo}
+                fact={artifact.fact}
+                secondaryNote={artifact.secondaryNote}
+                revealedContent={
+                  trail ? (
+                    <ArtifactTrail trail={trail} showTitle={false} />
+                  ) : undefined
+                }
+              />
+            </div>
           );
         })}
       </section>
@@ -1771,11 +1780,11 @@ const styles: Record<string, CSSProperties> = {
   galleryMemoryContent: {
     position: "relative",
     inset: "auto",
-    alignContent: "safe center",
+    alignContent: "start",
     justifyItems: "center",
     minHeight: "100%",
-    gap: "clamp(0.72rem, 2svh, 1.05rem)",
-    paddingTop: "clamp(3.2rem, 8svh, 4.7rem)",
+    gap: "clamp(0.56rem, 1.4svh, 0.82rem)",
+    paddingTop: "clamp(2.35rem, 6svh, 3.4rem)",
     paddingBottom: "clamp(0.65rem, 2svh, 1rem)",
     overflowX: "hidden",
     overflowY: "auto",
@@ -1783,8 +1792,15 @@ const styles: Record<string, CSSProperties> = {
       "linear-gradient(to bottom, black 0%, black 96%, transparent 100%)",
     maskImage:
       "linear-gradient(to bottom, black 0%, black 96%, transparent 100%)",
-    scrollPaddingTop: "clamp(3.2rem, 8svh, 4.7rem)",
+    scrollPaddingTop: "clamp(2.35rem, 6svh, 3.4rem)",
     scrollPaddingBottom: "clamp(0.65rem, 2svh, 1rem)",
+  },
+  galleryArtifactGroup: {
+    display: "grid",
+    gap: "clamp(0.58rem, 1.5svh, 0.82rem)",
+    width: "100%",
+    maxWidth: "36rem",
+    justifySelf: "center",
   },
   galleryHeader: {
     display: "grid",
