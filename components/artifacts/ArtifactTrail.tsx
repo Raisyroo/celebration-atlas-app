@@ -39,7 +39,7 @@ export default function ArtifactTrail({ trail }: ArtifactTrailProps) {
     <section
       className="artifact-trail"
       style={styles.trail}
-      aria-label={`${trail.name} artifact trail`}
+      aria-label={trail.name}
     >
       <div style={styles.trailHeader}>
         <h3 style={styles.trailTitle}>{trail.name}</h3>
@@ -154,16 +154,16 @@ const styles: Record<string, CSSProperties> = {
   trail: {
     position: "relative",
     display: "grid",
-    gap: "clamp(0.82rem, 2.2svh, 1.18rem)",
+    gap: "clamp(0.48rem, 1.3svh, 0.72rem)",
     width: "100%",
     maxWidth: "36rem",
     justifySelf: "center",
-    marginTop: "clamp(0.16rem, 1svh, 0.42rem)",
+    marginTop: "clamp(0.72rem, 2.4svh, 1.08rem)",
     paddingBottom: "clamp(0.6rem, 2svh, 1rem)",
   },
   trailHeader: {
     display: "grid",
-    gap: "0.34rem",
+    gap: "0.18rem",
     padding: "0 clamp(0.52rem, 2.4vw, 0.82rem)",
     textAlign: "left",
   },
@@ -179,7 +179,7 @@ const styles: Record<string, CSSProperties> = {
   trailLine: {
     position: "absolute",
     left: "clamp(1.14rem, 5vw, 1.78rem)",
-    top: "clamp(2.62rem, 7svh, 3.4rem)",
+    top: "clamp(2.18rem, 5.8svh, 2.88rem)",
     bottom: "0.8rem",
     width: "1px",
     background:

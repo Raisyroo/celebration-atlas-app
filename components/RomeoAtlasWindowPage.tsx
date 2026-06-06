@@ -40,7 +40,7 @@ type PortalArtifactProps = {
   portalBackground?: string;
   imageSrc?: string;
   revealVideo?: string;
-  fact: string;
+  fact?: string;
   secondaryNote?: string;
   revealedContent?: ReactNode;
 };
@@ -53,7 +53,7 @@ type GalleryPortalArtifact = {
   revealAriaLabel: string;
   portalBackground?: string;
   revealVideo?: string;
-  fact: string;
+  fact?: string;
   secondaryNote?: string;
   usesMemoryMedia?: boolean;
 };
@@ -70,8 +70,7 @@ const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal-bg.png";
 const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
   firstPeachQueen1931:
     "/artifact-reveals/romeo-peach/first-peach-queen-1931.mp4",
-  lucillePlassey1933:
-    "/artifact-reveals/romeo-peach/lucille-plassey-1933.mp4",
+  lucillePlassey1933: "/artifact-reveals/romeo-peach/lucille-plassey-1933.mp4",
   romeoGrowersAssociation1950:
     "/artifact-reveals/romeo-peach/romeo-growers-association-1950.mp4",
   loisBealDeliversPeaches1937:
@@ -83,11 +82,10 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
     id: "peach-queen-origins",
     ariaLabel: "Romeo Peach Queen origins portal artifact",
     artifactType: "memory",
-    question: "Want to open the Peach Queen origins trail?",
+    question: "Want to see the first Peach Queen from 1931?",
     revealAriaLabel: "Reveal the Romeo Peach Queen origins memory",
     portalBackground: MEMORY_PORTAL_BACKGROUND_SRC,
     revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
-    fact: "Virginia Allor was crowned the first overall Romeo Peach Festival Queen in 1931.",
     usesMemoryMedia: true,
   },
   {
@@ -474,145 +472,149 @@ function PortalArtifact({
   return (
     <>
       <article style={portalArtifactStyle} aria-label={ariaLabel}>
-      {!isMemoryPortal ? (
-        <div
-          style={{
-            ...styles.portalMemoryBackdrop,
-            ...(imageSrc ? { backgroundImage: `url(${imageSrc})` } : null),
-          }}
-          aria-hidden="true"
-        />
-      ) : null}
-      <div style={portalHaloStyle} aria-hidden="true" />
-      <div style={portalFrameStyle}>
-        <div
-          style={portalApertureStyle}
-          onClick={handlePortalReplay}
-          role={
-            isRevealed && hasVideoEnded && revealVideo ? "button" : undefined
-          }
-          tabIndex={isRevealed && hasVideoEnded && revealVideo ? 0 : undefined}
-          onKeyDown={(event) => {
-            if (
-              (event.key === "Enter" || event.key === " ") &&
-              isRevealed &&
-              hasVideoEnded &&
-              revealVideo
-            ) {
-              event.preventDefault();
-              playRevealVideo();
-            }
-          }}
-          aria-label={
-            isRevealed && hasVideoEnded && revealVideo
-              ? `${ariaLabel}. Replay reveal video.`
-              : undefined
-          }
-        >
-          {!isRevealed ? (
-            <div
-              className="romeo-portal-question"
-              style={portalQuestionLayerStyle}
-            >
-              <p style={styles.portalArtifactLabel}>{portalLabel}</p>
-              <div style={portalHeroStackStyle}>
-                <h3 style={styles.portalQuestion}>{question}</h3>
-                <button
-                  type="button"
-                  className="romeo-portal-reveal"
-                  style={styles.portalRevealButton}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleReveal();
-                  }}
-                  aria-label={revealAriaLabel}
-                >
-                  Reveal
-                </button>
-              </div>
-              {!isMemoryPortal ? (
-                <ArtifactSymbol
-                  type={artifactType}
-                  variant="portal"
-                  className="romeo-portal-symbol"
-                  ariaLabel={`${artifactType} artifact symbol`}
-                />
-              ) : null}
-            </div>
-          ) : null}
-
-          {isRevealed && revealVideo ? (
-            <>
-              <video
-                ref={videoRef}
-                className="romeo-portal-video"
-                style={portalVideoStyle}
-                src={revealVideo}
-                autoPlay
-                muted
-                playsInline
-                controls={false}
-                preload="auto"
-                onLoadedData={handleVideoReady}
-                onCanPlay={handleVideoReady}
-                onEnded={handleVideoEnded}
-                onError={handleVideoError}
-                aria-label={ariaLabel}
-              />
-              {videoLoadFailed ? (
-                <p style={styles.portalVideoFallback}>
-                  This memory video could not be loaded.
-                </p>
-              ) : null}
-              {hasVideoEnded ? (
-                <button
-                  type="button"
-                  className="romeo-portal-replay"
-                  style={styles.portalReplayButton}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    playRevealVideo();
-                  }}
-                  aria-label={`Replay ${ariaLabel}`}
-                >
-                  Replay
-                </button>
-              ) : null}
-            </>
-          ) : null}
-
-          {isRevealed && !revealVideo ? (
-            <div
-              className="romeo-portal-video"
-              style={styles.portalIllustrationPlaceholder}
-              aria-label="Portrait illustration placeholder"
-              role="img"
-            >
-              <span style={styles.portalPortraitGlow} aria-hidden="true" />
-              <span style={styles.portalPortraitFrame} aria-hidden="true">
-                <span style={styles.portalPortraitHead} />
-                <span style={styles.portalPortraitShoulders} />
-              </span>
-              <span style={styles.portalPortraitCaption}>
-                Portrait placeholder
-              </span>
-            </div>
-          ) : null}
-        </div>
-      </div>
-      <div
-        className={
-          showFact ? "romeo-portal-fact is-visible" : "romeo-portal-fact"
-        }
-        style={styles.portalFactStack}
-      >
-        <p style={styles.portalFactNote}>{fact}</p>
-        {secondaryNote ? (
-          <p style={styles.portalSecondaryNote}>{secondaryNote}</p>
+        {!isMemoryPortal ? (
+          <div
+            style={{
+              ...styles.portalMemoryBackdrop,
+              ...(imageSrc ? { backgroundImage: `url(${imageSrc})` } : null),
+            }}
+            aria-hidden="true"
+          />
         ) : null}
-      </div>
+        <div style={portalHaloStyle} aria-hidden="true" />
+        <div style={portalFrameStyle}>
+          <div
+            style={portalApertureStyle}
+            onClick={handlePortalReplay}
+            role={
+              isRevealed && hasVideoEnded && revealVideo ? "button" : undefined
+            }
+            tabIndex={
+              isRevealed && hasVideoEnded && revealVideo ? 0 : undefined
+            }
+            onKeyDown={(event) => {
+              if (
+                (event.key === "Enter" || event.key === " ") &&
+                isRevealed &&
+                hasVideoEnded &&
+                revealVideo
+              ) {
+                event.preventDefault();
+                playRevealVideo();
+              }
+            }}
+            aria-label={
+              isRevealed && hasVideoEnded && revealVideo
+                ? `${ariaLabel}. Replay reveal video.`
+                : undefined
+            }
+          >
+            {!isRevealed ? (
+              <div
+                className="romeo-portal-question"
+                style={portalQuestionLayerStyle}
+              >
+                <p style={styles.portalArtifactLabel}>{portalLabel}</p>
+                <div style={portalHeroStackStyle}>
+                  <h3 style={styles.portalQuestion}>{question}</h3>
+                  <button
+                    type="button"
+                    className="romeo-portal-reveal"
+                    style={styles.portalRevealButton}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleReveal();
+                    }}
+                    aria-label={revealAriaLabel}
+                  >
+                    Reveal
+                  </button>
+                </div>
+                {!isMemoryPortal ? (
+                  <ArtifactSymbol
+                    type={artifactType}
+                    variant="portal"
+                    className="romeo-portal-symbol"
+                    ariaLabel={`${artifactType} artifact symbol`}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+
+            {isRevealed && revealVideo ? (
+              <>
+                <video
+                  ref={videoRef}
+                  className="romeo-portal-video"
+                  style={portalVideoStyle}
+                  src={revealVideo}
+                  autoPlay
+                  muted
+                  playsInline
+                  controls={false}
+                  preload="auto"
+                  onLoadedData={handleVideoReady}
+                  onCanPlay={handleVideoReady}
+                  onEnded={handleVideoEnded}
+                  onError={handleVideoError}
+                  aria-label={ariaLabel}
+                />
+                {videoLoadFailed ? (
+                  <p style={styles.portalVideoFallback}>
+                    This memory video could not be loaded.
+                  </p>
+                ) : null}
+                {hasVideoEnded ? (
+                  <button
+                    type="button"
+                    className="romeo-portal-replay"
+                    style={styles.portalReplayButton}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      playRevealVideo();
+                    }}
+                    aria-label={`Replay ${ariaLabel}`}
+                  >
+                    Replay
+                  </button>
+                ) : null}
+              </>
+            ) : null}
+
+            {isRevealed && !revealVideo ? (
+              <div
+                className="romeo-portal-video"
+                style={styles.portalIllustrationPlaceholder}
+                aria-label="Portrait illustration placeholder"
+                role="img"
+              >
+                <span style={styles.portalPortraitGlow} aria-hidden="true" />
+                <span style={styles.portalPortraitFrame} aria-hidden="true">
+                  <span style={styles.portalPortraitHead} />
+                  <span style={styles.portalPortraitShoulders} />
+                </span>
+                <span style={styles.portalPortraitCaption}>
+                  Portrait placeholder
+                </span>
+              </div>
+            ) : null}
+          </div>
+        </div>
+        {fact || secondaryNote ? (
+          <div
+            className={
+              showFact ? "romeo-portal-fact is-visible" : "romeo-portal-fact"
+            }
+            style={styles.portalFactStack}
+          >
+            {fact ? <p style={styles.portalFactNote}>{fact}</p> : null}
+            {secondaryNote ? (
+              <p style={styles.portalSecondaryNote}>{secondaryNote}</p>
+            ) : null}
+          </div>
+        ) : null}
       </article>
-      {isRevealed && revealedContent ? revealedContent : null}
+      {isRevealed && showFact && revealedContent ? revealedContent : null}
     </>
   );
 }
