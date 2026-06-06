@@ -614,7 +614,7 @@ function PortalArtifact({
           </div>
         ) : null}
       </article>
-      {isRevealed && showFact && revealedContent ? revealedContent : null}
+      {revealedContent ? revealedContent : null}
     </>
   );
 }
