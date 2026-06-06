@@ -68,8 +68,8 @@ type RomeoAtlasWindowPageProps = {
 
 const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal-bg.png";
 const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
-  fiveCountyPageant:
-    "/artifact-reveals/romeo-peach/five-county-pageant.mp4",
+  firstPeachQueen1931:
+    "/artifact-reveals/romeo-peach/first-peach-queen-1931.mp4",
   lucillePlassey1933:
     "/artifact-reveals/romeo-peach/lucille-plassey-1933.mp4",
   romeoGrowersAssociation1950:
@@ -84,7 +84,7 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
     question: "Want to open the Peach Queen origins trail?",
     revealAriaLabel: "Reveal the Romeo Peach Queen origins memory",
     portalBackground: MEMORY_PORTAL_BACKGROUND_SRC,
-    revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.fiveCountyPageant,
+    revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
     fact: "Early Romeo Peach Queen pageants drew from five Michigan counties, connecting the festival to a wider orchard region.",
     usesMemoryMedia: true,
   },
@@ -106,13 +106,6 @@ const GALLERY_ARTIFACT_TRAILS: readonly ArtifactTrailData[] = [
     name: "Peach Queen Origins",
     parentArtifactId: "peach-queen-origins",
     artifacts: [
-      {
-        id: "five-county-pageant",
-        title: "Five-County Pageant",
-        caption:
-          "When the Romeo Peach Festival began, the Peach Queen contest represented five Michigan counties, not only Romeo.",
-        videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.fiveCountyPageant,
-      },
       {
         id: "lucille-plassey-1933",
         title: "Lucille Plassey, 1933",
