@@ -75,6 +75,10 @@ const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
     "/artifact-reveals/romeo-peach/romeo-growers-association-1950.mp4",
   loisBealDeliversPeaches1937:
     "/artifact-reveals/romeo-peach/peaches-for-president-hoover.mp4",
+  queenCourtDetroitAthleticClub1950:
+    "/artifact-reveals/romeo-peach/queen-court-detroit-athletic-club-1950.mp4",
+  realRomneyGeorgeRomney1968:
+    "/artifact-reveals/romeo-peach/real-romney-george-romney-1968.mp4",
 } as const;
 
 const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
@@ -126,6 +130,21 @@ const GALLERY_ARTIFACT_TRAILS: readonly ArtifactTrailData[] = [
         caption:
           "In 1937, Peach Queen Lois Beal delivered Romeo peaches to President Franklin D. Roosevelt in Washington, D.C.",
         videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.loisBealDeliversPeaches1937,
+      },
+      {
+        id: "queen-court-detroit-athletic-club-1950",
+        title: "Queen and Court at Detroit Athletic Club, 1950",
+        caption:
+          "In 1950, the Romeo Peach Queen and her court appeared at the Detroit Athletic Club in Detroit, Michigan.",
+        videoSrc:
+          ROMEO_PEACH_REVEAL_VIDEO_PATHS.queenCourtDetroitAthleticClub1950,
+      },
+      {
+        id: "real-romney-george-romney-1968",
+        title: "The “Real” Romney, 1968",
+        caption:
+          "In 1968, Michigan Governor George W. Romney received a peach from Peach Queen Donna Jean Christenson of Flint in Lansing.",
+        videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.realRomneyGeorgeRomney1968,
       },
     ],
   },
