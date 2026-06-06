@@ -28,7 +28,6 @@ type ArtifactTrailProps = {
 
 type OpenArtifactCardProps = {
   artifact: ArtifactTrailItem;
-  index: number;
 };
 
 type ArtifactVideoCardProps = {
@@ -43,30 +42,22 @@ export default function ArtifactTrail({ trail }: ArtifactTrailProps) {
       aria-label={`${trail.name} artifact trail`}
     >
       <div style={styles.trailHeader}>
-        <p style={styles.trailEyebrow}>Artifact Trail</p>
         <h3 style={styles.trailTitle}>{trail.name}</h3>
       </div>
       <div style={styles.trailLine} aria-hidden="true" />
       <div style={styles.cardStack}>
-        {trail.artifacts.map((artifact, index) => (
-          <OpenArtifactCard
-            key={artifact.id}
-            artifact={artifact}
-            index={index}
-          />
+        {trail.artifacts.map((artifact) => (
+          <OpenArtifactCard key={artifact.id} artifact={artifact} />
         ))}
       </div>
     </section>
   );
 }
 
-export function OpenArtifactCard({ artifact, index }: OpenArtifactCardProps) {
+export function OpenArtifactCard({ artifact }: OpenArtifactCardProps) {
   return (
     <article style={styles.openCard} aria-label={artifact.title}>
       <div style={styles.cardGlow} aria-hidden="true" />
-      <span style={styles.cardMarker} aria-hidden="true">
-        {String(index + 1).padStart(2, "0")}
-      </span>
       <ArtifactVideoCard artifact={artifact} />
       <div style={styles.captionStack}>
         <h4 style={styles.cardTitle}>{artifact.title}</h4>
@@ -176,14 +167,6 @@ const styles: Record<string, CSSProperties> = {
     padding: "0 clamp(0.52rem, 2.4vw, 0.82rem)",
     textAlign: "left",
   },
-  trailEyebrow: {
-    margin: 0,
-    color: "rgba(246,202,127,0.58)",
-    fontSize: "0.58rem",
-    letterSpacing: "0.2em",
-    lineHeight: 1,
-    textTransform: "uppercase",
-  },
   trailTitle: {
     margin: 0,
     color: "rgba(255,239,213,0.96)",
@@ -196,7 +179,7 @@ const styles: Record<string, CSSProperties> = {
   trailLine: {
     position: "absolute",
     left: "clamp(1.14rem, 5vw, 1.78rem)",
-    top: "clamp(3.95rem, 12svh, 5.2rem)",
+    top: "clamp(2.62rem, 7svh, 3.4rem)",
     bottom: "0.8rem",
     width: "1px",
     background:
@@ -230,19 +213,6 @@ const styles: Record<string, CSSProperties> = {
       "radial-gradient(ellipse at center, rgba(246,202,127,0.16), rgba(226,150,72,0.06) 42%, transparent 72%)",
     filter: "blur(10px)",
     pointerEvents: "none",
-  },
-  cardMarker: {
-    position: "absolute",
-    left: "clamp(0.58rem, 2.4vw, 0.82rem)",
-    top: "clamp(0.58rem, 2.4vw, 0.82rem)",
-    zIndex: 3,
-    padding: "0.26rem 0.42rem",
-    borderRadius: "999px",
-    background: "rgba(6,9,16,0.58)",
-    color: "rgba(246,202,127,0.76)",
-    fontSize: "0.56rem",
-    letterSpacing: "0.13em",
-    backdropFilter: "blur(8px)",
   },
   videoFrame: {
     position: "relative",

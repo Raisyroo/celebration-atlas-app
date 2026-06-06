@@ -74,7 +74,7 @@ const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
     "/artifact-reveals/romeo-peach/lucille-plassey-1933.mp4",
   romeoGrowersAssociation1950:
     "/artifact-reveals/romeo-peach/romeo-growers-association-1950.mp4",
-  peachesForPresidentHoover:
+  loisBealDeliversPeaches1937:
     "/artifact-reveals/romeo-peach/peaches-for-president-hoover.mp4",
 } as const;
 
@@ -87,7 +87,7 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
     revealAriaLabel: "Reveal the Romeo Peach Queen origins memory",
     portalBackground: MEMORY_PORTAL_BACKGROUND_SRC,
     revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
-    fact: "Virginia Allor was crowned the first overall Romeo Peach Festival Queen in 1931. In the festival’s early years, the Peach Queen court represented a five-county orchard region, not Romeo alone.",
+    fact: "Virginia Allor was crowned the first overall Romeo Peach Festival Queen in 1931.",
     usesMemoryMedia: true,
   },
   {
@@ -123,11 +123,11 @@ const GALLERY_ARTIFACT_TRAILS: readonly ArtifactTrailData[] = [
         videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.romeoGrowersAssociation1950,
       },
       {
-        id: "peaches-for-president-hoover",
-        title: "Peaches for President Hoover",
+        id: "lois-beal-delivers-peaches-1937",
+        title: "Lois Beal Delivers Peaches, 1937",
         caption:
-          "Romeo peaches were promoted far beyond the village, including shipments associated with President Herbert Hoover.",
-        videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.peachesForPresidentHoover,
+          "In 1937, Peach Queen Lois Beal delivered Romeo peaches to President Franklin D. Roosevelt in Washington, D.C.",
+        videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.loisBealDeliversPeaches1937,
       },
     ],
   },
