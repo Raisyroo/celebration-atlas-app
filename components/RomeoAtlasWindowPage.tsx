@@ -74,6 +74,8 @@ const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
     "/artifact-reveals/romeo-peach/lucille-plassey-1933.mp4",
   romeoGrowersAssociation1950:
     "/artifact-reveals/romeo-peach/romeo-growers-association-1950.mp4",
+  peachesForPresidentHoover:
+    "/artifact-reveals/romeo-peach/peaches-for-president-hoover.mp4",
 } as const;
 
 const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
@@ -85,7 +87,7 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
     revealAriaLabel: "Reveal the Romeo Peach Queen origins memory",
     portalBackground: MEMORY_PORTAL_BACKGROUND_SRC,
     revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
-    fact: "Early Romeo Peach Queen pageants drew from five Michigan counties, connecting the festival to a wider orchard region.",
+    fact: "Virginia Allor was crowned the first overall Romeo Peach Festival Queen in 1931. In the festival’s early years, the Peach Queen court represented a five-county orchard region, not Romeo alone.",
     usesMemoryMedia: true,
   },
   {
@@ -119,6 +121,13 @@ const GALLERY_ARTIFACT_TRAILS: readonly ArtifactTrailData[] = [
         caption:
           "Peach Queen Rosemary Murray appears with Jerome Schoff, president of the Romeo Peach Growers Association, in 1950.",
         videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.romeoGrowersAssociation1950,
+      },
+      {
+        id: "peaches-for-president-hoover",
+        title: "Peaches for President Hoover",
+        caption:
+          "Romeo peaches were promoted far beyond the village, including shipments associated with President Herbert Hoover.",
+        videoSrc: ROMEO_PEACH_REVEAL_VIDEO_PATHS.peachesForPresidentHoover,
       },
     ],
   },
