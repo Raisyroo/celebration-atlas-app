@@ -158,7 +158,7 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     maxWidth: "36rem",
     justifySelf: "center",
-    marginTop: "clamp(1.28rem, 3.8svh, 1.95rem)",
+    marginTop: "clamp(0.7rem, 2svh, 1.05rem)",
     paddingBottom: "clamp(0.6rem, 2svh, 1rem)",
   },
   trailHeader: {
