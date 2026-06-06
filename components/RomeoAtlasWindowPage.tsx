@@ -8,8 +8,12 @@ import {
   type CSSProperties,
   type FormEvent,
   type RefObject,
+  type ReactNode,
 } from "react";
 import Link from "next/link";
+import ArtifactTrail, {
+  type ArtifactTrailData,
+} from "./artifacts/ArtifactTrail";
 import ArtifactSymbol, { type ArtifactType } from "./artifacts/ArtifactSymbol";
 
 type RomeoContentMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
@@ -38,6 +42,7 @@ type PortalArtifactProps = {
   revealVideo?: string;
   fact: string;
   secondaryNote?: string;
+  revealedContent?: ReactNode;
 };
 
 type GalleryPortalArtifact = {
@@ -65,7 +70,7 @@ const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal-bg.png";
 
 const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
   {
-    id: "first-peach-queen",
+    id: "first-peach-queen-1931",
     ariaLabel: "Romeo Peach Queen portal artifact",
     artifactType: "memory",
     question: "Want to see the first Peach Queen from 1931?",
@@ -84,6 +89,46 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
     fact: "In 1838, the founders could not agree on a name. Laura Taylor selected 'Romeo' because she felt it was musical, classical, and uncommon.",
     secondaryNote:
       "Before Romeo, the settlement was known as Indian Village and later Hoxie's Settlement.",
+  },
+] as const;
+
+const GALLERY_ARTIFACT_TRAILS: readonly ArtifactTrailData[] = [
+  {
+    id: "peach-queen-origins",
+    name: "Peach Queen Origins",
+    parentArtifactId: "first-peach-queen-1931",
+    artifacts: [
+      {
+        id: "five-county-pageant",
+        title: "Five-County Pageant",
+        caption:
+          "When the Romeo Peach Festival began, the Peach Queen contest represented five Michigan counties, not only Romeo.",
+        videoSrc: "/artifact-reveals/romeo-peach/five-county-pageant.mp4",
+      },
+      {
+        id: "lucille-plassey-1933",
+        title: "Lucille Plassey, 1933",
+        caption:
+          "Lucille Plassey of Rochester was crowned Peach Queen in September 1933 before a crowd gathered outside the old Romeo High School.",
+        videoSrc: "/artifact-reveals/romeo-peach/lucille-plassey-1933.mp4",
+      },
+      {
+        id: "romeo-growers-association-1950",
+        title: "Romeo Peach Growers Association, 1950",
+        caption:
+          "Peach Queen Rosemary Murray appears with Jerome Schoff, president of the Romeo Peach Growers Association, in 1950.",
+        videoSrc:
+          "/artifact-reveals/romeo-peach/romeo-growers-association-1950.mp4",
+      },
+      {
+        id: "peaches-for-president-hoover",
+        title: "Peaches for President Hoover",
+        caption:
+          "Romeo peaches were promoted far beyond the village, including shipments associated with President Herbert Hoover.",
+        videoSrc:
+          "/artifact-reveals/romeo-peach/peaches-for-president-hoover.mp4",
+      },
+    ],
   },
 ] as const;
 
@@ -299,6 +344,7 @@ function PortalArtifact({
   revealVideo,
   fact,
   secondaryNote,
+  revealedContent,
 }: PortalArtifactProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -425,7 +471,8 @@ function PortalArtifact({
   };
 
   return (
-    <article style={portalArtifactStyle} aria-label={ariaLabel}>
+    <>
+      <article style={portalArtifactStyle} aria-label={ariaLabel}>
       {!isMemoryPortal ? (
         <div
           style={{
@@ -563,7 +610,9 @@ function PortalArtifact({
           <p style={styles.portalSecondaryNote}>{secondaryNote}</p>
         ) : null}
       </div>
-    </article>
+      </article>
+      {isRevealed && revealedContent ? revealedContent : null}
+    </>
   );
 }
 
@@ -725,20 +774,29 @@ function RomeoMemoryContent({
         <div style={styles.galleryHeader}>
           <p style={styles.windowEyebrow}>Gallery</p>
         </div>
-        {GALLERY_PORTAL_ARTIFACTS.map((artifact) => (
-          <PortalArtifact
-            key={artifact.id}
-            ariaLabel={artifact.ariaLabel}
-            artifactType={artifact.artifactType}
-            question={artifact.question}
-            revealAriaLabel={artifact.revealAriaLabel}
-            portalBackground={artifact.portalBackground}
-            imageSrc={artifact.usesMemoryMedia ? memoryImageSrc : undefined}
-            revealVideo={artifact.revealVideo}
-            fact={artifact.fact}
-            secondaryNote={artifact.secondaryNote}
-          />
-        ))}
+        {GALLERY_PORTAL_ARTIFACTS.map((artifact) => {
+          const trail = GALLERY_ARTIFACT_TRAILS.find(
+            (artifactTrail) => artifactTrail.parentArtifactId === artifact.id,
+          );
+
+          return (
+            <PortalArtifact
+              key={artifact.id}
+              ariaLabel={artifact.ariaLabel}
+              artifactType={artifact.artifactType}
+              question={artifact.question}
+              revealAriaLabel={artifact.revealAriaLabel}
+              portalBackground={artifact.portalBackground}
+              imageSrc={artifact.usesMemoryMedia ? memoryImageSrc : undefined}
+              revealVideo={artifact.revealVideo}
+              fact={artifact.fact}
+              secondaryNote={artifact.secondaryNote}
+              revealedContent={
+                trail ? <ArtifactTrail trail={trail} /> : undefined
+              }
+            />
+          );
+        })}
       </section>
     );
   }
