@@ -12,7 +12,6 @@ import {
 } from "react";
 import Link from "next/link";
 import ArtifactTrail, {
-  ArtifactTrailTitle,
   type ArtifactTrailData,
 } from "./artifacts/ArtifactTrail";
 import ArtifactSymbol, { type ArtifactType } from "./artifacts/ArtifactSymbol";
@@ -68,7 +67,8 @@ type RomeoAtlasWindowPageProps = {
 };
 
 const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal-bg.png";
-const ORIGIN_ARTIFACT_BACKGROUND_SRC = "/portal-backgrounds/origin-artifact.png";
+const ORIGIN_ARTIFACT_BACKGROUND_SRC =
+  "/portal-backgrounds/origin-artifact.png";
 const DEFAULT_PORTAL_BACKGROUND_BY_ARTIFACT_TYPE: Partial<
   Record<ArtifactType, string>
 > = {
@@ -91,23 +91,24 @@ const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
 
 const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
   {
-    id: "peach-queen-origins",
-    ariaLabel: "Romeo Peach Queen origins portal artifact",
-    artifactType: "origin",
-    question: "Want to see the first Peach Queen from 1931?",
-    revealAriaLabel: "Reveal the Romeo Peach Queen origins artifact",
-    portalBackground: ORIGIN_ARTIFACT_BACKGROUND_SRC,
-    revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
-  },
-  {
     id: "romeo-name-origin",
     ariaLabel: "Romeo name origin portal artifact",
     artifactType: "origin",
     question: "How did Romeo get its name?",
-    revealAriaLabel: "Reveal the Romeo name origin memory",
+    revealAriaLabel: "Reveal the Romeo name origin artifact",
+    portalBackground: ORIGIN_ARTIFACT_BACKGROUND_SRC,
     fact: "In 1838, the founders could not agree on a name. Laura Taylor selected 'Romeo' because she felt it was musical, classical, and uncommon.",
     secondaryNote:
       "Before Romeo, the settlement was known as Indian Village and later Hoxie's Settlement.",
+  },
+  {
+    id: "peach-queen-origins",
+    ariaLabel: "Romeo Peach Queen memory portal artifact",
+    artifactType: "memory",
+    question: "Want to see the first Peach Queen from 1931?",
+    revealAriaLabel: "Reveal the Romeo Peach Queen memory portal",
+    portalBackground: MEMORY_PORTAL_BACKGROUND_SRC,
+    revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
   },
 ] as const;
 
@@ -821,25 +822,18 @@ function RomeoMemoryContent({
 
           return (
             <div key={artifact.id} style={styles.galleryArtifactGroup}>
-              {trail ? (
-                <ArtifactTrailTitle>{trail.name}</ArtifactTrailTitle>
-              ) : null}
               <PortalArtifact
                 ariaLabel={artifact.ariaLabel}
                 artifactType={artifact.artifactType}
                 question={artifact.question}
                 revealAriaLabel={artifact.revealAriaLabel}
                 portalBackground={artifact.portalBackground}
-                imageSrc={
-                  artifact.usesMemoryMedia ? memoryImageSrc : undefined
-                }
+                imageSrc={artifact.usesMemoryMedia ? memoryImageSrc : undefined}
                 revealVideo={artifact.revealVideo}
                 fact={artifact.fact}
                 secondaryNote={artifact.secondaryNote}
                 revealedContent={
-                  trail ? (
-                    <ArtifactTrail trail={trail} showTitle={false} />
-                  ) : undefined
+                  trail ? <ArtifactTrail trail={trail} /> : undefined
                 }
               />
             </div>
