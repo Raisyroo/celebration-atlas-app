@@ -15,6 +15,7 @@ import ArtifactTrail, {
   type ArtifactTrailData,
 } from "./artifacts/ArtifactTrail";
 import { type ArtifactType } from "./artifacts/ArtifactSymbol";
+import RomeoDormantSchedule from "./RomeoDormantSchedule";
 
 type RomeoContentMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 type RomeoAtlasMode = RomeoContentMode | "ask";
@@ -194,22 +195,6 @@ const MODE_OPTIONS: readonly RomeoAtlasModeOption[] = [
   { id: "maps", label: "Maps", iconSrc: "/ui/maps-icon.svg" },
   { id: "gallery", label: "Gallery", iconSrc: "/ui/gallery-icon.svg" },
   { id: "plan", label: "Plan", iconSrc: "/ui/plan-icon.svg" },
-] as const;
-
-const SCHEDULE_ITEMS = [
-  {
-    time: "11:00 AM",
-    text: "Downtown opens; vendors and storefronts begin service.",
-  },
-  {
-    time: "1:30 PM",
-    text: "Peak food window for peach desserts and cold drinks.",
-  },
-  { time: "4:00 PM", text: "Parade route begins filling along Main Street." },
-  {
-    time: "7:45 PM",
-    text: "Evening walk-through; lights and food stands remain active.",
-  },
 ] as const;
 
 const MAP_GUIDANCE = [
@@ -760,20 +745,10 @@ function RomeoMemoryContent({
     return (
       <section
         className="romeo-memory-scroll romeo-mode-content-reveal"
-        style={styles.memoryContent}
+        style={{ ...styles.memoryContent, ...styles.scheduleMemoryContent }}
         aria-label="Schedule lens"
       >
-        <p style={styles.windowEyebrow}>Schedule</p>
-        <h2 style={styles.windowTitle}>Time + event</h2>
-        <MemorySeparator />
-        <div style={styles.timelineStack}>
-          {SCHEDULE_ITEMS.map((item) => (
-            <article key={item.time} style={styles.timelineItem}>
-              <span style={styles.timelineTime}>{item.time}</span>
-              <p style={styles.timelineText}>{item.text}</p>
-            </article>
-          ))}
-        </div>
+        <RomeoDormantSchedule eventName={eventName} eventState="UPCOMING" />
       </section>
     );
   }
@@ -1448,6 +1423,15 @@ const styles: Record<string, CSSProperties> = {
     msOverflowStyle: "none",
     textShadow: "0 2px 18px rgba(0,0,0,0.58), 0 0 26px rgba(226,150,72,0.12)",
   },
+  scheduleMemoryContent: {
+    alignContent: "start",
+    paddingTop: "0",
+    paddingBottom: "clamp(1.25rem, 4svh, 2.2rem)",
+    WebkitMaskImage:
+      "linear-gradient(to bottom, black 0%, black 94%, transparent 100%)",
+    maskImage:
+      "linear-gradient(to bottom, black 0%, black 94%, transparent 100%)",
+  },
   highlightsMemoryContent: {
     alignContent: "center",
     paddingTop: "clamp(2rem, 8svh, 4.6rem)",
@@ -1729,29 +1713,6 @@ const styles: Record<string, CSSProperties> = {
     margin: "0.42rem 0 0 1rem",
     color: "rgba(234,220,196,0.86)",
     fontSize: "0.77rem",
-    lineHeight: 1.48,
-  },
-  timelineStack: { display: "grid", gap: "1.1rem" },
-  timelineItem: {
-    display: "grid",
-    gridTemplateColumns: "4.8rem 1fr",
-    gap: "0.78rem",
-    alignItems: "start",
-    border: 0,
-    paddingLeft: 0,
-    opacity: 0.94,
-    filter: "drop-shadow(0 0 10px rgba(226,150,72,0.08))",
-  },
-  timelineTime: {
-    color: gold,
-    fontSize: "0.66rem",
-    letterSpacing: "0.11em",
-    textTransform: "uppercase",
-  },
-  timelineText: {
-    margin: 0,
-    color: "rgba(237,224,200,0.91)",
-    fontSize: "0.8rem",
     lineHeight: 1.48,
   },
   mapPlate: {
