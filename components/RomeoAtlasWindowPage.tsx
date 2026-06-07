@@ -100,17 +100,15 @@ const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
 
 const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
   {
-    id: "romeo-name-origin",
-    ariaLabel: "Romeo name origin portal artifact",
+    id: "peach-queen-origins",
+    ariaLabel: "First Peach Queen origin portal artifact",
     artifactType: "origin",
     artifactLabel: "ORIGIN PORTAL",
     title: "Origins",
-    question: "How did Romeo get its name?",
-    revealAriaLabel: "Reveal the Romeo name origin artifact",
+    question: "Want to see the first Peach Queen from 1931?",
+    revealAriaLabel: "Reveal the first Peach Queen origin artifact",
     portalBackground: ORIGIN_ARTIFACT_BACKGROUND_SRC,
-    fact: "In 1838, the founders could not agree on a name. Laura Taylor selected 'Romeo' because she felt it was musical, classical, and uncommon.",
-    secondaryNote:
-      "Before Romeo, the settlement was known as Indian Village and later Hoxie's Settlement.",
+    revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
   },
   {
     id: "memories",
@@ -413,7 +411,6 @@ function PortalArtifact({
   const [videoLoadFailed, setVideoLoadFailed] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const isMemoryPortal = artifactType === "memory";
-  const isOriginPortal = artifactType === "origin";
   const portalLabel =
     artifactLabel ??
     (isMemoryPortal
@@ -465,17 +462,6 @@ function PortalArtifact({
   const portalVideoStyle: CSSProperties = {
     ...styles.portalVideo,
     opacity: isVideoReady ? 1 : 0,
-  };
-
-  const portalQuestionLayerStyle: CSSProperties = {
-    ...styles.portalQuestionLayer,
-    ...(isOriginPortal ? styles.originPortalQuestionLayer : null),
-    ...(isMemoryPortal ? styles.memoryPortalQuestionLayer : null),
-  };
-
-  const portalHeroStackStyle: CSSProperties = {
-    ...styles.portalHeroStack,
-    ...(isMemoryPortal ? styles.memoryPortalHeroStack : null),
   };
 
   const playRevealVideo = useCallback(() => {
@@ -598,25 +584,23 @@ function PortalArtifact({
             {!isRevealed ? (
               <div
                 className="romeo-portal-question"
-                style={portalQuestionLayerStyle}
+                style={styles.portalQuestionLayer}
               >
                 <p style={styles.portalArtifactLabel}>{portalLabel}</p>
-                <div style={portalHeroStackStyle}>
-                  <h3 style={styles.portalQuestion}>{question}</h3>
-                  <button
-                    type="button"
-                    className="romeo-portal-reveal"
-                    style={styles.portalRevealButton}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleRevealButtonClick();
-                    }}
-                    aria-disabled={!hasRevealContent}
-                    aria-label={revealAriaLabel}
-                  >
-                    Reveal
-                  </button>
-                </div>
+                <h3 style={styles.portalQuestion}>{question}</h3>
+                <button
+                  type="button"
+                  className="romeo-portal-reveal"
+                  style={styles.portalRevealButton}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleRevealButtonClick();
+                  }}
+                  aria-disabled={!hasRevealContent}
+                  aria-label={revealAriaLabel}
+                >
+                  Reveal
+                </button>
               </div>
             ) : null}
 
@@ -659,31 +643,11 @@ function PortalArtifact({
                 ) : null}
               </>
             ) : null}
-
-            {isRevealed && !revealVideo ? (
-              <div
-                className="romeo-portal-video"
-                style={styles.portalIllustrationPlaceholder}
-                aria-label="Portrait illustration placeholder"
-                role="img"
-              >
-                <span style={styles.portalPortraitGlow} aria-hidden="true" />
-                <span style={styles.portalPortraitFrame} aria-hidden="true">
-                  <span style={styles.portalPortraitHead} />
-                  <span style={styles.portalPortraitShoulders} />
-                </span>
-                <span style={styles.portalPortraitCaption}>
-                  Portrait placeholder
-                </span>
-              </div>
-            ) : null}
           </div>
         </div>
-        {fact || secondaryNote ? (
+        {showFact && (fact || secondaryNote) ? (
           <div
-            className={
-              showFact ? "romeo-portal-fact is-visible" : "romeo-portal-fact"
-            }
+            className="romeo-portal-fact is-visible"
             style={styles.portalFactStack}
           >
             {fact ? <p style={styles.portalFactNote}>{fact}</p> : null}
@@ -1961,30 +1925,15 @@ const styles: Record<string, CSSProperties> = {
     width: "auto",
     minWidth: 0,
     display: "grid",
-    gridTemplateRows: "auto auto",
-    alignContent: "center",
+    gridTemplateRows: "auto clamp(4.85rem, 12svh, 5.8rem) auto",
+    alignContent: "start",
     justifyItems: "center",
-    gap: "clamp(0.72rem, 2svh, 1.05rem)",
+    gap: "clamp(0.5rem, 1.3svh, 0.78rem)",
     textAlign: "center",
-    padding: "clamp(0.74rem, 3.2vw, 1.12rem)",
+    padding: "clamp(0.82rem, 3.8vw, 1.28rem) clamp(0.74rem, 3.2vw, 1.12rem) clamp(0.74rem, 3.2vw, 1.12rem)",
     borderRadius: "1rem",
     background:
       "radial-gradient(ellipse at 50% 38%, rgba(6,9,16,0.72), rgba(6,9,16,0.34) 48%, transparent 78%)",
-  },
-
-  originPortalQuestionLayer: {
-    background:
-      "linear-gradient(180deg, rgba(3,5,10,0.28), rgba(3,5,10,0.1) 34%, rgba(3,5,10,0.18) 72%, rgba(3,5,10,0.42) 100%)",
-    boxShadow: "inset 0 0 0 1px rgba(255,238,207,0.045)",
-  },
-  memoryPortalQuestionLayer: {
-    gridTemplateRows: "auto auto",
-    alignContent: "start",
-    gap: "clamp(1.18rem, 3.2svh, 1.72rem)",
-    paddingTop: "clamp(3.05rem, 10.8vw, 4.15rem)",
-    background:
-      "linear-gradient(180deg, rgba(3,5,10,0.5), rgba(3,5,10,0.22) 30%, transparent 58%, rgba(3,5,10,0.14) 82%, rgba(3,5,10,0.36) 100%)",
-    boxShadow: "none",
   },
   portalArtifactLabel: {
     margin: 0,
@@ -1995,17 +1944,8 @@ const styles: Record<string, CSSProperties> = {
     textTransform: "uppercase",
     textShadow: "0 2px 14px rgba(0,0,0,0.58)",
   },
-  portalHeroStack: {
-    display: "grid",
-    alignSelf: "center",
-    justifyItems: "center",
-    gap: "clamp(0.68rem, 1.8svh, 0.95rem)",
-    width: "100%",
-  },
-  memoryPortalHeroStack: {
-    gap: "clamp(1.02rem, 2.7svh, 1.48rem)",
-  },
   portalQuestion: {
+    alignSelf: "start",
     margin: 0,
     maxWidth: "15rem",
     color: "rgba(255,239,213,0.98)",
@@ -2016,6 +1956,7 @@ const styles: Record<string, CSSProperties> = {
     textShadow: "0 3px 24px rgba(0,0,0,0.72), 0 0 28px rgba(226,150,72,0.18)",
   },
   portalRevealButton: {
+    alignSelf: "start",
     appearance: "none",
     border: "1px solid rgba(246,202,127,0.42)",
     borderRadius: "999px",
@@ -2072,61 +2013,6 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
     backdropFilter: "blur(10px)",
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
-  },
-  portalIllustrationPlaceholder: {
-    position: "absolute",
-    inset: 0,
-    zIndex: 2,
-    display: "grid",
-    placeItems: "center",
-    overflow: "hidden",
-    background:
-      "radial-gradient(circle at 50% 24%, rgba(246,202,127,0.18), transparent 34%), linear-gradient(180deg, rgba(21,28,40,0.95), rgba(5,8,15,0.98))",
-  },
-  portalPortraitGlow: {
-    position: "absolute",
-    width: "62%",
-    aspectRatio: "1",
-    borderRadius: "999px",
-    background:
-      "radial-gradient(circle, rgba(246,202,127,0.24), rgba(226,150,72,0.1) 42%, transparent 72%)",
-    filter: "blur(10px)",
-  },
-  portalPortraitFrame: {
-    position: "relative",
-    display: "grid",
-    justifyItems: "center",
-    alignContent: "center",
-    width: "58%",
-    aspectRatio: "3 / 4",
-    borderRadius: "999px 999px 1.4rem 1.4rem",
-    border: "1px solid rgba(246,202,127,0.32)",
-    background:
-      "linear-gradient(180deg, rgba(255,238,207,0.1), rgba(226,150,72,0.08)), radial-gradient(circle at 50% 30%, rgba(255,238,207,0.16), transparent 38%)",
-    boxShadow:
-      "0 0 38px rgba(226,150,72,0.16), inset 0 1px 0 rgba(255,238,207,0.12)",
-  },
-  portalPortraitHead: {
-    width: "28%",
-    aspectRatio: "1",
-    borderRadius: "999px",
-    background: "rgba(246,202,127,0.36)",
-    boxShadow: "0 0 24px rgba(246,202,127,0.18)",
-  },
-  portalPortraitShoulders: {
-    width: "54%",
-    height: "18%",
-    marginTop: "8%",
-    borderRadius: "999px 999px 0.7rem 0.7rem",
-    background: "rgba(246,202,127,0.22)",
-  },
-  portalPortraitCaption: {
-    position: "absolute",
-    bottom: "8%",
-    color: "rgba(246,202,127,0.58)",
-    fontSize: "0.58rem",
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
   },
   portalFactStack: {
     position: "relative",
