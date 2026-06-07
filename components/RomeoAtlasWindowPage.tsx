@@ -35,6 +35,7 @@ type ChatMessage = {
 type PortalArtifactProps = {
   ariaLabel: string;
   artifactType: ArtifactType;
+  title?: string;
   question: string;
   revealAriaLabel: string;
   portalBackground?: string;
@@ -49,6 +50,7 @@ type GalleryPortalArtifact = {
   id: string;
   ariaLabel: string;
   artifactType: ArtifactType;
+  title?: string;
   question: string;
   revealAriaLabel: string;
   portalBackground?: string;
@@ -91,6 +93,16 @@ const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
 
 const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
   {
+    id: "peach-queen-origins",
+    ariaLabel: "Romeo Peach Queen origins portal artifact",
+    artifactType: "origin",
+    title: "Peach Queen Origins",
+    question: "Want to see the first Peach Queen from 1931?",
+    revealAriaLabel: "Reveal the Romeo Peach Queen origins artifact",
+    portalBackground: ORIGIN_ARTIFACT_BACKGROUND_SRC,
+    revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
+  },
+  {
     id: "romeo-name-origin",
     ariaLabel: "Romeo name origin portal artifact",
     artifactType: "origin",
@@ -100,15 +112,6 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
     fact: "In 1838, the founders could not agree on a name. Laura Taylor selected 'Romeo' because she felt it was musical, classical, and uncommon.",
     secondaryNote:
       "Before Romeo, the settlement was known as Indian Village and later Hoxie's Settlement.",
-  },
-  {
-    id: "peach-queen-origins",
-    ariaLabel: "Romeo Peach Queen memory portal artifact",
-    artifactType: "memory",
-    question: "Want to see the first Peach Queen from 1931?",
-    revealAriaLabel: "Reveal the Romeo Peach Queen memory portal",
-    portalBackground: MEMORY_PORTAL_BACKGROUND_SRC,
-    revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
   },
 ] as const;
 
@@ -363,6 +366,7 @@ function RomeoAtlasConversation({
 function PortalArtifact({
   ariaLabel,
   artifactType,
+  title,
   question,
   revealAriaLabel,
   portalBackground,
@@ -506,6 +510,7 @@ function PortalArtifact({
   return (
     <>
       <article style={portalArtifactStyle} aria-label={ariaLabel}>
+        {title ? <h3 style={styles.portalTitle}>{title}</h3> : null}
         {!isMemoryPortal ? (
           <div
             style={{
@@ -825,6 +830,7 @@ function RomeoMemoryContent({
               <PortalArtifact
                 ariaLabel={artifact.ariaLabel}
                 artifactType={artifact.artifactType}
+                title={artifact.title}
                 question={artifact.question}
                 revealAriaLabel={artifact.revealAriaLabel}
                 portalBackground={artifact.portalBackground}
@@ -1841,6 +1847,19 @@ const styles: Record<string, CSSProperties> = {
   },
   revealedPortalArtifact: {
     backdropFilter: "none",
+  },
+  portalTitle: {
+    position: "relative",
+    zIndex: 2,
+    margin: 0,
+    color: "rgba(255,238,207,0.98)",
+    fontFamily: "Georgia, Times New Roman, serif",
+    fontSize: "clamp(1.34rem, 5.8vw, 2.28rem)",
+    fontWeight: 400,
+    lineHeight: 1.02,
+    textAlign: "center",
+    textShadow:
+      "0 3px 24px rgba(0,0,0,0.72), 0 0 20px rgba(227,146,76,0.2)",
   },
   portalMemoryBackdrop: {
     position: "absolute",
