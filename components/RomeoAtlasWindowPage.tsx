@@ -398,9 +398,7 @@ function PortalArtifact({
   const isMemoryPortal = artifactType === "memory";
   const portalLabel =
     artifactLabel ??
-    (isMemoryPortal
-      ? "MEMORY PORTAL"
-      : `${artifactType.toUpperCase()} PORTAL`);
+    (isMemoryPortal ? "MEMORY PORTAL" : `${artifactType.toUpperCase()} PORTAL`);
   const hasRevealContent = Boolean(
     revealVideo || fact || secondaryNote || revealedContent,
   );
@@ -906,18 +904,16 @@ function RomeoMemoryContent({
             <h2 style={getHighlightsHeroTitleStyle(eventName)}>{eventName}</h2>
             <MemorySeparator />
           </div>
-          <div style={styles.highlightsCardsFrame}>
-            <div style={styles.highlightGrid}>
-              {HIGHLIGHT_ITEMS.map(([title, text]) => (
-                <article key={title} style={styles.highlightCard}>
-                  <h3 style={styles.highlightTitle}>
-                    <span style={styles.highlightSigil}>✦</span>
-                    {title}
-                  </h3>
-                  <p style={styles.highlightText}>{text}</p>
-                </article>
-              ))}
-            </div>
+          <div style={styles.highlightsShowcase}>
+            {HIGHLIGHT_ITEMS.map(([title, text]) => (
+              <article key={title} style={styles.highlightsRow}>
+                <h3 style={styles.highlightsRowTitle}>
+                  <span style={styles.highlightsRowSigil}>✦</span>
+                  {title}
+                </h3>
+                <p style={styles.highlightsRowText}>{text}</p>
+              </article>
+            ))}
           </div>
         </div>
       ) : null}
@@ -1443,13 +1439,15 @@ const styles: Record<string, CSSProperties> = {
   },
   highlightsPostIntroMemoryContent: {
     alignContent: "start",
-    paddingTop: "clamp(4.6rem, 13svh, 7.2rem)",
-    paddingBottom: "clamp(2.2rem, 7svh, 4.2rem)",
+    paddingTop: "clamp(3.35rem, 10svh, 6rem)",
+    paddingRight: "clamp(0.65rem, 3.6vw, 1.55rem)",
+    paddingBottom: "clamp(6.5rem, 16svh, 9rem)",
+    paddingLeft: "clamp(0.65rem, 3.6vw, 1.55rem)",
     WebkitMaskImage:
-      "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
+      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
     maskImage:
-      "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
-    scrollPaddingTop: "clamp(4.6rem, 13svh, 7.2rem)",
+      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
+    scrollPaddingTop: "clamp(3.35rem, 10svh, 6rem)",
   },
   cinematicVideoFrame: {
     position: "relative",
@@ -1637,7 +1635,7 @@ const styles: Record<string, CSSProperties> = {
   },
   highlightsContentReveal: {
     display: "grid",
-    gap: "clamp(1.05rem, 3svh, 1.55rem)",
+    gap: "clamp(2.25rem, 7svh, 4.75rem)",
     width: "100%",
     maxWidth: "100%",
     justifySelf: "stretch",
@@ -1646,9 +1644,11 @@ const styles: Record<string, CSSProperties> = {
   },
   highlightsHeroHeader: {
     display: "grid",
-    gap: "clamp(0.72rem, 2.2svh, 1.05rem)",
+    alignContent: "end",
+    gap: "clamp(0.9rem, 2.8svh, 1.35rem)",
     width: "100%",
     maxWidth: "100%",
+    minHeight: "clamp(14rem, 38svh, 24rem)",
     minWidth: 0,
     justifySelf: "stretch",
   },
@@ -1660,9 +1660,9 @@ const styles: Record<string, CSSProperties> = {
     color: "rgba(255,238,207,0.98)",
     fontFamily: "Georgia, Times New Roman, serif",
     fontWeight: 400,
-    fontSize: "clamp(2rem, 7vw, 4.5rem)",
-    lineHeight: 0.92,
-    letterSpacing: "-0.04em",
+    fontSize: "clamp(2.55rem, 13vw, 6rem)",
+    lineHeight: 0.88,
+    letterSpacing: "-0.055em",
     overflowWrap: "anywhere",
     wordBreak: "normal",
     hyphens: "auto",
@@ -1670,15 +1670,51 @@ const styles: Record<string, CSSProperties> = {
     textShadow: "0 4px 28px rgba(0,0,0,0.78), 0 0 24px rgba(227,146,76,0.22)",
   },
   highlightsHeroTitleLong: {
-    fontSize: "clamp(1.82rem, 6.1vw, 3.85rem)",
-    lineHeight: 0.96,
-    letterSpacing: "-0.035em",
+    fontSize: "clamp(2.2rem, 11vw, 5.15rem)",
+    lineHeight: 0.92,
+    letterSpacing: "-0.048em",
     textWrap: "pretty",
   },
-  highlightsCardsFrame: {
+  highlightsShowcase: {
+    display: "grid",
+    gap: "clamp(1.1rem, 3.8svh, 2rem)",
     width: "100%",
-    maxWidth: "34rem",
-    justifySelf: "center",
+    maxWidth: "100%",
+    justifySelf: "stretch",
+  },
+  highlightsRow: {
+    display: "grid",
+    alignContent: "center",
+    gap: "clamp(0.62rem, 1.9svh, 0.95rem)",
+    width: "100%",
+    minHeight: "clamp(6.75rem, 17svh, 9.75rem)",
+    padding: "clamp(1rem, 4.8vw, 1.85rem) 0",
+    borderTop: "1px solid rgba(246,202,127,0.22)",
+    background: "transparent",
+    boxSizing: "border-box",
+  },
+  highlightsRowSigil: {
+    color: gold,
+    fontSize: "0.72rem",
+    opacity: 0.9,
+    textShadow: "0 0 14px rgba(226,150,72,0.42)",
+    marginRight: "0.46rem",
+  },
+  highlightsRowTitle: {
+    margin: 0,
+    color: "rgba(250,224,183,0.96)",
+    fontSize: "clamp(0.84rem, 3vw, 1.02rem)",
+    letterSpacing: "0.13em",
+    textTransform: "uppercase",
+  },
+  highlightsRowText: {
+    margin: 0,
+    maxWidth: "44rem",
+    color: "rgba(238,225,203,0.9)",
+    fontFamily: "Georgia, Times New Roman, serif",
+    fontSize: "clamp(1.15rem, 4.9vw, 1.65rem)",
+    lineHeight: 1.42,
+    textWrap: "pretty",
   },
   highlightGrid: {
     display: "grid",
@@ -1891,7 +1927,8 @@ const styles: Record<string, CSSProperties> = {
     justifyItems: "center",
     gap: "clamp(0.5rem, 1.3svh, 0.78rem)",
     textAlign: "center",
-    padding: "clamp(0.82rem, 3.8vw, 1.28rem) clamp(0.74rem, 3.2vw, 1.12rem) clamp(0.74rem, 3.2vw, 1.12rem)",
+    padding:
+      "clamp(0.82rem, 3.8vw, 1.28rem) clamp(0.74rem, 3.2vw, 1.12rem) clamp(0.74rem, 3.2vw, 1.12rem)",
     borderRadius: "1rem",
     background:
       "radial-gradient(ellipse at 50% 38%, rgba(6,9,16,0.72), rgba(6,9,16,0.34) 48%, transparent 78%)",
