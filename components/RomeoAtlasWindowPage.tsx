@@ -69,6 +69,12 @@ type RomeoAtlasWindowPageProps = {
 
 const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal-bg.png";
 const ORIGIN_ARTIFACT_BACKGROUND_SRC = "/portal-backgrounds/origin-artifact.png";
+const DEFAULT_PORTAL_BACKGROUND_BY_ARTIFACT_TYPE: Partial<
+  Record<ArtifactType, string>
+> = {
+  memory: MEMORY_PORTAL_BACKGROUND_SRC,
+  origin: ORIGIN_ARTIFACT_BACKGROUND_SRC,
+};
 const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
   firstPeachQueen1931:
     "/artifact-reveals/romeo-peach/first-peach-queen-1931.mp4",
@@ -372,11 +378,14 @@ function PortalArtifact({
   const [videoLoadFailed, setVideoLoadFailed] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const isMemoryPortal = artifactType === "memory";
+  const isOriginPortal = artifactType === "origin";
   const portalLabel = isMemoryPortal
     ? "MEMORY PORTAL"
     : `${artifactType.toUpperCase()} ARTIFACT`;
   const closedPortalBackground =
-    portalBackground ?? (isMemoryPortal ? MEMORY_PORTAL_BACKGROUND_SRC : null);
+    portalBackground ??
+    DEFAULT_PORTAL_BACKGROUND_BY_ARTIFACT_TYPE[artifactType] ??
+    null;
   const shouldShowPortalBackground =
     Boolean(closedPortalBackground) && (!isRevealed || !revealVideo);
   const portalBackgroundStyle: CSSProperties | null =
@@ -420,6 +429,7 @@ function PortalArtifact({
 
   const portalQuestionLayerStyle: CSSProperties = {
     ...styles.portalQuestionLayer,
+    ...(isOriginPortal ? styles.originPortalQuestionLayer : null),
     ...(isMemoryPortal ? styles.memoryPortalQuestionLayer : null),
   };
 
@@ -499,7 +509,11 @@ function PortalArtifact({
           <div
             style={{
               ...styles.portalMemoryBackdrop,
-              ...(imageSrc ? { backgroundImage: `url(${imageSrc})` } : null),
+              ...((imageSrc ?? closedPortalBackground)
+                ? {
+                    backgroundImage: `url(${imageSrc ?? closedPortalBackground})`,
+                  }
+                : null),
             }}
             aria-hidden="true"
           />
@@ -1909,6 +1923,11 @@ const styles: Record<string, CSSProperties> = {
       "radial-gradient(ellipse at 50% 38%, rgba(6,9,16,0.72), rgba(6,9,16,0.34) 48%, transparent 78%)",
   },
 
+  originPortalQuestionLayer: {
+    background:
+      "linear-gradient(180deg, rgba(3,5,10,0.28), rgba(3,5,10,0.1) 34%, rgba(3,5,10,0.18) 72%, rgba(3,5,10,0.42) 100%)",
+    boxShadow: "inset 0 0 0 1px rgba(255,238,207,0.045)",
+  },
   memoryPortalQuestionLayer: {
     gridTemplateRows: "auto auto",
     alignContent: "start",
