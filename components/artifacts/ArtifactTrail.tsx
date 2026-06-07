@@ -102,7 +102,7 @@ export function ArtifactVideoCard({ artifact }: ArtifactVideoCardProps) {
         muted
         playsInline
         controls={false}
-        preload="metadata"
+        preload="auto"
         onLoadedData={() => {
           setIsVideoReady(true);
           setVideoLoadFailed(false);
@@ -139,12 +139,19 @@ function useTrailVideoAutoplay(
 
     if (!video || videoLoadFailed) return;
 
+    const requestVideoLoad = () => {
+      if (video.networkState === HTMLMediaElement.NETWORK_EMPTY) {
+        video.load();
+      }
+    };
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry) return;
 
         if (entry.isIntersecting) {
           video.muted = true;
+          requestVideoLoad();
           const playPromise = video.play();
 
           if (playPromise) {
@@ -157,7 +164,7 @@ function useTrailVideoAutoplay(
 
         video.pause();
       },
-      { threshold: 0.42, rootMargin: "0px 0px -8% 0px" },
+      { threshold: 0.15, rootMargin: "300px 0px 300px 0px" },
     );
 
     observer.observe(video);
