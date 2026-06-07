@@ -35,6 +35,7 @@ type ChatMessage = {
 type PortalArtifactProps = {
   ariaLabel: string;
   artifactType: ArtifactType;
+  artifactLabel?: string;
   title?: string;
   question: string;
   revealAriaLabel: string;
@@ -50,6 +51,7 @@ type GalleryPortalArtifact = {
   id: string;
   ariaLabel: string;
   artifactType: ArtifactType;
+  artifactLabel?: string;
   title?: string;
   question: string;
   revealAriaLabel: string;
@@ -68,7 +70,10 @@ type RomeoAtlasWindowPageProps = {
   introVideoSrc: string;
 };
 
-const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal-bg.png";
+const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal.png";
+const LEGEND_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/legend-portal.png";
+const ARTIFACT_ARCHIVE_BACKGROUND_SRC =
+  "/portal-backgrounds/artifact-archive.png";
 const ORIGIN_ARTIFACT_BACKGROUND_SRC =
   "/portal-backgrounds/origin-artifact.png";
 const DEFAULT_PORTAL_BACKGROUND_BY_ARTIFACT_TYPE: Partial<
@@ -93,25 +98,46 @@ const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
 
 const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
   {
-    id: "peach-queen-origins",
-    ariaLabel: "Romeo Peach Queen origins portal artifact",
-    artifactType: "origin",
-    title: "Peach Queen Origins",
-    question: "Want to see the first Peach Queen from 1931?",
-    revealAriaLabel: "Reveal the Romeo Peach Queen origins artifact",
-    portalBackground: ORIGIN_ARTIFACT_BACKGROUND_SRC,
-    revealVideo: ROMEO_PEACH_REVEAL_VIDEO_PATHS.firstPeachQueen1931,
-  },
-  {
     id: "romeo-name-origin",
     ariaLabel: "Romeo name origin portal artifact",
     artifactType: "origin",
+    title: "Origins",
     question: "How did Romeo get its name?",
     revealAriaLabel: "Reveal the Romeo name origin artifact",
     portalBackground: ORIGIN_ARTIFACT_BACKGROUND_SRC,
     fact: "In 1838, the founders could not agree on a name. Laura Taylor selected 'Romeo' because she felt it was musical, classical, and uncommon.",
     secondaryNote:
       "Before Romeo, the settlement was known as Indian Village and later Hoxie's Settlement.",
+  },
+  {
+    id: "memories",
+    ariaLabel: "Romeo Peach Festival memories portal artifact",
+    artifactType: "memory",
+    artifactLabel: "MEMORY PORTAL",
+    title: "Memories",
+    question: "Remember your first Peach Festival?",
+    revealAriaLabel: "Reveal the Romeo Peach Festival memories portal",
+    portalBackground: MEMORY_PORTAL_BACKGROUND_SRC,
+  },
+  {
+    id: "legends",
+    ariaLabel: "Romeo Peach Festival legends portal artifact",
+    artifactType: "legend",
+    artifactLabel: "LEGEND PORTAL",
+    title: "Legends",
+    question: "Which Peach Festival stories became legend?",
+    revealAriaLabel: "Reveal the Romeo Peach Festival legends portal",
+    portalBackground: LEGEND_PORTAL_BACKGROUND_SRC,
+  },
+  {
+    id: "artifacts",
+    ariaLabel: "Romeo Peach Festival artifact archive portal artifact",
+    artifactType: "gold",
+    artifactLabel: "ARTIFACT ARCHIVE",
+    title: "Artifacts",
+    question: "What treasures survived the festival?",
+    revealAriaLabel: "Reveal the Romeo Peach Festival artifact archive portal",
+    portalBackground: ARTIFACT_ARCHIVE_BACKGROUND_SRC,
   },
 ] as const;
 
@@ -366,6 +392,7 @@ function RomeoAtlasConversation({
 function PortalArtifact({
   ariaLabel,
   artifactType,
+  artifactLabel,
   title,
   question,
   revealAriaLabel,
@@ -384,9 +411,14 @@ function PortalArtifact({
   const [isVideoReady, setIsVideoReady] = useState(false);
   const isMemoryPortal = artifactType === "memory";
   const isOriginPortal = artifactType === "origin";
-  const portalLabel = isMemoryPortal
-    ? "MEMORY PORTAL"
-    : `${artifactType.toUpperCase()} ARTIFACT`;
+  const portalLabel =
+    artifactLabel ??
+    (isMemoryPortal
+      ? "MEMORY PORTAL"
+      : `${artifactType.toUpperCase()} ARTIFACT`);
+  const hasRevealContent = Boolean(
+    revealVideo || fact || secondaryNote || revealedContent,
+  );
   const closedPortalBackground =
     portalBackground ??
     DEFAULT_PORTAL_BACKGROUND_BY_ARTIFACT_TYPE[artifactType] ??
@@ -481,9 +513,17 @@ function PortalArtifact({
     setVideoLoadFailed(false);
     setIsVideoReady(false);
 
+    if (!hasRevealContent) return;
+
     if (!revealVideo) {
       window.setTimeout(() => setShowFact(true), 420);
     }
+  };
+
+  const handleRevealButtonClick = () => {
+    if (!hasRevealContent) return;
+
+    handleReveal();
   };
 
   const handleVideoReady = () => {
@@ -566,8 +606,9 @@ function PortalArtifact({
                     style={styles.portalRevealButton}
                     onClick={(event) => {
                       event.stopPropagation();
-                      handleReveal();
+                      handleRevealButtonClick();
                     }}
+                    aria-disabled={!hasRevealContent}
                     aria-label={revealAriaLabel}
                   >
                     Reveal
@@ -830,6 +871,7 @@ function RomeoMemoryContent({
               <PortalArtifact
                 ariaLabel={artifact.ariaLabel}
                 artifactType={artifact.artifactType}
+                artifactLabel={artifact.artifactLabel}
                 title={artifact.title}
                 question={artifact.question}
                 revealAriaLabel={artifact.revealAriaLabel}
@@ -1858,8 +1900,7 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 400,
     lineHeight: 1.02,
     textAlign: "center",
-    textShadow:
-      "0 3px 24px rgba(0,0,0,0.72), 0 0 20px rgba(227,146,76,0.2)",
+    textShadow: "0 3px 24px rgba(0,0,0,0.72), 0 0 20px rgba(227,146,76,0.2)",
   },
   portalMemoryBackdrop: {
     position: "absolute",
