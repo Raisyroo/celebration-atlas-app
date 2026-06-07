@@ -14,7 +14,7 @@ import Link from "next/link";
 import ArtifactTrail, {
   type ArtifactTrailData,
 } from "./artifacts/ArtifactTrail";
-import ArtifactSymbol, { type ArtifactType } from "./artifacts/ArtifactSymbol";
+import { type ArtifactType } from "./artifacts/ArtifactSymbol";
 
 type RomeoContentMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 type RomeoAtlasMode = RomeoContentMode | "ask";
@@ -72,8 +72,8 @@ type RomeoAtlasWindowPageProps = {
 
 const MEMORY_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/memory-portal.png";
 const LEGEND_PORTAL_BACKGROUND_SRC = "/portal-backgrounds/legend-portal.png";
-const ARTIFACT_ARCHIVE_BACKGROUND_SRC =
-  "/portal-backgrounds/artifact-archive.png";
+const ARTIFACT_PORTAL_BACKGROUND_SRC =
+  "/portal-backgrounds/artifact-portal.png";
 const ORIGIN_ARTIFACT_BACKGROUND_SRC =
   "/portal-backgrounds/origin-artifact.png";
 const DEFAULT_PORTAL_BACKGROUND_BY_ARTIFACT_TYPE: Partial<
@@ -81,6 +81,8 @@ const DEFAULT_PORTAL_BACKGROUND_BY_ARTIFACT_TYPE: Partial<
 > = {
   memory: MEMORY_PORTAL_BACKGROUND_SRC,
   origin: ORIGIN_ARTIFACT_BACKGROUND_SRC,
+  legend: LEGEND_PORTAL_BACKGROUND_SRC,
+  gold: ARTIFACT_PORTAL_BACKGROUND_SRC,
 };
 const ROMEO_PEACH_REVEAL_VIDEO_PATHS = {
   firstPeachQueen1931:
@@ -101,6 +103,7 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
     id: "romeo-name-origin",
     ariaLabel: "Romeo name origin portal artifact",
     artifactType: "origin",
+    artifactLabel: "ORIGIN PORTAL",
     title: "Origins",
     question: "How did Romeo get its name?",
     revealAriaLabel: "Reveal the Romeo name origin artifact",
@@ -133,11 +136,11 @@ const GALLERY_PORTAL_ARTIFACTS: readonly GalleryPortalArtifact[] = [
     id: "artifacts",
     ariaLabel: "Romeo Peach Festival artifact archive portal artifact",
     artifactType: "gold",
-    artifactLabel: "ARTIFACT ARCHIVE",
+    artifactLabel: "ARTIFACT PORTAL",
     title: "Artifacts",
     question: "What treasures survived the festival?",
     revealAriaLabel: "Reveal the Romeo Peach Festival artifact archive portal",
-    portalBackground: ARTIFACT_ARCHIVE_BACKGROUND_SRC,
+    portalBackground: ARTIFACT_PORTAL_BACKGROUND_SRC,
   },
 ] as const;
 
@@ -415,7 +418,7 @@ function PortalArtifact({
     artifactLabel ??
     (isMemoryPortal
       ? "MEMORY PORTAL"
-      : `${artifactType.toUpperCase()} ARTIFACT`);
+      : `${artifactType.toUpperCase()} PORTAL`);
   const hasRevealContent = Boolean(
     revealVideo || fact || secondaryNote || revealedContent,
   );
@@ -614,14 +617,6 @@ function PortalArtifact({
                     Reveal
                   </button>
                 </div>
-                {!isMemoryPortal ? (
-                  <ArtifactSymbol
-                    type={artifactType}
-                    variant="portal"
-                    className="romeo-portal-symbol"
-                    ariaLabel={`${artifactType} artifact symbol`}
-                  />
-                ) : null}
               </div>
             ) : null}
 
@@ -1966,12 +1961,12 @@ const styles: Record<string, CSSProperties> = {
     width: "auto",
     minWidth: 0,
     display: "grid",
-    gridTemplateRows: "auto minmax(0, 1fr) auto",
-    alignContent: "stretch",
+    gridTemplateRows: "auto auto",
+    alignContent: "center",
     justifyItems: "center",
-    gap: "clamp(0.58rem, 1.6svh, 0.88rem)",
+    gap: "clamp(0.72rem, 2svh, 1.05rem)",
     textAlign: "center",
-    padding: "clamp(0.78rem, 3.7vw, 1.35rem)",
+    padding: "clamp(0.74rem, 3.2vw, 1.12rem)",
     borderRadius: "1rem",
     background:
       "radial-gradient(ellipse at 50% 38%, rgba(6,9,16,0.72), rgba(6,9,16,0.34) 48%, transparent 78%)",
@@ -2002,7 +1997,7 @@ const styles: Record<string, CSSProperties> = {
   },
   portalHeroStack: {
     display: "grid",
-    alignSelf: "start",
+    alignSelf: "center",
     justifyItems: "center",
     gap: "clamp(0.68rem, 1.8svh, 0.95rem)",
     width: "100%",
