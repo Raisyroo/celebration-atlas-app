@@ -1475,6 +1475,7 @@ const styles: Record<string, CSSProperties> = {
     display: "block",
     width: "100%",
     height: "auto",
+    objectPosition: "50% 40%",
     opacity: 0,
     mixBlendMode: "soft-light",
     filter: "saturate(0.88) contrast(1.04) brightness(0.86)",
