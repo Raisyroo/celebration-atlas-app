@@ -861,9 +861,7 @@ function RomeoMemoryContent({
       style={{
         ...styles.memoryContent,
         ...styles.highlightsMemoryContent,
-        ...(introStatus === "playing"
-          ? styles.highlightsIntroMemoryContent
-          : styles.highlightsPostIntroMemoryContent),
+        ...styles.highlightsPostIntroMemoryContent,
       }}
       aria-label="Highlights lens"
     >
@@ -871,13 +869,12 @@ function RomeoMemoryContent({
         <figure
           className="romeo-cinematic-video-memory"
           style={{
-            ...styles.cinematicVideoFrame,
-            ...(introVideoReady
-              ? styles.cinematicVideoFrameReady
-              : styles.cinematicVideoFrameHidden),
             ...styles.highlightsIntroVideoLayer,
+            ...(introVideoReady
+              ? styles.highlightsIntroVideoLayerReady
+              : styles.highlightsIntroVideoLayerHidden),
             ...(introStatus === "dissolving"
-              ? styles.cinematicVideoFrameHidden
+              ? styles.highlightsIntroVideoLayerHidden
               : null),
           }}
           data-intro-state={introStatus}
@@ -892,9 +889,8 @@ function RomeoMemoryContent({
             aria-label="Romeo Peach Festival intro video"
             className="romeo-cinematic-intro-video"
             style={{
-              ...styles.cinematicIntroVideo,
               ...styles.highlightsIntroVideo,
-              ...(introVideoReady ? styles.cinematicIntroVideoReady : null),
+              ...(introVideoReady ? styles.highlightsIntroVideoReady : null),
             }}
             onCanPlay={handleIntroCanPlay}
             onPlay={handleIntroVideoPlay}
@@ -1155,7 +1151,10 @@ export default function RomeoAtlasWindowPage({
           }
           @keyframes romeo-cinematic-ken-burns {
             0%, 100% {
-              transform: translateY(10%);
+              transform: scale(1.08);
+            }
+            50% {
+              transform: scale(1.12);
             }
           }
           @media (prefers-reduced-motion: reduce) {
@@ -1168,7 +1167,7 @@ export default function RomeoAtlasWindowPage({
               animation-duration: 1ms;
             }
             .romeo-cinematic-intro-video {
-              transform: translateY(10%);
+              transform: scale(1.08);
             }
           }
         `}</style>
@@ -1464,10 +1463,6 @@ const styles: Record<string, CSSProperties> = {
     paddingTop: "clamp(2rem, 8svh, 4.6rem)",
     paddingBottom: "clamp(1.1rem, 5svh, 3.2rem)",
   },
-  highlightsIntroMemoryContent: {
-    paddingRight: 0,
-    paddingLeft: 0,
-  },
   highlightsPostIntroMemoryContent: {
     alignContent: "start",
     justifyItems: "center",
@@ -1486,60 +1481,53 @@ const styles: Record<string, CSSProperties> = {
       "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
     scrollPaddingTop: "clamp(2.8rem, 8svh, 4.8rem)",
   },
-  cinematicVideoFrame: {
-    position: "relative",
-    width: "100%",
-    justifySelf: "stretch",
-    margin: "clamp(0.35rem, 1.5svh, 0.9rem) 0 0",
-    overflow: "visible",
-    borderRadius: 0,
-    border: 0,
-    background: "transparent",
-    boxShadow: "0 24px 68px rgba(0,0,0,0.18), 0 0 76px rgba(226,150,72,0.08)",
-    opacity: 0,
-    transition: `opacity ${INTRO_FADE_MS}ms ease-out`,
-    isolation: "isolate",
-  },
-  cinematicVideoFrameHidden: {
-    opacity: 0,
-  },
-  cinematicVideoFrameReady: {
-    opacity: 1,
-  },
   highlightsIntroVideoLayer: {
     position: "absolute",
     inset: 0,
     zIndex: 2,
+    display: "block",
     width: "100%",
     height: "100%",
+    minHeight: "100%",
     margin: 0,
     overflow: "hidden",
+    borderRadius: 0,
+    border: 0,
+    background: "transparent",
+    boxShadow: "none",
+    opacity: 0,
+    pointerEvents: "none",
+    isolation: "isolate",
+    transition: `opacity ${INTRO_FADE_MS}ms ease-out`,
   },
-  cinematicIntroVideo: {
-    position: "relative",
+  highlightsIntroVideoLayerHidden: {
+    opacity: 0,
+  },
+  highlightsIntroVideoLayerReady: {
+    opacity: 1,
+  },
+  highlightsIntroVideo: {
+    position: "absolute",
+    inset: 0,
     zIndex: 2,
     display: "block",
     width: "100%",
-    height: "auto",
+    height: "100%",
+    minWidth: "100%",
+    minHeight: "100%",
+    maxWidth: "none",
+    maxHeight: "none",
     objectFit: "cover",
     objectPosition: "50% 60%",
-    transform: "translateY(10%)",
+    transform: "scale(1.08)",
     opacity: 0,
     mixBlendMode: "soft-light",
     filter: "saturate(0.88) contrast(1.04) brightness(0.86)",
     willChange: "opacity, transform",
     transition: `opacity ${INTRO_FADE_MS}ms ease-out`,
   },
-  cinematicIntroVideoReady: {
+  highlightsIntroVideoReady: {
     opacity: 0.52,
-  },
-  highlightsIntroVideo: {
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    transform: "translateY(0)",
   },
   cinematicVideoOverlay: {
     position: "absolute",
