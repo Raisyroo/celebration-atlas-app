@@ -1124,7 +1124,7 @@ export default function RomeoAtlasWindowPage({
           }
           @keyframes romeo-cinematic-ken-burns {
             0%, 100% {
-              transform: translateY(-10%);
+              transform: translateY(10%);
             }
           }
           @media (prefers-reduced-motion: reduce) {
@@ -1137,7 +1137,7 @@ export default function RomeoAtlasWindowPage({
               animation-duration: 1ms;
             }
             .romeo-cinematic-intro-video {
-              transform: translateY(-10%);
+              transform: translateY(10%);
             }
           }
         `}</style>
@@ -1476,8 +1476,8 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     height: "auto",
     objectFit: "cover",
-    objectPosition: "50% 40%",
-    transform: "translateY(-10%)",
+    objectPosition: "50% 60%",
+    transform: "translateY(10%)",
     opacity: 0,
     mixBlendMode: "soft-light",
     filter: "saturate(0.88) contrast(1.04) brightness(0.86)",
