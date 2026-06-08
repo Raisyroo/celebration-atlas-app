@@ -725,8 +725,11 @@ function RomeoMemoryContent({
 
   const handleIntroVideoPlay = useCallback(() => {
     onIntroVideoPlayback();
+  }, [onIntroVideoPlayback]);
+
+  useEffect(() => {
     startIntroVisibleTimer();
-  }, [onIntroVideoPlayback, startIntroVisibleTimer]);
+  }, [startIntroVisibleTimer]);
 
   const handleIntroVideoError = useCallback(() => {
     if (introVisibleTimerRef.current !== null) {
@@ -1079,11 +1082,12 @@ export default function RomeoAtlasWindowPage({
             opacity: 1 !important;
           }
           .romeo-cinematic-video-memory {
+            pointer-events: none;
             transition: opacity 420ms ease-out;
           }
           .romeo-cinematic-video-memory[data-intro-state="dissolving"] {
             transition-duration: 420ms;
-            transition-timing-function: ease-in;
+            transition-timing-function: ease-out;
           }
           .romeo-cinematic-intro-video {
             animation: romeo-cinematic-ken-burns 24s ease-in-out infinite alternate;
@@ -1094,7 +1098,7 @@ export default function RomeoAtlasWindowPage({
             will-change: opacity, transform;
           }
           .romeo-highlights-content {
-            animation-duration: 420ms;
+            animation-duration: 620ms;
           }
           .romeo-portal-question {
             transition: opacity 760ms ease, transform 760ms ease, filter 760ms ease;
@@ -1154,7 +1158,7 @@ export default function RomeoAtlasWindowPage({
           @keyframes romeo-highlights-fade-in {
             from {
               opacity: 0;
-              transform: translate3d(0, 1.15rem, 0);
+              transform: translate3d(0, 12px, 0);
             }
             to {
               opacity: 1;
@@ -1435,7 +1439,7 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 3,
     minHeight: 0,
     marginTop: "clamp(2.8rem, 8svh, 4.35rem)",
-    overflow: "visible",
+    overflow: "hidden",
   },
   memoryContent: {
     position: "absolute",
@@ -1477,8 +1481,13 @@ const styles: Record<string, CSSProperties> = {
     paddingLeft: 0,
   },
   highlightsPostIntroMemoryContent: {
-    alignContent: "safe center",
+    alignContent: "start",
     justifyItems: "center",
+    overflowX: "hidden",
+    overflowY: "auto",
+    overscrollBehavior: "contain",
+    WebkitOverflowScrolling: "touch",
+    touchAction: "pan-y",
     paddingTop: "clamp(2.8rem, 8svh, 4.8rem)",
     paddingRight: 0,
     paddingBottom: "clamp(6.5rem, 16svh, 9rem)",
