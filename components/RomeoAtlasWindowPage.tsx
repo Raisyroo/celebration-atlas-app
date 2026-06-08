@@ -277,6 +277,7 @@ const INTRO_VISIBLE_MS = 6000;
 const INTRO_FADE_MS = 420;
 const HIGHLIGHTS_CONTENT_OFFSET_Y = "32px";
 const HIGHLIGHTS_VIDEO_OBJECT_POSITION = "50% 66%";
+const ROMEO_VIEWPORT_HEIGHT_VAR = "--romeo-viewport-height";
 
 type IntroStatus = "playing" | "dissolving" | "complete";
 
@@ -956,6 +957,7 @@ export default function RomeoAtlasWindowPage({
   introVideoSrc,
 }: RomeoAtlasWindowPageProps) {
   const [activeMode, setActiveMode] = useState<RomeoAtlasMode>("highlights");
+  const [viewportHeight, setViewportHeight] = useState<string | null>(null);
   const [askQuestion, setAskQuestion] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [introPlaybackEventId, setIntroPlaybackEventId] = useState<
@@ -963,6 +965,28 @@ export default function RomeoAtlasWindowPage({
   >(null);
   const chatHistoryRef = useRef<HTMLElement | null>(null);
   const hasPlayedIntroVideo = introPlaybackEventId === eventId;
+
+  useEffect(() => {
+    const updateViewportHeight = () => {
+      const visualViewportHeight = window.visualViewport?.height;
+      const measuredHeight = visualViewportHeight ?? window.innerHeight;
+
+      setViewportHeight(`${measuredHeight}px`);
+    };
+
+    updateViewportHeight();
+    window.visualViewport?.addEventListener("resize", updateViewportHeight);
+    window.addEventListener("resize", updateViewportHeight);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateViewportHeight);
+      window.removeEventListener("resize", updateViewportHeight);
+    };
+  }, []);
+
+  const viewportHeightStyle = viewportHeight
+    ? ({ [ROMEO_VIEWPORT_HEIGHT_VAR]: viewportHeight } as CSSProperties)
+    : undefined;
 
   const handleIntroVideoPlayback = useCallback(() => {
     setIntroPlaybackEventId(eventId);
@@ -1020,7 +1044,7 @@ export default function RomeoAtlasWindowPage({
 
   return (
     <main
-      style={styles.page}
+      style={{ ...styles.page, ...viewportHeightStyle }}
       className="atlas-event-shell"
       data-event-id={eventId}
     >
@@ -1331,8 +1355,8 @@ const gold = "rgba(226, 172, 92, 0.88)";
 const styles: Record<string, CSSProperties> = {
   page: {
     width: "100vw",
-    height: "100svh",
-    minHeight: "100svh",
+    height: `var(${ROMEO_VIEWPORT_HEIGHT_VAR}, 100dvh)`,
+    minHeight: `var(${ROMEO_VIEWPORT_HEIGHT_VAR}, 100dvh)`,
     overflow: "hidden",
     color: "rgba(246,232,205,0.94)",
     background: "radial-gradient(circle at 50% 15%, #172233, #05070c 70%)",
@@ -1340,7 +1364,7 @@ const styles: Record<string, CSSProperties> = {
   stage: {
     position: "relative",
     width: "min(100vw, 760px)",
-    height: "100svh",
+    height: `var(${ROMEO_VIEWPORT_HEIGHT_VAR}, 100dvh)`,
     margin: "0 auto",
     overflow: "hidden",
     padding:
