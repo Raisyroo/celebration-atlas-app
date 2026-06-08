@@ -275,6 +275,8 @@ const GENERAL_ATLAS_ANSWER =
 
 const INTRO_VISIBLE_MS = 6000;
 const INTRO_FADE_MS = 420;
+const HIGHLIGHTS_CONTENT_OFFSET_Y = "32px";
+const HIGHLIGHTS_VIDEO_OBJECT_POSITION = "50% 66%";
 
 type IntroStatus = "playing" | "dissolving" | "complete";
 
@@ -891,6 +893,7 @@ function RomeoMemoryContent({
             style={{
               ...styles.highlightsIntroVideo,
               ...(introVideoReady ? styles.highlightsIntroVideoReady : null),
+              objectPosition: HIGHLIGHTS_VIDEO_OBJECT_POSITION,
             }}
             onCanPlay={handleIntroCanPlay}
             onPlay={handleIntroVideoPlay}
@@ -909,7 +912,9 @@ function RomeoMemoryContent({
             ...(shouldShowIntroVideo
               ? styles.highlightsContentUnderIntro
               : null),
-          }}
+            "--highlights-content-offset-y": HIGHLIGHTS_CONTENT_OFFSET_Y,
+            transform: `translate3d(0, ${HIGHLIGHTS_CONTENT_OFFSET_Y}, 0)`,
+          } as CSSProperties}
         >
           <header style={styles.highlightsHeroHeader}>
             <p style={{ ...styles.windowEyebrow, ...styles.highlightsEyebrow }}>
@@ -1083,6 +1088,7 @@ export default function RomeoAtlasWindowPage({
           }
           .romeo-highlights-content {
             animation-duration: 620ms;
+            transform: translate3d(0, var(--highlights-content-offset-y, 0px), 0);
           }
           .romeo-portal-question {
             transition: opacity 760ms ease, transform 760ms ease, filter 760ms ease;
@@ -1142,11 +1148,11 @@ export default function RomeoAtlasWindowPage({
           @keyframes romeo-highlights-fade-in {
             from {
               opacity: 0;
-              transform: translate3d(0, 12px, 0);
+              transform: translate3d(0, calc(var(--highlights-content-offset-y, 0px) + 12px), 0);
             }
             to {
               opacity: 1;
-              transform: translate3d(0, 0, 0);
+              transform: translate3d(0, var(--highlights-content-offset-y, 0px), 0);
             }
           }
           @keyframes romeo-cinematic-ken-burns {
@@ -1515,7 +1521,7 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: "none",
     maxHeight: "none",
     objectFit: "cover",
-    objectPosition: "50% 60%",
+    objectPosition: HIGHLIGHTS_VIDEO_OBJECT_POSITION,
     transform: "scale(1.08)",
     opacity: 0,
     mixBlendMode: "soft-light",
