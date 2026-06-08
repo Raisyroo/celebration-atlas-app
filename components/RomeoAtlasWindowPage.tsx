@@ -287,23 +287,10 @@ function getAtlasAnswer(question: string) {
   );
 }
 
-const HIGHLIGHT_ITEMS = [
-  [
-    "Parade route",
-    "Main Street fills early; claim a viewing spot before 4:00 PM.",
-  ],
-  [
-    "Peach food",
-    "Pie, cobbler, drinks, and seasonal vendor specials are the main draw.",
-  ],
-  [
-    "Downtown core",
-    "Storefronts, music corners, and food rows are within a short walk.",
-  ],
-  [
-    "Evening window",
-    "After sunset, lighting improves for photos and crowds begin to thin.",
-  ],
+const HIGHLIGHT_STATEMENTS = [
+  "🍑 Peach Queen Tradition",
+  "🎡 Midway & Carnival",
+  "🎺 Peach Parade",
 ] as const;
 
 function MemorySeparator() {
@@ -899,22 +886,58 @@ function RomeoMemoryContent({
           className="romeo-mode-content-reveal romeo-highlights-content"
           style={styles.highlightsContentReveal}
         >
-          <div style={styles.highlightsHeroHeader}>
-            <p style={styles.windowEyebrow}>Highlights</p>
+          <header style={styles.highlightsHeroHeader}>
+            <p style={{ ...styles.windowEyebrow, ...styles.highlightsEyebrow }}>
+              Highlights
+            </p>
+            <figure
+              className="romeo-cinematic-video-memory"
+              style={{
+                ...styles.cinematicVideoFrame,
+                ...styles.cinematicVideoFrameReady,
+                ...styles.highlightsHeroVideoFrame,
+              }}
+            >
+              <video
+                src={introVideoSrc}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-label="Romeo Peach Festival intro video"
+                className="romeo-cinematic-intro-video"
+                style={{
+                  ...styles.cinematicIntroVideo,
+                  ...styles.cinematicIntroVideoReady,
+                }}
+              >
+                Romeo intro video unavailable
+              </video>
+              <span style={styles.cinematicVideoOverlay} aria-hidden="true" />
+            </figure>
+          </header>
+
+          <div style={styles.highlightsIntroCopy}>
             <h2 style={getHighlightsHeroTitleStyle(eventName)}>{eventName}</h2>
-            <MemorySeparator />
+            <p style={styles.highlightsDescriptor}>
+              Michigan&apos;s most famous peach celebration.
+            </p>
+            <p style={styles.highlightsSupportLine}>
+              A Labor Day tradition since 1931.
+            </p>
           </div>
-          <div style={styles.highlightsShowcase}>
-            {HIGHLIGHT_ITEMS.map(([title, text]) => (
-              <article key={title} style={styles.highlightsRow}>
-                <h3 style={styles.highlightsRowTitle}>
-                  <span style={styles.highlightsRowSigil}>✦</span>
-                  {title}
-                </h3>
-                <p style={styles.highlightsRowText}>{text}</p>
-              </article>
+
+          <ul
+            style={styles.highlightsShowcase}
+            aria-label="Romeo Peach Festival highlights"
+          >
+            {HIGHLIGHT_STATEMENTS.map((statement) => (
+              <li key={statement} style={styles.highlightsStatement}>
+                {statement}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       ) : null}
     </section>
@@ -1438,16 +1461,17 @@ const styles: Record<string, CSSProperties> = {
     paddingLeft: 0,
   },
   highlightsPostIntroMemoryContent: {
-    alignContent: "start",
-    paddingTop: "clamp(3.35rem, 10svh, 6rem)",
-    paddingRight: "clamp(0.65rem, 3.6vw, 1.55rem)",
+    alignContent: "safe center",
+    justifyItems: "center",
+    paddingTop: "clamp(2.8rem, 8svh, 4.8rem)",
+    paddingRight: 0,
     paddingBottom: "clamp(6.5rem, 16svh, 9rem)",
-    paddingLeft: "clamp(0.65rem, 3.6vw, 1.55rem)",
+    paddingLeft: 0,
     WebkitMaskImage:
       "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
     maskImage:
       "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
-    scrollPaddingTop: "clamp(3.35rem, 10svh, 6rem)",
+    scrollPaddingTop: "clamp(2.8rem, 8svh, 4.8rem)",
   },
   cinematicVideoFrame: {
     position: "relative",
@@ -1638,27 +1662,49 @@ const styles: Record<string, CSSProperties> = {
   },
   highlightsContentReveal: {
     display: "grid",
-    gap: "clamp(2.25rem, 7svh, 4.75rem)",
+    alignContent: "center",
+    justifyItems: "center",
+    gap: "clamp(1.35rem, 4.6svh, 2.75rem)",
     width: "100%",
     maxWidth: "100%",
+    minHeight: "100%",
     justifySelf: "stretch",
+    textAlign: "center",
     opacity: 0,
     willChange: "opacity, transform",
   },
   highlightsHeroHeader: {
     display: "grid",
-    alignContent: "end",
-    gap: "clamp(0.9rem, 2.8svh, 1.35rem)",
+    gap: "clamp(0.8rem, 2.5svh, 1.2rem)",
     width: "100%",
     maxWidth: "100%",
-    minHeight: "clamp(14rem, 38svh, 24rem)",
     minWidth: 0,
+    justifyItems: "center",
     justifySelf: "stretch",
+  },
+  highlightsEyebrow: {
+    textAlign: "center",
+    letterSpacing: "0.28em",
+  },
+  highlightsHeroVideoFrame: {
+    margin: 0,
+    width: "100%",
+    maxWidth: "100%",
+  },
+  highlightsIntroCopy: {
+    display: "grid",
+    justifyItems: "center",
+    gap: "clamp(0.55rem, 1.6svh, 0.85rem)",
+    width: "100%",
+    maxWidth: "42rem",
+    paddingRight: "clamp(1.05rem, 5.4vw, 2.35rem)",
+    paddingLeft: "clamp(1.05rem, 5.4vw, 2.35rem)",
+    boxSizing: "border-box",
   },
   highlightsHeroTitle: {
     margin: 0,
     width: "100%",
-    maxWidth: "100%",
+    maxWidth: "13ch",
     minWidth: 0,
     color: "rgba(255,238,207,0.98)",
     fontFamily: "Georgia, Times New Roman, serif",
@@ -1669,6 +1715,7 @@ const styles: Record<string, CSSProperties> = {
     overflowWrap: "anywhere",
     wordBreak: "normal",
     hyphens: "auto",
+    textAlign: "center",
     textWrap: "balance",
     textShadow: "0 4px 28px rgba(0,0,0,0.78), 0 0 24px rgba(227,146,76,0.22)",
   },
@@ -1678,12 +1725,44 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: "-0.048em",
     textWrap: "pretty",
   },
+  highlightsDescriptor: {
+    margin: 0,
+    maxWidth: "28rem",
+    color: "rgba(255,238,207,0.94)",
+    fontFamily: "Georgia, Times New Roman, serif",
+    fontSize: "clamp(1.05rem, 3.7vw, 1.34rem)",
+    lineHeight: 1.45,
+    textWrap: "balance",
+  },
+  highlightsSupportLine: {
+    margin: 0,
+    color: "rgba(246,202,127,0.84)",
+    fontSize: "clamp(0.76rem, 2.55vw, 0.92rem)",
+    letterSpacing: "0.12em",
+    lineHeight: 1.5,
+    textTransform: "uppercase",
+  },
   highlightsShowcase: {
     display: "grid",
-    gap: "clamp(1.1rem, 3.8svh, 2rem)",
+    justifyItems: "center",
+    gap: "clamp(1.12rem, 3.7svh, 2.05rem)",
     width: "100%",
-    maxWidth: "100%",
-    justifySelf: "stretch",
+    maxWidth: "34rem",
+    margin: 0,
+    padding: "0 clamp(1.05rem, 5.4vw, 2.35rem)",
+    listStyle: "none",
+    boxSizing: "border-box",
+  },
+  highlightsStatement: {
+    margin: 0,
+    color: "rgba(250,224,183,0.96)",
+    fontFamily: "Georgia, Times New Roman, serif",
+    fontSize: "clamp(1.2rem, 4.6vw, 1.72rem)",
+    lineHeight: 1.16,
+    letterSpacing: "-0.018em",
+    textAlign: "center",
+    textWrap: "balance",
+    textShadow: "0 3px 24px rgba(0,0,0,0.72), 0 0 18px rgba(227,146,76,0.18)",
   },
   highlightsRow: {
     display: "grid",
