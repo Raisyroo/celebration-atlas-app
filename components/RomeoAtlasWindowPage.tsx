@@ -746,19 +746,6 @@ function RomeoMemoryContent({
     setIntroStatus("complete");
   }, [onIntroVideoPlayback]);
 
-  useEffect(() => {
-    if (introStatus !== "complete") {
-      return;
-    }
-
-    const highlightsScroll = highlightsScrollRef.current;
-    if (!highlightsScroll) {
-      return;
-    }
-
-    highlightsScroll.scrollTo({ top: 0, behavior: "instant" });
-  }, [introStatus]);
-
   if (activeMode === "schedule") {
     return (
       <section
@@ -1472,7 +1459,8 @@ const styles: Record<string, CSSProperties> = {
       "linear-gradient(to bottom, black 0%, black 94%, transparent 100%)",
   },
   highlightsMemoryContent: {
-    alignContent: "center",
+    alignContent: "safe center",
+    justifyItems: "center",
     paddingTop: "clamp(2rem, 8svh, 4.6rem)",
     paddingBottom: "clamp(1.1rem, 5svh, 3.2rem)",
   },
@@ -1481,22 +1469,18 @@ const styles: Record<string, CSSProperties> = {
     paddingLeft: 0,
   },
   highlightsPostIntroMemoryContent: {
-    alignContent: "start",
     justifyItems: "center",
     overflowX: "hidden",
     overflowY: "auto",
     overscrollBehavior: "contain",
     WebkitOverflowScrolling: "touch",
     touchAction: "pan-y",
-    paddingTop: "clamp(2.8rem, 8svh, 4.8rem)",
     paddingRight: 0,
-    paddingBottom: "clamp(6.5rem, 16svh, 9rem)",
     paddingLeft: 0,
     WebkitMaskImage:
-      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
+      "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
     maskImage:
-      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
-    scrollPaddingTop: "clamp(2.8rem, 8svh, 4.8rem)",
+      "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
   },
   cinematicVideoFrame: {
     position: "relative",
