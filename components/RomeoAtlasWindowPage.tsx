@@ -273,8 +273,7 @@ const ANSWER_MATCHERS: readonly {
 const GENERAL_ATLAS_ANSWER =
   "Romeo Peach Festival is easiest when you treat Main Street as your anchor: arrive early, park outside the busiest core, sample peach food before peak lines, and save time for the parade, photos, and an evening stroll.";
 
-const INTRO_VISIBLE_MS = 5000;
-const INTRO_DISSOLVE_MS = 1300;
+const INTRO_FADE_MS = 420;
 
 type IntroStatus = "playing" | "dissolving" | "complete";
 
@@ -663,52 +662,51 @@ function RomeoMemoryContent({
     shouldAutoplayIntroVideo ? "playing" : "complete",
   );
   const highlightsScrollRef = useRef<HTMLElement | null>(null);
-  const isIntroPlaybackInProgressRef = useRef(false);
+  const introFadeTimerRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (activeMode !== "highlights") {
+  const finishIntroVideo = useCallback(() => {
+    if (introFadeTimerRef.current !== null) {
       return;
     }
 
-    if (shouldAutoplayIntroVideo) {
-      isIntroPlaybackInProgressRef.current = true;
-    }
-
-    if (!shouldAutoplayIntroVideo && !isIntroPlaybackInProgressRef.current) {
-      return;
-    }
-
-    if (!introVideoReady) {
-      return;
-    }
-
-    const dissolveTimer = window.setTimeout(() => {
-      setIntroStatus("dissolving");
-    }, INTRO_VISIBLE_MS);
-    const completeTimer = window.setTimeout(() => {
-      isIntroPlaybackInProgressRef.current = false;
+    setIntroStatus("dissolving");
+    introFadeTimerRef.current = window.setTimeout(() => {
+      introFadeTimerRef.current = null;
       onIntroVideoPlayback();
       setIntroStatus("complete");
-    }, INTRO_VISIBLE_MS + INTRO_DISSOLVE_MS);
+    }, INTRO_FADE_MS);
+  }, [onIntroVideoPlayback]);
 
+  useEffect(() => {
     return () => {
-      window.clearTimeout(dissolveTimer);
-      window.clearTimeout(completeTimer);
+      if (introFadeTimerRef.current !== null) {
+        window.clearTimeout(introFadeTimerRef.current);
+      }
     };
-  }, [
-    activeMode,
-    introVideoReady,
-    introVideoSrc,
-    onIntroVideoPlayback,
-    shouldAutoplayIntroVideo,
-  ]);
+  }, []);
+
+  useEffect(() => {
+    if (activeMode === "highlights" || introStatus === "complete") {
+      return;
+    }
+
+    finishIntroVideo();
+  }, [activeMode, finishIntroVideo, introStatus]);
 
   const handleIntroCanPlay = useCallback(() => {
     setIntroVideoReady(true);
   }, []);
 
+  const handleIntroVideoEnded = useCallback(() => {
+    finishIntroVideo();
+  }, [finishIntroVideo]);
+
   const handleIntroVideoError = useCallback(() => {
-    isIntroPlaybackInProgressRef.current = false;
+    if (introFadeTimerRef.current !== null) {
+      window.clearTimeout(introFadeTimerRef.current);
+      introFadeTimerRef.current = null;
+    }
+
     onIntroVideoPlayback();
     setIntroStatus("complete");
   }, [onIntroVideoPlayback]);
@@ -831,6 +829,9 @@ function RomeoMemoryContent({
     );
   }
 
+  const shouldShowIntroVideo = introStatus !== "complete";
+  const shouldShowHighlightsContent = introStatus !== "playing";
+
   return (
     <section
       ref={highlightsScrollRef}
@@ -844,7 +845,7 @@ function RomeoMemoryContent({
       }}
       aria-label="Highlights lens"
     >
-      {introStatus !== "complete" ? (
+      {shouldShowIntroVideo ? (
         <figure
           className="romeo-cinematic-video-memory"
           style={{
@@ -852,6 +853,7 @@ function RomeoMemoryContent({
             ...(introVideoReady
               ? styles.cinematicVideoFrameReady
               : styles.cinematicVideoFrameHidden),
+            ...styles.highlightsIntroVideoLayer,
             ...(introStatus === "dissolving"
               ? styles.cinematicVideoFrameHidden
               : null),
@@ -873,7 +875,7 @@ function RomeoMemoryContent({
             }}
             onCanPlay={handleIntroCanPlay}
             onPlay={onIntroVideoPlayback}
-            onEnded={onIntroVideoPlayback}
+            onEnded={handleIntroVideoEnded}
             onError={handleIntroVideoError}
           >
             Romeo intro video unavailable
@@ -881,41 +883,20 @@ function RomeoMemoryContent({
           <span style={styles.cinematicVideoOverlay} aria-hidden="true" />
         </figure>
       ) : null}
-      {introStatus === "complete" ? (
+      {shouldShowHighlightsContent ? (
         <div
           className="romeo-mode-content-reveal romeo-highlights-content"
-          style={styles.highlightsContentReveal}
+          style={{
+            ...styles.highlightsContentReveal,
+            ...(shouldShowIntroVideo
+              ? styles.highlightsContentUnderIntro
+              : null),
+          }}
         >
           <header style={styles.highlightsHeroHeader}>
             <p style={{ ...styles.windowEyebrow, ...styles.highlightsEyebrow }}>
               Highlights
             </p>
-            <figure
-              className="romeo-cinematic-video-memory"
-              style={{
-                ...styles.cinematicVideoFrame,
-                ...styles.cinematicVideoFrameReady,
-                ...styles.highlightsHeroVideoFrame,
-              }}
-            >
-              <video
-                src={introVideoSrc}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                aria-label="Romeo Peach Festival intro video"
-                className="romeo-cinematic-intro-video"
-                style={{
-                  ...styles.cinematicIntroVideo,
-                  ...styles.cinematicIntroVideoReady,
-                }}
-              >
-                Romeo intro video unavailable
-              </video>
-              <span style={styles.cinematicVideoOverlay} aria-hidden="true" />
-            </figure>
           </header>
 
           <div style={styles.highlightsIntroCopy}>
@@ -1067,9 +1048,10 @@ export default function RomeoAtlasWindowPage({
             opacity: 1 !important;
           }
           .romeo-cinematic-video-memory {
-            transition: opacity 1300ms ease-out;
+            transition: opacity 420ms ease-out;
           }
           .romeo-cinematic-video-memory[data-intro-state="dissolving"] {
+            transition-duration: 420ms;
             transition-timing-function: ease-in;
           }
           .romeo-cinematic-intro-video {
@@ -1079,6 +1061,9 @@ export default function RomeoAtlasWindowPage({
           .romeo-highlights-content {
             animation: romeo-highlights-fade-in 1050ms ease-out forwards;
             will-change: opacity, transform;
+          }
+          .romeo-highlights-content {
+            animation-duration: 420ms;
           }
           .romeo-portal-question {
             transition: opacity 760ms ease, transform 760ms ease, filter 760ms ease;
@@ -1484,7 +1469,7 @@ const styles: Record<string, CSSProperties> = {
     background: "transparent",
     boxShadow: "0 24px 68px rgba(0,0,0,0.18), 0 0 76px rgba(226,150,72,0.08)",
     opacity: 0,
-    transition: "opacity 1300ms ease-out",
+    transition: `opacity ${INTRO_FADE_MS}ms ease-out`,
     isolation: "isolate",
   },
   cinematicVideoFrameHidden: {
@@ -1492,6 +1477,11 @@ const styles: Record<string, CSSProperties> = {
   },
   cinematicVideoFrameReady: {
     opacity: 1,
+  },
+  highlightsIntroVideoLayer: {
+    gridArea: "1 / 1",
+    alignSelf: "center",
+    zIndex: 2,
   },
   cinematicIntroVideo: {
     position: "relative",
@@ -1506,7 +1496,7 @@ const styles: Record<string, CSSProperties> = {
     mixBlendMode: "soft-light",
     filter: "saturate(0.88) contrast(1.04) brightness(0.86)",
     willChange: "opacity, transform",
-    transition: "opacity 1300ms ease-out",
+    transition: `opacity ${INTRO_FADE_MS}ms ease-out`,
   },
   cinematicIntroVideoReady: {
     opacity: 0.52,
@@ -1661,6 +1651,8 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: "32rem",
   },
   highlightsContentReveal: {
+    gridArea: "1 / 1",
+    zIndex: 1,
     display: "grid",
     alignContent: "center",
     justifyItems: "center",
@@ -1686,10 +1678,8 @@ const styles: Record<string, CSSProperties> = {
     textAlign: "center",
     letterSpacing: "0.28em",
   },
-  highlightsHeroVideoFrame: {
-    margin: 0,
-    width: "100%",
-    maxWidth: "100%",
+  highlightsContentUnderIntro: {
+    pointerEvents: "none",
   },
   highlightsIntroCopy: {
     display: "grid",
