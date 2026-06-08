@@ -861,9 +861,9 @@ function RomeoMemoryContent({
       style={{
         ...styles.memoryContent,
         ...styles.highlightsMemoryContent,
-        ...(introStatus === "complete"
-          ? styles.highlightsPostIntroMemoryContent
-          : styles.highlightsIntroMemoryContent),
+        ...(introStatus === "playing"
+          ? styles.highlightsIntroMemoryContent
+          : styles.highlightsPostIntroMemoryContent),
       }}
       aria-label="Highlights lens"
     >
@@ -893,6 +893,7 @@ function RomeoMemoryContent({
             className="romeo-cinematic-intro-video"
             style={{
               ...styles.cinematicIntroVideo,
+              ...styles.highlightsIntroVideo,
               ...(introVideoReady ? styles.cinematicIntroVideoReady : null),
             }}
             onCanPlay={handleIntroCanPlay}
@@ -1459,8 +1460,7 @@ const styles: Record<string, CSSProperties> = {
       "linear-gradient(to bottom, black 0%, black 94%, transparent 100%)",
   },
   highlightsMemoryContent: {
-    alignContent: "safe center",
-    justifyItems: "center",
+    alignContent: "center",
     paddingTop: "clamp(2rem, 8svh, 4.6rem)",
     paddingBottom: "clamp(1.1rem, 5svh, 3.2rem)",
   },
@@ -1469,18 +1469,22 @@ const styles: Record<string, CSSProperties> = {
     paddingLeft: 0,
   },
   highlightsPostIntroMemoryContent: {
+    alignContent: "start",
     justifyItems: "center",
     overflowX: "hidden",
     overflowY: "auto",
     overscrollBehavior: "contain",
     WebkitOverflowScrolling: "touch",
     touchAction: "pan-y",
+    paddingTop: "clamp(2.8rem, 8svh, 4.8rem)",
     paddingRight: 0,
+    paddingBottom: "clamp(6.5rem, 16svh, 9rem)",
     paddingLeft: 0,
     WebkitMaskImage:
-      "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
     maskImage:
-      "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
+    scrollPaddingTop: "clamp(2.8rem, 8svh, 4.8rem)",
   },
   cinematicVideoFrame: {
     position: "relative",
@@ -1503,9 +1507,13 @@ const styles: Record<string, CSSProperties> = {
     opacity: 1,
   },
   highlightsIntroVideoLayer: {
-    gridArea: "1 / 1",
-    alignSelf: "center",
+    position: "absolute",
+    inset: 0,
     zIndex: 2,
+    width: "100%",
+    height: "100%",
+    margin: 0,
+    overflow: "hidden",
   },
   cinematicIntroVideo: {
     position: "relative",
@@ -1524,6 +1532,14 @@ const styles: Record<string, CSSProperties> = {
   },
   cinematicIntroVideoReady: {
     opacity: 0.52,
+  },
+  highlightsIntroVideo: {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    transform: "translateY(0)",
   },
   cinematicVideoOverlay: {
     position: "absolute",
