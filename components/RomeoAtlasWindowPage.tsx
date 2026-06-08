@@ -277,7 +277,6 @@ const INTRO_VISIBLE_MS = 6000;
 const INTRO_FADE_MS = 420;
 const HIGHLIGHTS_CONTENT_OFFSET_Y = "32px";
 const HIGHLIGHTS_VIDEO_OBJECT_POSITION = "50% 66%";
-const ROMEO_VIEWPORT_HEIGHT_VAR = "--romeo-viewport-height";
 
 type IntroStatus = "playing" | "dissolving" | "complete";
 
@@ -665,7 +664,6 @@ function RomeoMemoryContent({
   const [introStatus, setIntroStatus] = useState<IntroStatus>(
     shouldAutoplayIntroVideo ? "playing" : "complete",
   );
-  const highlightsScrollRef = useRef<HTMLElement | null>(null);
   const introVisibleTimerRef = useRef<number | null>(null);
   const introFadeTimerRef = useRef<number | null>(null);
 
@@ -859,13 +857,8 @@ function RomeoMemoryContent({
 
   return (
     <section
-      ref={highlightsScrollRef}
       className="romeo-memory-scroll"
-      style={{
-        ...styles.memoryContent,
-        ...styles.highlightsMemoryContent,
-        ...styles.highlightsPostIntroMemoryContent,
-      }}
+      style={styles.highlightsSharedStage}
       aria-label="Highlights lens"
     >
       {shouldShowIntroVideo ? (
@@ -908,14 +901,16 @@ function RomeoMemoryContent({
       {shouldShowHighlightsContent ? (
         <div
           className="romeo-mode-content-reveal romeo-highlights-content"
-          style={{
-            ...styles.highlightsContentReveal,
-            ...(shouldShowIntroVideo
-              ? styles.highlightsContentUnderIntro
-              : null),
-            "--highlights-content-offset-y": HIGHLIGHTS_CONTENT_OFFSET_Y,
-            transform: `translate3d(0, ${HIGHLIGHTS_CONTENT_OFFSET_Y}, 0)`,
-          } as CSSProperties}
+          style={
+            {
+              ...styles.highlightsContentReveal,
+              ...(shouldShowIntroVideo
+                ? styles.highlightsContentUnderIntro
+                : null),
+              "--highlights-content-offset-y": HIGHLIGHTS_CONTENT_OFFSET_Y,
+              transform: `translate3d(0, ${HIGHLIGHTS_CONTENT_OFFSET_Y}, 0)`,
+            } as CSSProperties
+          }
         >
           <header style={styles.highlightsHeroHeader}>
             <p style={{ ...styles.windowEyebrow, ...styles.highlightsEyebrow }}>
@@ -957,7 +952,6 @@ export default function RomeoAtlasWindowPage({
   introVideoSrc,
 }: RomeoAtlasWindowPageProps) {
   const [activeMode, setActiveMode] = useState<RomeoAtlasMode>("highlights");
-  const [viewportHeight, setViewportHeight] = useState<string | null>(null);
   const [askQuestion, setAskQuestion] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [introPlaybackEventId, setIntroPlaybackEventId] = useState<
@@ -965,28 +959,6 @@ export default function RomeoAtlasWindowPage({
   >(null);
   const chatHistoryRef = useRef<HTMLElement | null>(null);
   const hasPlayedIntroVideo = introPlaybackEventId === eventId;
-
-  useEffect(() => {
-    const updateViewportHeight = () => {
-      const visualViewportHeight = window.visualViewport?.height;
-      const measuredHeight = visualViewportHeight ?? window.innerHeight;
-
-      setViewportHeight(`${measuredHeight}px`);
-    };
-
-    updateViewportHeight();
-    window.visualViewport?.addEventListener("resize", updateViewportHeight);
-    window.addEventListener("resize", updateViewportHeight);
-
-    return () => {
-      window.visualViewport?.removeEventListener("resize", updateViewportHeight);
-      window.removeEventListener("resize", updateViewportHeight);
-    };
-  }, []);
-
-  const viewportHeightStyle = viewportHeight
-    ? ({ [ROMEO_VIEWPORT_HEIGHT_VAR]: viewportHeight } as CSSProperties)
-    : undefined;
 
   const handleIntroVideoPlayback = useCallback(() => {
     setIntroPlaybackEventId(eventId);
@@ -1044,7 +1016,7 @@ export default function RomeoAtlasWindowPage({
 
   return (
     <main
-      style={{ ...styles.page, ...viewportHeightStyle }}
+      style={styles.page}
       className="atlas-event-shell"
       data-event-id={eventId}
     >
@@ -1258,33 +1230,45 @@ export default function RomeoAtlasWindowPage({
           </span>
         </div>
 
-        <section
-          style={{
-            ...styles.floatingMemoryLayout,
-            ...(activeMode === "gallery"
-              ? styles.galleryFloatingMemoryLayout
-              : null),
-          }}
-          aria-live="polite"
-          aria-label="Atlas memory content"
-        >
-          {activeMode === "ask" ? (
-            <RomeoAtlasConversation
-              messages={chatMessages}
-              historyRef={chatHistoryRef}
-            />
-          ) : (
-            <RomeoMemoryContent
-              key={`${eventId}:${activeMode}`}
-              activeMode={activeMode}
-              eventName={eventName}
-              introVideoSrc={introVideoSrc}
-              memoryImageSrc={memoryImageSrc}
-              shouldAutoplayIntroVideo={!hasPlayedIntroVideo}
-              onIntroVideoPlayback={handleIntroVideoPlayback}
-            />
-          )}
-        </section>
+        {activeMode === "highlights" ? (
+          <RomeoMemoryContent
+            key={`${eventId}:${activeMode}`}
+            activeMode={activeMode}
+            eventName={eventName}
+            introVideoSrc={introVideoSrc}
+            memoryImageSrc={memoryImageSrc}
+            shouldAutoplayIntroVideo={!hasPlayedIntroVideo}
+            onIntroVideoPlayback={handleIntroVideoPlayback}
+          />
+        ) : (
+          <section
+            style={{
+              ...styles.floatingMemoryLayout,
+              ...(activeMode === "gallery"
+                ? styles.galleryFloatingMemoryLayout
+                : null),
+            }}
+            aria-live="polite"
+            aria-label="Atlas memory content"
+          >
+            {activeMode === "ask" ? (
+              <RomeoAtlasConversation
+                messages={chatMessages}
+                historyRef={chatHistoryRef}
+              />
+            ) : (
+              <RomeoMemoryContent
+                key={`${eventId}:${activeMode}`}
+                activeMode={activeMode}
+                eventName={eventName}
+                introVideoSrc={introVideoSrc}
+                memoryImageSrc={memoryImageSrc}
+                shouldAutoplayIntroVideo={!hasPlayedIntroVideo}
+                onIntroVideoPlayback={handleIntroVideoPlayback}
+              />
+            )}
+          </section>
+        )}
 
         <section
           style={styles.bottomZone}
@@ -1355,8 +1339,8 @@ const gold = "rgba(226, 172, 92, 0.88)";
 const styles: Record<string, CSSProperties> = {
   page: {
     width: "100vw",
-    height: `var(${ROMEO_VIEWPORT_HEIGHT_VAR}, 100dvh)`,
-    minHeight: `var(${ROMEO_VIEWPORT_HEIGHT_VAR}, 100dvh)`,
+    height: "100dvh",
+    minHeight: "100dvh",
     overflow: "hidden",
     color: "rgba(246,232,205,0.94)",
     background: "radial-gradient(circle at 50% 15%, #172233, #05070c 70%)",
@@ -1364,15 +1348,11 @@ const styles: Record<string, CSSProperties> = {
   stage: {
     position: "relative",
     width: "min(100vw, 760px)",
-    height: `var(${ROMEO_VIEWPORT_HEIGHT_VAR}, 100dvh)`,
+    height: "100dvh",
+    minHeight: "100dvh",
     margin: "0 auto",
     overflow: "hidden",
-    padding:
-      "max(0.62rem, env(safe-area-inset-top, 0px)) 0.72rem max(0.56rem, env(safe-area-inset-bottom, 0px))",
     boxSizing: "border-box",
-    display: "grid",
-    gridTemplateRows: "minmax(0, 1fr) auto",
-    gap: "0.52rem",
   },
   stars: {
     position: "absolute",
@@ -1451,12 +1431,25 @@ const styles: Record<string, CSSProperties> = {
     transform: "rotate(-4deg)",
   },
   floatingMemoryLayout: {
-    alignSelf: "stretch",
-    position: "relative",
+    position: "absolute",
+    inset: 0,
     zIndex: 3,
     minHeight: 0,
-    marginTop: "clamp(2.8rem, 8svh, 4.35rem)",
+    padding:
+      "max(3.42rem, calc(env(safe-area-inset-top, 0px) + 3.42rem)) 0.72rem max(10.1rem, calc(env(safe-area-inset-bottom, 0px) + 10.1rem))",
+    boxSizing: "border-box",
     overflow: "hidden",
+  },
+  highlightsSharedStage: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 3,
+    height: "100dvh",
+    minHeight: "100dvh",
+    display: "block",
+    overflow: "hidden",
+    boxSizing: "border-box",
+    textShadow: "0 2px 18px rgba(0,0,0,0.58), 0 0 26px rgba(226,150,72,0.12)",
   },
   memoryContent: {
     position: "absolute",
@@ -1706,7 +1699,8 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: "32rem",
   },
   highlightsContentReveal: {
-    gridArea: "1 / 1",
+    position: "absolute",
+    inset: 0,
     zIndex: 1,
     display: "grid",
     alignContent: "center",
@@ -1714,9 +1708,19 @@ const styles: Record<string, CSSProperties> = {
     gap: "clamp(1.1rem, 3.6svh, 2.2rem)",
     width: "100%",
     maxWidth: "100%",
-    minHeight: "100%",
-    justifySelf: "stretch",
-    alignSelf: "center",
+    padding:
+      "clamp(4rem, 10svh, 6.4rem) clamp(0.82rem, 5.6vw, 2.35rem) max(11.2rem, calc(env(safe-area-inset-bottom, 0px) + 10.2rem))",
+    boxSizing: "border-box",
+    overflowX: "hidden",
+    overflowY: "auto",
+    overscrollBehavior: "contain",
+    WebkitOverflowScrolling: "touch",
+    touchAction: "pan-y",
+    WebkitMaskImage:
+      "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+    maskImage:
+      "linear-gradient(to bottom, transparent 0%, black 8%, black 88%, transparent 100%)",
+    scrollPaddingTop: "clamp(4rem, 10svh, 6.4rem)",
     textAlign: "center",
     opacity: 0,
     willChange: "opacity, transform",
@@ -2181,7 +2185,10 @@ const styles: Record<string, CSSProperties> = {
     textShadow: "0 0 12px rgba(226,150,72,0.1)",
   },
   bottomZone: {
-    position: "relative",
+    position: "absolute",
+    left: "0.72rem",
+    right: "0.72rem",
+    bottom: "max(0.56rem, env(safe-area-inset-bottom, 0px))",
     zIndex: 4,
     display: "grid",
     gap: "0.62rem",
