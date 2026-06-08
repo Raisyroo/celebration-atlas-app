@@ -273,6 +273,7 @@ const ANSWER_MATCHERS: readonly {
 const GENERAL_ATLAS_ANSWER =
   "Romeo Peach Festival is easiest when you treat Main Street as your anchor: arrive early, park outside the busiest core, sample peach food before peak lines, and save time for the parade, photos, and an evening stroll.";
 
+const INTRO_VISIBLE_MS = 6000;
 const INTRO_FADE_MS = 420;
 
 type IntroStatus = "playing" | "dissolving" | "complete";
@@ -662,9 +663,15 @@ function RomeoMemoryContent({
     shouldAutoplayIntroVideo ? "playing" : "complete",
   );
   const highlightsScrollRef = useRef<HTMLElement | null>(null);
+  const introVisibleTimerRef = useRef<number | null>(null);
   const introFadeTimerRef = useRef<number | null>(null);
 
   const finishIntroVideo = useCallback(() => {
+    if (introVisibleTimerRef.current !== null) {
+      window.clearTimeout(introVisibleTimerRef.current);
+      introVisibleTimerRef.current = null;
+    }
+
     if (introFadeTimerRef.current !== null) {
       return;
     }
@@ -677,8 +684,27 @@ function RomeoMemoryContent({
     }, INTRO_FADE_MS);
   }, [onIntroVideoPlayback]);
 
+  const startIntroVisibleTimer = useCallback(() => {
+    if (
+      introStatus !== "playing" ||
+      introVisibleTimerRef.current !== null ||
+      introFadeTimerRef.current !== null
+    ) {
+      return;
+    }
+
+    introVisibleTimerRef.current = window.setTimeout(() => {
+      introVisibleTimerRef.current = null;
+      finishIntroVideo();
+    }, INTRO_VISIBLE_MS);
+  }, [finishIntroVideo, introStatus]);
+
   useEffect(() => {
     return () => {
+      if (introVisibleTimerRef.current !== null) {
+        window.clearTimeout(introVisibleTimerRef.current);
+      }
+
       if (introFadeTimerRef.current !== null) {
         window.clearTimeout(introFadeTimerRef.current);
       }
@@ -697,11 +723,17 @@ function RomeoMemoryContent({
     setIntroVideoReady(true);
   }, []);
 
-  const handleIntroVideoEnded = useCallback(() => {
-    finishIntroVideo();
-  }, [finishIntroVideo]);
+  const handleIntroVideoPlay = useCallback(() => {
+    onIntroVideoPlayback();
+    startIntroVisibleTimer();
+  }, [onIntroVideoPlayback, startIntroVisibleTimer]);
 
   const handleIntroVideoError = useCallback(() => {
+    if (introVisibleTimerRef.current !== null) {
+      window.clearTimeout(introVisibleTimerRef.current);
+      introVisibleTimerRef.current = null;
+    }
+
     if (introFadeTimerRef.current !== null) {
       window.clearTimeout(introFadeTimerRef.current);
       introFadeTimerRef.current = null;
@@ -874,8 +906,7 @@ function RomeoMemoryContent({
               ...(introVideoReady ? styles.cinematicIntroVideoReady : null),
             }}
             onCanPlay={handleIntroCanPlay}
-            onPlay={onIntroVideoPlayback}
-            onEnded={handleIntroVideoEnded}
+            onPlay={handleIntroVideoPlay}
             onError={handleIntroVideoError}
           >
             Romeo intro video unavailable
