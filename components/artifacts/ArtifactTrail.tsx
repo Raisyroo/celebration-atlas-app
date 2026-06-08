@@ -36,6 +36,18 @@ type ArtifactVideoCardProps = {
   artifact: ArtifactTrailItem;
 };
 
+const TRAIL_VIDEO_PRELOAD_OBSERVER_OPTIONS: IntersectionObserverInit = {
+  rootMargin: "600px 0px 600px 0px",
+  threshold: 0,
+};
+
+const TRAIL_VIDEO_PLAYBACK_OBSERVER_OPTIONS: IntersectionObserverInit = {
+  rootMargin: "-20% 0px -30% 0px",
+  threshold: 0.45,
+};
+
+let activeTrailVideo: HTMLVideoElement | null = null;
+
 export default function ArtifactTrail({
   trail,
   showTitle = true,
@@ -102,7 +114,7 @@ export function ArtifactVideoCard({ artifact }: ArtifactVideoCardProps) {
         muted
         playsInline
         controls={false}
-        preload="auto"
+        preload="metadata"
         onLoadedData={() => {
           setIsVideoReady(true);
           setVideoLoadFailed(false);
@@ -139,39 +151,68 @@ function useTrailVideoAutoplay(
 
     if (!video || videoLoadFailed) return;
 
+    let hasRequestedPreload = false;
+
     const requestVideoLoad = () => {
+      if (hasRequestedPreload) return;
+
+      hasRequestedPreload = true;
+      video.preload = "auto";
+
       if (video.networkState === HTMLMediaElement.NETWORK_EMPTY) {
         video.load();
       }
     };
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry) return;
+    const pauseVideo = () => {
+      video.pause();
 
-        if (entry.isIntersecting) {
-          video.muted = true;
-          requestVideoLoad();
-          const playPromise = video.play();
+      if (activeTrailVideo === video) {
+        activeTrailVideo = null;
+      }
+    };
 
-          if (playPromise) {
-            void playPromise.catch(() => {
-              video.pause();
-            });
-          }
-          return;
-        }
+    const preloadObserver = new IntersectionObserver(([entry]) => {
+      if (!entry?.isIntersecting) return;
 
-        video.pause();
-      },
-      { threshold: 0.15, rootMargin: "300px 0px 300px 0px" },
-    );
+      requestVideoLoad();
+      preloadObserver.unobserve(video);
+    }, TRAIL_VIDEO_PRELOAD_OBSERVER_OPTIONS);
 
-    observer.observe(video);
+    const playbackObserver = new IntersectionObserver(([entry]) => {
+      const shouldPlay =
+        Boolean(entry?.isIntersecting) &&
+        (entry?.intersectionRatio ?? 0) >= 0.45;
+
+      if (!shouldPlay) {
+        pauseVideo();
+        return;
+      }
+
+      video.muted = true;
+      requestVideoLoad();
+
+      if (activeTrailVideo && activeTrailVideo !== video) {
+        activeTrailVideo.pause();
+      }
+
+      activeTrailVideo = video;
+      const playPromise = video.play();
+
+      if (playPromise) {
+        void playPromise.catch(() => {
+          pauseVideo();
+        });
+      }
+    }, TRAIL_VIDEO_PLAYBACK_OBSERVER_OPTIONS);
+
+    preloadObserver.observe(video);
+    playbackObserver.observe(video);
 
     return () => {
-      observer.disconnect();
-      video.pause();
+      preloadObserver.disconnect();
+      playbackObserver.disconnect();
+      pauseVideo();
     };
   }, [videoLoadFailed, videoRef, videoSrc]);
 }
