@@ -7,7 +7,6 @@ import {
   useState,
   type CSSProperties,
   type FormEvent,
-  type RefObject,
   type ReactNode,
 } from "react";
 import Link from "next/link";
@@ -307,10 +306,8 @@ function MemorySeparator() {
 
 function RomeoAtlasConversation({
   messages,
-  historyRef,
 }: {
   messages: ChatMessage[];
-  historyRef: RefObject<HTMLElement | null>;
 }) {
   const conversationPairs = messages.reduce<
     { id: string; question?: ChatMessage; answer?: ChatMessage }[]
@@ -333,7 +330,6 @@ function RomeoAtlasConversation({
 
   return (
     <section
-      ref={historyRef}
       className="romeo-memory-scroll romeo-mode-content-reveal"
       style={{ ...styles.memoryContent, ...styles.askAnythingMemoryContent }}
       aria-label="Atlas conversation history"
@@ -1235,6 +1231,8 @@ export default function RomeoAtlasWindowPage({
         </div>
 
         <section
+          ref={activeMode === "ask" ? chatHistoryRef : null}
+          className="romeo-memory-scroll"
           style={{
             ...styles.floatingMemoryLayout,
             ...(activeMode === "gallery"
@@ -1245,10 +1243,7 @@ export default function RomeoAtlasWindowPage({
           aria-label="Atlas memory content"
         >
           {activeMode === "ask" ? (
-            <RomeoAtlasConversation
-              messages={chatMessages}
-              historyRef={chatHistoryRef}
-            />
+            <RomeoAtlasConversation messages={chatMessages} />
           ) : (
             <RomeoMemoryContent
               key={`${eventId}:${activeMode}`}
@@ -1330,19 +1325,20 @@ const gold = "rgba(226, 172, 92, 0.88)";
 
 const styles: Record<string, CSSProperties> = {
   page: {
-    width: "100%",
+    width: "100vw",
+    height: "100dvh",
     minHeight: "100dvh",
-    overflowX: "hidden",
-    overflowY: "auto",
+    overflow: "hidden",
     color: "rgba(246,232,205,0.94)",
     background: "radial-gradient(circle at 50% 15%, #172233, #05070c 70%)",
   },
   stage: {
     position: "relative",
-    width: "min(100%, 760px)",
+    width: "min(100vw, 760px)",
+    height: "100dvh",
     minHeight: "100dvh",
     margin: "0 auto",
-    overflow: "visible",
+    overflow: "hidden",
     boxSizing: "border-box",
   },
   stars: {
@@ -1422,17 +1418,24 @@ const styles: Record<string, CSSProperties> = {
     transform: "rotate(-4deg)",
   },
   floatingMemoryLayout: {
-    position: "relative",
+    position: "absolute",
+    inset: 0,
     zIndex: 3,
+    minHeight: 0,
     padding:
       "max(3.42rem, calc(env(safe-area-inset-top, 0px) + 3.42rem)) 0.72rem max(12rem, calc(env(safe-area-inset-bottom, 0px) + 11rem))",
     boxSizing: "border-box",
-    overflow: "visible",
+    overflowX: "hidden",
+    overflowY: "auto",
+    overscrollBehavior: "contain",
+    WebkitOverflowScrolling: "touch",
+    scrollPaddingBottom: "max(12rem, calc(env(safe-area-inset-bottom, 0px) + 11rem))",
   },
   memoryContent: {
     position: "relative",
     zIndex: 3,
     display: "grid",
+    minHeight: "100%",
     alignContent: "safe center",
     gap: "clamp(1.15rem, 3.3svh, 1.8rem)",
     padding: "clamp(1.15rem, 5.2vw, 2.3rem) clamp(0.82rem, 5.6vw, 2.35rem)",
@@ -1871,7 +1874,6 @@ const styles: Record<string, CSSProperties> = {
     textShadow: "0 0 18px rgba(226,150,72,0.28)",
   },
   galleryFloatingMemoryLayout: {
-    overflow: "visible",
     touchAction: "pan-y",
   },
   galleryMemoryContent: {
