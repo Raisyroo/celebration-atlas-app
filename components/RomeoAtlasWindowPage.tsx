@@ -275,7 +275,7 @@ const GENERAL_ATLAS_ANSWER =
 const INTRO_VISIBLE_MS = 6000;
 const INTRO_FADE_MS = 420;
 const HIGHLIGHTS_CONTENT_OFFSET_Y = "32px";
-const HIGHLIGHTS_VIDEO_OBJECT_POSITION = "50% 52%";
+const HIGHLIGHTS_VIDEO_OBJECT_POSITION = "50% 40%";
 
 type IntroStatus = "playing" | "dissolving" | "complete";
 
@@ -853,7 +853,7 @@ function RomeoMemoryContent({
   }
 
   const shouldShowIntroVideo = introStatus !== "complete";
-  const shouldShowHighlightsContent = introStatus !== "playing";
+  const shouldShowHighlightsContent = introStatus === "complete";
 
   return (
     <section
@@ -969,8 +969,9 @@ export default function RomeoAtlasWindowPage({
     ATLAS_WINDOW_TARGET_BOTTOM_INSET_PX,
   );
   const hasPlayedIntroVideo = introPlaybackEventId === eventId;
-  const isHighlightsIntroFadeInProgress =
-    activeMode === "highlights" && highlightsIntroStatus === "dissolving";
+  const isHighlightsIntroActive =
+    activeMode === "highlights" &&
+    (!hasPlayedIntroVideo || highlightsIntroStatus !== "complete");
 
   const handleIntroVideoPlayback = useCallback(() => {
     setIntroPlaybackEventId(eventId);
@@ -1218,10 +1219,10 @@ export default function RomeoAtlasWindowPage({
           }
           @keyframes romeo-cinematic-ken-burns {
             0%, 100% {
-              transform: scale(1.08);
+              transform: scale(1.01);
             }
             50% {
-              transform: scale(1.12);
+              transform: scale(1.035);
             }
           }
           @media (prefers-reduced-motion: reduce) {
@@ -1234,7 +1235,7 @@ export default function RomeoAtlasWindowPage({
               animation-duration: 1ms;
             }
             .romeo-cinematic-intro-video {
-              transform: scale(1.08);
+              transform: scale(1.01);
             }
           }
         `}</style>
@@ -1255,8 +1256,8 @@ export default function RomeoAtlasWindowPage({
         <div
           style={{
             ...styles.festivalMemory,
-            ...(isHighlightsIntroFadeInProgress
-              ? styles.festivalMemoryHiddenDuringIntroFade
+            ...(isHighlightsIntroActive
+              ? styles.festivalMemoryHiddenDuringIntro
               : null),
             backgroundImage: `url(${memoryImageSrc})`,
           }}
@@ -1467,7 +1468,7 @@ const styles: Record<string, CSSProperties> = {
     transform: "translateZ(0) scale(1.03)",
   },
 
-  festivalMemoryHiddenDuringIntroFade: {
+  festivalMemoryHiddenDuringIntro: {
     opacity: 0,
   },
   softVerticalVignette: {
@@ -1596,7 +1597,7 @@ const styles: Record<string, CSSProperties> = {
     maxHeight: "none",
     objectFit: "cover",
     objectPosition: HIGHLIGHTS_VIDEO_OBJECT_POSITION,
-    transform: "scale(1.08)",
+    transform: "scale(1.01)",
     opacity: 0,
     mixBlendMode: "soft-light",
     filter: "saturate(0.92) contrast(1.05) brightness(0.94)",
