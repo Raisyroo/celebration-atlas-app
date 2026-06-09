@@ -275,7 +275,7 @@ const GENERAL_ATLAS_ANSWER =
 const INTRO_VISIBLE_MS = 6000;
 const INTRO_FADE_MS = 420;
 const HIGHLIGHTS_CONTENT_OFFSET_Y = "32px";
-const HIGHLIGHTS_VIDEO_OBJECT_POSITION = "50% 66%";
+const HIGHLIGHTS_VIDEO_OBJECT_POSITION = "50% 58%";
 
 type IntroStatus = "playing" | "dissolving" | "complete";
 
@@ -304,11 +304,7 @@ function MemorySeparator() {
   );
 }
 
-function RomeoAtlasConversation({
-  messages,
-}: {
-  messages: ChatMessage[];
-}) {
+function RomeoAtlasConversation({ messages }: { messages: ChatMessage[] }) {
   const conversationPairs = messages.reduce<
     { id: string; question?: ChatMessage; answer?: ChatMessage }[]
   >((pairs, message) => {
@@ -646,6 +642,7 @@ function RomeoMemoryContent({
   memoryImageSrc,
   shouldAutoplayIntroVideo,
   onIntroVideoPlayback,
+  onIntroStatusChange,
 }: {
   activeMode: RomeoContentMode;
   eventName: string;
@@ -653,6 +650,7 @@ function RomeoMemoryContent({
   memoryImageSrc: string;
   shouldAutoplayIntroVideo: boolean;
   onIntroVideoPlayback: () => void;
+  onIntroStatusChange?: (introStatus: IntroStatus) => void;
 }) {
   const [introVideoReady, setIntroVideoReady] = useState(
     !shouldAutoplayIntroVideo,
@@ -698,6 +696,8 @@ function RomeoMemoryContent({
 
   useEffect(() => {
     return () => {
+      onIntroStatusChange?.("complete");
+
       if (introVisibleTimerRef.current !== null) {
         window.clearTimeout(introVisibleTimerRef.current);
       }
@@ -706,7 +706,11 @@ function RomeoMemoryContent({
         window.clearTimeout(introFadeTimerRef.current);
       }
     };
-  }, []);
+  }, [onIntroStatusChange]);
+
+  useEffect(() => {
+    onIntroStatusChange?.(introStatus);
+  }, [introStatus, onIntroStatusChange]);
 
   useEffect(() => {
     if (activeMode === "highlights" || introStatus === "complete") {
@@ -957,8 +961,12 @@ export default function RomeoAtlasWindowPage({
   const [introPlaybackEventId, setIntroPlaybackEventId] = useState<
     string | null
   >(null);
+  const [highlightsIntroStatus, setHighlightsIntroStatus] =
+    useState<IntroStatus>("complete");
   const chatHistoryRef = useRef<HTMLElement | null>(null);
   const hasPlayedIntroVideo = introPlaybackEventId === eventId;
+  const isHighlightsIntroFadeInProgress =
+    activeMode === "highlights" && highlightsIntroStatus === "dissolving";
 
   const handleIntroVideoPlayback = useCallback(() => {
     setIntroPlaybackEventId(eventId);
@@ -1190,6 +1198,9 @@ export default function RomeoAtlasWindowPage({
         <div
           style={{
             ...styles.festivalMemory,
+            ...(isHighlightsIntroFadeInProgress
+              ? styles.festivalMemoryHiddenDuringIntroFade
+              : null),
             backgroundImage: `url(${memoryImageSrc})`,
           }}
           aria-hidden="true"
@@ -1253,6 +1264,7 @@ export default function RomeoAtlasWindowPage({
               memoryImageSrc={memoryImageSrc}
               shouldAutoplayIntroVideo={!hasPlayedIntroVideo}
               onIntroVideoPlayback={handleIntroVideoPlayback}
+              onIntroStatusChange={setHighlightsIntroStatus}
             />
           )}
         </section>
@@ -1386,6 +1398,10 @@ const styles: Record<string, CSSProperties> = {
     pointerEvents: "none",
     transform: "translateZ(0) scale(1.03)",
   },
+
+  festivalMemoryHiddenDuringIntroFade: {
+    opacity: 0,
+  },
   softVerticalVignette: {
     position: "absolute",
     inset: 0,
@@ -1516,7 +1532,7 @@ const styles: Record<string, CSSProperties> = {
     transition: `opacity ${INTRO_FADE_MS}ms ease-out`,
   },
   highlightsIntroVideoReady: {
-    opacity: 0.52,
+    opacity: 0.59,
   },
   cinematicVideoOverlay: {
     position: "absolute",
