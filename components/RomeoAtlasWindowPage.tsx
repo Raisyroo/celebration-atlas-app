@@ -964,6 +964,10 @@ export default function RomeoAtlasWindowPage({
   const [highlightsIntroStatus, setHighlightsIntroStatus] =
     useState<IntroStatus>("complete");
   const chatHistoryRef = useRef<HTMLElement | null>(null);
+  const modeRailRef = useRef<HTMLElement | null>(null);
+  const [atlasWindowBottomInsetPx, setAtlasWindowBottomInsetPx] = useState(
+    ATLAS_WINDOW_BOTTOM_FALLBACK_INSET_PX
+  );
   const hasPlayedIntroVideo = introPlaybackEventId === eventId;
   const isHighlightsIntroFadeInProgress =
     activeMode === "highlights" && highlightsIntroStatus === "dissolving";
@@ -975,6 +979,44 @@ export default function RomeoAtlasWindowPage({
   const handleAtlasExit = () => {
     setIntroPlaybackEventId(null);
   };
+
+  const updateAtlasWindowBottomInset = useCallback(() => {
+    const iconRow = modeRailRef.current;
+    if (!iconRow || typeof window === "undefined") return;
+
+    const iconRowTop = iconRow.getBoundingClientRect().top;
+    const visibleIconRowTopInset = Math.max(0, window.innerHeight - iconRowTop);
+    const nextBottomInset = Math.round(
+      visibleIconRowTopInset + ATLAS_WINDOW_TO_ICON_CLEARANCE_PX
+    );
+
+    setAtlasWindowBottomInsetPx((currentInset) =>
+      Math.abs(currentInset - nextBottomInset) < 1 ? currentInset : nextBottomInset
+    );
+  }, []);
+
+  useEffect(() => {
+    updateAtlasWindowBottomInset();
+
+    const iconRow = modeRailRef.current;
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(updateAtlasWindowBottomInset);
+
+    if (iconRow) resizeObserver?.observe(iconRow);
+    window.addEventListener("resize", updateAtlasWindowBottomInset);
+    window.visualViewport?.addEventListener("resize", updateAtlasWindowBottomInset);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateAtlasWindowBottomInset);
+      window.visualViewport?.removeEventListener(
+        "resize",
+        updateAtlasWindowBottomInset
+      );
+    };
+  }, [updateAtlasWindowBottomInset]);
 
   useEffect(() => {
     if (activeMode !== "ask") {
@@ -1246,6 +1288,7 @@ export default function RomeoAtlasWindowPage({
           className="romeo-memory-scroll romeo-atlas-inner-window"
           style={{
             ...styles.floatingMemoryLayout,
+            bottom: `${atlasWindowBottomInsetPx}px`,
             ...(activeMode === "gallery"
               ? styles.galleryFloatingMemoryLayout
               : null),
@@ -1273,7 +1316,7 @@ export default function RomeoAtlasWindowPage({
           style={styles.bottomZone}
           aria-label="Atlas controls and Ask Anything"
         >
-          <nav style={styles.modeRail} aria-label="Atlas controls">
+          <nav ref={modeRailRef} style={styles.modeRail} aria-label="Atlas controls">
             <span style={styles.modeRailAtmosphere} aria-hidden="true" />
             {MODE_OPTIONS.map((mode) => {
               const isActive = mode.id === activeMode;
@@ -1333,10 +1376,10 @@ export default function RomeoAtlasWindowPage({
   );
 }
 
-const ATLAS_ICON_ROW_TOP_OFFSET_PX = 90;
-const ATLAS_WINDOW_BOTTOM_CLEARANCE_PX = 10;
-const ATLAS_WINDOW_BOTTOM_INSET_PX =
-  ATLAS_ICON_ROW_TOP_OFFSET_PX + ATLAS_WINDOW_BOTTOM_CLEARANCE_PX;
+const ATLAS_WINDOW_TO_ICON_CLEARANCE_PX = 18;
+const ATLAS_ICON_ROW_TOP_FALLBACK_INSET_PX = 140;
+const ATLAS_WINDOW_BOTTOM_FALLBACK_INSET_PX =
+  ATLAS_ICON_ROW_TOP_FALLBACK_INSET_PX + ATLAS_WINDOW_TO_ICON_CLEARANCE_PX;
 
 const gold = "rgba(226, 172, 92, 0.88)";
 
@@ -1442,8 +1485,7 @@ const styles: Record<string, CSSProperties> = {
     position: "absolute",
     top: "max(3.42rem, calc(env(safe-area-inset-top, 0px) + 3.42rem))",
     right: "0.72rem",
-    bottom:
-      `calc(env(safe-area-inset-bottom, 0px) + ${ATLAS_WINDOW_BOTTOM_INSET_PX}px)`,
+    bottom: `${ATLAS_WINDOW_BOTTOM_FALLBACK_INSET_PX}px`,
     left: "0.72rem",
     zIndex: 3,
     minHeight: 0,
