@@ -1437,7 +1437,7 @@ const styles: Record<string, CSSProperties> = {
     position: "absolute",
     top: "max(3.42rem, calc(env(safe-area-inset-top, 0px) + 3.42rem))",
     right: "0.72rem",
-    bottom: "max(12rem, calc(env(safe-area-inset-bottom, 0px) + 11rem))",
+    bottom: "max(10.25rem, calc(env(safe-area-inset-bottom, 0px) + 9.6rem))",
     left: "0.72rem",
     zIndex: 3,
     minHeight: 0,
