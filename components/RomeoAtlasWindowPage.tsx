@@ -1232,7 +1232,7 @@ export default function RomeoAtlasWindowPage({
 
         <section
           ref={activeMode === "ask" ? chatHistoryRef : null}
-          className="romeo-memory-scroll"
+          className="romeo-memory-scroll romeo-atlas-inner-window"
           style={{
             ...styles.floatingMemoryLayout,
             ...(activeMode === "gallery"
@@ -1419,17 +1419,29 @@ const styles: Record<string, CSSProperties> = {
   },
   floatingMemoryLayout: {
     position: "absolute",
-    inset: 0,
+    top: "max(3.42rem, calc(env(safe-area-inset-top, 0px) + 3.42rem))",
+    right: "0.72rem",
+    bottom: "max(12rem, calc(env(safe-area-inset-bottom, 0px) + 11rem))",
+    left: "0.72rem",
     zIndex: 3,
     minHeight: 0,
-    padding:
-      "max(3.42rem, calc(env(safe-area-inset-top, 0px) + 3.42rem)) 0.72rem max(12rem, calc(env(safe-area-inset-bottom, 0px) + 11rem))",
+    padding: 0,
     boxSizing: "border-box",
     overflowX: "hidden",
     overflowY: "auto",
     overscrollBehavior: "contain",
     WebkitOverflowScrolling: "touch",
-    scrollPaddingBottom: "max(12rem, calc(env(safe-area-inset-bottom, 0px) + 11rem))",
+    scrollPaddingTop: "clamp(1.15rem, 5.2vw, 2.3rem)",
+    scrollPaddingBottom: "clamp(1.15rem, 5.2vw, 2.3rem)",
+    border: "1px solid rgba(226,172,92,0.24)",
+    borderRadius: "clamp(1.1rem, 4.4vw, 1.65rem)",
+    background:
+      "linear-gradient(180deg, rgba(7,10,17,0.44), rgba(5,8,14,0.32)), radial-gradient(ellipse at 50% 8%, rgba(226,150,72,0.1), transparent 54%)",
+    boxShadow:
+      "0 22px 62px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,235,195,0.11), inset 0 -1px 0 rgba(226,150,72,0.12)",
+    backdropFilter: "blur(7px)",
+    WebkitBackdropFilter: "blur(7px)",
+    isolation: "isolate",
   },
   memoryContent: {
     position: "relative",
