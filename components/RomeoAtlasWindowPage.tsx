@@ -858,7 +858,11 @@ function RomeoMemoryContent({
   return (
     <section
       className="romeo-memory-scroll"
-      style={styles.highlightsSharedStage}
+      style={{
+        ...styles.memoryContent,
+        ...styles.highlightsMemoryContent,
+        ...styles.highlightsPostIntroMemoryContent,
+      }}
       aria-label="Highlights lens"
     >
       {shouldShowIntroVideo ? (
@@ -1230,45 +1234,33 @@ export default function RomeoAtlasWindowPage({
           </span>
         </div>
 
-        {activeMode === "highlights" ? (
-          <RomeoMemoryContent
-            key={`${eventId}:${activeMode}`}
-            activeMode={activeMode}
-            eventName={eventName}
-            introVideoSrc={introVideoSrc}
-            memoryImageSrc={memoryImageSrc}
-            shouldAutoplayIntroVideo={!hasPlayedIntroVideo}
-            onIntroVideoPlayback={handleIntroVideoPlayback}
-          />
-        ) : (
-          <section
-            style={{
-              ...styles.floatingMemoryLayout,
-              ...(activeMode === "gallery"
-                ? styles.galleryFloatingMemoryLayout
-                : null),
-            }}
-            aria-live="polite"
-            aria-label="Atlas memory content"
-          >
-            {activeMode === "ask" ? (
-              <RomeoAtlasConversation
-                messages={chatMessages}
-                historyRef={chatHistoryRef}
-              />
-            ) : (
-              <RomeoMemoryContent
-                key={`${eventId}:${activeMode}`}
-                activeMode={activeMode}
-                eventName={eventName}
-                introVideoSrc={introVideoSrc}
-                memoryImageSrc={memoryImageSrc}
-                shouldAutoplayIntroVideo={!hasPlayedIntroVideo}
-                onIntroVideoPlayback={handleIntroVideoPlayback}
-              />
-            )}
-          </section>
-        )}
+        <section
+          style={{
+            ...styles.floatingMemoryLayout,
+            ...(activeMode === "gallery"
+              ? styles.galleryFloatingMemoryLayout
+              : null),
+          }}
+          aria-live="polite"
+          aria-label="Atlas memory content"
+        >
+          {activeMode === "ask" ? (
+            <RomeoAtlasConversation
+              messages={chatMessages}
+              historyRef={chatHistoryRef}
+            />
+          ) : (
+            <RomeoMemoryContent
+              key={`${eventId}:${activeMode}`}
+              activeMode={activeMode}
+              eventName={eventName}
+              introVideoSrc={introVideoSrc}
+              memoryImageSrc={memoryImageSrc}
+              shouldAutoplayIntroVideo={!hasPlayedIntroVideo}
+              onIntroVideoPlayback={handleIntroVideoPlayback}
+            />
+          )}
+        </section>
 
         <section
           style={styles.bottomZone}
@@ -1436,14 +1428,6 @@ const styles: Record<string, CSSProperties> = {
       "max(3.42rem, calc(env(safe-area-inset-top, 0px) + 3.42rem)) 0.72rem max(12rem, calc(env(safe-area-inset-bottom, 0px) + 11rem))",
     boxSizing: "border-box",
     overflow: "visible",
-  },
-  highlightsSharedStage: {
-    position: "relative",
-    zIndex: 3,
-    display: "block",
-    overflow: "visible",
-    boxSizing: "border-box",
-    textShadow: "0 2px 18px rgba(0,0,0,0.58), 0 0 26px rgba(226,150,72,0.12)",
   },
   memoryContent: {
     position: "relative",
