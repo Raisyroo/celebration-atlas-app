@@ -1333,6 +1333,11 @@ export default function RomeoAtlasWindowPage({
   );
 }
 
+const ATLAS_ICON_ROW_TOP_OFFSET_PX = 140;
+const ATLAS_WINDOW_BOTTOM_CLEARANCE_PX = 20;
+const ATLAS_WINDOW_BOTTOM_INSET_PX =
+  ATLAS_ICON_ROW_TOP_OFFSET_PX + ATLAS_WINDOW_BOTTOM_CLEARANCE_PX;
+
 const gold = "rgba(226, 172, 92, 0.88)";
 
 const styles: Record<string, CSSProperties> = {
@@ -1437,7 +1442,8 @@ const styles: Record<string, CSSProperties> = {
     position: "absolute",
     top: "max(3.42rem, calc(env(safe-area-inset-top, 0px) + 3.42rem))",
     right: "0.72rem",
-    bottom: "max(10.25rem, calc(env(safe-area-inset-bottom, 0px) + 9.6rem))",
+    bottom:
+      `calc(env(safe-area-inset-bottom, 0px) + ${ATLAS_WINDOW_BOTTOM_INSET_PX}px)`,
     left: "0.72rem",
     zIndex: 3,
     minHeight: 0,
