@@ -1117,11 +1117,19 @@ export default function RomeoAtlasWindowPage({
             transform: scale(1.015);
           }
           .romeo-mode-lens[data-active="true"] {
-            color: rgba(239, 190, 116, 0.96);
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.62);
+            color: rgba(248, 211, 143, 1);
+            text-shadow:
+              0 1px 1px rgba(0, 0, 0, 0.74),
+              0 0 8px rgba(226, 172, 92, 0.24);
           }
           .romeo-mode-lens[data-active="true"] > span {
             opacity: 1 !important;
+          }
+          .romeo-mode-lens[data-active="true"] > span:first-of-type {
+            filter:
+              brightness(1.2) saturate(1.14) contrast(1.08)
+              drop-shadow(0 1px 1px rgba(0, 0, 0, 0.74))
+              drop-shadow(0 0 7px rgba(226, 172, 92, 0.18));
           }
           .romeo-cinematic-video-memory {
             pointer-events: none;
@@ -2263,12 +2271,12 @@ const styles: Record<string, CSSProperties> = {
     minHeight: "4.85rem",
     padding: "0.28rem 0.08rem 0.16rem",
     boxSizing: "border-box",
-    color: "rgba(201,151,82,0.6)",
+    color: "rgba(224,174,98,0.86)",
     textAlign: "center",
     touchAction: "manipulation",
   },
   modeButtonActive: {
-    color: "rgba(239,190,116,0.96)",
+    color: "rgba(248,211,143,1)",
   },
   modeIconStack: {
     position: "relative",
@@ -2279,8 +2287,9 @@ const styles: Record<string, CSSProperties> = {
     minHeight: "3.15rem",
     borderRadius: "1.25rem",
     color: "currentColor",
-    opacity: 0.6,
-    filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.62))",
+    opacity: 0.84,
+    filter:
+      "brightness(1.12) saturate(1.1) contrast(1.06) drop-shadow(0 1px 1px rgba(0,0,0,0.74)) drop-shadow(0 0 5px rgba(226,172,92,0.12))",
     userSelect: "none",
     pointerEvents: "none",
   },
@@ -2306,8 +2315,9 @@ const styles: Record<string, CSSProperties> = {
     textTransform: "uppercase",
     whiteSpace: "nowrap",
     wordBreak: "keep-all",
-    opacity: 0.6,
-    textShadow: "0 1px 0 rgba(0,0,0,0.62)",
+    opacity: 0.84,
+    textShadow:
+      "0 1px 1px rgba(0,0,0,0.76), 0 0 5px rgba(226,172,92,0.14)",
     userSelect: "none",
     pointerEvents: "none",
   },
