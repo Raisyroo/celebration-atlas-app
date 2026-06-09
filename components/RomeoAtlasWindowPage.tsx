@@ -1432,7 +1432,6 @@ const styles: Record<string, CSSProperties> = {
   floatingMemoryLayout: {
     position: "relative",
     zIndex: 3,
-    minHeight: "100dvh",
     padding:
       "max(3.42rem, calc(env(safe-area-inset-top, 0px) + 3.42rem)) 0.72rem max(12rem, calc(env(safe-area-inset-bottom, 0px) + 11rem))",
     boxSizing: "border-box",
@@ -1441,7 +1440,6 @@ const styles: Record<string, CSSProperties> = {
   highlightsSharedStage: {
     position: "relative",
     zIndex: 3,
-    minHeight: "100dvh",
     display: "block",
     overflow: "visible",
     boxSizing: "border-box",
@@ -1681,7 +1679,6 @@ const styles: Record<string, CSSProperties> = {
     position: "relative",
     zIndex: 1,
     display: "grid",
-    minHeight: "100dvh",
     alignContent: "center",
     justifyItems: "center",
     gap: "clamp(1.1rem, 3.6svh, 2.2rem)",
