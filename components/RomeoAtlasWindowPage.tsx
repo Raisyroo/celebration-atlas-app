@@ -275,7 +275,7 @@ const GENERAL_ATLAS_ANSWER =
 const INTRO_VISIBLE_MS = 6000;
 const INTRO_FADE_MS = 420;
 const HIGHLIGHTS_CONTENT_OFFSET_Y = "32px";
-const HIGHLIGHTS_VIDEO_OBJECT_POSITION = "50% 58%";
+const HIGHLIGHTS_VIDEO_OBJECT_POSITION = "50% 52%";
 
 type IntroStatus = "playing" | "dissolving" | "complete";
 
@@ -1599,12 +1599,12 @@ const styles: Record<string, CSSProperties> = {
     transform: "scale(1.08)",
     opacity: 0,
     mixBlendMode: "soft-light",
-    filter: "saturate(0.88) contrast(1.04) brightness(0.86)",
+    filter: "saturate(0.92) contrast(1.05) brightness(0.94)",
     willChange: "opacity, transform",
     transition: `opacity ${INTRO_FADE_MS}ms ease-out`,
   },
   highlightsIntroVideoReady: {
-    opacity: 0.59,
+    opacity: 0.66,
   },
   cinematicVideoOverlay: {
     position: "absolute",
