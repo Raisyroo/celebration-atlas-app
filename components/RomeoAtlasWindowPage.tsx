@@ -1387,13 +1387,11 @@ export default function RomeoAtlasWindowPage({
   );
 }
 
-// Original known-good window bottom rule from before the height experiments:
-// max(12rem, calc(env(safe-area-inset-bottom, 0px) + 11rem)).
-const ATLAS_WINDOW_BASELINE_BOTTOM_CLEARANCE_PX = 192;
-const ATLAS_WINDOW_EXTENSION_PX = 28;
-const ATLAS_WINDOW_MIN_ICON_CLEARANCE_PX = 16;
+const ATLAS_WINDOW_CURRENT_BOTTOM_INSET_PX = 164;
+const ATLAS_WINDOW_EXTENSION_PX = 44;
+const ATLAS_WINDOW_MIN_ICON_CLEARANCE_PX = 14;
 const ATLAS_WINDOW_TARGET_BOTTOM_INSET_PX =
-  ATLAS_WINDOW_BASELINE_BOTTOM_CLEARANCE_PX - ATLAS_WINDOW_EXTENSION_PX;
+  ATLAS_WINDOW_CURRENT_BOTTOM_INSET_PX - ATLAS_WINDOW_EXTENSION_PX;
 
 const gold = "rgba(226, 172, 92, 0.88)";
 
