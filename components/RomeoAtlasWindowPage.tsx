@@ -274,7 +274,7 @@ const GENERAL_ATLAS_ANSWER =
 
 const INTRO_VISIBLE_MS = 6000;
 const INTRO_FADE_MS = 420;
-const HIGHLIGHTS_CONTENT_OFFSET_Y = "32px";
+const HIGHLIGHTS_CONTENT_OFFSET_Y = "8px";
 const HIGHLIGHTS_VIDEO_OBJECT_POSITION = "50% 40%";
 
 type IntroStatus = "playing" | "dissolving" | "complete";
