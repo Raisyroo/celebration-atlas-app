@@ -966,7 +966,7 @@ export default function RomeoAtlasWindowPage({
   const chatHistoryRef = useRef<HTMLElement | null>(null);
   const modeRailRef = useRef<HTMLElement | null>(null);
   const [atlasWindowBottomInsetPx, setAtlasWindowBottomInsetPx] = useState(
-    ATLAS_WINDOW_BOTTOM_FALLBACK_INSET_PX
+    ATLAS_WINDOW_TARGET_BOTTOM_INSET_PX,
   );
   const hasPlayedIntroVideo = introPlaybackEventId === eventId;
   const isHighlightsIntroFadeInProgress =
@@ -986,12 +986,16 @@ export default function RomeoAtlasWindowPage({
 
     const iconRowTop = iconRow.getBoundingClientRect().top;
     const visibleIconRowTopInset = Math.max(0, window.innerHeight - iconRowTop);
+    const minBottomInsetAboveIcons =
+      visibleIconRowTopInset + ATLAS_WINDOW_MIN_ICON_CLEARANCE_PX;
     const nextBottomInset = Math.round(
-      visibleIconRowTopInset + ATLAS_WINDOW_TO_ICON_CLEARANCE_PX
+      Math.max(ATLAS_WINDOW_TARGET_BOTTOM_INSET_PX, minBottomInsetAboveIcons),
     );
 
     setAtlasWindowBottomInsetPx((currentInset) =>
-      Math.abs(currentInset - nextBottomInset) < 1 ? currentInset : nextBottomInset
+      Math.abs(currentInset - nextBottomInset) < 1
+        ? currentInset
+        : nextBottomInset,
     );
   }, []);
 
@@ -1006,14 +1010,17 @@ export default function RomeoAtlasWindowPage({
 
     if (iconRow) resizeObserver?.observe(iconRow);
     window.addEventListener("resize", updateAtlasWindowBottomInset);
-    window.visualViewport?.addEventListener("resize", updateAtlasWindowBottomInset);
+    window.visualViewport?.addEventListener(
+      "resize",
+      updateAtlasWindowBottomInset,
+    );
 
     return () => {
       resizeObserver?.disconnect();
       window.removeEventListener("resize", updateAtlasWindowBottomInset);
       window.visualViewport?.removeEventListener(
         "resize",
-        updateAtlasWindowBottomInset
+        updateAtlasWindowBottomInset,
       );
     };
   }, [updateAtlasWindowBottomInset]);
@@ -1316,7 +1323,11 @@ export default function RomeoAtlasWindowPage({
           style={styles.bottomZone}
           aria-label="Atlas controls and Ask Anything"
         >
-          <nav ref={modeRailRef} style={styles.modeRail} aria-label="Atlas controls">
+          <nav
+            ref={modeRailRef}
+            style={styles.modeRail}
+            aria-label="Atlas controls"
+          >
             <span style={styles.modeRailAtmosphere} aria-hidden="true" />
             {MODE_OPTIONS.map((mode) => {
               const isActive = mode.id === activeMode;
@@ -1376,10 +1387,13 @@ export default function RomeoAtlasWindowPage({
   );
 }
 
-const ATLAS_WINDOW_TO_ICON_CLEARANCE_PX = 18;
-const ATLAS_ICON_ROW_TOP_FALLBACK_INSET_PX = 140;
-const ATLAS_WINDOW_BOTTOM_FALLBACK_INSET_PX =
-  ATLAS_ICON_ROW_TOP_FALLBACK_INSET_PX + ATLAS_WINDOW_TO_ICON_CLEARANCE_PX;
+// Original known-good window bottom rule from before the height experiments:
+// max(12rem, calc(env(safe-area-inset-bottom, 0px) + 11rem)).
+const ATLAS_WINDOW_BASELINE_BOTTOM_CLEARANCE_PX = 192;
+const ATLAS_WINDOW_EXTENSION_PX = 28;
+const ATLAS_WINDOW_MIN_ICON_CLEARANCE_PX = 16;
+const ATLAS_WINDOW_TARGET_BOTTOM_INSET_PX =
+  ATLAS_WINDOW_BASELINE_BOTTOM_CLEARANCE_PX - ATLAS_WINDOW_EXTENSION_PX;
 
 const gold = "rgba(226, 172, 92, 0.88)";
 
@@ -1485,7 +1499,7 @@ const styles: Record<string, CSSProperties> = {
     position: "absolute",
     top: "max(3.42rem, calc(env(safe-area-inset-top, 0px) + 3.42rem))",
     right: "0.72rem",
-    bottom: `${ATLAS_WINDOW_BOTTOM_FALLBACK_INSET_PX}px`,
+    bottom: `${ATLAS_WINDOW_TARGET_BOTTOM_INSET_PX}px`,
     left: "0.72rem",
     zIndex: 3,
     minHeight: 0,
