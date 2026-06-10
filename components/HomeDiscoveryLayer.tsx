@@ -1,10 +1,16 @@
 import type { CSSProperties } from 'react';
 
+type DiscoveryShortcutGroup = {
+  label?: string;
+  shortcuts: string[];
+};
+
 type HomeDiscoveryLayerProps = {
   query?: string;
   resultCount?: number;
   statusText?: string;
   shortcuts?: string[];
+  shortcutGroups?: DiscoveryShortcutGroup[];
   onShortcutSelect?: (value: string) => void;
 };
 
@@ -13,7 +19,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 7,
+    gap: 6,
     margin: '0 auto 8px',
     width: '100%',
   },
@@ -32,12 +38,41 @@ const styles = {
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
   },
+  shortcutGroups: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 5,
+    width: 'min(100%, 560px)',
+  },
+  shortcutGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    width: '100%',
+    maxWidth: 560,
+  },
+  shortcutGroupLabel: {
+    flex: '0 0 auto',
+    color: 'rgba(255, 226, 170, 0.48)',
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: 0.72,
+    lineHeight: 1,
+    textShadow: '0 1px 2px rgba(2, 3, 7, 0.68)',
+    textTransform: 'uppercase',
+  },
   shortcuts: {
     display: 'flex',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    flex: '1 1 auto',
+    flexWrap: 'nowrap',
     gap: '6px 7px',
-    width: 'min(100%, 520px)',
+    minWidth: 0,
+    overflowX: 'auto',
+    padding: '1px 2px 3px',
+    scrollbarWidth: 'none',
+    WebkitOverflowScrolling: 'touch',
   },
   shortcut: {
     minHeight: 28,
@@ -63,12 +98,32 @@ const styles = {
 
 export function HomeDiscoveryLayer({
   shortcuts,
+  shortcutGroups,
   statusText,
   onShortcutSelect,
 }: HomeDiscoveryLayerProps) {
-  const hasShortcuts = Boolean(shortcuts?.length && onShortcutSelect);
+  const normalizedShortcutGroups = shortcutGroups?.length
+    ? shortcutGroups
+    : shortcuts?.length
+      ? [{ shortcuts }]
+      : [];
+  const hasShortcuts = Boolean(
+    normalizedShortcutGroups.length && onShortcutSelect,
+  );
 
   if (!statusText && !hasShortcuts) return null;
+
+  const renderShortcut = (shortcut: string) => (
+    <button
+      key={shortcut}
+      type="button"
+      style={styles.shortcut}
+      onClick={() => onShortcutSelect?.(shortcut)}
+      aria-label={`Search for ${shortcut}`}
+    >
+      {shortcut}
+    </button>
+  );
 
   return (
     // Future scalable discovery layer for filters, summaries, chips, and event lists.
@@ -79,18 +134,26 @@ export function HomeDiscoveryLayer({
         </p>
       ) : null}
       {hasShortcuts ? (
-        <div style={styles.shortcuts} aria-label="Discovery shortcuts">
-          {shortcuts?.map((shortcut) => (
-            <button
-              key={shortcut}
-              type="button"
-              style={styles.shortcut}
-              onClick={() => onShortcutSelect?.(shortcut)}
-              aria-label={`Search for ${shortcut}`}
-            >
-              {shortcut}
-            </button>
-          ))}
+        <div style={styles.shortcutGroups} aria-label="Discovery shortcuts">
+          {normalizedShortcutGroups.map((group, groupIndex) => {
+            const groupLabel = group.label ?? `Discovery row ${groupIndex + 1}`;
+
+            return (
+              <div
+                key={group.label ?? group.shortcuts.join('-')}
+                style={styles.shortcutGroup}
+                role="group"
+                aria-label={groupLabel}
+              >
+                {group.label ? (
+                  <span style={styles.shortcutGroupLabel}>{group.label}</span>
+                ) : null}
+                <div style={styles.shortcuts}>
+                  {group.shortcuts.map(renderShortcut)}
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : null}
     </section>
