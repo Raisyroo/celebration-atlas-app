@@ -220,6 +220,9 @@ const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 const MARKER_EDGE_INSET_PERCENT = 6;
 const CLUSTER_RADIUS_PERCENT = 7.2;
 const SHOW_CLUSTER_LABELS = false;
+const PHONE_LANDSCAPE_QUERY =
+  '(orientation: landscape) and (max-height: 520px) and (max-width: 932px)';
+const HOME_PHONE_LANDSCAPE_SCROLL_CLASS = 'home-phone-landscape-scroll';
 
 // Central post-projection adjustment for the visible homepage marker/cluster
 // layer. Keep event lat/lng, anchor data, clustering, and marker styling
@@ -518,6 +521,7 @@ export default function AtlasMap() {
     null,
   );
   const [isDesktop, setIsDesktop] = useState(false);
+  const [isPhoneLandscape, setIsPhoneLandscape] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [parallaxOffset, setParallaxOffset] = useState({ x: 0, y: 0 });
   const [calibrationAnchors, setCalibrationAnchors] = useState<
@@ -948,8 +952,33 @@ export default function AtlasMap() {
   }, []);
 
   useEffect(() => {
+    const phoneLandscapeQuery = window.matchMedia(PHONE_LANDSCAPE_QUERY);
+    const syncPhoneLandscapeState = () =>
+      setIsPhoneLandscape(phoneLandscapeQuery.matches);
+    syncPhoneLandscapeState();
+    phoneLandscapeQuery.addEventListener('change', syncPhoneLandscapeState);
+
+    return () => {
+      phoneLandscapeQuery.removeEventListener(
+        'change',
+        syncPhoneLandscapeState,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
     const previousHtmlOverflow = document.documentElement.style.overflow;
     const previousBodyOverflow = document.body.style.overflow;
+
+    if (isPhoneLandscape) {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      return () => {
+        document.documentElement.style.overflow = previousHtmlOverflow;
+        document.body.style.overflow = previousBodyOverflow;
+      };
+    }
+
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
 
@@ -957,7 +986,25 @@ export default function AtlasMap() {
       document.documentElement.style.overflow = previousHtmlOverflow;
       document.body.style.overflow = previousBodyOverflow;
     };
-  }, []);
+  }, [isPhoneLandscape]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      HOME_PHONE_LANDSCAPE_SCROLL_CLASS,
+      isPhoneLandscape,
+    );
+    document.body.classList.toggle(
+      HOME_PHONE_LANDSCAPE_SCROLL_CLASS,
+      isPhoneLandscape,
+    );
+
+    return () => {
+      document.documentElement.classList.remove(
+        HOME_PHONE_LANDSCAPE_SCROLL_CLASS,
+      );
+      document.body.classList.remove(HOME_PHONE_LANDSCAPE_SCROLL_CLASS);
+    };
+  }, [isPhoneLandscape]);
 
   useEffect(() => {
     return () => {
@@ -975,13 +1022,17 @@ export default function AtlasMap() {
 
   return (
     <section
-      className="atlas-hero"
+      className={`atlas-hero ${
+        isPhoneLandscape ? 'atlas-hero--phone-landscape' : ''
+      }`}
       style={styles.hero}
       onPointerDown={handleBackdropPointerDown}
     >
       <div
         ref={mapFrameRef}
-        className="atlas-map-frame"
+        className={`atlas-map-frame ${
+          isPhoneLandscape ? 'atlas-map-frame--phone-landscape' : ''
+        }`}
         style={{
           ...styles.mapFrame,
           ...(isDesktop && !isVerificationMode ? styles.mapFrameDesktop : null),
@@ -1261,6 +1312,7 @@ export default function AtlasMap() {
 
       {!shouldShowCalibration && !isVerificationMode && selectedCluster ? (
         <aside
+          className="atlas-cluster-panel"
           style={{
             ...styles.clusterPanel,
             ...(isDesktop ? styles.clusterPanelDesktop : null),
