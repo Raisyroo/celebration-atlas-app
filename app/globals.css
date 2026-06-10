@@ -80,6 +80,70 @@ body.event-detail-scroll::-webkit-scrollbar {
   transform: translateZ(0);
 }
 
+/* Homepage phone-landscape fallback: only short, narrow landscape viewports. */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 932px) {
+  html.home-phone-landscape-scroll,
+  body.home-phone-landscape-scroll {
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: auto;
+    touch-action: auto;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: auto;
+    scrollbar-width: auto;
+  }
+
+  body.home-phone-landscape-scroll::-webkit-scrollbar {
+    display: block;
+  }
+
+  .home-phone-landscape-scroll .atlas-hero {
+    min-height: max(640px, 182svh) !important;
+    overflow: visible !important;
+    touch-action: auto !important;
+    overscroll-behavior-y: auto !important;
+  }
+
+  .home-phone-landscape-scroll .atlas-map-frame {
+    overflow: visible !important;
+    contain: layout paint !important;
+  }
+
+  .home-phone-landscape-scroll .atlas-search-dock {
+    position: absolute !important;
+    left: max(12px, env(safe-area-inset-left)) !important;
+    right: max(12px, env(safe-area-inset-right)) !important;
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
+
+  .home-phone-landscape-scroll .atlas-search-dock button {
+    margin-bottom: 6px !important;
+    padding-block: 4px !important;
+    font-size: 10px !important;
+  }
+
+  .home-phone-landscape-scroll .atlas-search-dock > div {
+    min-height: 42px !important;
+    padding-inline: 12px !important;
+  }
+
+  .home-phone-landscape-scroll .atlas-card,
+  .home-phone-landscape-scroll .atlas-cluster-panel {
+    position: absolute !important;
+    left: max(12px, env(safe-area-inset-left)) !important;
+    right: max(12px, env(safe-area-inset-right)) !important;
+    bottom: 76px !important;
+    max-height: min(360px, calc(100svh - 104px)) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* Responsive atlas framing (tablet/desktop only; mobile remains unchanged) */
 /* Keep framed desktop atlas layout only in true landscape; portrait stays edge-to-edge. */
 @media (min-width: 768px) and (orientation: landscape) {
