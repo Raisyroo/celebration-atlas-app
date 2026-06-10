@@ -906,8 +906,8 @@ export default function AtlasMap() {
     const nextHighlightedIds = getHighlightedIdsFromQuery(trimmedQuery);
     setDiscoveryStatusText(
       nextHighlightedIds.size > 0
-        ? `${nextHighlightedIds.size} ${nextHighlightedIds.size === 1 ? 'discovery' : 'discoveries'} found`
-        : 'No discoveries found',
+        ? `Showing ${nextHighlightedIds.size} ${nextHighlightedIds.size === 1 ? 'discovery' : 'discoveries'} for “${trimmedQuery}”`
+        : `No discoveries found for “${trimmedQuery}”`,
     );
     setDisplayedQuery(trimmedQuery);
     setIsSubmittedQueryFading(true);
