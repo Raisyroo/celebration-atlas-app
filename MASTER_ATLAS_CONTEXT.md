@@ -2,7 +2,7 @@
 
 Before making event-page architecture, responsive layout, data model, media-slot, or AI-agent population changes, read docs/EVENT_EXPERIENCE_ARCHITECTURE.md.
 
-Before making homepage, Michigan map, event discovery, search, filter, region, or large-scale event browsing changes, read docs/ATLAS_DISCOVERY_ARCHITECTURE.md.
+Before making homepage, U.S. map, state map, Michigan map, event discovery, search, filter, region, state-level, national-scale, or large-scale event browsing changes, read docs/ATLAS_DISCOVERY_ARCHITECTURE.md.
 
 ## 1. Project Vision
 Celebration Atlas is a **living experiential intelligence platform** for celebration discovery and memory. It is not just a directory of events; it is a discoverable emotional map where each marker, glow, card, and conversational cue helps people *feel* a place before they choose it.

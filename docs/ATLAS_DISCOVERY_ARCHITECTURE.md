@@ -2,69 +2,198 @@
 
 ## Purpose
 
-The Celebration Atlas home page must become an Atlas discovery system, not just a decorative Michigan map.
+Celebration Atlas needs a scalable discovery system that can eventually cover the entire United States.
 
-The home page should welcome people into the feeling of Michigan's celebration world while also helping them find real events at statewide scale. It must support:
+The home experience should not be only a decorative map or a handcrafted collection of featured events.
 
-* emotional entry into the Atlas
-* statewide event discovery
-* thousands of events
-* search
-* filters
-* categories
-* regions
-* seasonal exploration
-* map/list switching
-* future AI-agent population
+It should become a layered Atlas discovery system:
 
-This architecture defines how the home page, Michigan map, event search, event categories, regions, filters, seasonal discovery, and large-scale event browsing should work together.
+1. National discovery
+2. State discovery
+3. Regional / county / city discovery
+4. Event discovery
+5. Curiosity, media, and collection layers
+
+Michigan is the first state prototype, but the system must eventually work the same way for every state.
+
+The only major state-specific visual differences should be:
+
+* the state map
+* the state background atmosphere
+* featured state identity
+* state-specific event data and media
+
+The structure should remain reusable.
 
 ## Core Principle
 
-The Michigan map is the front door, not the entire discovery system.
+The map is the front door, not the entire discovery system.
 
-The user should not be forced to browse thousands of pins manually.
+At national scale, users should not be forced to browse thousands of pins manually.
 
 The system should guide exploration through layers:
 
-1. Map atmosphere
-2. Featured discoveries
-3. Seasonal paths
-4. Regional browsing
-5. Search and filters
-6. Event index/list
-7. Personalized/saved events in the future
+1. U.S. Atlas map
+2. State Atlas maps
+3. Featured discoveries
+4. Seasonal paths
+5. Regional browsing
+6. Search and filters
+7. Event index/list
+8. AI guide
+9. Saved and personalized discovery in the future
 
-The map creates wonder and geographic orientation. Discovery sections create invitations. Search, filters, and index views create precision. Future AI guidance should help users narrow the Atlas without requiring them to understand the full data structure.
+## National Layer
+
+Purpose:
+Let users enter the Celebration Atlas from the entire United States.
+
+The national layer should support:
+
+* beautiful U.S. map
+* state selection
+* national event search
+* featured states
+* seasonal national trails
+* major celebration categories
+* “near me” discovery
+* national event index
+* AI guide questions across states
+
+Examples:
+
+* What festivals are near me this weekend?
+* What are the best county fairs in the Midwest?
+* Show me fireworks events in July.
+* What are the best fall festivals in the U.S.?
+* What state has interesting small-town celebrations?
+
+The national map should create wonder, but it should not show every event pin at once.
+
+## State Layer
+
+Purpose:
+Each state gets its own Atlas experience.
+
+Each state should use the same structure, but with state-specific visual identity.
+
+State-specific elements:
+
+* state map
+* state background image or atmosphere
+* state regions
+* state event categories
+* state seasonal trails
+* state featured events
+* state curiosity trails
+* state event index
+
+Example:
+Michigan is the first State Atlas.
+
+Future states should follow the same model:
+
+* Ohio Atlas
+* Pennsylvania Atlas
+* Wisconsin Atlas
+* Tennessee Atlas
+* Texas Atlas
+* California Atlas
+
+The system should not require custom code for every state.
+
+## Regional / County / City Layer
+
+Purpose:
+Let users explore events geographically without needing to know exact event names.
+
+Supported geography:
+
+* state regions
+* counties
+* cities
+* tourism regions
+* shoreline regions
+* metro areas
+* rural areas
+* “near me” radius
+
+Examples:
+
+* Blue Water Area
+* Detroit Metro
+* Thumb region
+* West Michigan
+* Upper Peninsula
+* county-level fair discovery
+* city-level festival discovery
+
+## Event Layer
+
+Purpose:
+Once a user selects an event, they enter the reusable Event Experience Architecture.
+
+Every event should use the same basic structure:
+
+* Highlights
+* Schedule
+* Maps
+* Gallery
+* Plan
+* Ask Anything
+* curiosity layer
+* media slots
+* source-backed intelligence
+
+Not every event needs rich media at first.
+
+The system must support basic event pages for fast national coverage, then allow selected events to grow into richer Atlas experiences over time.
 
 ## Home Page Layers
 
-### 1. Atlas Map Layer
+### 1. National Atlas Map Layer
 
 Purpose:
-Create the emotional sense of entering Michigan's celebration world.
+Create the emotional sense of entering the Celebration Atlas.
 
 Should support:
 
-* Michigan map
-* subtle atmospheric motion
-* featured markers
-* region highlights
+* U.S. map
+* state highlights
+* featured state markers
 * seasonal overlays
+* national trails
+* search entry
+* current location if allowed
+* state selection
+* map/list toggle
+
+Important:
+Do not show every event in the country at once.
+
+### 2. State Atlas Map Layer
+
+Purpose:
+Create the emotional sense of entering a specific state’s celebration world.
+
+Should support:
+
+* state map
+* state regions
+* featured event markers
 * event clustering
+* seasonal overlays
 * zoom-based reveal
 * current location if allowed
 * map/list toggle
 
 Important:
-Do not show every event pin at once when the database contains thousands of events.
+Do not show every event pin at once when a state contains thousands of events.
 
-The map should behave like an atmospheric gateway and geographic discovery surface. It should reveal increasing detail as the user zooms, changes region, selects a season, or asks for a narrower category. When the event database grows, clustering and curated marker selection should protect the interface from becoming visually noisy.
-
-### 2. Discovery Layer
+### 3. Discovery Layer
 
 Purpose:
-Help people find events without needing to know what they are searching for.
+Help people find events without already knowing what they want.
 
 Discovery paths:
 
@@ -79,26 +208,30 @@ Discovery paths:
 * Music Festivals
 * Historic Celebrations
 * Holiday Events
-* Haunted Michigan
+* Haunted Events
 * Small-Town Parades
 * Hidden Gems
 * Recently Added
 * Family Friendly
 * Free Events
-* Rainy Day / Indoor Events
+* Indoor Events
+* Outdoor Events
+* Road Trip Worthy
+* State Traditions
+* Nationally Known Events
+* Local Favorites
 
-Discovery paths should be presented as clear invitations into the Atlas. They may appear as rails, cards, chips, panels, or seasonal sections, but they should remain easy to scan and should not require the user to manipulate the map before discovering meaningful options.
-
-### 3. Event Index Layer
+### 4. Event Index Layer
 
 Purpose:
-Scale to thousands of events.
+Scale to thousands or eventually hundreds of thousands of events.
 
 Required:
 
 * search
 * filters
 * date range
+* state
 * region
 * county
 * city
@@ -112,27 +245,6 @@ Required:
 * saved/favorite events
 * map/list toggle
 
-The Event Index Layer is the precision layer of the Atlas. It should let users move from broad curiosity to specific plans. It must remain usable when the Atlas contains hundreds, thousands, and eventually tens of thousands of celebrations.
-
-### 4. Regional Layer
-
-Purpose:
-Let users explore Michigan by geography.
-
-Regions:
-
-* Southeast Michigan
-* Detroit Metro
-* Thumb / Blue Water Area
-* Mid-Michigan
-* West Michigan
-* Northern Lower Peninsula
-* Upper Peninsula
-* Great Lakes Shoreline
-* County-level browsing
-
-Regional browsing should support both emotional and practical exploration. A user may enter through a familiar region, a travel destination, a shoreline route, a county fair circuit, or a small-town discovery path.
-
 ### 5. Seasonal Layer
 
 Purpose:
@@ -140,34 +252,33 @@ Let users explore by time and mood.
 
 Seasons:
 
-* Spring openings
-* Summer fairs and festivals
+* spring openings
+* summer fairs and festivals
+* Independence Day / fireworks
 * Labor Day traditions
-* Fall harvest and haunted events
-* Holiday lights and winter festivals
-
-Seasonal discovery should help users understand what Michigan is celebrating now, what is coming soon, and what traditions define each part of the year. Seasonal views may combine date filtering, editorial curation, map overlays, and featured trails.
+* fall harvest and haunted events
+* holiday lights and winter festivals
 
 ### 6. Curiosity Layer
 
 Purpose:
-Expose interesting facts and celebration culture from across the state.
+Expose interesting celebration culture across the country.
 
 Examples:
 
-* Oldest festivals
-* Largest parades
-* Best fireworks
-* Strange traditions
-* Queen pageants
-* Turtle races
-* Balloon glows
-* Fair food trails
-* Lost festivals
-* Michigan firsts
-* Historic artifacts
-
-The Curiosity Layer should make the Atlas feel alive even when a user is not ready to choose an event. It can connect events through shared traditions, unusual stories, historical artifacts, local rituals, and statewide celebration patterns.
+* oldest festivals
+* largest parades
+* best fireworks
+* strange traditions
+* queen pageants
+* turtle races
+* balloon glows
+* fair food trails
+* lost festivals
+* state firsts
+* national firsts
+* historic artifacts
+* unique local rituals
 
 ### 7. AI Guide Layer
 
@@ -183,8 +294,9 @@ Examples:
 * What events are good for kids?
 * What should I attend within 50 miles?
 * What celebrations have interesting history?
-
-The AI Guide Layer should eventually act as a conversational path into the same discovery system. It should use structured event data, filters, regions, source confidence, and saved preferences rather than inventing unsupported recommendations.
+* What are the best events in Michigan this month?
+* What are the best events in Ohio next weekend?
+* Show me a weekend trip built around festivals.
 
 ## Responsive Behavior
 
@@ -196,8 +308,6 @@ The AI Guide Layer should eventually act as a conversational path into the same 
 * map should not trap the page
 * bottom controls should not block discovery
 
-Phone portrait should prioritize fast orientation and simple exploration. The map can create the opening emotional impression, but the page must still allow users to reach search, discovery paths, and event lists without friction.
-
 ### Phone Landscape
 
 * page must remain usable
@@ -206,25 +316,21 @@ Phone portrait should prioritize fast orientation and simple exploration. The ma
 * collapse decorative elements
 * prioritize search/list/discovery controls
 
-Phone landscape is a critical usability constraint. Decorative atmosphere should yield to functional controls, readable lists, and scrollable content.
-
 ### Tablet
 
 * map and discovery panels can sit side by side
 * richer filters
 * event list visible with map
-
-Tablet layouts can support a hybrid browsing mode where users keep geographic context while scanning results and refining filters.
+* state map can remain atmospheric without blocking usability
 
 ### Desktop
 
 * full Atlas console
-* map on one side
+* U.S. or state map on one side
 * discovery/search/list on the other
 * persistent filters
 * AI guide panel optional
-
-Desktop should support the richest Atlas experience: persistent map context, discovery rails, search, filters, list results, saved events, and optional AI guidance.
+* map/list/grid modes available
 
 ## Scaling Rules
 
@@ -242,14 +348,20 @@ When event count grows:
 * prioritize search and filters
 * avoid showing all pins at once
 
-When event count reaches thousands:
+When event count reaches thousands per state:
 
 * map becomes one discovery mode
 * list/search/filter becomes primary for precision
 * AI guide helps users narrow choices
 * curated trails help exploration
 
-Scaling should be planned from the beginning. The interface should not depend on a small, manually curated event set. Every discovery surface should assume the Atlas will grow and should preserve both atmosphere and usability as density increases.
+When event count reaches national scale:
+
+* U.S. map should lead to state and regional discovery
+* national search should query across all states
+* state pages should own local browsing
+* event pages should stay reusable
+* media/world-building should be progressive enhancement, not required for coverage
 
 ## Data Requirements
 
@@ -262,6 +374,8 @@ Each event needs fields for discovery:
 * coordinates
 * city
 * county
+* state
+* state slug
 * region
 * date start
 * date end
@@ -282,14 +396,28 @@ Each event needs fields for discovery:
 * schedule status
 * last verified date
 
-These fields should be structured so that map markers, index results, AI recommendations, seasonal pages, region pages, and event pages can all draw from the same source-backed event model.
+Each state needs fields for state-level discovery:
+
+* state name
+* state abbreviation
+* state slug
+* state map asset
+* state background asset
+* state regions
+* featured categories
+* seasonal trails
+* featured events
+* state description
+* state atmosphere description
 
 ## Discovery Components
 
 Future reusable components:
 
-* AtlasHomeShell
-* MichiganMapStage
+* NationalAtlasHome
+* UnitedStatesMapStage
+* StateAtlasHome
+* StateMapStage
 * EventMarkerLayer
 * EventClusterLayer
 * DiscoveryRail
@@ -302,26 +430,103 @@ Future reusable components:
 * CuriosityTrailStrip
 * AtlasGuideDock
 * MapListToggle
+* StateSelector
+* RegionSelector
 
-These components should be designed as a reusable discovery system rather than one-off home page decorations. They should support progressive enhancement as the Atlas gains more events, richer filters, better media, and AI-assisted exploration.
+## Event Coverage Levels
+
+### Level 1 — Basic National Coverage
+
+Goal:
+Populate the country quickly.
+
+Required:
+
+* event name
+* city
+* state
+* date or estimated recurrence
+* event type
+* coordinates or approximate location
+* official website or source
+* short description
+* confidence score
+
+No fancy media required.
+
+### Level 2 — State Discovery Coverage
+
+Adds:
+
+* categories
+* region
+* season
+* tags
+* featured status
+* schedule status
+* basic map marker
+* state-level browsing support
+
+### Level 3 — Practical Event Page
+
+Adds:
+
+* schedule
+* parking
+* tickets
+* map points
+* plan tips
+* major highlights
+
+### Level 4 — Atlas Experience Page
+
+Adds:
+
+* hero media
+* richer Highlights
+* Gallery portals
+* curiosity items
+* source-backed Ask Anything
+* event-specific atmosphere
+
+### Level 5 — Living Celebration / World-Built Event
+
+Adds:
+
+* field scout data
+* live updates
+* vendor photos
+* food boards
+* current-year media
+* happening now
+* interactive map
+* user memories
+* 3D maps
+* route animation
+* AR artifacts
+* generated video scenes
+* collectible artifacts
 
 ## First Implementation Priorities
 
-1. Diagnose current homepage/map scroll behavior.
-2. Make home page usable in phone landscape.
-3. Make the home page vertically scrollable where needed.
-4. Add map/list discovery structure.
-5. Add scalable event filtering.
-6. Add region and season browsing.
-7. Add AI-guide discovery later.
-
-Implementation should protect the emotional map experience while correcting usability issues first. Discovery structure and filtering should come before advanced AI guidance.
+1. Keep Michigan as the first state prototype.
+2. Diagnose current homepage/map scroll behavior.
+3. Make the homepage usable in phone landscape.
+4. Make the homepage vertically scrollable where needed.
+5. Define national/state discovery data structure.
+6. Add state-level abstraction without redesigning the whole app.
+7. Add map/list discovery structure.
+8. Add scalable event filtering.
+9. Add region and season browsing.
+10. Add AI-guide discovery later.
 
 ## Final Direction
 
-The Celebration Atlas home page should feel magical, but it must also scale.
+Celebration Atlas should feel magical, but it must also scale.
 
-The Michigan map creates wonder.
+The U.S. map creates national wonder.
+
+The state maps create local identity.
 
 The discovery system creates usability.
 
@@ -329,4 +534,6 @@ The event index creates scale.
 
 The AI guide creates intelligence.
 
-Together, they let users explore thousands of celebrations without being overwhelmed.
+The media and world-building layers create depth over time.
+
+The system should be able to populate the entire country quickly with basic event data, then progressively enhance selected events with richer media, stories, artifacts, maps, and immersive experiences.
