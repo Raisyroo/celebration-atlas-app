@@ -21,6 +21,14 @@ const ATMOSPHERIC_SUGGESTIONS = [
   'waterfront festivals',
   'hidden gems',
 ];
+const DISCOVERY_SHORTCUTS = [
+  'Fairs',
+  'Fireworks',
+  'Food',
+  'Music',
+  'Parades',
+  'Hidden Gems',
+];
 const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
 const MEDIA_MASKS: Record<'romeoPeach', string> = {
   romeoPeach:
@@ -187,6 +195,11 @@ const getLegacyHighlightedIdsFromQuery = (queryText: string) => {
   }
   if (normalizedQuery.includes('jazz')) ids.add('detroit-jazz');
   if (normalizedQuery.includes('forest')) ids.add('electric-forest');
+  if (
+    normalizedQuery.includes('hidden gem') ||
+    normalizedQuery.includes('hidden gems')
+  )
+    ids.add('electric-forest');
 
   if (
     normalizedQuery.includes('cherry') ||
@@ -881,8 +894,8 @@ export default function AtlasMap() {
     };
   }, [isVideoMedia, isCardVisible, isCardMediaVisible, cardMediaVideoKey]);
 
-  const submitSearch = useCallback(() => {
-    const trimmedQuery = query.trim();
+  const runDiscoverySearch = useCallback((searchText: string) => {
+    const trimmedQuery = searchText.trim();
     if (!trimmedQuery) return;
 
     if (queryFadeTimerRef.current) {
@@ -910,6 +923,7 @@ export default function AtlasMap() {
         ? `Showing ${nextHighlightedIds.size} ${nextHighlightedIds.size === 1 ? 'discovery' : 'discoveries'} for “${trimmedQuery}”`
         : `No discoveries found for “${trimmedQuery}”`,
     );
+    setQuery(trimmedQuery);
     setDisplayedQuery(trimmedQuery);
     setIsSubmittedQueryFading(true);
     setSearchPulseTick((prev) => prev + 1);
@@ -920,7 +934,18 @@ export default function AtlasMap() {
       setIsSubmittedQueryFading(false);
       queryFadeTimerRef.current = null;
     }, 680);
-  }, [query]);
+  }, []);
+
+  const submitSearch = useCallback(() => {
+    runDiscoverySearch(query);
+  }, [query, runDiscoverySearch]);
+
+  const handleDiscoveryShortcutSelect = useCallback(
+    (shortcut: string) => {
+      runDiscoverySearch(shortcut);
+    },
+    [runDiscoverySearch],
+  );
 
   useEffect(() => {
     if (initialEventParamHandledRef.current) return;
@@ -1513,6 +1538,8 @@ export default function AtlasMap() {
               query={submittedQuery}
               resultCount={highlightedIds.size}
               statusText={discoveryStatusText ?? undefined}
+              shortcuts={DISCOVERY_SHORTCUTS}
+              onShortcutSelect={handleDiscoveryShortcutSelect}
             />
             <div style={styles.searchInputWrap}>
               <span style={styles.searchPrefix} aria-hidden="true">
