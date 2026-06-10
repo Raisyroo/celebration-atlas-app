@@ -37,6 +37,24 @@ body::-webkit-scrollbar {
   display: none;
 }
 
+html.home-discovery-scroll,
+body.home-discovery-scroll {
+  height: auto;
+  min-height: 100dvh;
+  background: #050812;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  touch-action: auto;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: auto;
+  scrollbar-width: auto;
+}
+
+body.home-discovery-scroll::-webkit-scrollbar {
+  display: block;
+}
+
 html.event-detail-scroll,
 body.event-detail-scroll {
   height: auto;

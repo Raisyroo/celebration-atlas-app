@@ -222,6 +222,7 @@ const CLUSTER_RADIUS_PERCENT = 7.2;
 const SHOW_CLUSTER_LABELS = false;
 const PHONE_LANDSCAPE_QUERY =
   '(orientation: landscape) and (max-height: 520px) and (max-width: 932px)';
+const HOME_DISCOVERY_SCROLL_CLASS = 'home-discovery-scroll';
 const HOME_PHONE_LANDSCAPE_SCROLL_CLASS = 'home-phone-landscape-scroll';
 
 // Central post-projection adjustment for the visible homepage marker/cluster
@@ -967,26 +968,14 @@ export default function AtlasMap() {
   }, []);
 
   useEffect(() => {
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    const previousBodyOverflow = document.body.style.overflow;
-
-    if (isPhoneLandscape) {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
-      return () => {
-        document.documentElement.style.overflow = previousHtmlOverflow;
-        document.body.style.overflow = previousBodyOverflow;
-      };
-    }
-
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add(HOME_DISCOVERY_SCROLL_CLASS);
+    document.body.classList.add(HOME_DISCOVERY_SCROLL_CLASS);
 
     return () => {
-      document.documentElement.style.overflow = previousHtmlOverflow;
-      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.classList.remove(HOME_DISCOVERY_SCROLL_CLASS);
+      document.body.classList.remove(HOME_DISCOVERY_SCROLL_CLASS);
     };
-  }, [isPhoneLandscape]);
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle(
@@ -1681,8 +1670,8 @@ const styles: Record<string, CSSProperties> = {
     width: '100vw',
     minHeight: '100dvh',
     overflow: 'hidden',
-    touchAction: 'manipulation',
-    overscrollBehavior: 'none',
+    touchAction: 'pan-y pinch-zoom',
+    overscrollBehavior: 'auto',
     background: 'radial-gradient(circle at 50% 15%, #172233, #05070c 70%)',
     color: '#f5e8c7',
   },
@@ -1708,7 +1697,7 @@ const styles: Record<string, CSSProperties> = {
     transformOrigin: 'center center',
     transition:
       'filter 260ms ease, transform 520ms cubic-bezier(.22,.61,.36,1)',
-    touchAction: 'none',
+    touchAction: 'pan-y pinch-zoom',
     filter: 'saturate(0.74) brightness(0.62) contrast(1.08)',
   },
   atmosphereMapContent: {
