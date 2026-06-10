@@ -1517,9 +1517,9 @@ const styles: Record<string, CSSProperties> = {
     overscrollBehavior: "contain",
     WebkitOverflowScrolling: "touch",
     WebkitMaskImage:
-      "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.92) 9%, black 12%, black 88%, rgba(0,0,0,0.92) 91%, transparent 100%)",
+      "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.72) 3%, rgba(0,0,0,0.96) 5.75%, black 7%, black 93%, rgba(0,0,0,0.96) 94.25%, rgba(0,0,0,0.72) 97%, transparent 100%)",
     maskImage:
-      "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.92) 9%, black 12%, black 88%, rgba(0,0,0,0.92) 91%, transparent 100%)",
+      "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.72) 3%, rgba(0,0,0,0.96) 5.75%, black 7%, black 93%, rgba(0,0,0,0.96) 94.25%, rgba(0,0,0,0.72) 97%, transparent 100%)",
     scrollPaddingTop: "clamp(1.15rem, 5.2vw, 2.3rem)",
     scrollPaddingBottom: "clamp(1.15rem, 5.2vw, 2.3rem)",
     borderRadius: "clamp(1.1rem, 4.4vw, 1.65rem)",
