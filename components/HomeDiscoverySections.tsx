@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { filterEventProfiles, getDiscoveryCategories } from '../data/eventDiscovery';
+import { filterEventProfiles, getDiscoveryCategories, getDiscoveryRegions } from '../data/eventDiscovery';
 import { EVENT_PROFILES } from '../data/eventProfiles';
 import type { EventProfile } from '../data/eventProfileTypes';
 
@@ -44,6 +44,12 @@ const styles: Record<string, CSSProperties> = {
     color: 'rgba(226, 211, 178, 0.68)',
     fontSize: 'clamp(0.92rem, 2.4vw, 1rem)',
     lineHeight: 1.7,
+  },
+  sectionBlock: {
+    marginTop: 0,
+  },
+  sectionBlockSpaced: {
+    marginTop: 'clamp(3rem, 7vw, 5.25rem)',
   },
   grid: {
     display: 'grid',
@@ -118,39 +124,85 @@ export default function HomeDiscoverySections() {
       representativeDiscoveries: discoveries.slice(0, REPRESENTATIVE_DISCOVERY_LIMIT),
     };
   });
+  const regions = getDiscoveryRegions();
+  const regionGroups = regions
+    .map((region) => {
+      const discoveries = filterEventProfiles({ region });
+
+      return {
+        region,
+        discoveries,
+        representativeDiscoveries: discoveries.slice(0, REPRESENTATIVE_DISCOVERY_LIMIT),
+      };
+    })
+    .filter(({ discoveries }) => discoveries.length > 0);
 
   return (
-    <section aria-labelledby="browse-by-category-heading" style={styles.shell}>
+    <section style={styles.shell}>
       <div style={styles.inner}>
-        <p style={styles.eyebrow}>Discovery paths</p>
-        <h2 id="browse-by-category-heading" style={styles.heading}>
-          Browse by Category
-        </h2>
-        <p style={styles.intro}>
-          A quiet index of {EVENT_PROFILES.length} Michigan discoveries, grouped from the same Atlas event profile data that powers search and future browsing layers.
-        </p>
+        <section aria-labelledby="browse-by-category-heading" style={styles.sectionBlock}>
+          <p style={styles.eyebrow}>Discovery paths</p>
+          <h2 id="browse-by-category-heading" style={styles.heading}>
+            Browse by Category
+          </h2>
+          <p style={styles.intro}>
+            A quiet index of {EVENT_PROFILES.length} Michigan discoveries, grouped from the same Atlas event profile data that powers search and future browsing layers.
+          </p>
 
-        <div style={styles.grid}>
-          {categoryGroups.map(({ category, discoveries, representativeDiscoveries }) => (
-            <article key={category} style={styles.card} aria-label={`${category}: ${discoveries.length} discoveries`}>
-              <div style={styles.cardHeader}>
-                <h3 style={styles.categoryName}>{category}</h3>
-                <span style={styles.count}>
-                  {discoveries.length} {discoveries.length === 1 ? 'discovery' : 'discoveries'}
-                </span>
-              </div>
+          <div style={styles.grid}>
+            {categoryGroups.map(({ category, discoveries, representativeDiscoveries }) => (
+              <article key={category} style={styles.card} aria-label={`${category}: ${discoveries.length} discoveries`}>
+                <div style={styles.cardHeader}>
+                  <h3 style={styles.categoryName}>{category}</h3>
+                  <span style={styles.count}>
+                    {discoveries.length} {discoveries.length === 1 ? 'discovery' : 'discoveries'}
+                  </span>
+                </div>
 
-              <ul style={styles.list}>
-                {representativeDiscoveries.map((discovery) => (
-                  <li key={discovery.id} style={styles.item}>
-                    <span style={styles.eventName}>{discovery.name}</span>
-                    <span style={styles.eventLocation}>{getLocationLabel(discovery)}</span>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
+                <ul style={styles.list}>
+                  {representativeDiscoveries.map((discovery) => (
+                    <li key={discovery.id} style={styles.item}>
+                      <span style={styles.eventName}>{discovery.name}</span>
+                      <span style={styles.eventLocation}>{getLocationLabel(discovery)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section aria-labelledby="browse-by-region-heading" style={styles.sectionBlockSpaced}>
+          <p style={styles.eyebrow}>Regional paths</p>
+          <h2 id="browse-by-region-heading" style={styles.heading}>
+            Browse by Region
+          </h2>
+          <p style={styles.intro}>
+            A read-only regional view of the same discovery profiles, showing only regions with at least one matching Michigan event.
+          </p>
+
+          <div style={styles.grid}>
+            {regionGroups.map(({ region, discoveries, representativeDiscoveries }) => (
+              <article key={region} style={styles.card} aria-label={`${region}: ${discoveries.length} discoveries`}>
+                <div style={styles.cardHeader}>
+                  <h3 style={styles.categoryName}>{region}</h3>
+                  <span style={styles.count}>
+                    {discoveries.length} {discoveries.length === 1 ? 'discovery' : 'discoveries'}
+                  </span>
+                </div>
+
+                <ul style={styles.list}>
+                  {representativeDiscoveries.map((discovery) => (
+                    <li key={discovery.id} style={styles.item}>
+                      <span style={styles.eventName}>{discovery.name}</span>
+                      <span style={styles.eventLocation}>{getLocationLabel(discovery)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
       </div>
     </section>
   );
