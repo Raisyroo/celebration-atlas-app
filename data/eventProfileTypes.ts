@@ -55,6 +55,7 @@ export type EventScheduleStatus =
   | 'unknown';
 
 export type EventSourceStatus =
+  | 'unverified'
   | 'officialConfirmed'
   | 'sourceBacked'
   | 'communityReported'
