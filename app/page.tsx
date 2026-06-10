@@ -1,12 +1,12 @@
 import { Suspense } from 'react';
-import AtlasMap from '../components/AtlasMap';
 import CinematicIntro from '../components/CinematicIntro';
+import HomeAtlasExperience from '../components/HomeAtlasExperience';
 
 export default function HomePage() {
   return (
     <Suspense fallback={null}>
       <CinematicIntro>
-        <AtlasMap />
+        <HomeAtlasExperience />
       </CinematicIntro>
     </Suspense>
   );
