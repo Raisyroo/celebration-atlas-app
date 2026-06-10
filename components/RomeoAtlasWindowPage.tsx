@@ -1225,6 +1225,95 @@ export default function RomeoAtlasWindowPage({
               transform: scale(1.035);
             }
           }
+          @media (orientation: landscape) and (max-height: 520px) and (max-width: 950px) {
+            .romeo-atlas-stage {
+              width: 100vw !important;
+              max-width: none !important;
+            }
+            .romeo-atlas-back-link {
+              min-height: 1.78rem !important;
+              padding: 0.18rem 0.48rem !important;
+              font-size: 0.52rem !important;
+              right: max(0.42rem, env(safe-area-inset-right, 0px)) !important;
+              top: max(0.34rem, env(safe-area-inset-top, 0px)) !important;
+            }
+            .romeo-atlas-inner-window {
+              top: max(0.42rem, calc(env(safe-area-inset-top, 0px) + 0.42rem)) !important;
+              right: max(0.5rem, env(safe-area-inset-right, 0px)) !important;
+              bottom: max(3.68rem, calc(env(safe-area-inset-bottom, 0px) + 3.48rem)) !important;
+              left: max(0.5rem, env(safe-area-inset-left, 0px)) !important;
+              border-radius: 1rem !important;
+              scroll-padding-top: 0.8rem !important;
+              scroll-padding-bottom: 0.8rem !important;
+            }
+            .romeo-atlas-inner-window > .romeo-memory-scroll {
+              align-content: start !important;
+              min-height: 100% !important;
+              gap: 0.72rem !important;
+              padding: 0.74rem 1rem 0.9rem !important;
+              scroll-padding-top: 0.74rem !important;
+              scroll-padding-bottom: 0.9rem !important;
+            }
+            .romeo-highlights-content {
+              align-content: start !important;
+              gap: 0.64rem !important;
+              padding: 0.72rem 1rem 0.95rem !important;
+              scroll-padding-top: 0.72rem !important;
+            }
+            .romeo-atlas-controls {
+              grid-template-columns: minmax(0, 1fr) minmax(8.4rem, 26vw) !important;
+              align-items: end !important;
+              gap: 0.36rem !important;
+              width: min(calc(100vw - 1rem), 950px) !important;
+              bottom: max(0.32rem, env(safe-area-inset-bottom, 0px)) !important;
+            }
+            .romeo-mode-rail {
+              column-gap: 0.12rem !important;
+              padding: 0.08rem 0.16rem 0.04rem !important;
+            }
+            .romeo-mode-rail-atmosphere {
+              top: -0.56rem !important;
+              bottom: -0.08rem !important;
+              opacity: 0.62 !important;
+            }
+            .romeo-mode-lens {
+              gap: 0.04rem !important;
+              min-height: 2.86rem !important;
+              padding: 0.08rem 0.02rem 0.04rem !important;
+            }
+            .romeo-mode-icon-stack {
+              min-height: 1.86rem !important;
+              border-radius: 0.82rem !important;
+            }
+            .romeo-mode-icon-image {
+              width: clamp(1.42rem, 5.1vh, 1.9rem) !important;
+              height: clamp(1.42rem, 5.1vh, 1.9rem) !important;
+            }
+            .romeo-mode-label {
+              font-size: 6.5px !important;
+              letter-spacing: 0.045em !important;
+              line-height: 1 !important;
+            }
+            .romeo-ask-dock {
+              min-height: 2.5rem !important;
+              grid-template-columns: 1fr auto !important;
+              gap: 0.34rem !important;
+              padding: 0.26rem 0.32rem 0.26rem 0.58rem !important;
+              border-radius: 999px !important;
+            }
+            .romeo-ask-sigil {
+              display: none !important;
+            }
+            .romeo-ask-input {
+              font-size: 0.78rem !important;
+              min-width: 0 !important;
+            }
+            .romeo-ask-button {
+              width: 1.74rem !important;
+              height: 1.74rem !important;
+              font-size: 0.82rem !important;
+            }
+          }
           @media (prefers-reduced-motion: reduce) {
             .romeo-cinematic-video-memory,
             .romeo-cinematic-video-memory[data-intro-state="dissolving"],
@@ -1240,6 +1329,7 @@ export default function RomeoAtlasWindowPage({
           }
         `}</style>
       <section
+        className="romeo-atlas-stage"
         style={styles.stage}
         aria-label={`${eventName} Atlas floating memory`}
       >
@@ -1329,15 +1419,21 @@ export default function RomeoAtlasWindowPage({
         </section>
 
         <section
+          className="romeo-atlas-controls"
           style={styles.bottomZone}
           aria-label="Atlas controls and Ask Anything"
         >
           <nav
             ref={modeRailRef}
+            className="romeo-mode-rail"
             style={styles.modeRail}
             aria-label="Atlas controls"
           >
-            <span style={styles.modeRailAtmosphere} aria-hidden="true" />
+            <span
+              className="romeo-mode-rail-atmosphere"
+              style={styles.modeRailAtmosphere}
+              aria-hidden="true"
+            />
             {MODE_OPTIONS.map((mode) => {
               const isActive = mode.id === activeMode;
               return (
@@ -1355,28 +1451,42 @@ export default function RomeoAtlasWindowPage({
                   data-active={isActive ? "true" : "false"}
                   title={mode.label}
                 >
-                  <span style={styles.modeIconStack}>
+                  <span
+                    className="romeo-mode-icon-stack"
+                    style={styles.modeIconStack}
+                  >
                     <img
                       src={mode.iconSrc}
                       alt=""
+                      className="romeo-mode-icon-image"
                       style={styles.modeIconImage}
                       aria-hidden="true"
                       draggable={false}
                     />
                   </span>
-                  <span style={styles.modeLabel}>{mode.label}</span>
+                  <span className="romeo-mode-label" style={styles.modeLabel}>
+                    {mode.label}
+                  </span>
                 </button>
               );
             })}
           </nav>
 
-          <form style={styles.askDock} onSubmit={handleAskSubmit}>
-            <span style={styles.askSigil} aria-hidden="true">
+          <form
+            className="romeo-ask-dock"
+            style={styles.askDock}
+            onSubmit={handleAskSubmit}
+          >
+            <span
+              className="romeo-ask-sigil"
+              style={styles.askSigil}
+              aria-hidden="true"
+            >
               ✦
             </span>
             <input
               style={styles.askInput}
-              className="atlas-ask-input"
+              className="atlas-ask-input romeo-ask-input"
               placeholder="Ask Anything"
               aria-label="Ask Anything"
               value={askQuestion}
@@ -1385,6 +1495,7 @@ export default function RomeoAtlasWindowPage({
             <button
               type="submit"
               style={styles.askButton}
+              className="romeo-ask-button"
               aria-label="Submit Ask Anything prompt"
             >
               ↗
@@ -2317,8 +2428,7 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: "nowrap",
     wordBreak: "keep-all",
     opacity: 0.84,
-    textShadow:
-      "0 1px 1px rgba(0,0,0,0.76), 0 0 5px rgba(226,172,92,0.14)",
+    textShadow: "0 1px 1px rgba(0,0,0,0.76), 0 0 5px rgba(226,172,92,0.14)",
     userSelect: "none",
     pointerEvents: "none",
   },
