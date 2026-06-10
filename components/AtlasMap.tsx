@@ -14,6 +14,7 @@ import {
 import type { MichiganMapAnchor } from '../data/mapCalibration';
 import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
+import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
 
 const ATMOSPHERIC_SUGGESTIONS = [
   'music festivals',
@@ -638,6 +639,21 @@ export default function AtlasMap() {
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
   const highlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
+  const discoveryResultLimit = isPhoneLandscape ? 2 : isDesktop ? 4 : 3;
+  const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
+    if (!q || highlightedIds.size === 0) return [];
+
+    return ATLAS_EVENTS.filter((event) => highlightedIds.has(event.id))
+      .slice(0, discoveryResultLimit)
+      .map((event) => ({
+        id: event.id,
+        name: event.name,
+        location: event.location,
+        category: event.category,
+        atmosphereLabel: event.atmosphereLabel,
+        blurb: event.blurb,
+      }));
+  }, [discoveryResultLimit, highlightedIds, q]);
   const markerLayouts = useMemo(
     () => resolveAtlasMarkerLayouts(ATLAS_EVENTS),
     [],
@@ -1577,6 +1593,7 @@ export default function AtlasMap() {
               query={submittedQuery}
               resultCount={highlightedIds.size}
               statusText={discoveryStatusText ?? undefined}
+              results={discoveryResultRows}
               shortcutGroups={HOME_DISCOVERY_SHORTCUT_GROUPS}
               onShortcutSelect={handleDiscoveryShortcutSelect}
             />
