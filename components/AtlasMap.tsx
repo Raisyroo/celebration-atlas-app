@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
+import { searchEventProfiles } from '../data/eventProfiles';
 import {
   MICHIGAN_MAP_ANCHORS,
   latLngToAtlasPosition,
@@ -149,7 +150,7 @@ const RESET_SEARCH_COMMANDS = new Set([
 
 const isResetSearchCommand = (queryText: string) =>
   RESET_SEARCH_COMMANDS.has(queryText.trim().toLowerCase());
-const getHighlightedIdsFromQuery = (queryText: string) => {
+const getLegacyHighlightedIdsFromQuery = (queryText: string) => {
   const ids = new Set<string>();
   const normalizedQuery = queryText.trim().toLowerCase();
 
@@ -210,6 +211,16 @@ const getHighlightedIdsFromQuery = (queryText: string) => {
     ) {
       ids.add(event.id);
     }
+  }
+
+  return ids;
+};
+
+const getHighlightedIdsFromQuery = (queryText: string) => {
+  const ids = getLegacyHighlightedIdsFromQuery(queryText);
+
+  for (const profile of searchEventProfiles(queryText)) {
+    ids.add(profile.id);
   }
 
   return ids;
