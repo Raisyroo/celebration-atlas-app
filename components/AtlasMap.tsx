@@ -29,6 +29,17 @@ const DISCOVERY_SHORTCUTS = [
   'Parades',
   'Hidden Gems',
 ];
+const REGIONAL_DISCOVERY_SHORTCUTS = [
+  'Detroit Metro',
+  'Thumb',
+  'West Michigan',
+  'Northern Michigan',
+  'Upper Peninsula',
+];
+const HOME_DISCOVERY_SHORTCUT_GROUPS = [
+  { label: 'Guide', shortcuts: DISCOVERY_SHORTCUTS },
+  { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
+];
 const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
 const MEDIA_MASKS: Record<'romeoPeach', string> = {
   romeoPeach:
@@ -157,6 +168,26 @@ const RESET_SEARCH_COMMANDS = new Set([
   'clear',
 ]);
 
+const REGIONAL_DISCOVERY_EVENT_IDS: Record<string, string[]> = {
+  'detroit metro': ['detroit-jazz', 'romeo-peach', 'armada-fair'],
+  thumb: ['black-river-tattoo', 'goodells-fair', 'armada-fair'],
+  'west michigan': [
+    'electric-forest',
+    'west-michigan-coast-guard',
+    'holland-tulip-time',
+    'muskegon-summer-celebration',
+    'allendale-balloon-fest',
+  ],
+  'northern michigan': [
+    'traverse-city-cherry',
+    'mackinac-lilac',
+    'alpena-brown-trout',
+    'charlevoix-venetian',
+    'cheboygan-4th-fireworks',
+  ],
+  'upper peninsula': ['upper-peninsula-state-fair'],
+};
+
 const isResetSearchCommand = (queryText: string) =>
   RESET_SEARCH_COMMANDS.has(queryText.trim().toLowerCase());
 const getLegacyHighlightedIdsFromQuery = (queryText: string) => {
@@ -169,6 +200,14 @@ const getLegacyHighlightedIdsFromQuery = (queryText: string) => {
     ids.add('electric-forest');
     ids.add('detroit-jazz');
   };
+
+  for (const [regionLabel, eventIds] of Object.entries(
+    REGIONAL_DISCOVERY_EVENT_IDS,
+  )) {
+    if (normalizedQuery.includes(regionLabel)) {
+      eventIds.forEach((eventId) => ids.add(eventId));
+    }
+  }
 
   if (
     normalizedQuery.includes('music festival') ||
@@ -1538,7 +1577,7 @@ export default function AtlasMap() {
               query={submittedQuery}
               resultCount={highlightedIds.size}
               statusText={discoveryStatusText ?? undefined}
-              shortcuts={DISCOVERY_SHORTCUTS}
+              shortcutGroups={HOME_DISCOVERY_SHORTCUT_GROUPS}
               onShortcutSelect={handleDiscoveryShortcutSelect}
             />
             <div style={styles.searchInputWrap}>
