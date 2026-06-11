@@ -1323,18 +1323,18 @@ export default function AtlasMap() {
                                     : '1px',
                                   '--marker-glint-opacity': isCluster
                                     ? isHighlighted || isSelected
-                                      ? 0.7
-                                      : 0.46
+                                      ? 0.72
+                                      : 0.18
                                     : isHighlighted || isSelected
-                                      ? 0.74
-                                      : 0.5,
+                                      ? 0.78
+                                      : 0.08,
                                   '--marker-glint-soft-opacity': isCluster
                                     ? isHighlighted || isSelected
-                                      ? 0.34
-                                      : 0.22
+                                      ? 0.36
+                                      : 0.08
                                     : isHighlighted || isSelected
-                                      ? 0.32
-                                      : 0.2,
+                                      ? 0.34
+                                      : 0.04,
                                   animationDuration: `${pulseDuration}s`,
                                   animationDelay: `${pulseDelay}s`,
                                 } as CSSProperties
@@ -2196,9 +2196,9 @@ const styles: Record<string, CSSProperties> = {
     width: 16,
     height: 16,
     borderRadius: 999,
-    border: '1px solid rgba(255, 238, 192, 0.18)',
+    border: '1px solid rgba(255, 230, 178, 0.1)',
     background:
-      'radial-gradient(circle at 50% 50%, rgba(255, 253, 226, 1) 0 8%, rgba(255, 232, 166, 0.94) 9% 15%, rgba(247, 189, 78, 0.42) 23%, rgba(226, 145, 48, 0.16) 39%, rgba(160, 87, 34, 0.05) 58%, rgba(160, 87, 34, 0) 74%)',
+      'radial-gradient(circle at 50% 50%, rgba(255, 248, 212, 0.98) 0 4%, rgba(255, 225, 146, 0.92) 5% 9%, rgba(248, 189, 79, 0.44) 17%, rgba(226, 145, 48, 0.16) 34%, rgba(160, 87, 34, 0.04) 56%, rgba(160, 87, 34, 0) 86%)',
     zIndex: Z_INDEX.markers,
     pointerEvents: 'none',
   },
@@ -2209,9 +2209,9 @@ const styles: Record<string, CSSProperties> = {
     width: 26,
     height: 26,
     borderRadius: 999,
-    border: '1px solid rgba(255, 232, 177, 0.16)',
+    border: '1px solid rgba(255, 226, 170, 0.09)',
     background:
-      'radial-gradient(circle at 50% 50%, rgba(255, 250, 221, 0.98) 0 5%, rgba(255, 222, 145, 0.86) 8% 12%, rgba(247, 185, 77, 0.34) 23%, rgba(216, 130, 44, 0.13) 43%, rgba(128, 72, 29, 0.04) 66%, rgba(128, 72, 29, 0) 82%), radial-gradient(circle at 37% 34%, rgba(255, 245, 207, 0.78) 0 3%, rgba(241, 170, 68, 0.22) 6%, rgba(241, 170, 68, 0) 14%), radial-gradient(circle at 66% 58%, rgba(255, 234, 177, 0.56) 0 2.5%, rgba(226, 146, 54, 0.16) 6%, rgba(226, 146, 54, 0) 13%)',
+      'radial-gradient(circle at 50% 50%, rgba(255, 247, 210, 0.98) 0 3.5%, rgba(255, 222, 142, 0.88) 5% 8%, rgba(247, 185, 77, 0.34) 18%, rgba(216, 130, 44, 0.12) 39%, rgba(128, 72, 29, 0.035) 63%, rgba(128, 72, 29, 0) 90%), radial-gradient(circle at 37% 34%, rgba(255, 239, 196, 0.66) 0 2%, rgba(241, 170, 68, 0.18) 5%, rgba(241, 170, 68, 0) 16%), radial-gradient(circle at 66% 58%, rgba(255, 228, 166, 0.42) 0 1.8%, rgba(226, 146, 54, 0.13) 5%, rgba(226, 146, 54, 0) 15%)',
     zIndex: Z_INDEX.markers,
     pointerEvents: 'none',
   },
