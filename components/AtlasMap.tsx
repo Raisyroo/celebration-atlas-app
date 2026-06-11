@@ -1289,20 +1289,32 @@ export default function AtlasMap() {
                                     ? styles.clusterMarker
                                     : styles.marker),
                                   '--marker-scale-base': markerScaleBase,
-                                  '--marker-shadow-idle': isHighlighted
-                                    ? '0 0 18px rgba(255,241,202,.98), 0 0 40px rgba(253,208,120,1)'
-                                    : isSelected
-                                      ? '0 0 12px rgba(255,228,170,.9), 0 0 28px rgba(253,208,120,.96)'
-                                      : isFeaturedMarker
-                                        ? '0 0 10px rgba(248,209,124,.9), 0 0 22px rgba(248,209,124,.76)'
-                                        : '0 0 8px rgba(242,198,106,.82), 0 0 18px rgba(242,198,106,.72)',
-                                  '--marker-shadow-peak': isHighlighted
-                                    ? '0 0 24px rgba(255,246,220,1), 0 0 54px rgba(253,208,120,1)'
-                                    : isSelected
-                                      ? '0 0 18px rgba(255,235,186,.98), 0 0 36px rgba(253,208,120,.99)'
-                                      : isFeaturedMarker
-                                        ? '0 0 16px rgba(255,233,176,.95), 0 0 33px rgba(253,208,120,.93)'
-                                        : '0 0 14px rgba(255,228,170,.92), 0 0 30px rgba(253,208,120,.9)',
+                                  '--marker-shadow-idle': isCluster
+                                    ? isHighlighted
+                                      ? '0 0 14px rgba(255,246,220,.82), 0 0 34px rgba(249,195,91,.62), 0 0 64px rgba(206,135,44,.38)'
+                                      : isSelected
+                                        ? '0 0 13px rgba(255,238,196,.78), 0 0 32px rgba(249,185,75,.58), 0 0 58px rgba(198,121,36,.34)'
+                                        : '0 0 10px rgba(255,231,178,.54), 0 0 26px rgba(236,164,64,.38), 0 0 48px rgba(179,104,38,.24)'
+                                    : isHighlighted
+                                      ? '0 0 10px rgba(255,247,218,.94), 0 0 24px rgba(251,200,96,.82), 0 0 36px rgba(213,134,45,.36)'
+                                      : isSelected
+                                        ? '0 0 9px rgba(255,239,196,.9), 0 0 22px rgba(248,190,88,.76), 0 0 32px rgba(202,122,40,.34)'
+                                        : isFeaturedMarker
+                                          ? '0 0 8px rgba(255,232,178,.82), 0 0 18px rgba(244,179,76,.58), 0 0 27px rgba(178,103,40,.24)'
+                                          : '0 0 6px rgba(255,224,166,.66), 0 0 14px rgba(235,158,62,.42), 0 0 21px rgba(164,91,36,.18)',
+                                  '--marker-shadow-peak': isCluster
+                                    ? isHighlighted
+                                      ? '0 0 18px rgba(255,250,230,.9), 0 0 42px rgba(255,208,109,.72), 0 0 78px rgba(216,143,49,.44)'
+                                      : isSelected
+                                        ? '0 0 17px rgba(255,244,214,.86), 0 0 40px rgba(252,198,94,.68), 0 0 72px rgba(206,130,43,.4)'
+                                        : '0 0 13px rgba(255,236,194,.64), 0 0 32px rgba(242,179,78,.46), 0 0 60px rgba(186,112,42,.28)'
+                                    : isHighlighted
+                                      ? '0 0 13px rgba(255,251,232,.98), 0 0 30px rgba(255,210,112,.9), 0 0 44px rgba(223,146,48,.42)'
+                                      : isSelected
+                                        ? '0 0 12px rgba(255,246,220,.94), 0 0 28px rgba(253,201,100,.84), 0 0 40px rgba(211,132,44,.4)'
+                                        : isFeaturedMarker
+                                          ? '0 0 10px rgba(255,239,202,.9), 0 0 24px rgba(250,196,94,.72), 0 0 34px rgba(196,120,42,.3)'
+                                          : '0 0 8px rgba(255,233,184,.76), 0 0 19px rgba(242,178,78,.52), 0 0 29px rgba(177,103,39,.22)',
                                   animationDuration: `${pulseDuration}s`,
                                   animationDelay: `${pulseDelay}s`,
                                 } as CSSProperties
@@ -2132,9 +2144,9 @@ const styles: Record<string, CSSProperties> = {
     width: 20,
     height: 20,
     borderRadius: 999,
-    border: '1px solid rgba(255,228,170,.95)',
+    border: '1px solid rgba(255,231,178,.78)',
     background:
-      'radial-gradient(circle, #ffebba 8%, #f2c66a 55%, rgba(242,198,106,.15) 100%)',
+      'radial-gradient(circle at 42% 36%, rgba(255,253,226,.98) 0 9%, rgba(255,238,184,.96) 16%, rgba(244,190,82,.82) 46%, rgba(218,133,42,.34) 72%, rgba(142,76,31,.08) 100%)',
     zIndex: Z_INDEX.markers,
     pointerEvents: 'none',
   },
@@ -2145,9 +2157,9 @@ const styles: Record<string, CSSProperties> = {
     width: 28,
     height: 28,
     borderRadius: 999,
-    border: '1px solid rgba(255,236,190,.98)',
+    border: '1px solid rgba(255,237,190,.72)',
     background:
-      'radial-gradient(circle, #fff4d1 6%, #f7cf72 44%, rgba(242,198,106,.28) 72%, rgba(132,174,207,.16) 100%)',
+      'radial-gradient(circle at 40% 35%, rgba(255,253,228,.96) 0 8%, rgba(255,229,168,.88) 18%, rgba(244,181,75,.58) 48%, rgba(210,124,44,.26) 74%, rgba(119,69,38,.1) 100%)',
     zIndex: Z_INDEX.markers,
     pointerEvents: 'none',
   },
