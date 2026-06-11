@@ -8,6 +8,8 @@ Before making country/state atlas, state map, regional discovery, constellation 
 
 Before making map projection, illustrated map, real map, event grounds map, constellation marker, geocoding, or map calibration changes, read docs/MAP_PRESENTATION_ARCHITECTURE.md.
 
+Before making constellation marker, star marker, trail, cluster glow, themed discovery path, or AI-suggested relationship changes, read docs/ATLAS_CONSTELLATIONS_ARCHITECTURE.md.
+
 ## 1. Project Vision
 Celebration Atlas is a **living experiential intelligence platform** for celebration discovery and memory. It is not just a directory of events; it is a discoverable emotional map where each marker, glow, card, and conversational cue helps people *feel* a place before they choose it.
 
