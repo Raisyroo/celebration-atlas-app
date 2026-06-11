@@ -1291,10 +1291,10 @@ export default function AtlasMap() {
                                   '--marker-scale-base': markerScaleBase,
                                   '--marker-shadow-idle': isCluster
                                     ? isHighlighted
-                                      ? '0 0 14px rgba(255,246,220,.82), 0 0 34px rgba(249,195,91,.62), 0 0 64px rgba(206,135,44,.38)'
+                                      ? '0 0 16px rgba(255,242,204,.76), 0 0 38px rgba(250,196,91,.58), 0 0 76px rgba(205,128,39,.34), 0 0 112px rgba(143,79,29,.18)'
                                       : isSelected
-                                        ? '0 0 13px rgba(255,238,196,.78), 0 0 32px rgba(249,185,75,.58), 0 0 58px rgba(198,121,36,.34)'
-                                        : '0 0 10px rgba(255,231,178,.54), 0 0 26px rgba(236,164,64,.38), 0 0 48px rgba(179,104,38,.24)'
+                                        ? '0 0 15px rgba(255,236,190,.72), 0 0 36px rgba(248,186,79,.54), 0 0 70px rgba(199,122,36,.32), 0 0 104px rgba(139,76,29,.16)'
+                                        : '0 0 12px rgba(255,224,166,.5), 0 0 30px rgba(235,165,63,.35), 0 0 62px rgba(180,103,36,.23), 0 0 92px rgba(122,68,28,.13)'
                                     : isHighlighted
                                       ? '0 0 10px rgba(255,247,218,.94), 0 0 24px rgba(251,200,96,.82), 0 0 36px rgba(213,134,45,.36)'
                                       : isSelected
@@ -1304,10 +1304,10 @@ export default function AtlasMap() {
                                           : '0 0 6px rgba(255,224,166,.66), 0 0 14px rgba(235,158,62,.42), 0 0 21px rgba(164,91,36,.18)',
                                   '--marker-shadow-peak': isCluster
                                     ? isHighlighted
-                                      ? '0 0 18px rgba(255,250,230,.9), 0 0 42px rgba(255,208,109,.72), 0 0 78px rgba(216,143,49,.44)'
+                                      ? '0 0 20px rgba(255,247,219,.84), 0 0 48px rgba(255,207,106,.66), 0 0 92px rgba(217,140,45,.4), 0 0 132px rgba(145,81,30,.2)'
                                       : isSelected
-                                        ? '0 0 17px rgba(255,244,214,.86), 0 0 40px rgba(252,198,94,.68), 0 0 72px rgba(206,130,43,.4)'
-                                        : '0 0 13px rgba(255,236,194,.64), 0 0 32px rgba(242,179,78,.46), 0 0 60px rgba(186,112,42,.28)'
+                                        ? '0 0 19px rgba(255,241,207,.8), 0 0 46px rgba(252,197,92,.62), 0 0 86px rgba(207,129,41,.37), 0 0 124px rgba(141,78,29,.18)'
+                                        : '0 0 15px rgba(255,232,184,.58), 0 0 38px rgba(242,178,77,.42), 0 0 74px rgba(186,111,40,.27), 0 0 108px rgba(128,72,29,.15)'
                                     : isHighlighted
                                       ? '0 0 13px rgba(255,251,232,.98), 0 0 30px rgba(255,210,112,.9), 0 0 44px rgba(223,146,48,.42)'
                                       : isSelected
@@ -2157,9 +2157,9 @@ const styles: Record<string, CSSProperties> = {
     width: 28,
     height: 28,
     borderRadius: 999,
-    border: '1px solid rgba(255,237,190,.72)',
+    border: '1px solid rgba(255,226,170,.62)',
     background:
-      'radial-gradient(circle at 40% 35%, rgba(255,253,228,.96) 0 8%, rgba(255,229,168,.88) 18%, rgba(244,181,75,.58) 48%, rgba(210,124,44,.26) 74%, rgba(119,69,38,.1) 100%)',
+      'radial-gradient(circle at 35% 32%, rgba(255,244,199,.96) 0 6%, rgba(255,217,139,.82) 13%, rgba(245,177,70,.48) 32%, rgba(214,126,43,.22) 56%, rgba(133,77,36,.08) 100%), radial-gradient(circle at 64% 42%, rgba(255,241,190,.74) 0 4%, rgba(241,170,68,.28) 9%, rgba(241,170,68,0) 18%), radial-gradient(circle at 48% 68%, rgba(255,226,161,.62) 0 3%, rgba(218,132,47,.22) 8%, rgba(218,132,47,0) 17%), radial-gradient(circle at 72% 68%, rgba(255,224,158,.5) 0 2.5%, rgba(226,146,54,.18) 7%, rgba(226,146,54,0) 15%)',
     zIndex: Z_INDEX.markers,
     pointerEvents: 'none',
   },
