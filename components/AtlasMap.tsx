@@ -1291,30 +1291,50 @@ export default function AtlasMap() {
                                   '--marker-scale-base': markerScaleBase,
                                   '--marker-shadow-idle': isCluster
                                     ? isHighlighted
-                                      ? '0 0 16px rgba(255,242,204,.76), 0 0 38px rgba(250,196,91,.58), 0 0 76px rgba(205,128,39,.34), 0 0 112px rgba(143,79,29,.18)'
+                                      ? '0 0 8px rgba(255,247,219,.82), 0 0 26px rgba(255,205,106,.56), 0 0 64px rgba(211,132,43,.28), 0 0 108px rgba(145,81,30,.14)'
                                       : isSelected
-                                        ? '0 0 15px rgba(255,236,190,.72), 0 0 36px rgba(248,186,79,.54), 0 0 70px rgba(199,122,36,.32), 0 0 104px rgba(139,76,29,.16)'
-                                        : '0 0 12px rgba(255,224,166,.5), 0 0 30px rgba(235,165,63,.35), 0 0 62px rgba(180,103,36,.23), 0 0 92px rgba(122,68,28,.13)'
+                                        ? '0 0 8px rgba(255,241,207,.78), 0 0 24px rgba(252,197,92,.52), 0 0 58px rgba(207,129,41,.26), 0 0 96px rgba(141,78,29,.13)'
+                                        : '0 0 6px rgba(255,232,184,.54), 0 0 19px rgba(242,178,77,.36), 0 0 48px rgba(186,111,40,.2), 0 0 82px rgba(128,72,29,.11)'
                                     : isHighlighted
-                                      ? '0 0 10px rgba(255,247,218,.94), 0 0 24px rgba(251,200,96,.82), 0 0 36px rgba(213,134,45,.36)'
+                                      ? '0 0 5px rgba(255,251,232,.96), 0 0 17px rgba(255,210,112,.72), 0 0 34px rgba(223,146,48,.3)'
                                       : isSelected
-                                        ? '0 0 9px rgba(255,239,196,.9), 0 0 22px rgba(248,190,88,.76), 0 0 32px rgba(202,122,40,.34)'
+                                        ? '0 0 5px rgba(255,246,220,.9), 0 0 16px rgba(253,201,100,.68), 0 0 30px rgba(211,132,44,.28)'
                                         : isFeaturedMarker
-                                          ? '0 0 8px rgba(255,232,178,.82), 0 0 18px rgba(244,179,76,.58), 0 0 27px rgba(178,103,40,.24)'
-                                          : '0 0 6px rgba(255,224,166,.66), 0 0 14px rgba(235,158,62,.42), 0 0 21px rgba(164,91,36,.18)',
+                                          ? '0 0 4px rgba(255,239,202,.82), 0 0 13px rgba(250,196,94,.54), 0 0 25px rgba(196,120,42,.22)'
+                                          : '0 0 3px rgba(255,233,184,.7), 0 0 10px rgba(242,178,78,.38), 0 0 21px rgba(177,103,39,.16)',
                                   '--marker-shadow-peak': isCluster
                                     ? isHighlighted
-                                      ? '0 0 20px rgba(255,247,219,.84), 0 0 48px rgba(255,207,106,.66), 0 0 92px rgba(217,140,45,.4), 0 0 132px rgba(145,81,30,.2)'
+                                      ? '0 0 10px rgba(255,250,229,.9), 0 0 34px rgba(255,214,122,.66), 0 0 78px rgba(217,140,45,.34), 0 0 124px rgba(145,81,30,.16)'
                                       : isSelected
-                                        ? '0 0 19px rgba(255,241,207,.8), 0 0 46px rgba(252,197,92,.62), 0 0 86px rgba(207,129,41,.37), 0 0 124px rgba(141,78,29,.18)'
-                                        : '0 0 15px rgba(255,232,184,.58), 0 0 38px rgba(242,178,77,.42), 0 0 74px rgba(186,111,40,.27), 0 0 108px rgba(128,72,29,.15)'
+                                        ? '0 0 9px rgba(255,246,220,.84), 0 0 31px rgba(255,207,106,.6), 0 0 72px rgba(207,129,41,.31), 0 0 114px rgba(141,78,29,.15)'
+                                        : '0 0 7px rgba(255,238,197,.62), 0 0 25px rgba(248,190,88,.45), 0 0 60px rgba(196,120,42,.24), 0 0 96px rgba(128,72,29,.13)'
                                     : isHighlighted
-                                      ? '0 0 13px rgba(255,251,232,.98), 0 0 30px rgba(255,210,112,.9), 0 0 44px rgba(223,146,48,.42)'
+                                      ? '0 0 7px rgba(255,253,238,1), 0 0 22px rgba(255,218,130,.84), 0 0 40px rgba(223,146,48,.36)'
                                       : isSelected
-                                        ? '0 0 12px rgba(255,246,220,.94), 0 0 28px rgba(253,201,100,.84), 0 0 40px rgba(211,132,44,.4)'
+                                        ? '0 0 6px rgba(255,250,232,.96), 0 0 20px rgba(255,210,112,.78), 0 0 36px rgba(211,132,44,.34)'
                                         : isFeaturedMarker
-                                          ? '0 0 10px rgba(255,239,202,.9), 0 0 24px rgba(250,196,94,.72), 0 0 34px rgba(196,120,42,.3)'
-                                          : '0 0 8px rgba(255,233,184,.76), 0 0 19px rgba(242,178,78,.52), 0 0 29px rgba(177,103,39,.22)',
+                                          ? '0 0 5px rgba(255,244,214,.9), 0 0 17px rgba(253,201,100,.64), 0 0 30px rgba(196,120,42,.26)'
+                                          : '0 0 4px rgba(255,238,197,.78), 0 0 13px rgba(248,190,88,.48), 0 0 25px rgba(177,103,39,.2)',
+                                  '--marker-glint-span': isCluster
+                                    ? '21px'
+                                    : '15px',
+                                  '--marker-glint-thickness': isCluster
+                                    ? '1.5px'
+                                    : '1px',
+                                  '--marker-glint-opacity': isCluster
+                                    ? isHighlighted || isSelected
+                                      ? 0.7
+                                      : 0.46
+                                    : isHighlighted || isSelected
+                                      ? 0.74
+                                      : 0.5,
+                                  '--marker-glint-soft-opacity': isCluster
+                                    ? isHighlighted || isSelected
+                                      ? 0.34
+                                      : 0.22
+                                    : isHighlighted || isSelected
+                                      ? 0.32
+                                      : 0.2,
                                   animationDuration: `${pulseDuration}s`,
                                   animationDelay: `${pulseDelay}s`,
                                 } as CSSProperties
@@ -1701,6 +1721,38 @@ export default function AtlasMap() {
               animation-fill-mode: both;
               will-change: transform, box-shadow, filter;
               transform-origin: center;
+            }
+
+            .marker-pulse::before,
+            .marker-pulse::after {
+              content: '';
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              width: var(--marker-glint-span, 15px);
+              height: var(--marker-glint-thickness, 1px);
+              border-radius: 999px;
+              background: linear-gradient(
+                90deg,
+                rgba(255, 237, 177, 0),
+                rgba(255, 249, 226, var(--marker-glint-opacity, 0.5)),
+                rgba(255, 237, 177, 0)
+              );
+              box-shadow: 0 0 6px
+                rgba(255, 214, 122, var(--marker-glint-soft-opacity, 0.2));
+              pointer-events: none;
+              transform: translate(-50%, -50%);
+            }
+
+            .marker-pulse::after {
+              width: var(--marker-glint-thickness, 1px);
+              height: var(--marker-glint-span, 15px);
+              background: linear-gradient(
+                180deg,
+                rgba(255, 237, 177, 0),
+                rgba(255, 249, 226, var(--marker-glint-soft-opacity, 0.2)),
+                rgba(255, 237, 177, 0)
+              );
             }
 
             @keyframes featuredDiscoverySwap {
@@ -2141,12 +2193,12 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: '50%',
     top: '50%',
-    width: 20,
-    height: 20,
+    width: 16,
+    height: 16,
     borderRadius: 999,
-    border: '1px solid rgba(255,231,178,.78)',
+    border: '1px solid rgba(255, 238, 192, 0.18)',
     background:
-      'radial-gradient(circle at 42% 36%, rgba(255,253,226,.98) 0 9%, rgba(255,238,184,.96) 16%, rgba(244,190,82,.82) 46%, rgba(218,133,42,.34) 72%, rgba(142,76,31,.08) 100%)',
+      'radial-gradient(circle at 50% 50%, rgba(255, 253, 226, 1) 0 8%, rgba(255, 232, 166, 0.94) 9% 15%, rgba(247, 189, 78, 0.42) 23%, rgba(226, 145, 48, 0.16) 39%, rgba(160, 87, 34, 0.05) 58%, rgba(160, 87, 34, 0) 74%)',
     zIndex: Z_INDEX.markers,
     pointerEvents: 'none',
   },
@@ -2154,12 +2206,12 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: '50%',
     top: '50%',
-    width: 28,
-    height: 28,
+    width: 26,
+    height: 26,
     borderRadius: 999,
-    border: '1px solid rgba(255,226,170,.62)',
+    border: '1px solid rgba(255, 232, 177, 0.16)',
     background:
-      'radial-gradient(circle at 35% 32%, rgba(255,244,199,.96) 0 6%, rgba(255,217,139,.82) 13%, rgba(245,177,70,.48) 32%, rgba(214,126,43,.22) 56%, rgba(133,77,36,.08) 100%), radial-gradient(circle at 64% 42%, rgba(255,241,190,.74) 0 4%, rgba(241,170,68,.28) 9%, rgba(241,170,68,0) 18%), radial-gradient(circle at 48% 68%, rgba(255,226,161,.62) 0 3%, rgba(218,132,47,.22) 8%, rgba(218,132,47,0) 17%), radial-gradient(circle at 72% 68%, rgba(255,224,158,.5) 0 2.5%, rgba(226,146,54,.18) 7%, rgba(226,146,54,0) 15%)',
+      'radial-gradient(circle at 50% 50%, rgba(255, 250, 221, 0.98) 0 5%, rgba(255, 222, 145, 0.86) 8% 12%, rgba(247, 185, 77, 0.34) 23%, rgba(216, 130, 44, 0.13) 43%, rgba(128, 72, 29, 0.04) 66%, rgba(128, 72, 29, 0) 82%), radial-gradient(circle at 37% 34%, rgba(255, 245, 207, 0.78) 0 3%, rgba(241, 170, 68, 0.22) 6%, rgba(241, 170, 68, 0) 14%), radial-gradient(circle at 66% 58%, rgba(255, 234, 177, 0.56) 0 2.5%, rgba(226, 146, 54, 0.16) 6%, rgba(226, 146, 54, 0) 13%)',
     zIndex: Z_INDEX.markers,
     pointerEvents: 'none',
   },
