@@ -28,14 +28,14 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 4. Diagnose seasonal timing metadata
 
 - **Type:** diagnostic
-- **Status:** next
+- **Status:** complete
 - **Scope:** event profile/data only
 - **Notes:** Do not add Seasonal Discoveries UI until timing data is structured.
 
 ### 5. Add structured timing metadata model
 
 - **Type:** implementation
-- **Status:** future
+- **Status:** complete
 - **Scope:** data only
 - **Notes:** No UI until enough timing data exists.
 

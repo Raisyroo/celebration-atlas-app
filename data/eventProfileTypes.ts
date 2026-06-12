@@ -265,6 +265,23 @@ export interface EventPracticalAttendance {
   planTips?: EventPlanTip[];
 }
 
+export interface EventTimingProfile {
+  typicalMonth?: number;
+  typicalMonthName?: string;
+  typicalSeason?: EventSeason;
+  dateStart?: string;
+  dateEnd?: string;
+  timezone?: string;
+  recurrence?: EventRecurrencePattern;
+  recurrenceText?: string;
+  scheduleStatus?: EventScheduleStatus;
+  timingConfidence?: ConfidenceLevel;
+  timingSourceStatus?: EventSourceStatus;
+  timingSourceIds?: string[];
+  lastVerifiedAt?: string;
+  notes?: string;
+}
+
 export interface EventTrustProfile {
   sourceStatus: EventSourceStatus;
   confidence: ConfidenceLevel;
@@ -310,6 +327,7 @@ export interface EventProfile {
   foundingYear?: number;
   coverageLevel: EventCoverageLevel;
   scheduleStatus?: EventScheduleStatus;
+  timing?: EventTimingProfile;
   experiences?: EventExperienceItem[];
   schedule?: EventScheduleItem[];
   mapPoints?: EventMapPoint[];
