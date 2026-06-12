@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "atlas:check": "npm run lint && npm run build",
+    "atlas:status": "git status --short",
+    "atlas:queue": "node -e \"process.stdout.write(require('node:fs').readFileSync('docs/ATLAS_TASK_QUEUE.md', 'utf8'))\""
   },
   "dependencies": {
     "next": "16.2.6",

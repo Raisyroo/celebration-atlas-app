@@ -16,7 +16,8 @@ The loop exists to protect the app's current behavior while allowing steady prog
 - **UI, map, projection, and media changes require extra caution.** These areas shape the Atlas experience and can easily create unintended visual or behavioral changes.
 - **The Romeo page is protected unless the task specifically targets it.** Do not alter Romeo page files, content, data, media, or behavior incidentally.
 - **`ATLAS_EVENTS` is protected unless the task specifically targets event data.** Do not alter event records, identifiers, coordinates, timing, or metadata unless the selected task explicitly calls for data work.
-- **Always run `npm run lint` and `npm run build`.** A task is not complete until both checks have been attempted and reported.
+- **Always run the standard checks.** Use `npm run atlas:check` when available; otherwise run `npm run lint` and `npm run build`. A task is not complete until both checks have been attempted and reported.
+- **Always check working-tree status.** Use `npm run atlas:status` when available to confirm and report the files changed.
 - **Always report files changed and behavior preserved.** The report must make it easy for a human to review scope and risk.
 
 ## Required Reading Before Each Run
@@ -42,9 +43,10 @@ Also read any architecture document relevant to the selected task:
 3. **Confirm task type.** Determine whether the task is `diagnostic` or `implementation`.
 4. **Respect scope.** Work only within the task's stated scope and protected-area rules.
 5. **Perform the task.** Diagnose without changing code, or implement with the smallest safe file set.
-6. **Verify.** Run `npm run lint` and `npm run build`.
-7. **Report.** Summarize files changed, checks run, behavior preserved, and any risks or blockers.
-8. **Stop.** Do not pick up another task in the same run.
+6. **Verify.** Run `npm run atlas:check` when available; otherwise run `npm run lint` and `npm run build`.
+7. **Check status.** Run `npm run atlas:status` when available and use it to report the files changed.
+8. **Report.** Summarize files changed, checks run, behavior preserved, and any risks or blockers.
+9. **Stop.** Do not pick up another task in the same run.
 
 ## Diagnostic-First Rule
 
@@ -84,12 +86,20 @@ If the implementation appears larger or riskier than expected, stop and report t
 
 ## Lint and Build Requirement
 
-Every run must attempt both checks:
+Every run must attempt both checks. Prefer the local wrapper when present:
+
+```bash
+npm run atlas:check
+```
+
+If `atlas:check` is unavailable, run the underlying checks directly:
 
 ```bash
 npm run lint
 npm run build
 ```
+
+When present, use `npm run atlas:status` to capture the changed-file summary for the final report.
 
 Report whether each check passed, failed due to an agent error, or could not complete because of an environment limitation.
 

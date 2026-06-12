@@ -31,13 +31,13 @@ Rules:
 - UI/map/projection/media changes require extra caution.
 - The Romeo page is protected unless the task specifically targets it.
 - ATLAS_EVENTS is protected unless the task specifically targets event data.
-- Do not wire anything into scripts.
+- Do not wire anything into scripts unless the selected task explicitly requires package-script automation.
 - Do not add GitHub Actions.
 - Do not add automation code unless the selected task explicitly requires it.
 
 Run:
-- npm run lint
-- npm run build
+- npm run atlas:check when available; otherwise run npm run lint and npm run build
+- npm run atlas:status when available, and still report files changed
 
 Report results using this format:
 
@@ -54,8 +54,10 @@ Summary:
 - Protected areas touched:
 
 Verification:
-- npm run lint: [pass | fail | warning, with details]
-- npm run build: [pass | fail | warning, with details]
+- npm run atlas:check: [pass | fail | warning, with details, when available]
+- npm run atlas:status: [pass | fail | warning, with details, when available]
+- npm run lint: [pass | fail | warning, with details if run separately]
+- npm run build: [pass | fail | warning, with details if run separately]
 
 Notes / Risks / Next Human Decision:
 - [Any blockers, risks, diagnostic findings, or recommended next step]
