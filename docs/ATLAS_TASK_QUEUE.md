@@ -7,21 +7,21 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 1. Diagnose constellation line rendering
 
 - **Type:** diagnostic
-- **Status:** next
+- **Status:** complete
 - **Scope:** homepage map / AtlasMap only
 - **Notes:** Determine safest SVG/CSS/canvas layer strategy before rendering lines.
 
 ### 2. Implement faint selected-constellation line layer
 
 - **Type:** implementation
-- **Status:** blocked until diagnostic complete
+- **Status:** complete
 - **Scope:** homepage map / AtlasMap only
 - **Notes:** Only draw lines for selected constellation. No always-on constellation lines.
 
 ### 3. Add constellation interaction polish
 
 - **Type:** implementation
-- **Status:** future
+- **Status:** complete
 - **Scope:** homepage discovery section
 - **Notes:** Improve selected row state and clear action if needed.
 

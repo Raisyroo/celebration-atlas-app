@@ -87,18 +87,27 @@ const styles: Record<string, CSSProperties> = {
     flexWrap: 'wrap',
   },
   constellationClearButton: {
-    border: '1px solid rgba(245, 232, 199, 0.14)',
+    border: '1px solid rgba(245, 191, 92, 0.34)',
     borderRadius: '999px',
-    padding: '0.48rem 0.78rem',
-    color: 'rgba(255, 244, 217, 0.72)',
+    padding: '0.58rem 0.92rem',
+    color: 'rgba(255, 244, 217, 0.86)',
     background:
-      'linear-gradient(180deg, rgba(255, 244, 217, 0.055), rgba(255, 244, 217, 0.025))',
+      'radial-gradient(circle at 18% 20%, rgba(245, 191, 92, 0.16), transparent 48%), linear-gradient(180deg, rgba(255, 244, 217, 0.095), rgba(255, 244, 217, 0.035))',
+    boxShadow:
+      '0 0 22px rgba(245, 191, 92, 0.09), inset 0 1px 0 rgba(255, 244, 217, 0.08)',
     fontSize: '0.72rem',
-    fontWeight: 700,
+    fontWeight: 750,
     letterSpacing: '0.11em',
     textTransform: 'uppercase',
     cursor: 'pointer',
     touchAction: 'manipulation',
+  },
+  constellationSelectionNote: {
+    flexBasis: '100%',
+    margin: '-0.15rem 0 0',
+    color: 'rgba(226, 211, 178, 0.58)',
+    fontSize: '0.78rem',
+    lineHeight: 1.55,
   },
   sectionBlock: {
     marginTop: 0,
@@ -199,9 +208,9 @@ const styles: Record<string, CSSProperties> = {
   },
   constellationRowActive: {
     background:
-      'radial-gradient(circle at 7% 50%, rgba(245, 191, 92, 0.16), transparent 30%), linear-gradient(90deg, rgba(255, 244, 217, 0.075), rgba(255, 244, 217, 0.018))',
+      'radial-gradient(circle at 7% 50%, rgba(245, 191, 92, 0.14), transparent 30%), linear-gradient(90deg, rgba(255, 244, 217, 0.082), rgba(255, 244, 217, 0.02))',
     boxShadow:
-      'inset 2px 0 0 rgba(245, 191, 92, 0.72), inset 0 1px 0 rgba(255, 244, 217, 0.04), 0 0 36px rgba(245, 191, 92, 0.06)',
+      'inset 2px 0 0 rgba(245, 191, 92, 0.68), inset 0 1px 0 rgba(255, 244, 217, 0.055), inset 0 -1px 0 rgba(245, 191, 92, 0.12), 0 0 34px rgba(245, 191, 92, 0.055)',
   },
   constellationStarActive: {
     background: 'rgba(255, 232, 171, 0.95)',
@@ -234,6 +243,10 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 500,
     letterSpacing: '0.012em',
   },
+  constellationActiveTitle: {
+    color: 'rgba(255, 248, 226, 0.98)',
+    textShadow: '0 0 18px rgba(245, 191, 92, 0.12)',
+  },
   constellationDescription: {
     maxWidth: '52rem',
     margin: '0.45rem 0 0',
@@ -259,6 +272,11 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
   },
+  constellationFactActive: {
+    borderColor: 'rgba(245, 191, 92, 0.24)',
+    color: 'rgba(255, 244, 217, 0.78)',
+    background: 'rgba(245, 191, 92, 0.08)',
+  },
 };
 
 export default function HomeDiscoverySections({
@@ -266,6 +284,9 @@ export default function HomeDiscoverySections({
   onConstellationSelect,
   onConstellationClear,
 }: HomeDiscoverySectionsProps) {
+  const selectedConstellation = ATLAS_CONSTELLATIONS.find(
+    (constellation) => constellation.id === selectedConstellationId,
+  );
   const categories = getDiscoveryCategories();
   const categoryGroups = categories.map((category) => {
     const discoveries = filterEventProfiles({ category });
@@ -363,18 +384,29 @@ export default function HomeDiscoverySections({
           </h2>
           <div style={styles.constellationIntroRow}>
             <p style={styles.intro}>Guided trails through related Michigan celebrations.</p>
-            {selectedConstellationId ? (
+            {selectedConstellation ? (
               <button
                 type="button"
                 style={styles.constellationClearButton}
                 onClick={onConstellationClear}
+                aria-label={`Clear selected constellation: ${selectedConstellation.title}`}
               >
-                Clear trail
+                Clear selected trail
               </button>
+            ) : null}
+            {selectedConstellation ? (
+              <p style={styles.constellationSelectionNote}>
+                “{selectedConstellation.title}” is active on the map. Search
+                will replace this trail, and selecting it again clears the
+                highlight.
+              </p>
             ) : null}
           </div>
 
-          <div style={styles.constellationPanel} aria-label="Atlas Constellations">
+          <div
+            style={styles.constellationPanel}
+            aria-label="Atlas Constellations"
+          >
             {ATLAS_CONSTELLATIONS.map((constellation, index) => {
               const meta = getConstellationMeta(constellation);
               const isActive = constellation.id === selectedConstellationId;
@@ -389,7 +421,9 @@ export default function HomeDiscoverySections({
                     ...(index === 0 ? styles.constellationFirstRow : {}),
                     ...(isActive ? styles.constellationRowActive : {}),
                   }}
-                  aria-label={`${isActive ? 'Selected trail' : 'Select trail'}: ${constellation.title}, ${constellation.eventIds.length} events`}
+                  aria-label={`${
+                    isActive ? 'Selected trail, press to clear' : 'Select trail'
+                  }: ${constellation.title}, ${constellation.eventIds.length} events`}
                   aria-pressed={isActive}
                   onClick={() =>
                     isActive
@@ -414,17 +448,46 @@ export default function HomeDiscoverySections({
                     }}
                   />
                   <div>
-                    <p style={styles.constellationKicker}>{getRelationshipLabel(constellation.relationshipType)}</p>
-                    <h3 style={styles.constellationTitle}>{constellation.title}</h3>
-                    <p style={styles.constellationDescription}>{constellation.description}</p>
+                    <p style={styles.constellationKicker}>
+                      {getRelationshipLabel(constellation.relationshipType)}
+                    </p>
+                    <h3
+                      style={{
+                        ...styles.constellationTitle,
+                        ...(isActive ? styles.constellationActiveTitle : {}),
+                      }}
+                    >
+                      {constellation.title}
+                    </h3>
+                    <p style={styles.constellationDescription}>
+                      {constellation.description}
+                    </p>
                   </div>
 
-                  <ul style={styles.constellationFacts} aria-label={`${constellation.title} details`}>
-                    <li style={styles.constellationFact}>{getRelationshipLabel(constellation.relationshipType)}</li>
+                  <ul
+                    style={styles.constellationFacts}
+                    aria-label={`${constellation.title} details`}
+                  >
+                    {isActive ? (
+                      <li
+                        style={{
+                          ...styles.constellationFact,
+                          ...styles.constellationFactActive,
+                        }}
+                      >
+                        Selected on map
+                      </li>
+                    ) : null}
                     <li style={styles.constellationFact}>
-                      {constellation.eventIds.length} {constellation.eventIds.length === 1 ? 'event' : 'events'}
+                      {getRelationshipLabel(constellation.relationshipType)}
                     </li>
-                    {meta ? <li style={styles.constellationFact}>{meta}</li> : null}
+                    <li style={styles.constellationFact}>
+                      {constellation.eventIds.length}{' '}
+                      {constellation.eventIds.length === 1 ? 'event' : 'events'}
+                    </li>
+                    {meta ? (
+                      <li style={styles.constellationFact}>{meta}</li>
+                    ) : null}
                   </ul>
                 </article>
               );

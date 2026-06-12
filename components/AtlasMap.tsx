@@ -1173,9 +1173,11 @@ export default function AtlasMap({
       setIsSubmittedQueryFading(false);
       setDiscoveryStatusText(
         activeConstellationTitle
-          ? `Showing ${constellationHighlightedIds.length} ${
+          ? `Trail active: “${activeConstellationTitle}” — ${
+              constellationHighlightedIds.length
+            } ${
               constellationHighlightedIds.length === 1 ? 'star' : 'stars'
-            } in “${activeConstellationTitle}”`
+            } highlighted. Search replaces this trail.`
           : null,
       );
     });
