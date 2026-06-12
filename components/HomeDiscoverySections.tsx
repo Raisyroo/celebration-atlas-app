@@ -37,6 +37,12 @@ function getConstellationMeta(constellation: (typeof ATLAS_CONSTELLATIONS)[numbe
   return [constellation.season, constellation.category].filter(Boolean).map(toTitleCase).join(' · ');
 }
 
+type HomeDiscoverySectionsProps = {
+  selectedConstellationId: string | null;
+  onConstellationSelect: (constellationId: string) => void;
+  onConstellationClear: () => void;
+};
+
 const styles: Record<string, CSSProperties> = {
   shell: {
     position: 'relative',
@@ -72,6 +78,27 @@ const styles: Record<string, CSSProperties> = {
     color: 'rgba(226, 211, 178, 0.68)',
     fontSize: 'clamp(0.92rem, 2.4vw, 1rem)',
     lineHeight: 1.7,
+  },
+  constellationIntroRow: {
+    display: 'flex',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: '1rem',
+    flexWrap: 'wrap',
+  },
+  constellationClearButton: {
+    border: '1px solid rgba(245, 232, 199, 0.14)',
+    borderRadius: '999px',
+    padding: '0.48rem 0.78rem',
+    color: 'rgba(255, 244, 217, 0.72)',
+    background:
+      'linear-gradient(180deg, rgba(255, 244, 217, 0.055), rgba(255, 244, 217, 0.025))',
+    fontSize: '0.72rem',
+    fontWeight: 700,
+    letterSpacing: '0.11em',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+    touchAction: 'manipulation',
   },
   sectionBlock: {
     marginTop: 0,
@@ -156,9 +183,30 @@ const styles: Record<string, CSSProperties> = {
     gap: '0.8rem',
     padding: 'clamp(1.05rem, 3vw, 1.45rem) clamp(0.15rem, 1.5vw, 0.65rem) clamp(1.1rem, 3vw, 1.5rem) clamp(1.3rem, 3.5vw, 2rem)',
     borderTop: '1px solid rgba(245, 232, 199, 0.085)',
+    borderRight: 0,
+    borderBottom: 0,
+    borderLeft: 0,
+    width: '100%',
+    textAlign: 'left',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    touchAction: 'manipulation',
   },
   constellationFirstRow: {
     borderTop: 0,
+  },
+  constellationRowActive: {
+    background:
+      'radial-gradient(circle at 7% 50%, rgba(245, 191, 92, 0.16), transparent 30%), linear-gradient(90deg, rgba(255, 244, 217, 0.075), rgba(255, 244, 217, 0.018))',
+    boxShadow:
+      'inset 2px 0 0 rgba(245, 191, 92, 0.72), inset 0 1px 0 rgba(255, 244, 217, 0.04), 0 0 36px rgba(245, 191, 92, 0.06)',
+  },
+  constellationStarActive: {
+    background: 'rgba(255, 232, 171, 0.95)',
+    boxShadow:
+      '0 0 12px rgba(255, 247, 219, 0.62), 0 0 30px rgba(245, 191, 92, 0.42)',
   },
   constellationStar: {
     position: 'absolute',
@@ -213,7 +261,11 @@ const styles: Record<string, CSSProperties> = {
   },
 };
 
-export default function HomeDiscoverySections() {
+export default function HomeDiscoverySections({
+  selectedConstellationId,
+  onConstellationSelect,
+  onConstellationClear,
+}: HomeDiscoverySectionsProps) {
   const categories = getDiscoveryCategories();
   const categoryGroups = categories.map((category) => {
     const discoveries = filterEventProfiles({ category });
@@ -309,22 +361,58 @@ export default function HomeDiscoverySections() {
           <h2 id="atlas-constellations-heading" style={styles.heading}>
             Atlas Constellations
           </h2>
-          <p style={styles.intro}>Guided trails through related Michigan celebrations.</p>
+          <div style={styles.constellationIntroRow}>
+            <p style={styles.intro}>Guided trails through related Michigan celebrations.</p>
+            {selectedConstellationId ? (
+              <button
+                type="button"
+                style={styles.constellationClearButton}
+                onClick={onConstellationClear}
+              >
+                Clear trail
+              </button>
+            ) : null}
+          </div>
 
-          <div style={styles.constellationPanel} aria-label="Read-only Atlas Constellations">
+          <div style={styles.constellationPanel} aria-label="Atlas Constellations">
             {ATLAS_CONSTELLATIONS.map((constellation, index) => {
               const meta = getConstellationMeta(constellation);
+              const isActive = constellation.id === selectedConstellationId;
 
               return (
                 <article
                   key={constellation.id}
+                  role="button"
+                  tabIndex={0}
                   style={{
                     ...styles.constellationRow,
                     ...(index === 0 ? styles.constellationFirstRow : {}),
+                    ...(isActive ? styles.constellationRowActive : {}),
                   }}
-                  aria-label={`${constellation.title}: ${constellation.eventIds.length} events`}
+                  aria-label={`${isActive ? 'Selected trail' : 'Select trail'}: ${constellation.title}, ${constellation.eventIds.length} events`}
+                  aria-pressed={isActive}
+                  onClick={() =>
+                    isActive
+                      ? onConstellationClear()
+                      : onConstellationSelect(constellation.id)
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    if (isActive) {
+                      onConstellationClear();
+                      return;
+                    }
+                    onConstellationSelect(constellation.id);
+                  }}
                 >
-                  <span aria-hidden="true" style={styles.constellationStar} />
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      ...styles.constellationStar,
+                      ...(isActive ? styles.constellationStarActive : {}),
+                    }}
+                  />
                   <div>
                     <p style={styles.constellationKicker}>{getRelationshipLabel(constellation.relationshipType)}</p>
                     <h3 style={styles.constellationTitle}>{constellation.title}</h3>

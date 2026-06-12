@@ -355,6 +355,12 @@ type AtlasMarkerCluster = {
   position: MarkerPosition;
 };
 
+type AtlasMapProps = {
+  constellationHighlightedIds?: readonly string[];
+  activeConstellationTitle?: string | null;
+  onSearchActivate?: () => void;
+};
+
 const clampMarkerPercent = (value: number, offset = 0) => {
   const lowerBound = MARKER_EDGE_INSET_PERCENT + offset;
   const upperBound = 100 - MARKER_EDGE_INSET_PERCENT - offset;
@@ -617,7 +623,11 @@ function AtlasCalibrationPanel({
   );
 }
 
-export default function AtlasMap() {
+export default function AtlasMap({
+  constellationHighlightedIds = [],
+  activeConstellationTitle = null,
+  onSearchActivate,
+}: AtlasMapProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [displayedQuery, setDisplayedQuery] = useState('');
@@ -679,7 +689,14 @@ export default function AtlasMap() {
   const q = submittedQuery.trim().toLowerCase();
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
-  const highlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
+  const searchHighlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
+  const constellationHighlightedIdSet = useMemo(
+    () => new Set(constellationHighlightedIds),
+    [constellationHighlightedIds],
+  );
+  const highlightedIds = q
+    ? searchHighlightedIds
+    : constellationHighlightedIdSet;
   const discoveryResultLimit = isPhoneLandscape ? 2 : isDesktop ? 4 : 3;
   const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
     if (!q || highlightedIds.size === 0) return [];
@@ -999,6 +1016,8 @@ export default function AtlasMap() {
       queryFadeTimerRef.current = null;
     }
 
+    onSearchActivate?.();
+
     const isResetCommand = isResetSearchCommand(trimmedQuery);
 
     setSubmittedQuery(isResetCommand ? '' : trimmedQuery);
@@ -1030,7 +1049,41 @@ export default function AtlasMap() {
       setIsSubmittedQueryFading(false);
       queryFadeTimerRef.current = null;
     }, 680);
-  }, []);
+  }, [onSearchActivate]);
+
+  useEffect(() => {
+    let isCurrentConstellationState = true;
+
+    queueMicrotask(() => {
+      if (!isCurrentConstellationState) return;
+
+      if (constellationHighlightedIds.length === 0) {
+        if (!q) setDiscoveryStatusText(null);
+        return;
+      }
+
+      if (queryFadeTimerRef.current) {
+        clearTimeout(queryFadeTimerRef.current);
+        queryFadeTimerRef.current = null;
+      }
+
+      setSubmittedQuery('');
+      setDisplayedQuery('');
+      setQuery('');
+      setIsSubmittedQueryFading(false);
+      setDiscoveryStatusText(
+        activeConstellationTitle
+          ? `Showing ${constellationHighlightedIds.length} ${
+              constellationHighlightedIds.length === 1 ? 'star' : 'stars'
+            } in “${activeConstellationTitle}”`
+          : null,
+      );
+    });
+
+    return () => {
+      isCurrentConstellationState = false;
+    };
+  }, [activeConstellationTitle, constellationHighlightedIds, q]);
 
   const submitSearch = useCallback(() => {
     runDiscoverySearch(query);
