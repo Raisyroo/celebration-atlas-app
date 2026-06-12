@@ -38,7 +38,7 @@ Also read any architecture document relevant to the selected task:
 ## Task Lifecycle
 
 1. **Read context.** Read the required context and architecture files before making any decision.
-2. **Select one task.** Use only the first task in `docs/ATLAS_TASK_QUEUE.md` marked `Status: next`.
+2. **Select one task.** Use `npm run atlas:next` as the standard way to view the first task in `docs/ATLAS_TASK_QUEUE.md` marked `Status: next`, then select only that task.
 3. **Confirm task type.** Determine whether the task is `diagnostic` or `implementation`.
 4. **Respect scope.** Work only within the task's stated scope and protected-area rules.
 5. **Perform the task.** Diagnose without changing code, or implement with the smallest safe file set.

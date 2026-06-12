@@ -12,6 +12,7 @@ Read the relevant architecture docs for the selected task:
 - docs/ATLAS_CONSTELLATIONS_ARCHITECTURE.md when touching constellation markers, star markers, trails, cluster glow, themed discovery paths, or AI-suggested relationships.
 Read docs/ATLAS_DEV_LOOP.md.
 Read docs/ATLAS_TASK_QUEUE.md.
+Use npm run atlas:next to view the next queued task.
 
 Take only the next task marked Status: next.
 Do not proceed to any future task.
