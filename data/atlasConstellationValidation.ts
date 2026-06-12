@@ -11,6 +11,14 @@ function hasMissingArray(value: unknown): boolean {
   return !Array.isArray(value) || value.length === 0;
 }
 
+function hasUsableStringItem(value: unknown): boolean {
+  return Array.isArray(value) && value.some((item) => !isBlank(item));
+}
+
+function isMissingNumber(value: unknown): boolean {
+  return typeof value !== 'number' || Number.isNaN(value);
+}
+
 function getConstellationLabel(constellation: AtlasConstellation): string {
   if (!isBlank(constellation.id)) {
     return constellation.id;
@@ -21,6 +29,10 @@ function getConstellationLabel(constellation: AtlasConstellation): string {
   }
 
   return 'unknown constellation';
+}
+
+function incrementCount(counts: Record<string, number>, key: string): void {
+  counts[key] = (counts[key] ?? 0) + 1;
 }
 
 export function getMissingConstellationEventIds(constellation: AtlasConstellation): string[] {
@@ -99,7 +111,7 @@ export function validateAtlasConstellation(constellation: AtlasConstellation): s
     warnings.push('Missing reviewStatus.');
   }
 
-  if (typeof constellation.confidenceScore !== 'number') {
+  if (isMissingNumber(constellation.confidenceScore)) {
     warnings.push('Missing confidenceScore.');
   } else if (constellation.confidenceScore < 0 || constellation.confidenceScore > 1) {
     warnings.push('confidenceScore must be between 0 and 1.');
@@ -107,7 +119,7 @@ export function validateAtlasConstellation(constellation: AtlasConstellation): s
 
   if (
     (constellation.sourceStatus === 'official' || constellation.sourceStatus === 'fieldVerified') &&
-    hasMissingArray(constellation.sourceIds)
+    !hasUsableStringItem(constellation.sourceIds)
   ) {
     warnings.push('sourceStatus official or fieldVerified requires sourceIds.');
   }
@@ -120,7 +132,7 @@ export function validateAtlasConstellation(constellation: AtlasConstellation): s
     warnings.push('Missing generatedBy.');
   }
 
-  if (typeof constellation.displayPriority !== 'number') {
+  if (isMissingNumber(constellation.displayPriority)) {
     warnings.push('Missing displayPriority.');
   }
 
@@ -162,11 +174,10 @@ export function getConstellationCoverageSummary(constellations: AtlasConstellati
       uniqueEventIds.add(eventId);
     }
 
-    byState[constellation.stateSlug] = (byState[constellation.stateSlug] ?? 0) + 1;
-    byRelationshipType[constellation.relationshipType] =
-      (byRelationshipType[constellation.relationshipType] ?? 0) + 1;
-    byReviewStatus[constellation.reviewStatus] = (byReviewStatus[constellation.reviewStatus] ?? 0) + 1;
-    bySourceStatus[constellation.sourceStatus] = (bySourceStatus[constellation.sourceStatus] ?? 0) + 1;
+    incrementCount(byState, constellation.stateSlug);
+    incrementCount(byRelationshipType, constellation.relationshipType);
+    incrementCount(byReviewStatus, constellation.reviewStatus);
+    incrementCount(bySourceStatus, constellation.sourceStatus);
   }
 
   return {
