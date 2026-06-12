@@ -1,4 +1,5 @@
 import type { AtlasEvent } from './events';
+import { EVENT_TIMING_METADATA } from './eventTimingMetadata';
 import type {
   EventCoverageLevel,
   EventIndoorOutdoor,
@@ -250,6 +251,7 @@ export function toEventProfile(event: AtlasEvent): EventProfile {
   const categories = uniqueStrings([event.category, event.cardTag]);
   const eventTypes = uniqueStrings([event.category, event.iconType]);
   const snapshot = event.detailPage?.eventSnapshot;
+  const timing = EVENT_TIMING_METADATA[event.id];
 
   return {
     id: event.id,
@@ -287,6 +289,7 @@ export function toEventProfile(event: AtlasEvent): EventProfile {
     indoorOutdoor: mapIndoorOutdoor(event),
     coverageLevel: mapCoverageLevel(event),
     scheduleStatus: 'unknown',
+    timing,
     experiences: createExperienceItems(event),
     practicalAttendance: snapshot
       ? {
