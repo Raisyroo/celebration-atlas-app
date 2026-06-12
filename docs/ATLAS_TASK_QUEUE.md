@@ -39,6 +39,24 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - **Scope:** data only
 - **Notes:** No UI until enough timing data exists.
 
+### 6. Define Celebration Search command model
+
+- **Type:** diagnostic
+- **Status:** future
+- **Scope:** documentation and architecture only
+- **Protected files/areas:** app UI, routing, event data, map behavior, constellation behavior, media files, CSS, package scripts, automation
+- **Notes:** Convert the national atlas command architecture into an implementation-ready model before building Celebration Search.
+- **Verification:** `npm run atlas:check`
+
+### 7. Prototype national atlas shell
+
+- **Type:** implementation
+- **Status:** future
+- **Scope:** national atlas shell only after architecture review
+- **Protected files/areas:** existing Michigan map behavior, marker behavior, constellation behavior, event data, Romeo page, media files, package scripts, automation
+- **Notes:** Build the first national atlas shell only after the command model is reviewed and accepted.
+- **Verification:** `npm run atlas:check`
+
 ## Completed Tasks
 
 No Atlas Dev Loop tasks have been completed in this queue yet.
