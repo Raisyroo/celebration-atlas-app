@@ -51,7 +51,7 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 7. Prototype Celebration Search mock parser
 
 - **Type:** implementation
-- **Status:** future
+- **Status:** complete
 - **Scope:** Celebration Search parser/data layer only after command model review
 - **Protected files/areas:** app UI, routing, event data, map behavior, constellation behavior, media files, CSS, package scripts, automation
 - **Notes:** Convert approved mock command examples into a non-UI parser prototype that emits safe `AtlasSearchCommand` objects.
