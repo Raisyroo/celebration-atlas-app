@@ -41,14 +41,23 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 
 ### 6. Define Celebration Search command model
 
-- **Type:** diagnostic
-- **Status:** future
-- **Scope:** documentation and architecture only
+- **Type:** implementation
+- **Status:** complete
+- **Scope:** data/model architecture only
 - **Protected files/areas:** app UI, routing, event data, map behavior, constellation behavior, media files, CSS, package scripts, automation
-- **Notes:** Convert the national atlas command architecture into an implementation-ready model before building Celebration Search.
+- **Notes:** Converted the national atlas command architecture into a safe TypeScript command model before building Celebration Search UI.
 - **Verification:** `npm run atlas:check`
 
-### 7. Prototype national atlas shell
+### 7. Prototype Celebration Search mock parser
+
+- **Type:** implementation
+- **Status:** future
+- **Scope:** Celebration Search parser/data layer only after command model review
+- **Protected files/areas:** app UI, routing, event data, map behavior, constellation behavior, media files, CSS, package scripts, automation
+- **Notes:** Convert approved mock command examples into a non-UI parser prototype that emits safe `AtlasSearchCommand` objects.
+- **Verification:** `npm run atlas:check`
+
+### 8. Prototype national atlas shell
 
 - **Type:** implementation
 - **Status:** future
@@ -59,7 +68,7 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 
 ## Completed Tasks
 
-No Atlas Dev Loop tasks have been completed in this queue yet.
+- Define Celebration Search command model — completed in current queue item 6 as a data/model architecture step.
 
 ## Paused / Needs Human Review
 
