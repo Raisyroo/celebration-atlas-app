@@ -66,6 +66,15 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - **Notes:** Build the first national atlas shell only after the command model is reviewed and accepted.
 - **Verification:** `npm run atlas:check`
 
+### 9. Prototype Celebration Search UI shell
+
+- **Type:** implementation
+- **Status:** future
+- **Scope:** Celebration Search UI shell only after parser fixtures are reviewed
+- **Protected files/areas:** homepage map behavior, marker behavior, constellation behavior, event data, Romeo page, routing, media files, package scripts, automation
+- **Notes:** Create a non-executing or minimally wired Celebration Search interface shell only after parser fixture output has been reviewed and accepted.
+- **Verification:** `npm run atlas:check`
+
 ## Completed Tasks
 
 - Define Celebration Search command model — completed in current queue item 6 as a data/model architecture step.
