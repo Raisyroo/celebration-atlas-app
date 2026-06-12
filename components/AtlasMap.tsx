@@ -64,13 +64,15 @@ const MEDIA_MASKS: Record<'romeoPeach', string> = {
 const BASE_SCALE = 1.03;
 
 // Layer order contract (low -> high): map art (1), decorative atmosphere
-// (3-4 in effects), interactive markers (5), optional
-// calibration anchors (6), event card (15), search + featured discovery dock (20).
+// (3-4 in effects), selected constellation lines (4.5), interactive
+// markers (5), optional calibration anchors (6), event card (15),
+// search + featured discovery dock (20).
 const Z_INDEX = {
   mapImage: 1,
   atmosphere: 3,
   depthVeil: 4,
   particles: 4,
+  constellationLines: 4.5,
   markers: 5,
   card: 15,
   calibration: 6,
@@ -449,6 +451,86 @@ const resolveAtlasMarkerClusters = (
   return clusters;
 };
 
+const isFiniteMarkerPosition = (position: MarkerPosition) =>
+  Number.isFinite(position.x) && Number.isFinite(position.y);
+
+const getConstellationPointKey = (
+  position: MarkerPosition,
+  cluster?: AtlasMarkerCluster,
+) =>
+  cluster && cluster.events.length > 1
+    ? `cluster:${cluster.id}`
+    : `point:${position.x.toFixed(3)}:${position.y.toFixed(3)}`;
+
+const resolveConstellationLinePoints = ({
+  eventIds,
+  markerLayouts,
+  markerClusters,
+  isSearchActive,
+}: {
+  eventIds: readonly string[];
+  markerLayouts: AtlasMarkerLayout[];
+  markerClusters: AtlasMarkerCluster[];
+  isSearchActive: boolean;
+}): MarkerPosition[] => {
+  if (isSearchActive || eventIds.length === 0) return [];
+
+  const layoutByEventId = new Map(
+    markerLayouts.map((layout) => [layout.event.id, layout]),
+  );
+  const clusterByEventId = new Map<string, AtlasMarkerCluster>();
+
+  markerClusters.forEach((cluster) => {
+    cluster.events.forEach((event) => {
+      clusterByEventId.set(event.id, cluster);
+    });
+  });
+
+  const usedPointKeys = new Set<string>();
+  const points: MarkerPosition[] = [];
+
+  eventIds.forEach((eventId) => {
+    const cluster = clusterByEventId.get(eventId);
+    const layout = layoutByEventId.get(eventId);
+    const position =
+      cluster && cluster.events.length > 1 ? cluster.position : layout?.position;
+
+    if (!position || !isFiniteMarkerPosition(position)) return;
+
+    const pointKey = getConstellationPointKey(position, cluster);
+    if (usedPointKeys.has(pointKey)) return;
+
+    usedPointKeys.add(pointKey);
+    points.push(position);
+  });
+
+  return points;
+};
+
+function ConstellationLineLayer({ points }: { points: MarkerPosition[] }) {
+  if (points.length < 2) return null;
+
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      style={styles.constellationLineLayer}
+    >
+      <polyline
+        points={points.map((point) => `${point.x},${point.y}`).join(' ')}
+        fill="none"
+        stroke="rgba(255, 229, 184, 0.48)"
+        strokeWidth={0.9}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
 function VerificationReferenceLayer() {
   return (
     <div
@@ -719,6 +801,24 @@ export default function AtlasMap({
   const markerClusters = useMemo(
     () => resolveAtlasMarkerClusters(markerLayouts),
     [markerLayouts],
+  );
+  const isConstellationLineSearchActive = Boolean(
+    q || query.trim() || displayedQuery.trim(),
+  );
+  const constellationLinePoints = useMemo(
+    () =>
+      resolveConstellationLinePoints({
+        eventIds: constellationHighlightedIds,
+        markerLayouts,
+        markerClusters,
+        isSearchActive: isConstellationLineSearchActive,
+      }),
+    [
+      constellationHighlightedIds,
+      isConstellationLineSearchActive,
+      markerClusters,
+      markerLayouts,
+    ],
   );
   const selectedCluster =
     markerClusters.find(
@@ -1279,6 +1379,10 @@ export default function AtlasMap({
               onAnchorDragEnd={handleCalibrationAnchorDragEnd}
               layerRef={calibrationLayerRef}
             />
+          ) : null}
+
+          {!shouldShowCalibration && !isVerificationMode ? (
+            <ConstellationLineLayer points={constellationLinePoints} />
           ) : null}
 
           {!shouldShowCalibration ? (
@@ -2215,6 +2319,16 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: 0.42,
     color: 'rgba(255,238,203,.7)',
     textTransform: 'uppercase',
+  },
+  constellationLineLayer: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: Z_INDEX.constellationLines,
+    pointerEvents: 'none',
+    opacity: 0.34,
+    mixBlendMode: 'screen',
   },
   markerOverlayLayer: {
     position: 'absolute',
