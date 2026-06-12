@@ -1,6 +1,6 @@
 # Atlas Codex Run Template
 
-Use this template to run exactly one Atlas Dev Loop task.
+Use this template to run exactly one Atlas Dev Loop task. Run `npm run atlas:prompt` to print a ready-to-copy prompt for the next queue item marked `Status: next`.
 
 ```text
 Read MASTER_ATLAS_CONTEXT.md first.
