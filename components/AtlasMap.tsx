@@ -6,7 +6,12 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
-import { searchEventProfiles } from '../data/eventProfiles';
+import {
+  getEventProfileById,
+  searchEventProfiles,
+} from '../data/eventProfiles';
+import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
+import type { MarkerIntensity } from '../data/eventMarkerPresentation';
 import {
   MICHIGAN_MAP_ANCHORS,
   latLngToAtlasPosition,
@@ -159,6 +164,42 @@ const CARD_CUE_BY_ICON_TYPE: Record<
   winter: { sigil: '◦', label: 'Winter' },
   art: { sigil: '◦', label: 'Immersive' },
   heritage: { sigil: '◦', label: 'Heritage' },
+};
+
+const MARKER_BASE_SHADOWS_BY_INTENSITY: Record<
+  MarkerIntensity,
+  { idle: string; peak: string }
+> = {
+  dim: {
+    idle:
+      '0 0 3px rgba(255,233,184,.58), 0 0 9px rgba(242,178,78,.3), 0 0 18px rgba(177,103,39,.12)',
+    peak:
+      '0 0 4px rgba(255,238,197,.66), 0 0 12px rgba(248,190,88,.4), 0 0 22px rgba(177,103,39,.16)',
+  },
+  standard: {
+    idle:
+      '0 0 3px rgba(255,233,184,.7), 0 0 10px rgba(242,178,78,.38), 0 0 21px rgba(177,103,39,.16)',
+    peak:
+      '0 0 4px rgba(255,238,197,.78), 0 0 13px rgba(248,190,88,.48), 0 0 25px rgba(177,103,39,.2)',
+  },
+  bright: {
+    idle:
+      '0 0 4px rgba(255,237,194,.76), 0 0 12px rgba(246,188,86,.45), 0 0 24px rgba(186,111,40,.18)',
+    peak:
+      '0 0 5px rgba(255,242,207,.84), 0 0 15px rgba(251,197,96,.54), 0 0 28px rgba(190,114,41,.22)',
+  },
+  active: {
+    idle:
+      '0 0 4px rgba(255,239,202,.8), 0 0 13px rgba(250,196,94,.5), 0 0 25px rgba(196,120,42,.2)',
+    peak:
+      '0 0 5px rgba(255,244,214,.88), 0 0 16px rgba(253,201,100,.6), 0 0 29px rgba(196,120,42,.24)',
+  },
+  signature: {
+    idle:
+      '0 0 4px rgba(255,239,202,.82), 0 0 13px rgba(250,196,94,.54), 0 0 25px rgba(196,120,42,.22)',
+    peak:
+      '0 0 5px rgba(255,244,214,.9), 0 0 17px rgba(253,201,100,.64), 0 0 30px rgba(196,120,42,.26)',
+  },
 };
 
 const RESET_SEARCH_COMMANDS = new Set([
@@ -1212,6 +1253,17 @@ export default function AtlasMap() {
                 const isFeaturedMarker =
                   !isSearchActive &&
                   events.some((event) => featuredEvent.id === event.id);
+                const primaryEventProfile = getEventProfileById(
+                  primaryEvent.id,
+                );
+                const markerPresentation = primaryEventProfile
+                  ? getEventMarkerPresentation(primaryEventProfile)
+                  : null;
+                const markerBaseShadows = markerPresentation
+                  ? MARKER_BASE_SHADOWS_BY_INTENSITY[
+                      markerPresentation.intensity
+                    ]
+                  : MARKER_BASE_SHADOWS_BY_INTENSITY.standard;
                 const firstEventIndex = Math.min(...eventIndices);
                 const pulseDuration = 2.4 + (firstEventIndex % 3) * 0.35;
                 const pulseDelay = firstEventIndex * 0.26;
@@ -1300,8 +1352,8 @@ export default function AtlasMap() {
                                       : isSelected
                                         ? '0 0 5px rgba(255,246,220,.9), 0 0 16px rgba(253,201,100,.68), 0 0 30px rgba(211,132,44,.28)'
                                         : isFeaturedMarker
-                                          ? '0 0 4px rgba(255,239,202,.82), 0 0 13px rgba(250,196,94,.54), 0 0 25px rgba(196,120,42,.22)'
-                                          : '0 0 3px rgba(255,233,184,.7), 0 0 10px rgba(242,178,78,.38), 0 0 21px rgba(177,103,39,.16)',
+                                          ? MARKER_BASE_SHADOWS_BY_INTENSITY.signature.idle
+                                          : markerBaseShadows.idle,
                                   '--marker-shadow-peak': isCluster
                                     ? isHighlighted
                                       ? '0 0 10px rgba(255,250,229,.9), 0 0 34px rgba(255,214,122,.66), 0 0 78px rgba(217,140,45,.34), 0 0 124px rgba(145,81,30,.16)'
@@ -1313,8 +1365,8 @@ export default function AtlasMap() {
                                       : isSelected
                                         ? '0 0 6px rgba(255,250,232,.96), 0 0 20px rgba(255,210,112,.78), 0 0 36px rgba(211,132,44,.34)'
                                         : isFeaturedMarker
-                                          ? '0 0 5px rgba(255,244,214,.9), 0 0 17px rgba(253,201,100,.64), 0 0 30px rgba(196,120,42,.26)'
-                                          : '0 0 4px rgba(255,238,197,.78), 0 0 13px rgba(248,190,88,.48), 0 0 25px rgba(177,103,39,.2)',
+                                          ? MARKER_BASE_SHADOWS_BY_INTENSITY.signature.peak
+                                          : markerBaseShadows.peak,
                                   '--marker-glint-span': isCluster
                                     ? '21px'
                                     : '15px',
