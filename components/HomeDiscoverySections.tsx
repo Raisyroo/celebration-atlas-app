@@ -1,12 +1,40 @@
 import type { CSSProperties } from 'react';
 import { filterEventProfiles, getDiscoveryCategories, getDiscoveryRegions } from '../data/eventDiscovery';
+import { ATLAS_CONSTELLATIONS } from '../data/atlasConstellations';
 import { EVENT_PROFILES } from '../data/eventProfiles';
 import type { EventProfile } from '../data/eventProfileTypes';
 
 const REPRESENTATIVE_DISCOVERY_LIMIT = 4;
 
+const relationshipLabels: Record<string, string> = {
+  category: 'Category trail',
+  seasonal: 'Seasonal trail',
+  geographic: 'Regional trail',
+  historical: 'Historic trail',
+  practicalTravel: 'Travel trail',
+  cultural: 'Cultural trail',
+  editorial: 'Curated trail',
+  aiSuggested: 'Suggested trail',
+};
+
+function toTitleCase(value: string) {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+    .join(' ');
+}
+
 function getLocationLabel(profile: EventProfile) {
   return profile.locationName ?? [profile.city, profile.state].filter(Boolean).join(', ');
+}
+
+function getRelationshipLabel(relationshipType: string) {
+  return relationshipLabels[relationshipType] ?? toTitleCase(relationshipType);
+}
+
+function getConstellationMeta(constellation: (typeof ATLAS_CONSTELLATIONS)[number]) {
+  return [constellation.season, constellation.category].filter(Boolean).map(toTitleCase).join(' · ');
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -111,6 +139,78 @@ const styles: Record<string, CSSProperties> = {
     fontSize: '0.76rem',
     lineHeight: 1.35,
   },
+
+  constellationPanel: {
+    display: 'grid',
+    gap: 0,
+    marginTop: 'clamp(1.65rem, 4vw, 2.6rem)',
+    borderTop: '1px solid rgba(245, 232, 199, 0.12)',
+    borderBottom: '1px solid rgba(245, 232, 199, 0.1)',
+    background:
+      'radial-gradient(circle at 8% 0%, rgba(245, 191, 92, 0.09), transparent 28%), linear-gradient(180deg, rgba(255, 244, 217, 0.035), rgba(255, 244, 217, 0.015))',
+  },
+  constellationRow: {
+    position: 'relative',
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr)',
+    gap: '0.8rem',
+    padding: 'clamp(1.05rem, 3vw, 1.45rem) clamp(0.15rem, 1.5vw, 0.65rem) clamp(1.1rem, 3vw, 1.5rem) clamp(1.3rem, 3.5vw, 2rem)',
+    borderTop: '1px solid rgba(245, 232, 199, 0.085)',
+  },
+  constellationFirstRow: {
+    borderTop: 0,
+  },
+  constellationStar: {
+    position: 'absolute',
+    top: 'clamp(1.25rem, 3vw, 1.6rem)',
+    left: '0.15rem',
+    width: '0.48rem',
+    height: '0.48rem',
+    borderRadius: '999px',
+    background: 'rgba(245, 191, 92, 0.78)',
+    boxShadow: '0 0 18px rgba(245, 191, 92, 0.28)',
+  },
+  constellationKicker: {
+    margin: '0 0 0.4rem',
+    color: 'rgba(245, 232, 199, 0.52)',
+    fontSize: '0.68rem',
+    fontWeight: 700,
+    letterSpacing: '0.18em',
+    textTransform: 'uppercase',
+  },
+  constellationTitle: {
+    margin: 0,
+    color: 'rgba(255, 244, 217, 0.93)',
+    fontFamily: 'Georgia, Times New Roman, serif',
+    fontSize: 'clamp(1.12rem, 3vw, 1.45rem)',
+    fontWeight: 500,
+    letterSpacing: '0.012em',
+  },
+  constellationDescription: {
+    maxWidth: '52rem',
+    margin: '0.45rem 0 0',
+    color: 'rgba(226, 211, 178, 0.66)',
+    fontSize: '0.9rem',
+    lineHeight: 1.65,
+  },
+  constellationFacts: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.45rem',
+    margin: 0,
+    padding: 0,
+    listStyle: 'none',
+  },
+  constellationFact: {
+    border: '1px solid rgba(245, 232, 199, 0.09)',
+    borderRadius: '999px',
+    padding: '0.34rem 0.62rem',
+    color: 'rgba(226, 211, 178, 0.62)',
+    background: 'rgba(5, 8, 18, 0.24)',
+    fontSize: '0.72rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  },
 };
 
 export default function HomeDiscoverySections() {
@@ -203,7 +303,48 @@ export default function HomeDiscoverySections() {
             ))}
           </div>
         </section>
+
+        <section aria-labelledby="atlas-constellations-heading" style={styles.sectionBlockSpaced}>
+          <p style={styles.eyebrow}>Curated trails</p>
+          <h2 id="atlas-constellations-heading" style={styles.heading}>
+            Atlas Constellations
+          </h2>
+          <p style={styles.intro}>Guided trails through related Michigan celebrations.</p>
+
+          <div style={styles.constellationPanel} aria-label="Read-only Atlas Constellations">
+            {ATLAS_CONSTELLATIONS.map((constellation, index) => {
+              const meta = getConstellationMeta(constellation);
+
+              return (
+                <article
+                  key={constellation.id}
+                  style={{
+                    ...styles.constellationRow,
+                    ...(index === 0 ? styles.constellationFirstRow : {}),
+                  }}
+                  aria-label={`${constellation.title}: ${constellation.eventIds.length} events`}
+                >
+                  <span aria-hidden="true" style={styles.constellationStar} />
+                  <div>
+                    <p style={styles.constellationKicker}>{getRelationshipLabel(constellation.relationshipType)}</p>
+                    <h3 style={styles.constellationTitle}>{constellation.title}</h3>
+                    <p style={styles.constellationDescription}>{constellation.description}</p>
+                  </div>
+
+                  <ul style={styles.constellationFacts} aria-label={`${constellation.title} details`}>
+                    <li style={styles.constellationFact}>{getRelationshipLabel(constellation.relationshipType)}</li>
+                    <li style={styles.constellationFact}>
+                      {constellation.eventIds.length} {constellation.eventIds.length === 1 ? 'event' : 'events'}
+                    </li>
+                    {meta ? <li style={styles.constellationFact}>{meta}</li> : null}
+                  </ul>
+                </article>
+              );
+            })}
+          </div>
+        </section>
       </div>
     </section>
   );
 }
+
