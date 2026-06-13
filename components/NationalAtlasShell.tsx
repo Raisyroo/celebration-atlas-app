@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { existsSync } from 'fs';
 import Image from 'next/image';
+import Link from 'next/link';
 
 // Future national atlas boundary.
 //
@@ -64,13 +65,33 @@ export default function NationalAtlasShell({ children }: NationalAtlasShellProps
           </div>
         )}
 
+        <section style={styles.statePortal} aria-label="Available state atlas">
+          <div style={styles.statePortalHeader}>
+            <p style={styles.statePortalLabel}>Live State Atlas</p>
+            <p style={styles.statePortalStatus}>Prototype available</p>
+          </div>
+          <div style={styles.statePortalBody}>
+            <div>
+              <h2 style={styles.statePortalTitle}>Michigan is the first live state atlas.</h2>
+              <p style={styles.statePortalCopy}>
+                Open the current Michigan prototype. More states will appear as coverage is built and verified;
+                other states are not populated yet, and this national preview is not a complete U.S. event index.
+              </p>
+            </div>
+            <Link href="/" style={styles.statePortalLink} aria-label="Open Michigan Atlas prototype">
+              Open Michigan Atlas
+            </Link>
+          </div>
+        </section>
+
         {children ? <div style={styles.searchSlot}>{children}</div> : null}
 
         <aside style={styles.honestyPanel} aria-label="National atlas coverage status">
           <p style={styles.honestyLabel}>Coverage note</p>
           <p style={styles.honestyCopy}>
-            This is not a complete U.S. event index yet. Celebration Search will eventually control the national
-            map, but this preview does not run real AI, verify active events, or change map state.
+            Michigan is live as the state atlas prototype, but national coverage remains partial and other states are
+            not populated yet. This is not a complete U.S. event index. Celebration Search will eventually control the
+            national map, but this preview does not run real AI, verify active events, or change map state.
           </p>
         </aside>
       </div>
@@ -173,6 +194,76 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     textAlign: 'center',
     zIndex: 1,
+  },
+
+  statePortal: {
+    background:
+      'linear-gradient(135deg, rgba(255, 246, 220, 0.105), rgba(255, 246, 220, 0.035))',
+    borderRadius: '1.35rem',
+    boxShadow:
+      '0 18px 55px rgba(0, 0, 0, 0.18), inset 0 0 0 1px rgba(255, 236, 196, 0.09)',
+    margin: 'clamp(1.75rem, 4.4vw, 3rem) auto 0',
+    maxWidth: '54rem',
+    padding: 'clamp(1rem, 3vw, 1.35rem)',
+  },
+  statePortalHeader: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '0.75rem',
+    justifyContent: 'space-between',
+    marginBottom: '0.9rem',
+  },
+  statePortalLabel: {
+    color: 'rgba(251, 216, 157, 0.78)',
+    fontSize: '0.72rem',
+    letterSpacing: '0.2em',
+    margin: 0,
+    textTransform: 'uppercase',
+  },
+  statePortalStatus: {
+    border: '1px solid rgba(251, 216, 157, 0.18)',
+    borderRadius: '999px',
+    color: 'rgba(255, 244, 219, 0.68)',
+    flex: '0 0 auto',
+    fontSize: '0.68rem',
+    letterSpacing: '0.12em',
+    margin: 0,
+    padding: '0.45rem 0.62rem',
+    textTransform: 'uppercase',
+  },
+  statePortalBody: {
+    alignItems: 'end',
+    display: 'grid',
+    gap: '1.1rem',
+    gridTemplateColumns: 'minmax(0, 1fr)',
+  },
+  statePortalTitle: {
+    color: '#fff4db',
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontSize: 'clamp(1.35rem, 4vw, 2.05rem)',
+    fontWeight: 400,
+    letterSpacing: '-0.035em',
+    lineHeight: 1.05,
+    margin: 0,
+  },
+  statePortalCopy: {
+    color: 'rgba(255, 244, 219, 0.72)',
+    fontSize: '0.95rem',
+    lineHeight: 1.6,
+    margin: '0.65rem 0 0',
+  },
+  statePortalLink: {
+    background: 'rgba(251, 216, 157, 0.16)',
+    border: '1px solid rgba(251, 216, 157, 0.22)',
+    borderRadius: '999px',
+    color: '#fff4db',
+    display: 'inline-flex',
+    fontSize: '0.78rem',
+    justifyContent: 'center',
+    letterSpacing: '0.14em',
+    padding: '0.88rem 1rem',
+    textDecoration: 'none',
+    textTransform: 'uppercase',
   },
   searchSlot: {
     margin: 'clamp(2rem, 5vw, 3.5rem) auto 0',
