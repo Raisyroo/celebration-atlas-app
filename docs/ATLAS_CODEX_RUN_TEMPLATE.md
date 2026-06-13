@@ -35,6 +35,7 @@ Rules:
 - Do not wire anything into scripts.
 - Do not add GitHub Actions.
 - Do not add automation code unless the selected task explicitly requires it.
+- Do not run `npm run atlas:complete` automatically unless the human explicitly instructs Codex to advance the queue after review.
 
 Run:
 - npm run lint
