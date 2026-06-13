@@ -359,6 +359,7 @@ type AtlasMarkerCluster = {
 
 type AtlasMapProps = {
   constellationHighlightedIds?: readonly string[];
+  celebrationSearchHighlightedIds?: readonly string[];
   activeConstellationTitle?: string | null;
   onSearchActivate?: () => void;
 };
@@ -707,6 +708,7 @@ function AtlasCalibrationPanel({
 
 export default function AtlasMap({
   constellationHighlightedIds = [],
+  celebrationSearchHighlightedIds = [],
   activeConstellationTitle = null,
   onSearchActivate,
 }: AtlasMapProps) {
@@ -772,13 +774,21 @@ export default function AtlasMap({
   const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
   const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
   const searchHighlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
+  const celebrationSearchHighlightedIdSet = useMemo(
+    () => new Set(celebrationSearchHighlightedIds),
+    [celebrationSearchHighlightedIds],
+  );
   const constellationHighlightedIdSet = useMemo(
     () => new Set(constellationHighlightedIds),
     [constellationHighlightedIds],
   );
+  const isCelebrationSearchHighlightActive =
+    celebrationSearchHighlightedIdSet.size > 0;
   const highlightedIds = q
     ? searchHighlightedIds
-    : constellationHighlightedIdSet;
+    : isCelebrationSearchHighlightActive
+      ? celebrationSearchHighlightedIdSet
+      : constellationHighlightedIdSet;
   const discoveryResultLimit = isPhoneLandscape ? 2 : isDesktop ? 4 : 3;
   const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
     if (!q || highlightedIds.size === 0) return [];
@@ -803,7 +813,10 @@ export default function AtlasMap({
     [markerLayouts],
   );
   const isConstellationLineSearchActive = Boolean(
-    q || query.trim() || displayedQuery.trim(),
+    q ||
+      query.trim() ||
+      displayedQuery.trim() ||
+      isCelebrationSearchHighlightActive,
   );
   const constellationLinePoints = useMemo(
     () =>
@@ -1186,6 +1199,29 @@ export default function AtlasMap({
       isCurrentConstellationState = false;
     };
   }, [activeConstellationTitle, constellationHighlightedIds, q]);
+
+  useEffect(() => {
+    let isCurrentCelebrationSearchState = true;
+
+    queueMicrotask(() => {
+      if (!isCurrentCelebrationSearchState || q) return;
+
+      if (celebrationSearchHighlightedIds.length === 0) {
+        setDiscoveryStatusText(null);
+        return;
+      }
+
+      setDiscoveryStatusText(
+        `Celebration Search highlighted ${celebrationSearchHighlightedIds.length} ${
+          celebrationSearchHighlightedIds.length === 1 ? 'star' : 'stars'
+        }. AtlasMap search replaces this guidance.`,
+      );
+    });
+
+    return () => {
+      isCurrentCelebrationSearchState = false;
+    };
+  }, [celebrationSearchHighlightedIds, q]);
 
   const submitSearch = useCallback(() => {
     runDiscoverySearch(query);

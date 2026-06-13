@@ -4,6 +4,11 @@ import { FormEvent, useMemo, useState } from 'react';
 import { parseCelebrationSearchMock } from '../data/celebrationSearchMockParser';
 import type { AtlasSearchResult } from '../data/celebrationSearchTypes';
 
+type CelebrationSearchShellProps = {
+  onResult?: (result: AtlasSearchResult) => void;
+  onClear?: () => void;
+};
+
 const EXAMPLE_QUERIES = [
   'Show me music festivals in Michigan',
   'What festivals are active in Michigan?',
@@ -11,7 +16,10 @@ const EXAMPLE_QUERIES = [
   'Romeo Peach Festival',
 ] as const;
 
-export default function CelebrationSearchShell() {
+export default function CelebrationSearchShell({
+  onResult,
+  onClear,
+}: CelebrationSearchShellProps) {
   const [queryText, setQueryText] = useState('');
   const [result, setResult] = useState<AtlasSearchResult | null>(null);
 
@@ -36,6 +44,7 @@ export default function CelebrationSearchShell() {
     });
 
     setResult(parsedResult);
+    onResult?.(parsedResult);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -46,6 +55,12 @@ export default function CelebrationSearchShell() {
   const handleExampleSelect = (exampleQuery: string) => {
     setQueryText(exampleQuery);
     runMockSearch(exampleQuery);
+  };
+
+  const handleClear = () => {
+    setQueryText('');
+    setResult(null);
+    onClear?.();
   };
 
   return (
@@ -115,9 +130,20 @@ export default function CelebrationSearchShell() {
 
           {shouldShowDeferredHighlightNote ? (
             <p className="celebration-search-shell__handoff">
-              {highlightedEventCount} map highlight {highlightedEventCount === 1 ? 'candidate' : 'candidates'} found. Map highlighting is deferred for this shell so existing search, marker taps, clusters, and constellation trails remain untouched.
+              {highlightedEventCount} map{' '}
+              {highlightedEventCount === 1 ? 'star is' : 'stars are'}
+              {' '}highlighted from this mock command. Marker taps, clusters, and
+              event cards stay manual.
             </p>
           ) : null}
+
+          <button
+            type="button"
+            className="celebration-search-shell__clear"
+            onClick={handleClear}
+          >
+            Clear map guidance
+          </button>
         </div>
       ) : null}
 
@@ -244,6 +270,14 @@ export default function CelebrationSearchShell() {
           min-height: 36px;
           padding: 0 14px;
           box-shadow: 0 0 18px rgba(255, 196, 98, 0.08);
+        }
+
+        .celebration-search-shell__clear {
+          width: fit-content;
+          margin-top: 12px;
+          padding: 8px 12px;
+          color: rgba(255, 232, 188, 0.7);
+          background: linear-gradient(180deg, rgba(255, 244, 217, 0.08), rgba(255, 244, 217, 0.03));
         }
 
         .celebration-search-shell__examples {
