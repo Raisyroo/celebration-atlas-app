@@ -155,6 +155,57 @@ Michigan is the first canonical state atlas and should remain the reference impl
 
 Future state atlases should reuse the Michigan structure, not create unrelated state-specific systems.
 
+## Current-to-Future Migration Plan
+
+The safest national atlas migration is documentation-first and shell-first. The current homepage is Michigan-first, and a visible route-level or map-level national shell change would be risky until the component boundaries are explicit and reviewed.
+
+### Current State
+
+* `/` currently renders the Michigan-first `HomeAtlasExperience` through `app/page.tsx`.
+* `HomeAtlasExperience` is the current Michigan state atlas implementation boundary, even though it still carries the historical homepage name.
+* `AtlasMap` is the current Michigan map implementation and is tightly wired to Michigan map assets, Michigan projection behavior, Michigan event data, clustering, markers, selected-event cards, and cluster panels.
+* Michigan remains the canonical state atlas prototype for future state atlas behavior, data caution, map presentation, discovery sections, and constellation interactions.
+
+### Target Structure
+
+Future national work should introduce explicit shell boundaries before any visible homepage change:
+
+* `AtlasGatewayShell` — the eventual top-level gateway that decides whether the user starts in national, state, or event scope.
+* `NationalAtlasShell` — the national U.S. atlas container for national search, state portals, density signals, partial-coverage messaging, and national-to-state transitions.
+* `StateAtlasShell` — the reusable state-level container that can host Michigan first and future state atlases later.
+* `MichiganAtlasExperience` — a wrapper or renamed boundary around the current `HomeAtlasExperience` behavior, preserving the existing Michigan-first prototype while giving it an explicit state-atlas identity.
+* `CelebrationSearchPanel` — the conversational command interface that can feed the same command model into national, state, region, or event responses without becoming a simple text filter.
+
+### Safe Migration Order
+
+1. Complete this documentation-only migration plan so the intended boundaries, command routing, and protection rules are explicit before code changes.
+2. Add non-rendered component skeletons for the national and state shells without importing them into `app/page.tsx` and without changing runtime behavior.
+3. Add `MichiganAtlasExperience` as a wrapper or alias around the existing `HomeAtlasExperience` boundary, preserving behavior first and deferring any rename cleanup.
+4. Add `StateAtlasShell` around `MichiganAtlasExperience` only after the wrapper is reviewed, preserving Michigan projection, clustering, marker interactions, cards, panels, and constellation behavior.
+5. Prototype a hidden or dev-only `NationalAtlasShell` that can exercise command and partial-coverage states without becoming the public homepage.
+6. Prototype a visible national placeholder only after the hidden shell is reviewed and approved, making clear that national coverage is partial.
+7. Make the national gateway the default entry only after explicit approval that the placeholder, state transitions, coverage language, and Michigan preservation rules are safe.
+
+### Command Routing Matrix
+
+| User intent | Safe routing behavior | Required honesty rule |
+| --- | --- | --- |
+| Broad national query, such as “Show me all music festivals in the US” | Stay in national scope and show state-level highlights, density, representative stars, or partial-coverage response text. | Do not claim national completeness or imply every matching event is known. |
+| Michigan query, such as “What festivals are active in Michigan?” | Transition to the Michigan state atlas and use Michigan state-level filters or highlights. | Explain timing confidence and avoid active/current claims without verified timing. |
+| Michigan event query, such as “Tell me about the Romeo Peach Festival parade” | Stay inside or transition into the Michigan atlas and highlight the matching Michigan event before offering event-page navigation. | Highlight only known Michigan event IDs and preserve existing selected-card behavior. |
+| Constellation query, such as “Show harvest trails in Michigan” | Activate the matching state constellation only when the trail is known and the existing state constellation behavior can be reused safely. | Do not invent relationships, trails, or event membership. |
+| Timing-sensitive query, such as “What’s happening this weekend?” | Ask a clarifying question unless verified timing exists for the requested scope and date window. | Do not call events active/current from stale recurring descriptions. |
+| No known results | Explain that the Atlas has no known results for the current coverage and offer a safer scope or clarification. | “No known results” must not mean “no events exist.” |
+
+### Protection Rules
+
+* Do not refactor `AtlasMap` projection while introducing national, gateway, or state shells.
+* Do not move marker clustering while introducing shells.
+* Do not change marker tap targets, selected-event card behavior, or cluster panel behavior during shell migration.
+* Do not pass national event IDs, national density IDs, or non-Michigan event identifiers into the Michigan map implementation.
+* Do not claim national completeness; national responses must describe partial coverage when coverage is incomplete.
+* Do not claim active/current events without verified timing data for the relevant event and date window.
+
 ## Celebration Search as the Conversational Command Layer
 
 Celebration Search is the conversational command layer that interprets user intent and decides how the atlas should respond.
