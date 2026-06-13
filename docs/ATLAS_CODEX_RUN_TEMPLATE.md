@@ -1,6 +1,6 @@
 # Atlas Codex Run Template
 
-Use this template to run exactly one Atlas Dev Loop task. Run `npm run atlas:prompt` to print a ready-to-copy prompt for the next queue item marked `Status: next`.
+Use this template to run exactly one Atlas Dev Loop task. Run `npm run atlas:handoff` as a human/operator convenience command to see the current loop state, and run `npm run atlas:prompt` to print a ready-to-copy prompt for the next queue item marked `Status: next`. `atlas:handoff` is read-only status output; Codex must not treat it as permission to continue to additional tasks.
 
 ```text
 Read MASTER_ATLAS_CONTEXT.md first.
