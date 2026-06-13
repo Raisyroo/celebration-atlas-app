@@ -96,10 +96,16 @@ export default function CelebrationSearchPanel({
           ) : null}
 
           {showMichiganCta ? (
-            <Link href="/" style={styles.michiganCta} aria-label="Open Michigan Atlas">
-              <span style={styles.michiganCtaKicker}>State doorway</span>
-              <span style={styles.michiganCtaText}>Open Michigan Atlas</span>
-            </Link>
+            <div style={styles.michiganCtaGroup}>
+              <Link href="/" style={styles.michiganCta} aria-label="Open Michigan Atlas">
+                <span style={styles.michiganCtaKicker}>State doorway</span>
+                <span style={styles.michiganCtaText}>Open Michigan Atlas</span>
+              </Link>
+              <p style={styles.michiganCtaNote}>
+                Manual doorway only. No query parameters, command state, or automatic navigation are sent to the
+                Michigan Atlas.
+              </p>
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -238,6 +244,13 @@ const styles: Record<string, CSSProperties> = {
     padding: '0.78rem 1rem',
     textDecoration: 'none',
   },
+  michiganCtaGroup: {
+    alignItems: 'flex-start',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.58rem',
+    marginTop: '1rem',
+  },
   michiganCtaKicker: {
     color: 'rgba(251, 216, 157, 0.74)',
     fontSize: '0.62rem',
@@ -247,6 +260,13 @@ const styles: Record<string, CSSProperties> = {
   michiganCtaText: {
     fontFamily: 'Georgia, "Times New Roman", serif',
     fontSize: '1.06rem',
+  },
+  michiganCtaNote: {
+    color: 'rgba(255, 244, 219, 0.52)',
+    fontSize: '0.76rem',
+    lineHeight: 1.5,
+    margin: 0,
+    maxWidth: '30rem',
   },
   visuallyHidden: {
     border: 0,
