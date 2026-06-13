@@ -15,7 +15,8 @@
 export default function NationalAtlasShell() {
   return (
     <section aria-label="Future national Celebration Atlas gateway">
-      <p>National Celebration Atlas gateway shell is not wired into the app yet.</p>
+      <p>Development Preview — National Atlas shell.</p>
+      <p>Coverage is partial; this is not a complete U.S. event index.</p>
     </section>
   );
 }

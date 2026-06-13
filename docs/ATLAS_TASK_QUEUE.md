@@ -87,11 +87,11 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 11. Implement hidden/dev-only NationalAtlasShell route
 
 - **Type:** implementation
-- **Status:** blocked until diagnostic complete
+- **Status:** complete
 - **Scope:** hidden/dev-only national atlas shell route only after route strategy is diagnosed and approved
 - **Protected files/areas:** visible homepage runtime behavior, app/page.tsx unless explicitly approved, existing Michigan map behavior, marker behavior, constellation behavior, event data, Romeo page, media files, CSS, package scripts, automation
-- **Notes:** Exercise national command, partial-coverage, and state-transition structure without making the national shell public. Do not mark this implementation task as next until the diagnostic route strategy is complete.
-- **Verification:** `npm run atlas:check`
+- **Notes:** Created unlinked `/dev/national-atlas` route rendering `NationalAtlasShell` only, with Development Preview and partial-coverage language. Do not add CelebrationSearchPanel, MichiganAtlasExperience, national map functionality, or state transitions until explicitly approved.
+- **Verification:** `npm run atlas:doctor`, `npm run atlas:check`, `npm run atlas:status`, `npm run lint`, `npm run build`
 
 ### 12. Prototype national atlas placeholder content
 
