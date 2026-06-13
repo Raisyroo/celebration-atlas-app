@@ -13,9 +13,9 @@ export default function DevNationalAtlasPage() {
   return (
     <DevNationalAtlasScrollBoundary>
       <main aria-label="Development Preview — National Atlas">
-        <p>Development Preview — partial coverage, not a complete U.S. event index.</p>
-        <NationalAtlasShell />
-        <CelebrationSearchPanel currentScope="national" />
+        <NationalAtlasShell>
+          <CelebrationSearchPanel currentScope="national" />
+        </NationalAtlasShell>
       </main>
     </DevNationalAtlasScrollBoundary>
   );
