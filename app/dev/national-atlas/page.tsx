@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import CelebrationSearchPanel from '../../../components/CelebrationSearchPanel';
 import NationalAtlasShell from '../../../components/NationalAtlasShell';
 
 export const metadata: Metadata = {
@@ -8,5 +9,11 @@ export const metadata: Metadata = {
 };
 
 export default function DevNationalAtlasPage() {
-  return <NationalAtlasShell />;
+  return (
+    <main aria-label="Development Preview — National Atlas">
+      <p>Development Preview — partial coverage, not a complete U.S. event index.</p>
+      <NationalAtlasShell />
+      <CelebrationSearchPanel currentScope="national" />
+    </main>
+  );
 }

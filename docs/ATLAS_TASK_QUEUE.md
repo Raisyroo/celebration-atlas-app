@@ -105,7 +105,7 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 13. Connect CelebrationSearchPanel to NationalAtlasShell in dev-only route
 
 - **Type:** implementation
-- **Status:** future
+- **Status:** complete
 - **Scope:** dev-only national route search wiring only after hidden/dev-only route and placeholder content review
 - **Protected files/areas:** visible homepage runtime behavior, app/page.tsx unless explicitly approved, existing Michigan map behavior, marker behavior, constellation behavior, event data, Romeo page, media files, CSS, package scripts, automation
 - **Notes:** Wire the reusable CelebrationSearchPanel into the NationalAtlasShell only inside the approved dev-only review surface. Do not affect the visible homepage or production-facing route behavior.
