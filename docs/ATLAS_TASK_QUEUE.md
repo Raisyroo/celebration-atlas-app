@@ -60,7 +60,7 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 8. Add non-rendered National/State shell component skeletons
 
 - **Type:** implementation
-- **Status:** next
+- **Status:** complete
 - **Scope:** component skeletons only; no route imports and no rendered UI
 - **Protected files/areas:** app/page.tsx, homepage runtime behavior, existing Michigan map behavior, marker behavior, clustering, constellation behavior, event data, Romeo page, media files, CSS, package scripts, automation
 - **Notes:** Add non-rendered `AtlasGatewayShell`, `NationalAtlasShell`, and `StateAtlasShell` skeleton boundaries without changing the visible homepage. This is the next safe code step after the documentation-only migration plan.
