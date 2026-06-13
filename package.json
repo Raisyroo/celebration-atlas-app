@@ -14,7 +14,8 @@
     "atlas:complete": "node scripts/atlas-complete-task.mjs",
     "atlas:complete:dry": "node scripts/atlas-complete-task.mjs --dry-run",
     "atlas:handoff": "node scripts/atlas-handoff.mjs",
-    "atlas:runbook": "node scripts/atlas-runbook.mjs"
+    "atlas:runbook": "node scripts/atlas-runbook.mjs",
+    "atlas:doctor": "node scripts/atlas-doctor.mjs"
   },
   "dependencies": {
     "next": "16.2.6",

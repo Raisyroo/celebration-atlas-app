@@ -1,6 +1,6 @@
 # Atlas Codex Run Template
 
-Use this template to run exactly one Atlas Dev Loop task. Run `npm run atlas:runbook` as a human/operator guide to print the recommended safe workflow. Run `npm run atlas:handoff` as a human/operator convenience command to see the current loop state, and run `npm run atlas:prompt` to print a ready-to-copy prompt for the next queue item marked `Status: next`. `atlas:runbook` and `atlas:handoff` are read-only operator aids; Codex must not treat either command as permission to proceed through multiple tasks.
+Use this template to run exactly one Atlas Dev Loop task. Run `npm run atlas:runbook` as a human/operator guide to print the recommended safe workflow. Run `npm run atlas:doctor` as a read-only operator diagnostic command when you want to verify loop health before a run. Run `npm run atlas:handoff` as a human/operator convenience command to see the current loop state, and run `npm run atlas:prompt` to print a ready-to-copy prompt for the next queue item marked `Status: next`. `atlas:runbook`, `atlas:doctor`, and `atlas:handoff` are read-only operator aids; Codex must not treat any of these commands as permission to proceed through multiple tasks.
 
 ```text
 Read MASTER_ATLAS_CONTEXT.md first.
