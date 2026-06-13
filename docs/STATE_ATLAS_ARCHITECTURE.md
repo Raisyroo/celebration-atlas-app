@@ -71,6 +71,12 @@ Michigan should establish:
 * practical planning structure
 * AI-agent population workflow
 
+Current implementation note:
+
+* `HomeAtlasExperience` currently functions as the Michigan state atlas implementation boundary.
+* Future `MichiganAtlasExperience` work should wrap or rename this boundary without changing behavior first.
+* Michigan remains the template for future state atlases, including shell boundaries, map behavior, discovery structure, and data caution.
+
 ## State Atlas Required Layers
 
 ### 1. State Identity Layer

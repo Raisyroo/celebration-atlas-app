@@ -57,22 +57,49 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - **Notes:** Convert approved mock command examples into a non-UI parser prototype that emits safe `AtlasSearchCommand` objects.
 - **Verification:** `npm run atlas:check`
 
-### 8. Prototype national atlas shell
+### 8. Add non-rendered National/State shell component skeletons
 
 - **Type:** implementation
-- **Status:** future
-- **Scope:** national atlas shell only after architecture review
-- **Protected files/areas:** existing Michigan map behavior, marker behavior, constellation behavior, event data, Romeo page, media files, package scripts, automation
-- **Notes:** Build the first national atlas shell only after the command model is reviewed and accepted.
+- **Status:** next
+- **Scope:** component skeletons only; no route imports and no rendered UI
+- **Protected files/areas:** app/page.tsx, homepage runtime behavior, existing Michigan map behavior, marker behavior, clustering, constellation behavior, event data, Romeo page, media files, CSS, package scripts, automation
+- **Notes:** Add non-rendered `AtlasGatewayShell`, `NationalAtlasShell`, and `StateAtlasShell` skeleton boundaries without changing the visible homepage. This is the next safe code step after the documentation-only migration plan.
 - **Verification:** `npm run atlas:check`
 
-### 9. Prototype Celebration Search UI shell
+### 9. Wrap current HomeAtlasExperience as MichiganAtlasExperience
 
 - **Type:** implementation
 - **Status:** future
-- **Scope:** Celebration Search UI shell only after parser fixtures are reviewed
+- **Scope:** Michigan state atlas boundary only after shell skeletons are reviewed
+- **Protected files/areas:** app/page.tsx unless explicitly approved, AtlasMap projection, marker behavior, clustering, constellation behavior, selected event card behavior, cluster panel behavior, event data, Romeo page, media files, CSS, package scripts, automation
+- **Notes:** Create a `MichiganAtlasExperience` wrapper or alias around the current `HomeAtlasExperience` without changing behavior first.
+- **Verification:** `npm run atlas:check`
+
+### 10. Prototype hidden NationalAtlasShell
+
+- **Type:** implementation
+- **Status:** future
+- **Scope:** hidden/dev-only national atlas shell only after Michigan boundary review
+- **Protected files/areas:** visible homepage runtime behavior, app/page.tsx unless explicitly approved, existing Michigan map behavior, marker behavior, constellation behavior, event data, Romeo page, media files, CSS, package scripts, automation
+- **Notes:** Exercise national command, partial-coverage, and state-transition structure without making the national shell public.
+- **Verification:** `npm run atlas:check`
+
+### 11. Prototype national atlas placeholder
+
+- **Type:** implementation
+- **Status:** future
+- **Scope:** visible placeholder only after hidden shell review and explicit approval
+- **Protected files/areas:** default homepage entry, existing Michigan map behavior, marker behavior, constellation behavior, event data, Romeo page, media files, package scripts, automation
+- **Notes:** Do not mark the visible national homepage or default national gateway as next yet. Any placeholder must clearly communicate partial coverage and preserve Michigan as the canonical state atlas prototype.
+- **Verification:** `npm run atlas:check`
+
+### 12. Prototype Celebration Search UI shell
+
+- **Type:** implementation
+- **Status:** future
+- **Scope:** Celebration Search UI shell only after parser fixtures and shell boundaries are reviewed
 - **Protected files/areas:** homepage map behavior, marker behavior, constellation behavior, event data, Romeo page, routing, media files, package scripts, automation
-- **Notes:** Create a non-executing or minimally wired Celebration Search interface shell only after parser fixture output has been reviewed and accepted.
+- **Notes:** Create a non-executing or minimally wired Celebration Search interface shell only after parser fixture output and shell boundaries have been reviewed and accepted.
 - **Verification:** `npm run atlas:check`
 
 ## Completed Tasks
