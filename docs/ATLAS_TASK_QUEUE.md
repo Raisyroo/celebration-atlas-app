@@ -69,31 +69,58 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 9. Wrap current HomeAtlasExperience as MichiganAtlasExperience
 
 - **Type:** implementation
-- **Status:** future
+- **Status:** complete
 - **Scope:** Michigan state atlas boundary only after shell skeletons are reviewed
 - **Protected files/areas:** app/page.tsx unless explicitly approved, AtlasMap projection, marker behavior, clustering, constellation behavior, selected event card behavior, cluster panel behavior, event data, Romeo page, media files, CSS, package scripts, automation
-- **Notes:** Create a `MichiganAtlasExperience` wrapper or alias around the current `HomeAtlasExperience` without changing behavior first.
+- **Notes:** Created a `MichiganAtlasExperience` wrapper around the current `HomeAtlasExperience` without changing behavior first.
 - **Verification:** `npm run atlas:check`
 
-### 10. Prototype hidden NationalAtlasShell
+### 10. Diagnose hidden national atlas route strategy
+
+- **Type:** diagnostic
+- **Status:** next
+- **Scope:** routing / national atlas shell / feature-flag strategy only
+- **Protected files/areas:** app UI, homepage runtime behavior, app/page.tsx, HomeAtlasExperience behavior, AtlasMap behavior, NationalAtlasShell runtime wiring, StateAtlasShell runtime wiring, MichiganAtlasExperience runtime wiring, CelebrationSearchPanel runtime wiring, routing, event data, media files, CSS, package scripts, automation scripts
+- **Notes:** Determine the safest way to expose the NationalAtlasShell for development review without changing the visible homepage. Compare hidden route, dev-only route, feature flag, and non-rendered import strategies.
+- **Verification:** `npm run atlas:doctor`, `npm run atlas:handoff`, `npm run atlas:next`, `npm run atlas:prompt`, `npm run atlas:check`
+
+### 11. Implement hidden/dev-only NationalAtlasShell route
 
 - **Type:** implementation
-- **Status:** future
-- **Scope:** hidden/dev-only national atlas shell only after Michigan boundary review
+- **Status:** blocked until diagnostic complete
+- **Scope:** hidden/dev-only national atlas shell route only after route strategy is diagnosed and approved
 - **Protected files/areas:** visible homepage runtime behavior, app/page.tsx unless explicitly approved, existing Michigan map behavior, marker behavior, constellation behavior, event data, Romeo page, media files, CSS, package scripts, automation
-- **Notes:** Exercise national command, partial-coverage, and state-transition structure without making the national shell public.
+- **Notes:** Exercise national command, partial-coverage, and state-transition structure without making the national shell public. Do not mark this implementation task as next until the diagnostic route strategy is complete.
 - **Verification:** `npm run atlas:check`
 
-### 11. Prototype national atlas placeholder
+### 12. Prototype national atlas placeholder content
 
 - **Type:** implementation
 - **Status:** future
-- **Scope:** visible placeholder only after hidden shell review and explicit approval
+- **Scope:** placeholder content only after hidden/dev-only route review and explicit approval
 - **Protected files/areas:** default homepage entry, existing Michigan map behavior, marker behavior, constellation behavior, event data, Romeo page, media files, package scripts, automation
 - **Notes:** Do not mark the visible national homepage or default national gateway as next yet. Any placeholder must clearly communicate partial coverage and preserve Michigan as the canonical state atlas prototype.
 - **Verification:** `npm run atlas:check`
 
-### 12. Prototype Celebration Search UI shell
+### 13. Connect CelebrationSearchPanel to NationalAtlasShell in dev-only route
+
+- **Type:** implementation
+- **Status:** future
+- **Scope:** dev-only national route search wiring only after hidden/dev-only route and placeholder content review
+- **Protected files/areas:** visible homepage runtime behavior, app/page.tsx unless explicitly approved, existing Michigan map behavior, marker behavior, constellation behavior, event data, Romeo page, media files, CSS, package scripts, automation
+- **Notes:** Wire the reusable CelebrationSearchPanel into the NationalAtlasShell only inside the approved dev-only review surface. Do not affect the visible homepage or production-facing route behavior.
+- **Verification:** `npm run atlas:check`
+
+### 14. Define state transition from national shell to Michigan shell
+
+- **Type:** diagnostic
+- **Status:** future
+- **Scope:** national-to-state transition architecture only
+- **Protected files/areas:** visible homepage runtime behavior, app/page.tsx unless explicitly approved, existing Michigan map behavior, marker behavior, constellation behavior, event data, Romeo page, media files, CSS, package scripts, automation
+- **Notes:** Define the safest development-only transition from the national shell into the Michigan shell before implementing navigation, routing, or runtime wiring.
+- **Verification:** `npm run atlas:check`
+
+### 15. Prototype Celebration Search UI shell
 
 - **Type:** implementation
 - **Status:** future
