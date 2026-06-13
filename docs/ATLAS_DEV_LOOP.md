@@ -9,7 +9,7 @@ The loop exists to protect the app's current behavior while allowing steady prog
 ## Core Principles
 
 - **One task per run.** Each run handles exactly one task from `docs/ATLAS_TASK_QUEUE.md`.
-- **Never continue to the next task automatically.** Even if a task succeeds, the run stops after reporting results.
+- **Never continue to the next task automatically.** Even if a task succeeds, the run stops after reporting results. Queue advancement with `npm run atlas:complete` happens only after human review confirms the task is acceptable.
 - **Preserve current app behavior unless the task explicitly changes it.** Existing map, marker, constellation, routing, event, and page behavior should remain unchanged by default.
 - **Diagnostics do not modify code.** Diagnostic tasks inspect, reason, and report only.
 - **Implementation tasks modify the smallest safe set of files.** Prefer targeted edits over broad refactors.
@@ -38,7 +38,7 @@ Also read any architecture document relevant to the selected task:
 ## Task Lifecycle
 
 1. **Read context.** Read the required context and architecture files before making any decision.
-2. **Select one task.** Use `npm run atlas:next` as the standard way to view the first task in `docs/ATLAS_TASK_QUEUE.md` marked `Status: next`; use `npm run atlas:prompt` when you want a ready-to-copy Codex prompt for that same selected task. Then select only that task.
+2. **Select one task.** Use `npm run atlas:next` as the standard way to view the first task in `docs/ATLAS_TASK_QUEUE.md` marked `Status: next`; use `npm run atlas:prompt` when you want a ready-to-copy Codex prompt for that same selected task. Then select only that task. After human review confirms the completed task is acceptable, use `npm run atlas:complete` as the standard way to mark that one task completed and promote the next eligible `Status: future` task to `Status: next`.
 3. **Confirm task type.** Determine whether the task is `diagnostic` or `implementation`.
 4. **Respect scope.** Work only within the task's stated scope and protected-area rules.
 5. **Perform the task.** Diagnose without changing code, or implement with the smallest safe file set.

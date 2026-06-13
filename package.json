@@ -10,7 +10,9 @@
     "atlas:check": "npm run lint && npm run build",
     "atlas:status": "git status --short",
     "atlas:next": "node scripts/atlas-next-task.mjs",
-    "atlas:prompt": "node scripts/atlas-codex-prompt.mjs"
+    "atlas:prompt": "node scripts/atlas-codex-prompt.mjs",
+    "atlas:complete": "node scripts/atlas-complete-task.mjs",
+    "atlas:complete:dry": "node scripts/atlas-complete-task.mjs --dry-run"
   },
   "dependencies": {
     "next": "16.2.6",
