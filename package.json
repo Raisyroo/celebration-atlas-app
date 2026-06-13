@@ -13,7 +13,8 @@
     "atlas:prompt": "node scripts/atlas-codex-prompt.mjs",
     "atlas:complete": "node scripts/atlas-complete-task.mjs",
     "atlas:complete:dry": "node scripts/atlas-complete-task.mjs --dry-run",
-    "atlas:handoff": "node scripts/atlas-handoff.mjs"
+    "atlas:handoff": "node scripts/atlas-handoff.mjs",
+    "atlas:runbook": "node scripts/atlas-runbook.mjs"
   },
   "dependencies": {
     "next": "16.2.6",
