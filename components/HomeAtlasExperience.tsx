@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import AtlasMap from './AtlasMap';
 import HomeDiscoverySections from './HomeDiscoverySections';
+import CelebrationSearchShell from './CelebrationSearchShell';
 import { ATLAS_CONSTELLATIONS } from '../data/atlasConstellations';
 
 export default function HomeAtlasExperience() {
@@ -31,6 +32,7 @@ export default function HomeAtlasExperience() {
         activeConstellationTitle={selectedConstellation?.title ?? null}
         onSearchActivate={() => setSelectedConstellationId(null)}
       />
+      <CelebrationSearchShell />
       <HomeDiscoverySections
         selectedConstellationId={selectedConstellationId}
         onConstellationSelect={handleConstellationSelect}
