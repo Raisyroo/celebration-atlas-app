@@ -38,7 +38,7 @@ Also read any architecture document relevant to the selected task:
 ## Task Lifecycle
 
 1. **Read context.** Read the required context and architecture files before making any decision.
-2. **Select one task.** Use `npm run atlas:handoff` as the standard way to see the current loop state in one place. Use `npm run atlas:next` to view the first task in `docs/ATLAS_TASK_QUEUE.md` marked `Status: next`; use `npm run atlas:prompt` when you want a ready-to-copy Codex prompt for that same selected task. Then select only that task. After human review confirms the completed task is acceptable, use `npm run atlas:complete` as the standard way to mark that one task completed and promote the next eligible `Status: future` task to `Status: next`.
+2. **Select one task.** Use `npm run atlas:runbook` as the human/operator guide to print the recommended safe workflow. Use `npm run atlas:handoff` as the standard way to see the current loop state in one place. Use `npm run atlas:next` to view the first task in `docs/ATLAS_TASK_QUEUE.md` marked `Status: next`; use `npm run atlas:prompt` when you want a ready-to-copy Codex prompt for that same selected task. Then select only that task. After human review confirms the completed task is acceptable, use `npm run atlas:complete` as the standard way to mark that one task completed and promote the next eligible `Status: future` task to `Status: next`.
 3. **Confirm task type.** Determine whether the task is `diagnostic` or `implementation`.
 4. **Respect scope.** Work only within the task's stated scope and protected-area rules.
 5. **Perform the task.** Diagnose without changing code, or implement with the smallest safe file set.
