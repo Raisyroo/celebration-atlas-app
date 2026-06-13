@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { existsSync } from 'fs';
 import Image from 'next/image';
 
 // Future national atlas boundary.
@@ -15,7 +16,9 @@ import Image from 'next/image';
 // - this shell must never claim national completeness while Atlas coverage is
 //   still partial or uneven.
 
-const nationalPreviewMapSrc = '/maps/michigan-atlas-base.webp';
+const nationalPreviewMapSrc = '/maps/us-atlas-preview.webp';
+const nationalPreviewMapFile = 'public/maps/us-atlas-preview.webp';
+const hasNationalPreviewMap = existsSync(nationalPreviewMapFile);
 
 export default function NationalAtlasShell() {
   return (
@@ -30,23 +33,30 @@ export default function NationalAtlasShell() {
         </p>
       </div>
 
-      <figure style={styles.mapStage} aria-label="Visual preview only for the future U.S. Atlas map">
-        <div style={styles.mapGlow} aria-hidden="true" />
-        <div style={styles.mapFrame}>
-          <Image
-            src={nationalPreviewMapSrc}
-            alt="Development preview map artwork for the future national Celebration Atlas gateway"
-            fill
-            sizes="100vw"
-            style={styles.mapImage}
-            priority={false}
-          />
+      {hasNationalPreviewMap ? (
+        <figure style={styles.mapStage} aria-label="Visual preview only for the future U.S. Atlas map">
+          <div style={styles.mapGlow} aria-hidden="true" />
+          <div style={styles.mapFrame}>
+            <Image
+              src={nationalPreviewMapSrc}
+              alt="Development preview map artwork for the future national Celebration Atlas gateway"
+              fill
+              sizes="100vw"
+              style={styles.mapImage}
+              priority={false}
+            />
+          </div>
+          <figcaption style={styles.caption}>
+            Visual preview only — no state clicks, stars, coordinates, clusters, search wiring, or constellation
+            lines are active in this development route.
+          </figcaption>
+        </figure>
+      ) : (
+        <div style={styles.missingMapNotice} role="status">
+          The visual U.S. map preview is missing. Add <code>{nationalPreviewMapFile}</code> to render this
+          development-only national gateway artwork.
         </div>
-        <figcaption style={styles.caption}>
-          Visual preview only — no state clicks, stars, coordinates, clusters, search wiring, or constellation
-          lines are active in this development route.
-        </figcaption>
-      </figure>
+      )}
     </section>
   );
 }
@@ -136,5 +146,15 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     textAlign: 'center',
     zIndex: 1,
+  },
+  missingMapNotice: {
+    background: 'rgba(255, 246, 220, 0.08)',
+    borderRadius: '1.25rem',
+    color: 'rgba(255, 244, 219, 0.72)',
+    fontSize: '0.95rem',
+    lineHeight: 1.6,
+    margin: 'clamp(2rem, 7vw, 5rem) auto 0',
+    maxWidth: '58rem',
+    padding: '1rem 1.1rem',
   },
 };
