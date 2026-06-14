@@ -23,11 +23,9 @@ import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
 
 const ATMOSPHERIC_SUGGESTIONS = [
-  'music festivals',
-  'county fairs',
-  'waterfront festivals',
-  'hidden gems',
+  'Ask for festivals, fireworks, fairs, or Romeo Peach Festival',
 ];
+const MOBILE_ATLAS_COMMAND_PLACEHOLDER = 'Ask about Michigan celebrations';
 const DISCOVERY_SHORTCUTS = [
   'Fairs',
   'Fireworks',
@@ -1893,9 +1891,7 @@ export default function AtlasMap({
               showShortcutGroups={false}
             />
             <div style={styles.searchInputWrap}>
-              <span style={styles.searchPrefix} aria-hidden="true">
-                Search:
-              </span>
+              <span style={styles.searchPrefix}>Ask Celebration Atlas</span>
               <span
                 aria-hidden="true"
                 className={`atlas-search-query ${isSubmittedQueryFading ? 'atlas-search-query--fade' : ''}`}
@@ -1908,9 +1904,12 @@ export default function AtlasMap({
                 className={`atlas-search-input ${searchPulseTick > 0 ? 'atlas-search-input--pulse' : ''}`}
                 style={styles.searchInput}
                 value={query}
+                aria-label="Ask Celebration Atlas"
                 placeholder={
                   !query.trim() && !displayedQuery && !isSearchFocused
-                    ? ATMOSPHERIC_SUGGESTIONS[suggestionIndex]
+                    ? isDesktop
+                      ? ATMOSPHERIC_SUGGESTIONS[suggestionIndex]
+                      : MOBILE_ATLAS_COMMAND_PLACEHOLDER
                     : ''
                 }
                 onChange={(event) => {
@@ -2580,28 +2579,34 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    minHeight: 52,
+    minHeight: 58,
     width: '100%',
-    borderRadius: 999,
-    border: '1px solid rgba(255, 226, 170, 0.56)',
-    background: 'rgba(7, 10, 15, 0.16)',
+    borderRadius: 24,
+    border: '1px solid rgba(255, 226, 170, 0.42)',
+    background:
+      'linear-gradient(180deg, rgba(15, 20, 30, 0.76), rgba(6, 9, 14, 0.64))',
     boxShadow:
-      'inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 0 14px rgba(252, 201, 102, 0.28)',
-    padding: '0 15px',
+      'inset 0 0 0 1px rgba(255, 244, 214, 0.07), 0 18px 42px rgba(2, 5, 12, 0.32), 0 0 18px rgba(252, 201, 102, 0.2)',
+    padding: '18px 17px 10px',
   },
   searchPrefix: {
     flexShrink: 0,
-    color: '#fff7de',
-    opacity: 0.96,
+    position: 'absolute',
+    top: 8,
+    left: 17,
+    color: 'rgba(255, 247, 222, 0.9)',
+    opacity: 0.98,
     textShadow: '0 1px 3px rgba(2, 3, 6, 0.85)',
-    fontSize: 15,
-    fontWeight: 600,
-    letterSpacing: 0.1,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: 0.16,
+    textTransform: 'uppercase',
   },
   searchQueryText: {
-    marginLeft: 8,
+    marginLeft: 0,
+    paddingTop: 12,
     color: 'rgba(255, 239, 206, 0.98)',
-    fontSize: 17,
+    fontSize: 16,
     textShadow: 'none',
     filter: 'none',
     letterSpacing: 0,
@@ -2612,7 +2617,7 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    maxWidth: 'calc(100% - 92px)',
+    maxWidth: '100%',
     pointerEvents: 'none',
     userSelect: 'none',
     WebkitUserSelect: 'none',
@@ -2622,13 +2627,13 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     inset: 0,
     width: '100%',
-    padding: '14px 15px 14px 84px',
-    borderRadius: 999,
+    padding: '26px 17px 9px',
+    borderRadius: 24,
     border: 'none',
     background: 'transparent',
     color: 'transparent',
     caretColor: 'rgba(255, 239, 206, 0.98)',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: 600,
     lineHeight: 1.15,
     outline: 'none',
