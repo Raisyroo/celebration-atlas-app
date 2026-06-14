@@ -12,6 +12,7 @@ import {
   searchEventProfiles,
 } from '../data/eventProfiles';
 import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
+import { resolveExactEventIntent } from '../data/exactEventIntent';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
 import {
   MICHIGAN_MAP_ANCHORS,
@@ -804,6 +805,9 @@ export default function AtlasMap({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queryFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exactEventOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const enterFrameRef = useRef<number | null>(null);
   const enterFrameInnerRef = useRef<number | null>(null);
   const [renderedEvent, setRenderedEvent] = useState<
@@ -830,7 +834,15 @@ export default function AtlasMap({
     typeof setTimeout
   > | null>(null);
   const q = submittedQuery.trim().toLowerCase();
-  const searchHighlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
+  const exactEventIntent = useMemo(
+    () => resolveExactEventIntent(submittedQuery),
+    [submittedQuery],
+  );
+  const searchHighlightedIds = useMemo(() => {
+    if (exactEventIntent) return new Set([exactEventIntent.eventId]);
+
+    return getHighlightedIdsFromQuery(q);
+  }, [exactEventIntent, q]);
   const celebrationSearchHighlightedIdSet = useMemo(
     () => new Set(celebrationSearchHighlightedIds),
     [celebrationSearchHighlightedIds],
@@ -848,7 +860,7 @@ export default function AtlasMap({
       : constellationHighlightedIdSet;
   const discoveryResultLimit = isPhoneLandscape ? 2 : isDesktop ? 4 : 3;
   const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
-    if (!q || highlightedIds.size === 0) return [];
+    if (exactEventIntent || !q || highlightedIds.size === 0) return [];
 
     return ATLAS_EVENTS.filter((event) => highlightedIds.has(event.id))
       .slice(0, discoveryResultLimit)
@@ -860,7 +872,7 @@ export default function AtlasMap({
         atmosphereLabel: event.atmosphereLabel,
         blurb: event.blurb,
       }));
-  }, [discoveryResultLimit, highlightedIds, q]);
+  }, [discoveryResultLimit, exactEventIntent, highlightedIds, q]);
   const markerLayouts = useMemo(
     () => resolveAtlasMarkerLayouts(ATLAS_EVENTS),
     [],
@@ -1187,6 +1199,12 @@ export default function AtlasMap({
     setSubmittedQuery(isResetCommand ? '' : trimmedQuery);
 
     if (isResetCommand) {
+      if (exactEventOpenTimerRef.current) {
+        clearTimeout(exactEventOpenTimerRef.current);
+        exactEventOpenTimerRef.current = null;
+      }
+      setSelectedId(null);
+      setSelectedClusterId(null);
       setDiscoveryStatusText(null);
       setDisplayedQuery('');
       setQuery('');
@@ -1196,12 +1214,29 @@ export default function AtlasMap({
       return;
     }
 
-    const nextHighlightedIds = getHighlightedIdsFromQuery(trimmedQuery);
-    setDiscoveryStatusText(
-      nextHighlightedIds.size > 0
-        ? `Showing ${nextHighlightedIds.size} ${nextHighlightedIds.size === 1 ? 'discovery' : 'discoveries'} for “${trimmedQuery}”`
-        : `No discoveries found for “${trimmedQuery}”`,
-    );
+    const exactMatch = resolveExactEventIntent(trimmedQuery);
+
+    if (exactEventOpenTimerRef.current) {
+      clearTimeout(exactEventOpenTimerRef.current);
+      exactEventOpenTimerRef.current = null;
+    }
+
+    if (exactMatch) {
+      setSelectedClusterId(null);
+      setSelectedId(null);
+      setDiscoveryStatusText(`Found ${exactMatch.eventName}`);
+      exactEventOpenTimerRef.current = setTimeout(() => {
+        setSelectedId(exactMatch.eventId);
+        exactEventOpenTimerRef.current = null;
+      }, 420);
+    } else {
+      const nextHighlightedIds = getHighlightedIdsFromQuery(trimmedQuery);
+      setDiscoveryStatusText(
+        nextHighlightedIds.size > 0
+          ? `Showing ${nextHighlightedIds.size} ${nextHighlightedIds.size === 1 ? 'discovery' : 'discoveries'} for “${trimmedQuery}”`
+          : `No discoveries found for “${trimmedQuery}”`,
+      );
+    }
     setQuery(trimmedQuery);
     setDisplayedQuery(trimmedQuery);
     setIsSubmittedQueryFading(true);
@@ -1362,6 +1397,8 @@ export default function AtlasMap({
       if (queryFadeTimerRef.current) clearTimeout(queryFadeTimerRef.current);
       if (cardMediaFadeTimerRef.current)
         clearTimeout(cardMediaFadeTimerRef.current);
+      if (exactEventOpenTimerRef.current)
+        clearTimeout(exactEventOpenTimerRef.current);
       if (calibrationCopyStatusTimerRef.current)
         clearTimeout(calibrationCopyStatusTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
@@ -1924,6 +1961,10 @@ export default function AtlasMap({
                     setDisplayedQuery('');
                     setSubmittedQuery('');
                     setIsSubmittedQueryFading(false);
+                    if (exactEventOpenTimerRef.current) {
+                      clearTimeout(exactEventOpenTimerRef.current);
+                      exactEventOpenTimerRef.current = null;
+                    }
                     setDiscoveryStatusText(null);
                   }
                 }}
