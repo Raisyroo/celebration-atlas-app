@@ -48,10 +48,6 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
   { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
 ];
 const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
-const MEDIA_MASKS: Record<'romeoPeach', string> = {
-  romeoPeach:
-    'radial-gradient(ellipse 96% 88% at 43% 46%, rgba(0,0,0,1) 0%, rgba(0,0,0,.98) 45%, rgba(0,0,0,.76) 61%, rgba(0,0,0,.34) 77%, rgba(0,0,0,0) 100%), radial-gradient(ellipse 72% 76% at 63% 39%, rgba(0,0,0,1) 0%, rgba(0,0,0,.92) 48%, rgba(0,0,0,.52) 70%, rgba(0,0,0,0) 100%), linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.06) 7%, rgba(0,0,0,.28) 17%, rgba(0,0,0,.64) 31%, rgba(0,0,0,.94) 44%, rgba(0,0,0,1) 54%, rgba(0,0,0,.93) 63%, rgba(0,0,0,.58) 76%, rgba(0,0,0,.18) 90%, rgba(0,0,0,0) 100%), linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.3) 8%, rgba(0,0,0,.72) 18%, rgba(0,0,0,.96) 30%, rgba(0,0,0,1) 76%, rgba(0,0,0,.96) 88%, rgba(0,0,0,.7) 96%, rgba(0,0,0,.22) 100%)',
-};
 
 // Current interaction policy:
 // - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
@@ -151,22 +147,6 @@ const blendCardTheme = (
     glow: `color-mix(in srgb, ${base.glow} 80%, ${region.glow})`,
     wash: `color-mix(in srgb, ${base.wash} 78%, ${region.wash})`,
   };
-};
-
-const CARD_CUE_BY_ICON_TYPE: Record<
-  NonNullable<(typeof ATLAS_EVENTS)[number]['iconType']>,
-  { sigil: string; label: string }
-> = {
-  music: { sigil: '◦', label: 'Sound' },
-  fair: { sigil: '◦', label: 'Midway' },
-  food: { sigil: '◦', label: 'Seasonal' },
-  fireworks: { sigil: '◦', label: 'Night sky' },
-  flower: { sigil: '◦', label: 'Bloom' },
-  harvest: { sigil: '◦', label: 'Harvest' },
-  waterfront: { sigil: '◦', label: 'Waterfront' },
-  winter: { sigil: '◦', label: 'Winter' },
-  art: { sigil: '◦', label: 'Immersive' },
-  heritage: { sigil: '◦', label: 'Heritage' },
 };
 
 const MARKER_BASE_SHADOWS_BY_INTENSITY: Record<
@@ -947,9 +927,6 @@ export default function AtlasMap({
     selectedMedia?.mediaType === 'video' && Boolean(selectedMedia?.mediaSrc);
   const mediaFadeDurationMs = selectedMedia?.mediaFadeDurationMs ?? 1300;
   const mediaDelayMs = selectedMedia?.mediaDelayMs ?? 0;
-  const mediaMask = selectedMedia?.mediaMaskProfile
-    ? MEDIA_MASKS[selectedMedia.mediaMaskProfile]
-    : undefined;
   const cardBaseTheme = safeEventCard
     ? CARD_THEME_BY_CATEGORY[safeEventCard.category]
     : CARD_THEME_BY_CATEGORY.Festivals;
@@ -957,14 +934,6 @@ export default function AtlasMap({
     cardBaseTheme,
     renderedEvent?.regionAtmosphere,
   );
-  const shouldSimplifyRomeoPeachCard = renderedEvent?.id === 'romeo-peach';
-  const cardCue =
-    !shouldSimplifyRomeoPeachCard && renderedEvent?.iconType
-      ? CARD_CUE_BY_ICON_TYPE[renderedEvent.iconType]
-      : null;
-  const cardMemoryExcerpt = shouldSimplifyRomeoPeachCard
-    ? undefined
-    : renderedEvent?.atlasMemories?.[0]?.trim();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -1799,15 +1768,12 @@ export default function AtlasMap({
           >
             ×
           </button>
-          <h3 style={styles.cardTitle}>{safeEventCard.name}</h3>
           {hasCardMedia && hasCardMediaSource ? (
             <div
               style={{
                 ...styles.cardMediaWrap,
                 opacity: isCardMediaVisible ? 1 : 0,
                 transitionDuration: `${mediaFadeDurationMs}ms`,
-                maskImage: mediaMask,
-                WebkitMaskImage: mediaMask,
               }}
               aria-hidden="true"
             >
@@ -1860,42 +1826,45 @@ export default function AtlasMap({
               />
             </div>
           ) : null}
-          <p style={styles.cardLocation}>{safeEventCard.location}</p>
-          {safeEventCard.cardTag ? (
-            <p style={styles.cardCategoryTag}>{safeEventCard.cardTag}</p>
-          ) : null}
-          {cardCue ? (
-            <p
-              style={styles.cardIconCue}
-            >{`${cardCue.sigil} ${cardCue.label}`}</p>
-          ) : null}
-          <p style={styles.cardAtmosphere}>
-            {safeEventCard.atmosphereLabel}
-          </p>
-          {cardMemoryExcerpt ? (
-            <p style={styles.cardMemoryExcerpt}>
-              Field note: {cardMemoryExcerpt}
-            </p>
-          ) : null}
-          <p style={styles.cardBody}>{safeEventCard.description}</p>
-          {safeEventCard.detailAction ? (
-            safeEventCard.id === 'electric-forest' ? (
-              <button
-                type="button"
-                style={styles.enterEventButton}
-                onClick={() => startElectricForestTransition(safeEventCard.id)}
-              >
-                {safeEventCard.detailAction.label}
-              </button>
-            ) : (
-              <Link
-                href={safeEventCard.detailAction.href}
-                style={styles.enterEventLink}
-              >
-                {safeEventCard.detailAction.label}
-              </Link>
-            )
-          ) : null}
+          <div style={styles.cardContent}>
+            <div style={styles.cardHeaderRow}>
+              <div style={styles.cardTitleGroup}>
+                <p style={styles.cardLocation}>{safeEventCard.location}</p>
+                <h3 style={styles.cardTitle}>{safeEventCard.name}</h3>
+              </div>
+              <p style={styles.cardCategoryTag}>
+                {safeEventCard.cardTag ?? safeEventCard.category}
+              </p>
+            </div>
+            <p style={styles.cardBody}>{safeEventCard.description}</p>
+            {safeEventCard.atmosphereLabel ? (
+              <p style={styles.cardAtmosphere}>
+                <span aria-hidden="true" style={styles.cardAtmosphereGlyph}>
+                  ✦
+                </span>
+                {safeEventCard.atmosphereLabel}
+              </p>
+            ) : null}
+            <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
+            {safeEventCard.detailAction ? (
+              safeEventCard.id === 'electric-forest' ? (
+                <button
+                  type="button"
+                  style={styles.enterEventButton}
+                  onClick={() => startElectricForestTransition(safeEventCard.id)}
+                >
+                  {safeEventCard.detailAction.label}
+                </button>
+              ) : (
+                <Link
+                  href={safeEventCard.detailAction.href}
+                  style={styles.enterEventLink}
+                >
+                  {safeEventCard.detailAction.label}
+                </Link>
+              )
+            ) : null}
+          </div>
           <span
             style={{
               ...styles.cardAtmosphereOrb,
@@ -2672,15 +2641,15 @@ const styles: Record<string, CSSProperties> = {
     left: 12,
     right: 12,
     bottom: 120,
-    padding: '14px 14px 16px',
-    borderRadius: 18,
+    padding: 0,
+    borderRadius: 22,
     background:
       'linear-gradient(160deg, rgba(16,21,30,.34), rgba(9,12,18,.2) 58%, rgba(7,10,15,.3))',
     border: '1px solid rgba(255,225,160,.4)',
     boxShadow:
       'inset 0 0 0 1px rgba(255,241,203,.08), 0 0 18px rgba(252,201,102,.24), 0 16px 36px rgba(0,0,0,.32)',
-    backdropFilter: 'blur(4px) saturate(1.05)',
-    WebkitBackdropFilter: 'blur(4px) saturate(1.05)',
+    backdropFilter: 'blur(5px) saturate(1.08)',
+    WebkitBackdropFilter: 'blur(5px) saturate(1.08)',
     zIndex: Z_INDEX.card,
     willChange: 'opacity, transform',
     overflow: 'hidden',
@@ -2692,11 +2661,9 @@ const styles: Record<string, CSSProperties> = {
     bottom: '18vh',
   },
   cardMediaWrap: {
-    position: 'absolute',
-    right: 0,
-    top: '6%',
-    width: '57%',
-    height: '90%',
+    position: 'relative',
+    height: 104,
+    margin: '0 0 2px',
     pointerEvents: 'none',
     userSelect: 'none',
     WebkitUserSelect: 'none',
@@ -2704,10 +2671,10 @@ const styles: Record<string, CSSProperties> = {
     overflow: 'hidden',
     opacity: 0,
     transition: 'opacity 1300ms ease',
-    maskImage: MEDIA_MASKS.romeoPeach,
-    WebkitMaskImage: MEDIA_MASKS.romeoPeach,
-    maskComposite: 'intersect',
-    WebkitMaskComposite: 'source-in',
+    maskImage:
+      'linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,.96) 66%, rgba(0,0,0,0) 100%)',
+    WebkitMaskImage:
+      'linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,.96) 66%, rgba(0,0,0,0) 100%)',
     zIndex: 0,
   },
   cardMediaLayer: {
@@ -2735,34 +2702,45 @@ const styles: Record<string, CSSProperties> = {
     placeItems: 'center',
     cursor: 'pointer',
     touchAction: 'none',
+    zIndex: 3,
   },
-  cardTitle: {
+  cardContent: {
     position: 'relative',
     zIndex: 1,
-    margin: '0 40px 4px 0',
+    padding: '14px 14px 16px',
+  },
+  cardHeaderRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 9,
+  },
+  cardTitleGroup: {
+    minWidth: 0,
+  },
+  cardTitle: {
+    margin: 0,
     fontSize: 22,
-    lineHeight: 1.12,
-    fontWeight: 700,
-    letterSpacing: 0.2,
+    lineHeight: 1.08,
+    fontWeight: 760,
+    letterSpacing: 0.1,
     color: '#ffebb9',
     textShadow: '0 1px 3px rgba(2,3,6,.9), 0 0 14px rgba(255,229,173,.28)',
   },
   cardLocation: {
-    position: 'relative',
-    zIndex: 1,
-    margin: '0 0 8px',
-    fontSize: 12,
-    letterSpacing: 0.9,
+    margin: '0 0 5px',
+    fontSize: 11,
+    letterSpacing: 1.15,
     textTransform: 'uppercase',
-    color: 'rgba(255,238,203,.88)',
+    color: 'rgba(255,238,203,.72)',
     textShadow: '0 1px 2px rgba(3,4,8,.8)',
   },
   cardCategoryTag: {
-    position: 'relative',
-    zIndex: 1,
     display: 'inline-flex',
+    flexShrink: 0,
     width: 'fit-content',
-    margin: '0 0 8px',
+    margin: '1px 26px 0 0',
     padding: '4px 9px',
     borderRadius: 999,
     border: '1px solid rgba(235, 205, 255, 0.34)',
@@ -2770,79 +2748,68 @@ const styles: Record<string, CSSProperties> = {
     color: 'rgba(248, 229, 255, 0.86)',
     fontSize: 10,
     fontWeight: 700,
-    letterSpacing: 1.1,
+    letterSpacing: 1.05,
     textTransform: 'uppercase',
     textShadow: '0 1px 2px rgba(3,4,8,.72)',
-  },
-  cardIconCue: {
-    position: 'relative',
-    zIndex: 1,
-    margin: '0 0 8px',
-    fontSize: 10,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    color: 'rgba(255,236,200,.58)',
-    textShadow: '0 1px 2px rgba(3,4,8,.72)',
-    opacity: 0.82,
   },
   cardAtmosphere: {
-    position: 'relative',
-    zIndex: 1,
-    margin: '0 0 10px',
-    fontSize: 14,
-    fontWeight: 600,
-    color: 'rgba(255,233,191,.95)',
-    letterSpacing: 0.28,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    margin: '10px 0 0',
+    fontSize: 13,
+    fontWeight: 650,
+    color: 'rgba(255,233,191,.94)',
+    letterSpacing: 0.24,
     textShadow: '0 1px 2px rgba(2,3,7,.7), 0 0 10px rgba(255,219,156,.22)',
   },
+  cardAtmosphereGlyph: {
+    color: 'rgba(255,215,150,.9)',
+    fontSize: 12,
+  },
   cardBody: {
-    position: 'relative',
-    zIndex: 1,
     margin: 0,
     color: '#f0e2c3',
     fontSize: 14,
-    lineHeight: 1.35,
+    lineHeight: 1.42,
     textShadow: '0 1px 3px rgba(2,3,6,.86)',
   },
-  cardMemoryExcerpt: {
-    position: 'relative',
-    zIndex: 1,
-    margin: '0 0 8px',
+  cardTrustLine: {
+    margin: '9px 0 0',
+    color: 'rgba(219,204,174,.54)',
     fontSize: 10,
-    letterSpacing: 1.05,
+    lineHeight: 1.2,
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: 'rgba(216,196,158,.72)',
-    lineHeight: 1.45,
-    textShadow: '0 1px 2px rgba(2,3,6,.6)',
   },
   enterEventLink: {
     display: 'inline-flex',
-    marginTop: '0.55rem',
-    color: 'rgba(255, 224, 162, 0.88)',
-    fontSize: '0.78rem',
+    marginTop: '0.62rem',
+    color: 'rgba(255, 224, 162, 0.9)',
+    fontSize: '0.76rem',
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
     textDecoration: 'none',
     borderBottom: '1px solid rgba(255, 214, 148, 0.45)',
     paddingBottom: '0.1rem',
-    opacity: 0.86,
+    opacity: 0.9,
     transition: 'opacity 180ms ease, border-color 180ms ease',
   },
   enterEventButton: {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '10px 16px',
-    marginTop: 2,
+    padding: '9px 14px',
+    marginTop: 10,
     borderRadius: 999,
     border: '1px solid rgba(255,230,183,.56)',
     color: 'rgba(255,242,215,.96)',
     background:
       'linear-gradient(180deg, rgba(255,206,124,.26), rgba(255,192,90,.14))',
-    letterSpacing: '0.13em',
+    letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    fontSize: 11,
-    fontWeight: 600,
+    fontSize: 10,
+    fontWeight: 650,
     textDecoration: 'none',
     boxShadow: '0 0 18px rgba(255,194,104,.24)',
   },
