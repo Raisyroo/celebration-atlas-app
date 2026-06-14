@@ -3,6 +3,8 @@
 :root {
   --background: #050812;
   --foreground: #f5e8c7;
+  --atlas-card-command-clearance: calc(136px + env(safe-area-inset-bottom));
+  --atlas-card-readable-top: max(16px, env(safe-area-inset-top));
 }
 
 @theme inline {
@@ -173,11 +175,22 @@ body.event-detail-scroll::-webkit-scrollbar {
     position: absolute !important;
     left: max(12px, env(safe-area-inset-left)) !important;
     right: max(12px, env(safe-area-inset-right)) !important;
-    bottom: 76px !important;
-    max-height: min(360px, calc(100svh - 104px)) !important;
+    bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+    max-height: min(360px, calc(100svh - 112px - env(safe-area-inset-bottom))) !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
   }
+}
+
+.atlas-card,
+.atlas-cluster-panel {
+  bottom: var(--atlas-card-command-clearance) !important;
+  max-height: calc(
+    100svh - var(--atlas-card-command-clearance) - var(--atlas-card-readable-top)
+  );
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Responsive atlas framing (tablet/desktop only; mobile remains unchanged) */
@@ -219,7 +232,15 @@ body.event-detail-scroll::-webkit-scrollbar {
     left: 50% !important;
     right: auto !important;
     width: min(520px, calc(100vw - 72px));
+    bottom: min(16vh, 168px) !important;
+    max-height: min(560px, calc(100dvh - 188px));
     transform: translateX(-50%);
+  }
+
+  .atlas-cluster-panel {
+    bottom: min(16vh, 168px) !important;
+    max-height: min(520px, calc(100dvh - 188px));
+    overflow-y: auto !important;
   }
 
   .atlas-search-dock {
