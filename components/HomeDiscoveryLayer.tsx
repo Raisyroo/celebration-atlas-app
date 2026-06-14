@@ -20,6 +20,7 @@ type HomeDiscoveryLayerProps = {
   statusText?: string;
   shortcuts?: string[];
   shortcutGroups?: DiscoveryShortcutGroup[];
+  showShortcutGroups?: boolean;
   results?: HomeDiscoveryResultRow[];
   onShortcutSelect?: (value: string) => void;
 };
@@ -202,16 +203,19 @@ export function HomeDiscoveryLayer({
   query,
   shortcuts,
   shortcutGroups,
+  showShortcutGroups = true,
   statusText,
   resultCount,
   results,
   onShortcutSelect,
 }: HomeDiscoveryLayerProps) {
-  const normalizedShortcutGroups = shortcutGroups?.length
-    ? shortcutGroups
-    : shortcuts?.length
-      ? [{ shortcuts }]
-      : [];
+  const normalizedShortcutGroups = showShortcutGroups
+    ? shortcutGroups?.length
+      ? shortcutGroups
+      : shortcuts?.length
+        ? [{ shortcuts }]
+        : []
+    : [];
   const hasShortcuts = Boolean(
     normalizedShortcutGroups.length && onShortcutSelect,
   );
