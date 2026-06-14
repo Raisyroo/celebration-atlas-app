@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 
 type CinematicIntroProps = {
   children: ReactNode;
+  skipOnDesktop?: boolean;
 };
 
 const INTRO_DURATION_MS = 4200;
@@ -30,14 +31,18 @@ function useMediaQuery(query: string, serverSnapshot: boolean) {
   );
 }
 
-export default function CinematicIntro({ children }: CinematicIntroProps) {
+export default function CinematicIntro({
+  children,
+  skipOnDesktop = false,
+}: CinematicIntroProps) {
   const [hasIntroFinished, setHasIntroFinished] = useState(false);
   const searchParams = useSearchParams();
   const isReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)', false);
   const isMobile = useMediaQuery('(max-width: 767px)', true);
 
   const isVerificationMode = searchParams.get('verify') === '1';
-  const shouldRenderOverlay = !hasIntroFinished && !isMobile && !isVerificationMode;
+  const shouldRenderOverlay =
+    !hasIntroFinished && !isMobile && !skipOnDesktop && !isVerificationMode;
   const introDurationMs = isReducedMotion ? REDUCED_MOTION_DURATION_MS : INTRO_DURATION_MS;
 
   useEffect(() => {

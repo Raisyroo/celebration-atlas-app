@@ -5,7 +5,7 @@ import HomeAtlasExperience from '../components/HomeAtlasExperience';
 export default function HomePage() {
   return (
     <Suspense fallback={null}>
-      <CinematicIntro>
+      <CinematicIntro skipOnDesktop>
         <HomeAtlasExperience />
       </CinematicIntro>
     </Suspense>
