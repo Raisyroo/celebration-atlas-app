@@ -752,7 +752,6 @@ export default function AtlasMap({
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [searchPulseTick, setSearchPulseTick] = useState(0);
-  const [featuredIndex, setFeaturedIndex] = useState(0);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
@@ -771,8 +770,6 @@ export default function AtlasMap({
     typeof setTimeout
   > | null>(null);
   const q = submittedQuery.trim().toLowerCase();
-  const featuredEvents = useMemo(() => ATLAS_EVENTS.slice(0, 4), []);
-  const featuredEvent = featuredEvents[featuredIndex % featuredEvents.length];
   const searchHighlightedIds = useMemo(() => getHighlightedIdsFromQuery(q), [q]);
   const celebrationSearchHighlightedIdSet = useMemo(
     () => new Set(celebrationSearchHighlightedIds),
@@ -1227,13 +1224,6 @@ export default function AtlasMap({
     runDiscoverySearch(query);
   }, [query, runDiscoverySearch]);
 
-  const handleDiscoveryShortcutSelect = useCallback(
-    (shortcut: string) => {
-      runDiscoverySearch(shortcut);
-    },
-    [runDiscoverySearch],
-  );
-
   useEffect(() => {
     if (initialEventParamHandledRef.current) return;
     const requestedEventId = searchParams.get('event');
@@ -1257,13 +1247,6 @@ export default function AtlasMap({
     }, 5400);
     return () => clearInterval(rotateId);
   }, [isSearchFocused, query]);
-
-  useEffect(() => {
-    const rotateFeaturedId = setInterval(() => {
-      setFeaturedIndex((prev) => (prev + 1) % featuredEvents.length);
-    }, 8200);
-    return () => clearInterval(rotateFeaturedId);
-  }, [featuredEvents.length]);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia('(min-width: 1024px)');
@@ -1444,10 +1427,6 @@ export default function AtlasMap({
                   ? events.some((event) => event.id === selectedId)
                   : selectedClusterId === id;
                 const isDimmed = highlightedIds.size > 0 && !isHighlighted;
-                const isSearchActive = highlightedIds.size > 0;
-                const isFeaturedMarker =
-                  !isSearchActive &&
-                  events.some((event) => featuredEvent.id === event.id);
                 const primaryEventProfile = getEventProfileById(
                   primaryEvent.id,
                 );
@@ -1475,9 +1454,7 @@ export default function AtlasMap({
                     ? 1.45
                     : isSelected
                       ? 1.25
-                      : isFeaturedMarker
-                        ? 1.08
-                        : 1;
+                      : 1;
                 return (
                   <div
                     key={id}
@@ -1546,9 +1523,7 @@ export default function AtlasMap({
                                       ? '0 0 5px rgba(255,251,232,.96), 0 0 17px rgba(255,210,112,.72), 0 0 34px rgba(223,146,48,.3)'
                                       : isSelected
                                         ? '0 0 5px rgba(255,246,220,.9), 0 0 16px rgba(253,201,100,.68), 0 0 30px rgba(211,132,44,.28)'
-                                        : isFeaturedMarker
-                                          ? MARKER_BASE_SHADOWS_BY_INTENSITY.signature.idle
-                                          : markerBaseShadows.idle,
+                                        : markerBaseShadows.idle,
                                   '--marker-shadow-peak': isCluster
                                     ? isHighlighted
                                       ? '0 0 10px rgba(255,250,229,.9), 0 0 34px rgba(255,214,122,.66), 0 0 78px rgba(217,140,45,.34), 0 0 124px rgba(145,81,30,.16)'
@@ -1559,9 +1534,7 @@ export default function AtlasMap({
                                       ? '0 0 7px rgba(255,253,238,1), 0 0 22px rgba(255,218,130,.84), 0 0 40px rgba(223,146,48,.36)'
                                       : isSelected
                                         ? '0 0 6px rgba(255,250,232,.96), 0 0 20px rgba(255,210,112,.78), 0 0 36px rgba(211,132,44,.34)'
-                                        : isFeaturedMarker
-                                          ? MARKER_BASE_SHADOWS_BY_INTENSITY.signature.peak
-                                          : markerBaseShadows.peak,
+                                        : markerBaseShadows.peak,
                                   '--marker-glint-span': isCluster
                                     ? '21px'
                                     : '15px',
@@ -1855,19 +1828,6 @@ export default function AtlasMap({
               ...(isDesktop ? styles.searchDockDesktop : null),
             }}
           >
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedClusterId(null);
-                setSelectedId(featuredEvent.id);
-              }}
-              style={styles.featuredDiscovery}
-              aria-label={`Open featured discovery: ${featuredEvent.name}`}
-            >
-              <span key={featuredEvent.id} className="featured-discovery-text">
-                Featured: {featuredEvent.name}
-              </span>
-            </button>
             <HomeDiscoveryLayer
               query={submittedQuery}
               resultCount={highlightedIds.size}
@@ -1875,7 +1835,6 @@ export default function AtlasMap({
               results={discoveryResultRows}
               shortcutGroups={HOME_DISCOVERY_SHORTCUT_GROUPS}
               showShortcutGroups={false}
-              onShortcutSelect={handleDiscoveryShortcutSelect}
             />
             <div style={styles.searchInputWrap}>
               <span style={styles.searchPrefix} aria-hidden="true">
@@ -1955,13 +1914,6 @@ export default function AtlasMap({
               opacity: 0;
             }
 
-            .featured-discovery-text {
-              display: inline-block;
-              animation: featuredDiscoverySwap 1200ms
-                cubic-bezier(0.22, 0.61, 0.36, 1);
-              will-change: opacity, transform;
-            }
-
             .marker-pulse {
               animation-name: markerPulse;
               animation-timing-function: ease-in-out;
@@ -2003,19 +1955,6 @@ export default function AtlasMap({
               );
             }
 
-            @keyframes featuredDiscoverySwap {
-              0% {
-                opacity: 0.42;
-                transform: translateY(4px);
-                filter: blur(1px);
-              }
-              100% {
-                opacity: 1;
-                transform: translateY(0);
-                filter: blur(0);
-              }
-            }
-
             @keyframes searchAcceptPulse {
               0% {
                 box-shadow:
@@ -2039,7 +1978,6 @@ export default function AtlasMap({
 
             @media (prefers-reduced-motion: reduce) {
               .marker-pulse,
-              .featured-discovery-text,
               .atlas-search-input--pulse,
               .atlas-search-query,
               .cinematic-intro-overlay,
@@ -2581,25 +2519,6 @@ const styles: Record<string, CSSProperties> = {
     right: 'auto',
     width: 'min(62vw, 980px)',
     padding: '0 0 2.5vh',
-  },
-  featuredDiscovery: {
-    display: 'block',
-    margin: '0 auto 10px',
-    padding: '5px 12px',
-    borderRadius: 999,
-    border: '1px solid rgba(255, 225, 160, 0.22)',
-    background: 'rgba(7, 10, 15, 0.18)',
-    color: 'rgba(255, 238, 205, 0.76)',
-    fontSize: 11,
-    letterSpacing: 0.24,
-    lineHeight: 1.2,
-    textShadow: '0 1px 3px rgba(2, 3, 7, 0.7)',
-    boxShadow:
-      'inset 0 0 0 1px rgba(255, 240, 205, 0.04), 0 0 10px rgba(252, 201, 102, 0.12)',
-    backdropFilter: 'blur(2px)',
-    WebkitBackdropFilter: 'blur(2px)',
-    cursor: 'pointer',
-    touchAction: 'none',
   },
   searchInputWrap: {
     position: 'relative',
