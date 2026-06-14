@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
+import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
 import {
   getEventProfileById,
   searchEventProfiles,
@@ -934,7 +935,10 @@ export default function AtlasMap({
     },
     [router],
   );
-  const selectedMedia = renderedEvent?.cardMedia;
+  const safeEventCard = renderedEvent
+    ? deriveSafeAtlasEventCard(renderedEvent)
+    : null;
+  const selectedMedia = safeEventCard?.media;
   const hasCardMedia = Boolean(selectedMedia);
   const hasCardMediaSource = Boolean(
     selectedMedia?.mediaSrc || selectedMedia?.posterSrc,
@@ -946,8 +950,8 @@ export default function AtlasMap({
   const mediaMask = selectedMedia?.mediaMaskProfile
     ? MEDIA_MASKS[selectedMedia.mediaMaskProfile]
     : undefined;
-  const cardBaseTheme = renderedEvent
-    ? CARD_THEME_BY_CATEGORY[renderedEvent.category]
+  const cardBaseTheme = safeEventCard
+    ? CARD_THEME_BY_CATEGORY[safeEventCard.category]
     : CARD_THEME_BY_CATEGORY.Festivals;
   const cardTheme = blendCardTheme(
     cardBaseTheme,
@@ -961,12 +965,6 @@ export default function AtlasMap({
   const cardMemoryExcerpt = shouldSimplifyRomeoPeachCard
     ? undefined
     : renderedEvent?.atlasMemories?.[0]?.trim();
-  const shouldShowEnterEvent = Boolean(
-    renderedEvent?.id === 'romeo-peach' ||
-    renderedEvent?.id === 'electric-forest' ||
-    renderedEvent?.id === 'goodells-fair' ||
-    renderedEvent?.id === 'black-river-tattoo',
-  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -1183,12 +1181,12 @@ export default function AtlasMap({
   }, [selectedId]);
 
   useEffect(() => {
-    if (!hasCardMedia || !isCardVisible) return;
+    if (!hasCardMediaSource || !isCardVisible) return;
     cardMediaFadeTimerRef.current = setTimeout(() => {
       setIsCardMediaVisible(true);
       cardMediaFadeTimerRef.current = null;
     }, mediaDelayMs);
-  }, [hasCardMedia, isCardVisible, mediaDelayMs]);
+  }, [hasCardMediaSource, isCardVisible, mediaDelayMs]);
 
   useEffect(() => {
     if (!isVideoMedia || !isCardVisible || !isCardMediaVisible) return;
@@ -1774,7 +1772,7 @@ export default function AtlasMap({
         </aside>
       ) : null}
 
-      {!shouldShowCalibration && !isVerificationMode && renderedEvent ? (
+      {!shouldShowCalibration && !isVerificationMode && renderedEvent && safeEventCard ? (
         <article
           ref={cardRef}
           className="atlas-card"
@@ -1801,7 +1799,7 @@ export default function AtlasMap({
           >
             ×
           </button>
-          <h3 style={styles.cardTitle}>{renderedEvent.name}</h3>
+          <h3 style={styles.cardTitle}>{safeEventCard.name}</h3>
           {hasCardMedia && hasCardMediaSource ? (
             <div
               style={{
@@ -1862,9 +1860,9 @@ export default function AtlasMap({
               />
             </div>
           ) : null}
-          <p style={styles.cardLocation}>{renderedEvent.location}</p>
-          {renderedEvent.cardTag ? (
-            <p style={styles.cardCategoryTag}>{renderedEvent.cardTag}</p>
+          <p style={styles.cardLocation}>{safeEventCard.location}</p>
+          {safeEventCard.cardTag ? (
+            <p style={styles.cardCategoryTag}>{safeEventCard.cardTag}</p>
           ) : null}
           {cardCue ? (
             <p
@@ -1872,29 +1870,29 @@ export default function AtlasMap({
             >{`${cardCue.sigil} ${cardCue.label}`}</p>
           ) : null}
           <p style={styles.cardAtmosphere}>
-            {selectedMedia?.atmosphereTitle ?? renderedEvent.atmosphereLabel}
+            {safeEventCard.atmosphereLabel}
           </p>
           {cardMemoryExcerpt ? (
             <p style={styles.cardMemoryExcerpt}>
               Field note: {cardMemoryExcerpt}
             </p>
           ) : null}
-          <p style={styles.cardBody}>{renderedEvent.blurb}</p>
-          {shouldShowEnterEvent ? (
-            renderedEvent.id === 'electric-forest' ? (
+          <p style={styles.cardBody}>{safeEventCard.description}</p>
+          {safeEventCard.detailAction ? (
+            safeEventCard.id === 'electric-forest' ? (
               <button
                 type="button"
                 style={styles.enterEventButton}
-                onClick={() => startElectricForestTransition(renderedEvent.id)}
+                onClick={() => startElectricForestTransition(safeEventCard.id)}
               >
-                Enter Event
+                {safeEventCard.detailAction.label}
               </button>
             ) : (
               <Link
-                href={`/events/${renderedEvent.id}`}
+                href={safeEventCard.detailAction.href}
                 style={styles.enterEventLink}
               >
-                Enter Event
+                {safeEventCard.detailAction.label}
               </Link>
             )
           ) : null}
