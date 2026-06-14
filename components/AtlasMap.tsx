@@ -327,6 +327,10 @@ const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
 const MARKER_EDGE_INSET_PERCENT = 6;
 const CLUSTER_RADIUS_PERCENT = 7.2;
+const DISPLAY_SPACING_RADIUS_PERCENT = CLUSTER_RADIUS_PERCENT;
+const DISPLAY_CLUSTER_RADIUS_PERCENT = 0.35;
+const DISPLAY_OFFSET_STEP_PERCENT = 1.12;
+const DISPLAY_OFFSET_MAX_PERCENT = 2.35;
 const SHOW_CLUSTER_LABELS = false;
 const PHONE_LANDSCAPE_QUERY =
   '(orientation: landscape) and (max-height: 520px) and (max-width: 932px)';
@@ -400,8 +404,85 @@ const resolveAtlasMarkerLayouts = (
 const getMarkerDistance = (a: MarkerPosition, b: MarkerPosition) =>
   Math.hypot(a.x - b.x, a.y - b.y);
 
+const resolveAtlasDisplayMarkerLayouts = (
+  layouts: AtlasMarkerLayout[],
+): AtlasMarkerLayout[] => {
+  const displayLayouts = layouts.map((layout) => ({
+    ...layout,
+    position: { ...layout.position },
+  }));
+  const consumed = new Set<string>();
+  const orderedLayouts = [...displayLayouts].sort(
+    (a, b) =>
+      a.position.x - b.position.x ||
+      a.position.y - b.position.y ||
+      a.event.id.localeCompare(b.event.id),
+  );
+
+  for (const layout of orderedLayouts) {
+    if (consumed.has(layout.event.id)) continue;
+
+    const nearbyLayouts = orderedLayouts.filter(
+      (candidate) =>
+        !consumed.has(candidate.event.id) &&
+        getMarkerDistance(layout.position, candidate.position) <=
+          DISPLAY_SPACING_RADIUS_PERCENT,
+    );
+
+    nearbyLayouts.forEach((candidate) => consumed.add(candidate.event.id));
+
+    if (nearbyLayouts.length <= 1) continue;
+
+    const hasTrueOverlap = nearbyLayouts.some(
+      (candidate) =>
+        nearbyLayouts.some(
+          (comparison) =>
+            comparison.event.id !== candidate.event.id &&
+            getMarkerDistance(candidate.position, comparison.position) <=
+              DISPLAY_CLUSTER_RADIUS_PERCENT,
+        ),
+    );
+
+    if (hasTrueOverlap) continue;
+
+    const centroid = nearbyLayouts.reduce(
+      (accumulator, candidate) => ({
+        x: accumulator.x + candidate.position.x,
+        y: accumulator.y + candidate.position.y,
+      }),
+      { x: 0, y: 0 },
+    );
+    const center = {
+      x: centroid.x / nearbyLayouts.length,
+      y: centroid.y / nearbyLayouts.length,
+    };
+    const ringStep = Math.min(
+      DISPLAY_OFFSET_MAX_PERCENT,
+      DISPLAY_OFFSET_STEP_PERCENT + nearbyLayouts.length * 0.12,
+    );
+    const angleOffset = ((nearbyLayouts[0]?.eventIndex ?? 0) % 6) * 0.38;
+
+    nearbyLayouts
+      .sort((a, b) => a.eventIndex - b.eventIndex)
+      .forEach((candidate, index) => {
+        const angle =
+          angleOffset + (Math.PI * 2 * index) / nearbyLayouts.length;
+        const distance =
+          ringStep * (nearbyLayouts.length <= 3 ? 0.86 : index % 2 ? 1 : 0.72);
+
+        candidate.position = {
+          x: clampMarkerPercent(center.x + Math.cos(angle) * distance),
+          y: clampMarkerPercent(center.y + Math.sin(angle) * distance),
+        };
+      });
+  }
+
+  return displayLayouts.sort((a, b) => a.eventIndex - b.eventIndex);
+};
+
 const resolveAtlasMarkerClusters = (
   layouts: AtlasMarkerLayout[],
+  clusterRadiusPercent = CLUSTER_RADIUS_PERCENT,
 ): AtlasMarkerCluster[] => {
   const clusters: AtlasMarkerCluster[] = [];
   const consumed = new Set<string>();
@@ -416,7 +497,7 @@ const resolveAtlasMarkerClusters = (
       (candidate) =>
         !consumed.has(candidate.event.id) &&
         getMarkerDistance(layout.position, candidate.position) <=
-          CLUSTER_RADIUS_PERCENT,
+          clusterRadiusPercent,
     );
 
     nearbyLayouts.forEach((candidate) => consumed.add(candidate.event.id));
@@ -805,9 +886,17 @@ export default function AtlasMap({
     () => resolveAtlasMarkerLayouts(ATLAS_EVENTS),
     [],
   );
-  const markerClusters = useMemo(
-    () => resolveAtlasMarkerClusters(markerLayouts),
+  const displayMarkerLayouts = useMemo(
+    () => resolveAtlasDisplayMarkerLayouts(markerLayouts),
     [markerLayouts],
+  );
+  const markerClusters = useMemo(
+    () =>
+      resolveAtlasMarkerClusters(
+        displayMarkerLayouts,
+        DISPLAY_CLUSTER_RADIUS_PERCENT,
+      ),
+    [displayMarkerLayouts],
   );
   const isConstellationLineSearchActive = Boolean(
     q ||
@@ -819,7 +908,7 @@ export default function AtlasMap({
     () =>
       resolveConstellationLinePoints({
         eventIds: constellationHighlightedIds,
-        markerLayouts,
+        markerLayouts: displayMarkerLayouts,
         markerClusters,
         isSearchActive: isConstellationLineSearchActive,
       }),
@@ -827,7 +916,7 @@ export default function AtlasMap({
       constellationHighlightedIds,
       isConstellationLineSearchActive,
       markerClusters,
-      markerLayouts,
+      displayMarkerLayouts,
     ],
   );
   const selectedCluster =
