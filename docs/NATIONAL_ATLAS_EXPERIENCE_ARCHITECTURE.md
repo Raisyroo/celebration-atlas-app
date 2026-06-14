@@ -25,6 +25,30 @@ The master user journey should be:
 
 The experience should feel magical, but the data should remain honest.
 
+## AI-First Atlas Interface
+
+Celebration Atlas should become AI-first at the national gateway level. The desktop home experience should ultimately be a beautiful full-screen U.S. map with a bottom-centered “Ask Celebration Atlas” conversation window as the primary control surface. Static chips, category buttons, and dashboard-style filters may remain as temporary scaffolding or fallback affordances, but they are not the final primary interface.
+
+The conversation window should let users command the Atlas in natural language, including prompts such as:
+
+* “Show me music events in the Thumb.”
+* “Show me events with fireworks.”
+* “Show me Romeo Peach Festival.”
+* “Show me the largest events in the U.S. by attendance.”
+* “What festivals are active in Michigan?”
+
+Natural language should control map state rather than merely filtering a list. The map should respond by lighting event stars, zooming to states or regions, opening event cards, showing relevant tags, revealing constellations when safe, and explaining uncertainty when data is incomplete.
+
+Command routing rules:
+
+* National queries stay national and should produce national-scale signals such as state highlights, regional glows, representative stars, or partial-coverage explanations.
+* State queries transition into the appropriate state atlas when the state is known and supported.
+* Event queries highlight known event stars and may open or preview event cards when the matching event is source-backed.
+* Timing/current queries must be source-backed for the requested date window or clearly warn that the Atlas cannot verify current activity.
+* AI-generated prompts, response cards, suggested cards, and map overlays must be built only from safe structured data, reviewed relationships, and source/confidence metadata.
+
+The intended feeling is not a dashboard with a map behind it. The intended feeling is a living national map that listens, responds, focuses, and explains what it knows.
+
 ## Experience Hierarchy
 
 ### 1. National Scope

@@ -77,6 +77,16 @@ Current implementation note:
 * Future `MichiganAtlasExperience` work should wrap or rename this boundary without changing behavior first.
 * Michigan remains the template for future state atlases, including shell boundaries, map behavior, discovery structure, and data caution.
 
+## AI-First State Atlas Direction
+
+State atlas experiences should also become AI-first. A state atlas should feel like a focused conversational map of one state rather than a permanent set of guide chips, region chips, and filter rails layered over geography.
+
+Michigan is the canonical prototype, but its future direction is conversational control: users should be able to ask for “music events in the Thumb,” “fireworks near Detroit,” “harvest festivals on the west side,” or “Romeo Peach Festival,” and the map should respond by focusing regions, lighting stars, revealing known constellations, and opening source-backed event intelligence.
+
+Guide chips, region chips, and category chips should be treated as transitional UI. Future versions should make them collapsible, generate them as contextual suggestions, or remove them from the main map layer when natural language can safely drive the same discovery behavior. Chips should never become permanent obstacles to map visibility, especially on mobile.
+
+State event cards should grow into richer state/event intelligence panels. They should still preserve cinematic restraint, but they may include stronger planning, source-confidence, timing, attendance, and “why it matters” context when those facts are structured and source-backed.
+
 ## State Atlas Required Layers
 
 ### 1. State Identity Layer

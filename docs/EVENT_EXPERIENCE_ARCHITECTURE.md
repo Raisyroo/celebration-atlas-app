@@ -328,6 +328,27 @@ It should make the Atlas feel like something people build with over time.
 
 The reusable event page should use five primary navigation areas.
 
+## Future Event Intelligence Cards
+
+Future event cards should support richer AI-built event intelligence while remaining source-backed, compact, and safe to show from map commands. Cards are previews and decision aids, not unsourced promotional posters.
+
+A rich event intelligence card may include:
+
+* hero image or video
+* event name
+* location
+* dates
+* hours
+* origin year
+* average attendance when source-backed
+* concise description
+* why it matters
+* source confidence
+* open full event action
+* live/current status only when verified for the relevant date window
+
+AI may assemble or summarize card content only from structured event data, source records, verified timing, and reviewed media metadata. If a field is unknown, stale, or only inferred, the card should omit it or label the uncertainty instead of implying completeness.
+
 ## Highlights
 
 Purpose:
