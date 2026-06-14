@@ -43,6 +43,19 @@ The system should guide exploration through layers:
 8. AI guide
 9. Saved and personalized discovery in the future
 
+## Conversational-First Discovery Direction
+
+Discovery should evolve from static browsing controls into a conversational-first map experience. Search, filters, chips, category buttons, and region buttons are secondary fallback affordances that help when conversation is unavailable, ambiguous, or intentionally collapsed. They should not become permanent dashboard chrome that blocks the map.
+
+Suggested prompts may replace static chips over time. Instead of fixed categories occupying the primary surface, the Atlas can generate safe prompt suggestions from structured event, region, season, constellation, and source-confidence data. These suggestions should be lightweight, collapsible, and aware of the current map scope.
+
+Discovery controls should preserve the map as the main stage:
+
+* Controls should not permanently block important map geography, markers, or atmospheric context.
+* Mobile map visibility is a priority; any guide, prompt, or filter surface should collapse or dock in a way that keeps the map readable.
+* The AI guide should decide when to reveal categories, regions, constellations, or event cards based on user intent, confidence, and available data.
+* Static controls may remain for accessibility, empty states, development scaffolding, or fallback browsing, but they should support conversation rather than replace it.
+
 ## National Layer
 
 Purpose:
