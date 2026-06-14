@@ -1874,6 +1874,7 @@ export default function AtlasMap({
               statusText={discoveryStatusText ?? undefined}
               results={discoveryResultRows}
               shortcutGroups={HOME_DISCOVERY_SHORTCUT_GROUPS}
+              showShortcutGroups={false}
               onShortcutSelect={handleDiscoveryShortcutSelect}
             />
             <div style={styles.searchInputWrap}>
