@@ -1923,13 +1923,29 @@ export default function AtlasMap({
                           >
                             <span
                               aria-hidden="true"
-                              className={`marker-pulse ${markerStateClass}${
+                              className={`marker-pulse atlas-marker ${markerStateClass}${
                                 isHighlighted ? ' marker-pulse--highlighted' : ''
                               }${
                                 isStrongActiveMarker
                                   ? ' marker-pulse--strong-active'
                                   : ''
+                              }${
+                                isExactRevealMarker ? ' atlas-marker--exact' : ''
                               }`}
+                              data-atlas-marker-state={
+                                isExactRevealMarker
+                                  ? 'exact-event'
+                                  : isSelectedMarker
+                                    ? 'selected'
+                                    : isHighlighted
+                                      ? 'broad-highlighted'
+                                      : isCluster
+                                        ? 'cluster'
+                                        : 'inactive'
+                              }
+                              data-atlas-exact-event={
+                                isExactRevealMarker ? primaryEvent.id : undefined
+                              }
                               style={
                                 {
                                   ...(isCluster
@@ -2423,17 +2439,22 @@ export default function AtlasMap({
               --marker-bloom-size: 230%;
             }
 
-            .marker-pulse--exact-reveal {
-              border-color: rgba(255, 250, 226, 0.56) !important;
-              outline: 1px solid rgba(255, 238, 184, 0.5);
-              outline-offset: 5px;
-              --marker-brightness-idle: 1.34;
-              --marker-brightness-peak: 1.55;
-              --marker-saturation-idle: 1.16;
-              --marker-saturation-peak: 1.26;
-              --marker-ring-opacity: 0.5;
-              --marker-bloom-opacity: 0.66;
-              --marker-bloom-size: 285%;
+            .marker-pulse--exact-reveal,
+            .atlas-marker--exact,
+            .marker-pulse[data-atlas-marker-state='exact-event'] {
+              border-color: rgba(255, 252, 232, 0.72) !important;
+              outline: 2px solid rgba(255, 239, 190, 0.58);
+              outline-offset: 7px;
+              opacity: 1 !important;
+              background:
+                radial-gradient(circle at 50% 50%, rgba(255, 255, 246, 1) 0 15%, rgba(255, 242, 192, 0.98) 22%, rgba(255, 209, 106, 0.88) 38%, rgba(236, 151, 48, 0.34) 58%, rgba(150, 78, 25, 0) 82%) !important;
+              --marker-brightness-idle: 1.72;
+              --marker-brightness-peak: 1.95;
+              --marker-saturation-idle: 1.32;
+              --marker-saturation-peak: 1.45;
+              --marker-ring-opacity: 0.72;
+              --marker-bloom-opacity: 0.9;
+              --marker-bloom-size: 360%;
             }
 
             .marker-pulse--selected {
@@ -2474,11 +2495,14 @@ export default function AtlasMap({
                 height: 22px !important;
               }
 
-              .marker-pulse--exact-reveal {
-                width: 30px !important;
-                height: 30px !important;
-                outline-width: 1.5px;
-                outline-offset: 6px;
+              .marker-pulse--exact-reveal,
+              .atlas-marker--exact,
+              .marker-pulse[data-atlas-marker-state='exact-event'] {
+                width: 34px !important;
+                height: 34px !important;
+                outline-width: 2px;
+                outline-offset: 8px;
+                --marker-bloom-size: 275%;
               }
 
               .marker-pulse--selected {
@@ -2525,6 +2549,44 @@ export default function AtlasMap({
               );
             }
 
+
+            .atlas-marker--exact::before,
+            .marker-pulse[data-atlas-marker-state='exact-event']::before {
+              width: var(--marker-exact-halo-size, 88px);
+              height: var(--marker-exact-halo-size, 88px);
+              background: radial-gradient(
+                circle,
+                rgba(255, 255, 244, 0.72) 0 11%,
+                rgba(255, 225, 142, 0.68) 19%,
+                rgba(240, 158, 55, 0.34) 42%,
+                rgba(160, 82, 28, 0.12) 62%,
+                rgba(160, 82, 28, 0) 78%
+              );
+              animation: exactMarkerHaloPulse 2.2s ease-in-out infinite;
+            }
+
+            .atlas-marker--exact::after,
+            .marker-pulse[data-atlas-marker-state='exact-event']::after {
+              width: 54px;
+              height: 54px;
+              background: radial-gradient(
+                circle,
+                rgba(255, 255, 248, 0.78) 0 14%,
+                rgba(255, 232, 157, 0.54) 32%,
+                rgba(255, 204, 96, 0.18) 58%,
+                rgba(255, 204, 96, 0) 74%
+              );
+            }
+
+            @media (min-width: 768px) {
+              .atlas-marker--exact,
+              .marker-pulse[data-atlas-marker-state='exact-event'] {
+                width: 28px !important;
+                height: 28px !important;
+                --marker-exact-halo-size: 76px;
+              }
+            }
+
             @keyframes searchAcceptPulse {
               0% {
                 box-shadow:
@@ -2554,6 +2616,18 @@ export default function AtlasMap({
               .cinematic-intro-video {
                 animation: none !important;
                 transition-duration: 1ms !important;
+              }
+            }
+
+            @keyframes exactMarkerHaloPulse {
+              0%,
+              100% {
+                opacity: 0.82;
+                transform: translate(-50%, -50%) scale(0.9);
+              }
+              50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.08);
               }
             }
 
