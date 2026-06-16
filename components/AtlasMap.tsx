@@ -58,6 +58,11 @@ const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
 // projection to the anchor-based latLngToAtlasPosition function in
 // data/mapCalibration.ts. The painterly image remains the visible basemap.
 const BASE_SCALE = 1.03;
+const MAP_ZOOM_MIN_SCALE = 1;
+const MAP_ZOOM_MAX_SCALE = 2.5;
+const MAP_PAN_EDGE_FACTOR = 0.5;
+const MAP_GESTURE_MOVE_THRESHOLD_PX = 8;
+const MAP_DOUBLE_TAP_RESET_MS = 320;
 
 // Layer order contract (low -> high): map art (1), decorative atmosphere
 // (3-4 in effects), selected constellation lines (4.5), interactive
@@ -327,6 +332,8 @@ const ATLAS_MARKER_PROJECTION_TRANSFORM = {
 
 type AtlasEvent = (typeof ATLAS_EVENTS)[number];
 type MarkerPosition = { x: number; y: number };
+type MapTransform = { scale: number; translateX: number; translateY: number };
+type ActiveMapPointer = { pointerId: number; clientX: number; clientY: number };
 
 type AtlasMarkerLayout = {
   event: AtlasEvent;
@@ -347,6 +354,42 @@ type AtlasMapProps = {
   activeConstellationTitle?: string | null;
   onSearchActivate?: () => void;
 };
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+
+const clampMapTransform = (
+  transform: MapTransform,
+  frame: HTMLDivElement | null,
+): MapTransform => {
+  const scale = clamp(
+    transform.scale,
+    MAP_ZOOM_MIN_SCALE,
+    MAP_ZOOM_MAX_SCALE,
+  );
+
+  if (!frame || scale <= MAP_ZOOM_MIN_SCALE) {
+    return { scale, translateX: 0, translateY: 0 };
+  }
+
+  const rect = frame.getBoundingClientRect();
+  const maxTranslateX = ((scale - 1) * rect.width * MAP_PAN_EDGE_FACTOR) / scale;
+  const maxTranslateY = ((scale - 1) * rect.height * MAP_PAN_EDGE_FACTOR) / scale;
+
+  return {
+    scale,
+    translateX: clamp(transform.translateX, -maxTranslateX, maxTranslateX),
+    translateY: clamp(transform.translateY, -maxTranslateY, maxTranslateY),
+  };
+};
+
+const getPointerDistance = (a: ActiveMapPointer, b: ActiveMapPointer) =>
+  Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+const getPointerCenter = (a: ActiveMapPointer, b: ActiveMapPointer) => ({
+  x: (a.clientX + b.clientX) / 2,
+  y: (a.clientY + b.clientY) / 2,
+});
 
 const clampMarkerPercent = (value: number, offset = 0) => {
   const lowerBound = MARKER_EDGE_INSET_PERCENT + offset;
@@ -786,6 +829,28 @@ export default function AtlasMap({
   const [isPhoneLandscape, setIsPhoneLandscape] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [parallaxOffset, setParallaxOffset] = useState({ x: 0, y: 0 });
+  const [mapTransform, setMapTransform] = useState<MapTransform>({
+    scale: MAP_ZOOM_MIN_SCALE,
+    translateX: 0,
+    translateY: 0,
+  });
+  const activeMapPointersRef = useRef<Map<number, ActiveMapPointer>>(new Map());
+  const panGestureRef = useRef<{
+    startX: number;
+    startY: number;
+    startTranslateX: number;
+    startTranslateY: number;
+  } | null>(null);
+  const pinchGestureRef = useRef<{
+    startDistance: number;
+    startCenterX: number;
+    startCenterY: number;
+    startScale: number;
+    startTranslateX: number;
+    startTranslateY: number;
+  } | null>(null);
+  const mapGestureMovedRef = useRef(false);
+  const lastMapTapTimeRef = useRef(0);
   const [calibrationAnchors, setCalibrationAnchors] = useState<
     MichiganMapAnchor[]
   >(createCalibrationAnchors);
@@ -971,6 +1036,177 @@ export default function AtlasMap({
   const handleDepthPointerLeave = useCallback(() => {
     setParallaxOffset({ x: 0, y: 0 });
   }, []);
+
+  const resetMapTransform = useCallback(() => {
+    activeMapPointersRef.current.clear();
+    panGestureRef.current = null;
+    pinchGestureRef.current = null;
+    mapGestureMovedRef.current = false;
+    setMapTransform({
+      scale: MAP_ZOOM_MIN_SCALE,
+      translateX: 0,
+      translateY: 0,
+    });
+  }, []);
+
+  const handleMapGesturePointerDown = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (shouldShowCalibration || isVerificationMode) return;
+      if (event.pointerType !== 'touch') return;
+
+      const nextPointers = activeMapPointersRef.current;
+      nextPointers.set(event.pointerId, {
+        pointerId: event.pointerId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
+      mapGestureMovedRef.current = false;
+
+      if (nextPointers.size === 1) {
+        panGestureRef.current = {
+          startX: event.clientX,
+          startY: event.clientY,
+          startTranslateX: mapTransform.translateX,
+          startTranslateY: mapTransform.translateY,
+        };
+        pinchGestureRef.current = null;
+        return;
+      }
+
+      if (nextPointers.size === 2) {
+        const [firstPointer, secondPointer] = [...nextPointers.values()];
+        const center = getPointerCenter(firstPointer, secondPointer);
+        pinchGestureRef.current = {
+          startDistance: getPointerDistance(firstPointer, secondPointer),
+          startCenterX: center.x,
+          startCenterY: center.y,
+          startScale: mapTransform.scale,
+          startTranslateX: mapTransform.translateX,
+          startTranslateY: mapTransform.translateY,
+        };
+        panGestureRef.current = null;
+      }
+    },
+    [isVerificationMode, mapTransform, shouldShowCalibration],
+  );
+
+  const handleMapGesturePointerMove = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== 'touch') return;
+      const activePointer = activeMapPointersRef.current.get(event.pointerId);
+      if (!activePointer) return;
+
+      activeMapPointersRef.current.set(event.pointerId, {
+        pointerId: event.pointerId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
+
+      const activePointers = [...activeMapPointersRef.current.values()];
+
+      if (activePointers.length >= 2 && pinchGestureRef.current) {
+        const [firstPointer, secondPointer] = activePointers;
+        const pinch = pinchGestureRef.current;
+        const nextDistance = getPointerDistance(firstPointer, secondPointer);
+        if (pinch.startDistance <= 0) return;
+
+        const center = getPointerCenter(firstPointer, secondPointer);
+        const nextScale = clamp(
+          pinch.startScale * (nextDistance / pinch.startDistance),
+          MAP_ZOOM_MIN_SCALE,
+          MAP_ZOOM_MAX_SCALE,
+        );
+        const nextTransform = clampMapTransform(
+          {
+            scale: nextScale,
+            translateX:
+              pinch.startTranslateX + (center.x - pinch.startCenterX) / nextScale,
+            translateY:
+              pinch.startTranslateY + (center.y - pinch.startCenterY) / nextScale,
+          },
+          mapFrameRef.current,
+        );
+
+        event.preventDefault();
+        mapGestureMovedRef.current = true;
+        setMapTransform(nextTransform);
+        return;
+      }
+
+      if (activePointers.length === 1 && panGestureRef.current) {
+        const pan = panGestureRef.current;
+        const deltaX = event.clientX - pan.startX;
+        const deltaY = event.clientY - pan.startY;
+        const movedEnough =
+          Math.hypot(deltaX, deltaY) >= MAP_GESTURE_MOVE_THRESHOLD_PX;
+
+        if (!movedEnough && !mapGestureMovedRef.current) return;
+
+        const nextTransform = clampMapTransform(
+          {
+            scale: mapTransform.scale,
+            translateX: pan.startTranslateX + deltaX / mapTransform.scale,
+            translateY: pan.startTranslateY + deltaY / mapTransform.scale,
+          },
+          mapFrameRef.current,
+        );
+
+        event.preventDefault();
+        mapGestureMovedRef.current = true;
+        setMapTransform(nextTransform);
+      }
+    },
+    [mapTransform.scale],
+  );
+
+  const handleMapGesturePointerEnd = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== 'touch') return;
+      activeMapPointersRef.current.delete(event.pointerId);
+
+      if (activeMapPointersRef.current.size < 2) {
+        pinchGestureRef.current = null;
+      }
+
+      if (activeMapPointersRef.current.size === 1) {
+        const [remainingPointer] = [...activeMapPointersRef.current.values()];
+        panGestureRef.current = {
+          startX: remainingPointer.clientX,
+          startY: remainingPointer.clientY,
+          startTranslateX: mapTransform.translateX,
+          startTranslateY: mapTransform.translateY,
+        };
+      } else if (activeMapPointersRef.current.size === 0) {
+        panGestureRef.current = null;
+      }
+    },
+    [mapTransform.translateX, mapTransform.translateY],
+  );
+
+  const handleMapGestureDoubleTap = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== 'touch') return;
+      if (mapGestureMovedRef.current) return;
+
+      const now = window.performance.now();
+      if (now - lastMapTapTimeRef.current <= MAP_DOUBLE_TAP_RESET_MS) {
+        event.preventDefault();
+        resetMapTransform();
+        lastMapTapTimeRef.current = 0;
+        return;
+      }
+
+      lastMapTapTimeRef.current = now;
+    },
+    [resetMapTransform],
+  );
+
+  const shouldSuppressMarkerTap = useCallback(() => {
+    if (!mapGestureMovedRef.current) return false;
+    mapGestureMovedRef.current = false;
+    return true;
+  }, []);
+
   const updateCalibrationAnchorPosition = useCallback(
     (anchorName: string, event: PointerEvent<HTMLButtonElement>) => {
       const layer = calibrationLayerRef.current;
@@ -1408,6 +1644,7 @@ export default function AtlasMap({
   }, []);
 
   const isAtlasPanelOpen = Boolean(renderedEvent || selectedCluster);
+  const mapLayerTransform = `translate3d(${mapTransform.translateX + (prefersReducedMotion ? 0 : parallaxOffset.x * 0.55)}px, ${mapTransform.translateY + (prefersReducedMotion ? 0 : parallaxOffset.y * 0.55)}px, 0) scale(${BASE_SCALE * mapTransform.scale})`;
 
   return (
     <section
@@ -1430,13 +1667,25 @@ export default function AtlasMap({
           ...styles.mapFrame,
           ...(isDesktop && !isVerificationMode ? styles.mapFrameDesktop : null),
         }}
-        onPointerMove={handleDepthPointerMove}
-        onPointerLeave={handleDepthPointerLeave}
+        onPointerDown={handleMapGesturePointerDown}
+        onPointerMove={(event) => {
+          handleDepthPointerMove(event);
+          handleMapGesturePointerMove(event);
+        }}
+        onPointerUp={(event) => {
+          handleMapGesturePointerEnd(event);
+          handleMapGestureDoubleTap(event);
+        }}
+        onPointerCancel={handleMapGesturePointerEnd}
+        onPointerLeave={(event) => {
+          handleDepthPointerLeave();
+          handleMapGesturePointerEnd(event);
+        }}
       >
         <div
           style={{
             ...styles.atmosphereMapContent,
-            transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.55}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.55}px, 0) scale(${BASE_SCALE})`,
+            transform: mapLayerTransform,
           }}
         >
           <img
@@ -1451,7 +1700,7 @@ export default function AtlasMap({
         <div
           style={{
             ...styles.mapContent,
-            transform: `translate3d(${prefersReducedMotion ? 0 : parallaxOffset.x * 0.55}px, ${prefersReducedMotion ? 0 : parallaxOffset.y * 0.55}px, 0) scale(${BASE_SCALE})`,
+            transform: mapLayerTransform,
           }}
         >
           <img
@@ -1586,6 +1835,7 @@ export default function AtlasMap({
                                 : primaryEvent.name
                             }
                             onClick={() => {
+                              if (shouldSuppressMarkerTap()) return;
                               if (isCluster) {
                                 setSelectedId(null);
                                 setSelectedClusterId(id);
@@ -1671,6 +1921,7 @@ export default function AtlasMap({
                                 : `Open ${primaryEvent.name}`
                             }
                             onClick={() => {
+                              if (shouldSuppressMarkerTap()) return;
                               if (isCluster) {
                                 setSelectedId(null);
                                 setSelectedClusterId(id);
@@ -2127,6 +2378,7 @@ const styles: Record<string, CSSProperties> = {
     inset: 0,
     overflow: 'hidden',
     contain: 'layout paint size',
+    touchAction: 'none',
   },
   mapFrameDesktop: {
     inset: '8vh auto 13vh 6vw',
@@ -2144,7 +2396,7 @@ const styles: Record<string, CSSProperties> = {
     transformOrigin: 'center center',
     transition:
       'filter 260ms ease, transform 520ms cubic-bezier(.22,.61,.36,1)',
-    touchAction: 'pan-y pinch-zoom',
+    touchAction: 'none',
     filter: 'saturate(0.74) brightness(0.62) contrast(1.08)',
   },
   atmosphereMapContent: {
@@ -2152,6 +2404,7 @@ const styles: Record<string, CSSProperties> = {
     inset: '-6% -10%',
     transformOrigin: 'center center',
     filter: 'saturate(0.8) brightness(0.4) contrast(1.08)',
+    transition: 'transform 520ms cubic-bezier(.22,.61,.36,1)',
     pointerEvents: 'none',
   },
   atmosphereMapImage: {
