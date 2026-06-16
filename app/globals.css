@@ -138,7 +138,7 @@ body.event-detail-scroll::-webkit-scrollbar {
   }
 
   .home-phone-landscape-scroll .atlas-hero {
-    min-height: max(640px, 182svh) !important;
+    min-height: max(760px, 220svh) !important;
     overflow: visible !important;
     touch-action: auto !important;
     overscroll-behavior-y: auto !important;
@@ -147,6 +147,14 @@ body.event-detail-scroll::-webkit-scrollbar {
   .home-phone-landscape-scroll .atlas-map-frame {
     overflow: visible !important;
     contain: layout paint !important;
+  }
+
+  .home-phone-landscape-scroll .atlas-map-frame--phone-landscape {
+    min-height: max(760px, 220svh) !important;
+  }
+
+  .home-phone-landscape-scroll .atlas-map-frame--phone-landscape img {
+    object-position: center top !important;
   }
 
   .home-phone-landscape-scroll .atlas-search-dock {

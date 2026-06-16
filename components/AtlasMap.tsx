@@ -47,7 +47,7 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
   { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
 ];
 const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
-const EXACT_EVENT_CARD_OPEN_DELAY_MS = 280;
+const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
 
 // Current interaction policy:
 // - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
@@ -1465,7 +1465,7 @@ export default function AtlasMap({
     if (exactMatch) {
       setSelectedClusterId(null);
       setSelectedId(null);
-      setDiscoveryStatusText(`Found ${exactMatch.eventName}`);
+      setDiscoveryStatusText(null);
       exactEventOpenTimerRef.current = setTimeout(() => {
         setSelectedId(exactMatch.eventId);
         exactEventOpenTimerRef.current = null;
@@ -1652,7 +1652,8 @@ export default function AtlasMap({
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
     isPhoneLandscape && isMapAtMinimumZoom;
-  const mapLayerTransform = `translate3d(${mapTransform.translateX + (prefersReducedMotion ? 0 : parallaxOffset.x * 0.55)}px, ${mapTransform.translateY + (prefersReducedMotion ? 0 : parallaxOffset.y * 0.55)}px, 0) scale(${BASE_SCALE * mapTransform.scale})`;
+  const mapLayerScale = (isPhoneLandscape ? 1 : BASE_SCALE) * mapTransform.scale;
+  const mapLayerTransform = `translate3d(${mapTransform.translateX + (prefersReducedMotion ? 0 : parallaxOffset.x * 0.55)}px, ${mapTransform.translateY + (prefersReducedMotion ? 0 : parallaxOffset.y * 0.55)}px, 0) scale(${mapLayerScale})`;
 
   return (
     <section
@@ -1868,6 +1869,10 @@ export default function AtlasMap({
                             }
                             onClick={() => {
                               if (shouldSuppressMarkerTap()) return;
+                              if (exactEventOpenTimerRef.current) {
+                                clearTimeout(exactEventOpenTimerRef.current);
+                                exactEventOpenTimerRef.current = null;
+                              }
                               if (exactHighlightedEvent) {
                                 setSelectedClusterId(null);
                                 setSelectedId(exactHighlightedEvent.id);
@@ -1911,7 +1916,7 @@ export default function AtlasMap({
                                         ? '0 0 8px rgba(255,247,219,.82), 0 0 26px rgba(255,205,106,.56), 0 0 64px rgba(211,132,43,.28), 0 0 108px rgba(145,81,30,.14)'
                                         : '0 0 6px rgba(255,232,184,.54), 0 0 19px rgba(242,178,77,.36), 0 0 48px rgba(186,111,40,.2), 0 0 82px rgba(128,72,29,.11)'
                                     : isStrongActiveMarker
-                                      ? '0 0 0 2px rgba(255,250,226,.34), 0 0 9px rgba(255,253,238,1), 0 0 26px rgba(255,218,128,.92), 0 0 54px rgba(223,146,48,.48)'
+                                      ? '0 0 0 2px rgba(255,250,226,.42), 0 0 12px rgba(255,254,242,1), 0 0 34px rgba(255,224,138,.98), 0 0 74px rgba(223,146,48,.58), 0 0 112px rgba(145,81,30,.24)'
                                       : isHighlighted
                                         ? '0 0 5px rgba(255,251,232,.96), 0 0 17px rgba(255,210,112,.72), 0 0 34px rgba(223,146,48,.3)'
                                         : markerBaseShadows.idle,
@@ -1922,7 +1927,7 @@ export default function AtlasMap({
                                         ? '0 0 10px rgba(255,250,229,.9), 0 0 34px rgba(255,214,122,.66), 0 0 78px rgba(217,140,45,.34), 0 0 124px rgba(145,81,30,.16)'
                                         : '0 0 7px rgba(255,238,197,.62), 0 0 25px rgba(248,190,88,.45), 0 0 60px rgba(196,120,42,.24), 0 0 96px rgba(128,72,29,.13)'
                                     : isStrongActiveMarker
-                                      ? '0 0 0 3px rgba(255,252,235,.42), 0 0 12px rgba(255,254,242,1), 0 0 34px rgba(255,226,142,.98), 0 0 66px rgba(223,146,48,.56)'
+                                      ? '0 0 0 3px rgba(255,252,235,.5), 0 0 16px rgba(255,254,242,1), 0 0 44px rgba(255,228,146,1), 0 0 88px rgba(223,146,48,.66), 0 0 128px rgba(145,81,30,.28)'
                                       : isHighlighted
                                         ? '0 0 7px rgba(255,253,238,1), 0 0 22px rgba(255,218,130,.84), 0 0 40px rgba(223,146,48,.36)'
                                         : markerBaseShadows.peak,
@@ -1974,6 +1979,10 @@ export default function AtlasMap({
                             }
                             onClick={() => {
                               if (shouldSuppressMarkerTap()) return;
+                              if (exactEventOpenTimerRef.current) {
+                                clearTimeout(exactEventOpenTimerRef.current);
+                                exactEventOpenTimerRef.current = null;
+                              }
                               if (exactHighlightedEvent) {
                                 setSelectedClusterId(null);
                                 setSelectedId(exactHighlightedEvent.id);
@@ -2076,6 +2085,10 @@ export default function AtlasMap({
                 type="button"
                 style={styles.clusterEventButton}
                 onClick={() => {
+                  if (exactEventOpenTimerRef.current) {
+                    clearTimeout(exactEventOpenTimerRef.current);
+                    exactEventOpenTimerRef.current = null;
+                  }
                   setSelectedClusterId(null);
                   setSelectedId(event.id);
                 }}
@@ -2358,10 +2371,14 @@ export default function AtlasMap({
               }
 
               .marker-pulse--strong-active {
-                width: 21px !important;
-                height: 21px !important;
+                width: 23px !important;
+                height: 23px !important;
                 outline-width: 1.5px;
-                outline-offset: 4px;
+                outline-offset: 5px;
+                --marker-brightness-idle: 1.36;
+                --marker-brightness-peak: 1.56;
+                --marker-saturation-idle: 1.18;
+                --marker-saturation-peak: 1.28;
               }
             }
 
