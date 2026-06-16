@@ -976,6 +976,17 @@ export default function AtlasMap({
       displayMarkerLayouts,
     ],
   );
+  const visibleMarkerGroups = exactEventIntent
+    ? displayMarkerLayouts
+        .filter((layout) => layout.event.id === exactEventIntent.eventId)
+        .map((layout) => ({
+          id: `exact-${layout.event.id}`,
+          events: [layout.event],
+          eventIndices: [layout.eventIndex],
+          position: layout.position,
+        }))
+    : markerClusters;
+
   const selectedCluster =
     markerClusters.find(
       (cluster) =>
@@ -1772,7 +1783,7 @@ export default function AtlasMap({
                     eventIndices: [layout.eventIndex],
                     position: layout.position,
                   }))
-                : markerClusters
+                : visibleMarkerGroups
               ).map(({ id, events, eventIndices, position }) => {
                 const primaryEvent = events[0];
                 const isCluster = events.length > 1;
@@ -1790,12 +1801,7 @@ export default function AtlasMap({
                   : selectedClusterId === id;
                 const isDimmed = highlightedIds.size > 0 && !isHighlighted;
                 const isExactEventMarker = Boolean(exactHighlightedEvent);
-                const isSingleSearchResultMarker = Boolean(
-                  q && highlightedIds.size === 1 && isHighlighted,
-                );
-                const isExactRevealMarker = Boolean(
-                  isExactEventMarker || isSingleSearchResultMarker,
-                );
+                const isExactRevealMarker = isExactEventMarker;
                 const isSelectedMarker = Boolean(isSelected);
                 const isStrongActiveMarker = Boolean(
                   isSelectedMarker || isExactRevealMarker,
@@ -1912,7 +1918,7 @@ export default function AtlasMap({
                             style={{
                               ...styles.markerTapTarget,
                               ...(isCluster ? styles.clusterTapTarget : null),
-                              opacity: isDimmed ? 0.28 : 1,
+                              opacity: isDimmed ? (exactEventIntent ? 0.08 : 0.28) : 1,
                             }}
                           >
                             <span
