@@ -138,23 +138,33 @@ body.event-detail-scroll::-webkit-scrollbar {
   }
 
   .home-phone-landscape-scroll .atlas-hero {
-    min-height: max(760px, 220svh) !important;
+    min-height: calc((100vw * 5000 / 2814) + 132px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(132px + env(safe-area-inset-bottom)) !important;
     overflow: visible !important;
     touch-action: auto !important;
     overscroll-behavior-y: auto !important;
   }
 
   .home-phone-landscape-scroll .atlas-map-frame {
+    position: relative !important;
+    inset: auto !important;
+    width: 100vw !important;
+    height: calc(100vw * 5000 / 2814) !important;
+    min-height: 0 !important;
+    border-radius: 0 !important;
     overflow: visible !important;
     contain: layout paint !important;
   }
 
-  .home-phone-landscape-scroll .atlas-map-frame--phone-landscape {
-    min-height: max(760px, 220svh) !important;
+  .home-phone-landscape-scroll .atlas-map-frame--phone-landscape > div {
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
   }
 
-  .home-phone-landscape-scroll .atlas-map-frame--phone-landscape img {
-    object-position: center top !important;
+  .home-phone-landscape-scroll .atlas-map-frame--phone-landscape > div > img {
+    object-fit: contain !important;
+    object-position: center center !important;
   }
 
   .home-phone-landscape-scroll .atlas-search-dock {
@@ -323,6 +333,43 @@ body.event-detail-scroll::-webkit-scrollbar {
     width: min(720px, calc(100vw - 84px));
     transform: translateX(-50%);
     bottom: 14px !important;
+  }
+}
+
+/* Re-assert phone-landscape map access after the tablet/desktop framing rules above. */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 932px) {
+  body.home-phone-landscape-scroll .atlas-hero {
+    display: block !important;
+    align-items: initial !important;
+    justify-content: initial !important;
+    min-height: calc((100vw * 5000 / 2814) + 132px + env(safe-area-inset-bottom)) !important;
+    padding: 0 0 calc(132px + env(safe-area-inset-bottom)) !important;
+    overflow: visible !important;
+  }
+
+  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape {
+    position: relative !important;
+    inset: auto !important;
+    width: 100vw !important;
+    min-width: 0 !important;
+    height: calc(100vw * 5000 / 2814) !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    contain: layout paint !important;
+  }
+
+  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape > div {
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape > div > img {
+    object-fit: contain !important;
+    object-position: center center !important;
   }
 }
 
