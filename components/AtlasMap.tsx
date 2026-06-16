@@ -1779,6 +1779,13 @@ export default function AtlasMap({
                   ? events.some((event) => event.id === selectedId)
                   : selectedClusterId === id;
                 const isDimmed = highlightedIds.size > 0 && !isHighlighted;
+                const isExactEventMarker = Boolean(exactHighlightedEvent);
+                const isSingleSearchResultMarker = Boolean(
+                  q && highlightedIds.size === 1 && isHighlighted,
+                );
+                const isStrongActiveMarker = Boolean(
+                  isSelected || isExactEventMarker || isSingleSearchResultMarker,
+                );
                 const primaryEventProfile = getEventProfileById(
                   primaryEvent.id,
                 );
@@ -1793,19 +1800,24 @@ export default function AtlasMap({
                 const firstEventIndex = Math.min(...eventIndices);
                 const pulseDuration = 2.4 + (firstEventIndex % 3) * 0.35;
                 const pulseDelay = firstEventIndex * 0.26;
-                const markerLayerLift = isSelected
-                  ? 30
+                const markerLayerLift = isStrongActiveMarker
+                  ? 34
                   : isHighlighted
                     ? 20
                     : isCluster
                       ? 10
                       : 0;
                 const markerScaleBase = isCluster
-                  ? Math.min(1.65, 1.16 + events.length * 0.09)
-                  : isHighlighted
-                    ? 1.45
-                    : isSelected
-                      ? 1.25
+                  ? Math.min(
+                      isStrongActiveMarker ? 1.82 : 1.65,
+                      1.16 +
+                        events.length * 0.09 +
+                        (isStrongActiveMarker ? 0.18 : isHighlighted ? 0.08 : 0),
+                    )
+                  : isStrongActiveMarker
+                    ? 1.62
+                    : isHighlighted
+                      ? 1.38
                       : 1;
                 const markerLabelEvent = exactHighlightedEvent ??
                   (!isCluster ? primaryEvent : null);
@@ -1870,7 +1882,13 @@ export default function AtlasMap({
                           >
                             <span
                               aria-hidden="true"
-                              className="marker-pulse"
+                              className={`marker-pulse${
+                                isHighlighted ? ' marker-pulse--highlighted' : ''
+                              }${
+                                isStrongActiveMarker
+                                  ? ' marker-pulse--strong-active'
+                                  : ''
+                              }`}
                               style={
                                 {
                                   ...(isCluster
@@ -1878,26 +1896,26 @@ export default function AtlasMap({
                                     : styles.marker),
                                   '--marker-scale-base': markerScaleBase,
                                   '--marker-shadow-idle': isCluster
-                                    ? isHighlighted
-                                      ? '0 0 8px rgba(255,247,219,.82), 0 0 26px rgba(255,205,106,.56), 0 0 64px rgba(211,132,43,.28), 0 0 108px rgba(145,81,30,.14)'
-                                      : isSelected
-                                        ? '0 0 8px rgba(255,241,207,.78), 0 0 24px rgba(252,197,92,.52), 0 0 58px rgba(207,129,41,.26), 0 0 96px rgba(141,78,29,.13)'
+                                    ? isStrongActiveMarker
+                                      ? '0 0 0 2px rgba(255,250,226,.28), 0 0 13px rgba(255,252,235,.96), 0 0 38px rgba(255,216,122,.78), 0 0 86px rgba(220,145,48,.42), 0 0 132px rgba(145,81,30,.2)'
+                                      : isHighlighted
+                                        ? '0 0 8px rgba(255,247,219,.82), 0 0 26px rgba(255,205,106,.56), 0 0 64px rgba(211,132,43,.28), 0 0 108px rgba(145,81,30,.14)'
                                         : '0 0 6px rgba(255,232,184,.54), 0 0 19px rgba(242,178,77,.36), 0 0 48px rgba(186,111,40,.2), 0 0 82px rgba(128,72,29,.11)'
-                                    : isHighlighted
-                                      ? '0 0 5px rgba(255,251,232,.96), 0 0 17px rgba(255,210,112,.72), 0 0 34px rgba(223,146,48,.3)'
-                                      : isSelected
-                                        ? '0 0 5px rgba(255,246,220,.9), 0 0 16px rgba(253,201,100,.68), 0 0 30px rgba(211,132,44,.28)'
+                                    : isStrongActiveMarker
+                                      ? '0 0 0 2px rgba(255,250,226,.34), 0 0 9px rgba(255,253,238,1), 0 0 26px rgba(255,218,128,.92), 0 0 54px rgba(223,146,48,.48)'
+                                      : isHighlighted
+                                        ? '0 0 5px rgba(255,251,232,.96), 0 0 17px rgba(255,210,112,.72), 0 0 34px rgba(223,146,48,.3)'
                                         : markerBaseShadows.idle,
                                   '--marker-shadow-peak': isCluster
-                                    ? isHighlighted
-                                      ? '0 0 10px rgba(255,250,229,.9), 0 0 34px rgba(255,214,122,.66), 0 0 78px rgba(217,140,45,.34), 0 0 124px rgba(145,81,30,.16)'
-                                      : isSelected
-                                        ? '0 0 9px rgba(255,246,220,.84), 0 0 31px rgba(255,207,106,.6), 0 0 72px rgba(207,129,41,.31), 0 0 114px rgba(141,78,29,.15)'
+                                    ? isStrongActiveMarker
+                                      ? '0 0 0 3px rgba(255,252,235,.36), 0 0 16px rgba(255,254,242,1), 0 0 48px rgba(255,226,142,.9), 0 0 104px rgba(225,151,52,.5), 0 0 152px rgba(145,81,30,.24)'
+                                      : isHighlighted
+                                        ? '0 0 10px rgba(255,250,229,.9), 0 0 34px rgba(255,214,122,.66), 0 0 78px rgba(217,140,45,.34), 0 0 124px rgba(145,81,30,.16)'
                                         : '0 0 7px rgba(255,238,197,.62), 0 0 25px rgba(248,190,88,.45), 0 0 60px rgba(196,120,42,.24), 0 0 96px rgba(128,72,29,.13)'
-                                    : isHighlighted
-                                      ? '0 0 7px rgba(255,253,238,1), 0 0 22px rgba(255,218,130,.84), 0 0 40px rgba(223,146,48,.36)'
-                                      : isSelected
-                                        ? '0 0 6px rgba(255,250,232,.96), 0 0 20px rgba(255,210,112,.78), 0 0 36px rgba(211,132,44,.34)'
+                                    : isStrongActiveMarker
+                                      ? '0 0 0 3px rgba(255,252,235,.42), 0 0 12px rgba(255,254,242,1), 0 0 34px rgba(255,226,142,.98), 0 0 66px rgba(223,146,48,.56)'
+                                      : isHighlighted
+                                        ? '0 0 7px rgba(255,253,238,1), 0 0 22px rgba(255,218,130,.84), 0 0 40px rgba(223,146,48,.36)'
                                         : markerBaseShadows.peak,
                                   '--marker-glint-span': isCluster
                                     ? '21px'
@@ -1906,19 +1924,27 @@ export default function AtlasMap({
                                     ? '1.5px'
                                     : '1px',
                                   '--marker-glint-opacity': isCluster
-                                    ? isHighlighted || isSelected
-                                      ? 0.72
-                                      : 0.18
-                                    : isHighlighted || isSelected
-                                      ? 0.78
-                                      : 0.08,
+                                    ? isStrongActiveMarker
+                                      ? 0.92
+                                      : isHighlighted
+                                        ? 0.72
+                                        : 0.18
+                                    : isStrongActiveMarker
+                                      ? 0.96
+                                      : isHighlighted
+                                        ? 0.78
+                                        : 0.08,
                                   '--marker-glint-soft-opacity': isCluster
-                                    ? isHighlighted || isSelected
-                                      ? 0.36
-                                      : 0.08
-                                    : isHighlighted || isSelected
-                                      ? 0.34
-                                      : 0.04,
+                                    ? isStrongActiveMarker
+                                      ? 0.52
+                                      : isHighlighted
+                                        ? 0.36
+                                        : 0.08
+                                    : isStrongActiveMarker
+                                      ? 0.56
+                                      : isHighlighted
+                                        ? 0.34
+                                        : 0.04,
                                   animationDuration: `${pulseDuration}s`,
                                   animationDelay: `${pulseDelay}s`,
                                 } as CSSProperties
@@ -2294,8 +2320,40 @@ export default function AtlasMap({
               animation-timing-function: ease-in-out;
               animation-iteration-count: infinite;
               animation-fill-mode: both;
-              will-change: transform, box-shadow, filter;
+              will-change: transform, box-shadow, filter, outline-offset;
               transform-origin: center;
+            }
+
+            .marker-pulse--highlighted {
+              border-color: rgba(255, 241, 202, 0.28) !important;
+              --marker-brightness-idle: 1.12;
+              --marker-brightness-peak: 1.24;
+              --marker-saturation-idle: 1.12;
+              --marker-saturation-peak: 1.18;
+            }
+
+            .marker-pulse--strong-active {
+              border-color: rgba(255, 250, 226, 0.52) !important;
+              outline: 1px solid rgba(255, 236, 177, 0.42);
+              outline-offset: 3px;
+              --marker-brightness-idle: 1.22;
+              --marker-brightness-peak: 1.38;
+              --marker-saturation-idle: 1.16;
+              --marker-saturation-peak: 1.24;
+            }
+
+            @media (max-width: 767px) {
+              .marker-pulse--highlighted {
+                width: 18px !important;
+                height: 18px !important;
+              }
+
+              .marker-pulse--strong-active {
+                width: 21px !important;
+                height: 21px !important;
+                outline-width: 1.5px;
+                outline-offset: 4px;
+              }
             }
 
             .marker-pulse::before,
@@ -2368,13 +2426,15 @@ export default function AtlasMap({
                 transform: translate(-50%, -50%)
                   scale(var(--marker-scale-base, 1));
                 box-shadow: var(--marker-shadow-idle);
-                filter: brightness(1) saturate(1);
+                filter: brightness(var(--marker-brightness-idle, 1))
+                  saturate(var(--marker-saturation-idle, 1));
               }
               50% {
                 transform: translate(-50%, -50%)
                   scale(calc(var(--marker-scale-base, 1) * 1.18));
                 box-shadow: var(--marker-shadow-peak);
-                filter: brightness(1.07) saturate(1.08);
+                filter: brightness(var(--marker-brightness-peak, 1.07))
+                  saturate(var(--marker-saturation-peak, 1.08));
               }
             }
           `}</style>
