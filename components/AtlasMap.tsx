@@ -1958,9 +1958,11 @@ export default function AtlasMap({
                                       : isHighlighted
                                         ? '0 0 12px rgba(255,244,214,.76), 0 0 34px rgba(255,205,106,.52), 0 0 72px rgba(211,132,43,.26), 0 0 112px rgba(145,81,30,.13)'
                                         : '0 0 9px rgba(255,232,184,.5), 0 0 26px rgba(242,178,77,.34), 0 0 56px rgba(186,111,40,.19), 0 0 86px rgba(128,72,29,.1)'
-                                    : isStrongActiveMarker
-                                      ? '0 0 0 2px rgba(255,250,226,.34), 0 0 16px rgba(255,254,242,.96), 0 0 40px rgba(255,224,138,.82), 0 0 82px rgba(223,146,48,.48), 0 0 116px rgba(145,81,30,.22)'
-                                      : isHighlighted
+                                    : isExactRevealMarker
+                                      ? '0 0 0 1px rgba(255,249,225,.34), 0 0 18px rgba(255,255,244,.98), 0 0 44px rgba(255,228,142,.82), 0 0 86px rgba(255,187,76,.44), 0 0 132px rgba(255,172,68,.22)'
+                                      : isStrongActiveMarker
+                                        ? '0 0 0 2px rgba(255,250,226,.34), 0 0 16px rgba(255,254,242,.96), 0 0 40px rgba(255,224,138,.82), 0 0 82px rgba(223,146,48,.48), 0 0 116px rgba(145,81,30,.22)'
+                                        : isHighlighted
                                         ? '0 0 8px rgba(255,249,226,.88), 0 0 22px rgba(255,210,112,.62), 0 0 46px rgba(223,146,48,.28)'
                                         : markerBaseShadows.idle,
                                   '--marker-shadow-peak': isCluster
@@ -1969,9 +1971,11 @@ export default function AtlasMap({
                                       : isHighlighted
                                         ? '0 0 14px rgba(255,248,224,.84), 0 0 42px rgba(255,214,122,.62), 0 0 86px rgba(217,140,45,.32), 0 0 130px rgba(145,81,30,.15)'
                                         : '0 0 11px rgba(255,238,197,.58), 0 0 32px rgba(248,190,88,.42), 0 0 66px rgba(196,120,42,.23), 0 0 100px rgba(128,72,29,.12)'
-                                    : isStrongActiveMarker
-                                      ? '0 0 0 3px rgba(255,252,235,.44), 0 0 22px rgba(255,254,242,1), 0 0 56px rgba(255,228,146,.94), 0 0 96px rgba(223,146,48,.56), 0 0 136px rgba(145,81,30,.25)'
-                                      : isHighlighted
+                                    : isExactRevealMarker
+                                      ? '0 0 0 1px rgba(255,252,232,.44), 0 0 24px rgba(255,255,248,1), 0 0 62px rgba(255,232,152,.94), 0 0 108px rgba(255,194,86,.52), 0 0 156px rgba(255,176,72,.28)'
+                                      : isStrongActiveMarker
+                                        ? '0 0 0 3px rgba(255,252,235,.44), 0 0 22px rgba(255,254,242,1), 0 0 56px rgba(255,228,146,.94), 0 0 96px rgba(223,146,48,.56), 0 0 136px rgba(145,81,30,.25)'
+                                        : isHighlighted
                                         ? '0 0 10px rgba(255,252,234,.96), 0 0 30px rgba(255,218,130,.78), 0 0 56px rgba(223,146,48,.34)'
                                         : markerBaseShadows.peak,
                                   animationDuration: `${pulseDuration}s`,
@@ -2447,7 +2451,7 @@ export default function AtlasMap({
               outline-offset: 7px;
               opacity: 1 !important;
               background:
-                radial-gradient(circle at 50% 50%, rgba(255, 255, 246, 1) 0 15%, rgba(255, 242, 192, 0.98) 22%, rgba(255, 209, 106, 0.88) 38%, rgba(236, 151, 48, 0.34) 58%, rgba(150, 78, 25, 0) 82%) !important;
+                radial-gradient(circle at 50% 50%, rgba(255, 255, 248, 1) 0 18%, rgba(255, 245, 205, 0.98) 28%, rgba(255, 219, 126, 0.76) 46%, rgba(255, 190, 78, 0.22) 66%, rgba(255, 190, 78, 0) 88%) !important;
               --marker-brightness-idle: 1.72;
               --marker-brightness-peak: 1.95;
               --marker-saturation-idle: 1.32;
@@ -2556,11 +2560,11 @@ export default function AtlasMap({
               height: var(--marker-exact-halo-size, 88px);
               background: radial-gradient(
                 circle,
-                rgba(255, 255, 244, 0.72) 0 11%,
-                rgba(255, 225, 142, 0.68) 19%,
-                rgba(240, 158, 55, 0.34) 42%,
-                rgba(160, 82, 28, 0.12) 62%,
-                rgba(160, 82, 28, 0) 78%
+                rgba(255, 255, 248, 0.78) 0 10%,
+                rgba(255, 238, 178, 0.64) 22%,
+                rgba(255, 202, 96, 0.36) 46%,
+                rgba(255, 178, 72, 0.16) 66%,
+                rgba(255, 178, 72, 0) 82%
               );
               animation: exactMarkerHaloPulse 2.2s ease-in-out infinite;
             }
@@ -2571,10 +2575,10 @@ export default function AtlasMap({
               height: 54px;
               background: radial-gradient(
                 circle,
-                rgba(255, 255, 248, 0.78) 0 14%,
-                rgba(255, 232, 157, 0.54) 32%,
-                rgba(255, 204, 96, 0.18) 58%,
-                rgba(255, 204, 96, 0) 74%
+                rgba(255, 255, 250, 0.86) 0 16%,
+                rgba(255, 240, 184, 0.58) 34%,
+                rgba(255, 214, 116, 0.22) 58%,
+                rgba(255, 214, 116, 0) 76%
               );
             }
 
