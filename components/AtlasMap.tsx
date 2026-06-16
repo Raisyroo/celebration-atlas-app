@@ -47,6 +47,7 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
   { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
 ];
 const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
+const EXACT_EVENT_CARD_OPEN_DELAY_MS = 280;
 
 // Current interaction policy:
 // - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
@@ -1464,7 +1465,7 @@ export default function AtlasMap({
       exactEventOpenTimerRef.current = setTimeout(() => {
         setSelectedId(exactMatch.eventId);
         exactEventOpenTimerRef.current = null;
-      }, 420);
+      }, EXACT_EVENT_CARD_OPEN_DELAY_MS);
     } else {
       const nextHighlightedIds = getHighlightedIdsFromQuery(trimmedQuery);
       setDiscoveryStatusText(
@@ -1765,6 +1766,11 @@ export default function AtlasMap({
               ).map(({ id, events, eventIndices, position }) => {
                 const primaryEvent = events[0];
                 const isCluster = events.length > 1;
+                const exactHighlightedEvent = exactEventIntent
+                  ? events.find(
+                      (event) => event.id === exactEventIntent.eventId,
+                    )
+                  : null;
                 const clusterHighlightedCount = events.filter((event) =>
                   highlightedIds.has(event.id),
                 ).length;
@@ -1801,6 +1807,11 @@ export default function AtlasMap({
                     : isSelected
                       ? 1.25
                       : 1;
+                const markerLabelEvent = exactHighlightedEvent ??
+                  (!isCluster ? primaryEvent : null);
+                const shouldShowMarkerLabel = exactEventIntent
+                  ? Boolean(exactHighlightedEvent)
+                  : !isCluster && isHighlighted;
                 return (
                   <div
                     key={id}
@@ -1836,6 +1847,12 @@ export default function AtlasMap({
                             }
                             onClick={() => {
                               if (shouldSuppressMarkerTap()) return;
+                              if (exactHighlightedEvent) {
+                                setSelectedClusterId(null);
+                                setSelectedId(exactHighlightedEvent.id);
+                                return;
+                              }
+
                               if (isCluster) {
                                 setSelectedId(null);
                                 setSelectedClusterId(id);
@@ -1916,12 +1933,18 @@ export default function AtlasMap({
                           <button
                             type="button"
                             aria-label={
-                              isCluster
-                                ? `Open ${events.length} nearby celebrations`
-                                : `Open ${primaryEvent.name}`
+                              markerLabelEvent
+                                ? `Open ${markerLabelEvent.name}`
+                                : `Open ${events.length} nearby celebrations`
                             }
                             onClick={() => {
                               if (shouldSuppressMarkerTap()) return;
+                              if (exactHighlightedEvent) {
+                                setSelectedClusterId(null);
+                                setSelectedId(exactHighlightedEvent.id);
+                                return;
+                              }
+
                               if (isCluster) {
                                 setSelectedId(null);
                                 setSelectedClusterId(id);
@@ -1934,18 +1957,17 @@ export default function AtlasMap({
                             style={{
                               ...styles.markerLabel,
                               ...(isCluster ? styles.clusterLabel : null),
-                              opacity: !isCluster && isHighlighted ? 1 : 0,
-                              transform:
-                                !isCluster && isHighlighted
-                                  ? 'translate(-50%, -122%)'
-                                  : 'translate(-50%, -116%)',
-                              pointerEvents:
-                                !isCluster && isHighlighted ? 'auto' : 'none',
+                              opacity: shouldShowMarkerLabel ? 1 : 0,
+                              transform: shouldShowMarkerLabel
+                                ? 'translate(-50%, -122%)'
+                                : 'translate(-50%, -116%)',
+                              pointerEvents: shouldShowMarkerLabel
+                                ? 'auto'
+                                : 'none',
                             }}
                           >
-                            {isCluster
-                              ? `${events.length} celebrations`
-                              : primaryEvent.name}
+                            {markerLabelEvent?.name ??
+                              `${events.length} celebrations`}
                           </button>
                         </>
                       )}
