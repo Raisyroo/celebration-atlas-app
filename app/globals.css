@@ -138,8 +138,8 @@ body.event-detail-scroll::-webkit-scrollbar {
   }
 
   .home-phone-landscape-scroll .atlas-hero {
-    min-height: calc((100vw * 5000 / 2814) + 132px + env(safe-area-inset-bottom)) !important;
-    padding-bottom: calc(132px + env(safe-area-inset-bottom)) !important;
+    min-height: calc((100vw * 5000 / 2814) + 88px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
     overflow: visible !important;
     touch-action: auto !important;
     overscroll-behavior-y: auto !important;
@@ -168,13 +168,14 @@ body.event-detail-scroll::-webkit-scrollbar {
   }
 
   .home-phone-landscape-scroll .atlas-search-dock {
-    position: absolute !important;
+    position: fixed !important;
     left: max(12px, env(safe-area-inset-left)) !important;
     right: max(12px, env(safe-area-inset-right)) !important;
     bottom: max(12px, env(safe-area-inset-bottom)) !important;
     width: auto !important;
     padding: 0 !important;
     transform: none !important;
+    z-index: 40 !important;
   }
 
   .home-phone-landscape-scroll .atlas-search-dock button {
@@ -342,8 +343,8 @@ body.event-detail-scroll::-webkit-scrollbar {
     display: block !important;
     align-items: initial !important;
     justify-content: initial !important;
-    min-height: calc((100vw * 5000 / 2814) + 132px + env(safe-area-inset-bottom)) !important;
-    padding: 0 0 calc(132px + env(safe-area-inset-bottom)) !important;
+    min-height: calc((100vw * 5000 / 2814) + 88px + env(safe-area-inset-bottom)) !important;
+    padding: 0 0 calc(88px + env(safe-area-inset-bottom)) !important;
     overflow: visible !important;
   }
 
