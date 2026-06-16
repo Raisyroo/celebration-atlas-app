@@ -1407,11 +1407,17 @@ export default function AtlasMap({
     };
   }, []);
 
+  const isAtlasPanelOpen = Boolean(renderedEvent || selectedCluster);
+
   return (
     <section
-      className={`atlas-hero ${
-        isPhoneLandscape ? 'atlas-hero--phone-landscape' : ''
-      }`}
+      className={[
+        'atlas-hero',
+        isPhoneLandscape ? 'atlas-hero--phone-landscape' : '',
+        isAtlasPanelOpen ? 'atlas-hero--card-open' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       style={styles.hero}
       onPointerDown={handleBackdropPointerDown}
     >
