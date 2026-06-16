@@ -160,33 +160,33 @@ const MARKER_BASE_SHADOWS_BY_INTENSITY: Record<
 > = {
   dim: {
     idle:
-      '0 0 3px rgba(255,233,184,.58), 0 0 9px rgba(242,178,78,.3), 0 0 18px rgba(177,103,39,.12)',
+      '0 0 0 1px rgba(255,236,194,.12), 0 0 8px rgba(255,220,148,.36), 0 0 22px rgba(221,142,48,.16), 0 0 42px rgba(120,70,28,.08)',
     peak:
-      '0 0 4px rgba(255,238,197,.66), 0 0 12px rgba(248,190,88,.4), 0 0 22px rgba(177,103,39,.16)',
+      '0 0 0 1px rgba(255,239,202,.16), 0 0 11px rgba(255,224,156,.44), 0 0 28px rgba(226,150,52,.2), 0 0 50px rgba(120,70,28,.1)',
   },
   standard: {
     idle:
-      '0 0 3px rgba(255,233,184,.7), 0 0 10px rgba(242,178,78,.38), 0 0 21px rgba(177,103,39,.16)',
+      '0 0 0 1px rgba(255,238,202,.14), 0 0 9px rgba(255,222,152,.42), 0 0 24px rgba(224,145,50,.18), 0 0 46px rgba(120,70,28,.09)',
     peak:
-      '0 0 4px rgba(255,238,197,.78), 0 0 13px rgba(248,190,88,.48), 0 0 25px rgba(177,103,39,.2)',
+      '0 0 0 1px rgba(255,242,210,.18), 0 0 13px rgba(255,228,164,.5), 0 0 31px rgba(229,153,54,.23), 0 0 56px rgba(120,70,28,.11)',
   },
   bright: {
     idle:
-      '0 0 4px rgba(255,237,194,.76), 0 0 12px rgba(246,188,86,.45), 0 0 24px rgba(186,111,40,.18)',
+      '0 0 0 1px rgba(255,242,210,.16), 0 0 11px rgba(255,226,158,.48), 0 0 28px rgba(230,151,52,.22), 0 0 54px rgba(126,72,28,.1)',
     peak:
-      '0 0 5px rgba(255,242,207,.84), 0 0 15px rgba(251,197,96,.54), 0 0 28px rgba(190,114,41,.22)',
+      '0 0 0 1px rgba(255,246,220,.22), 0 0 15px rgba(255,232,172,.58), 0 0 36px rgba(235,158,56,.28), 0 0 64px rgba(126,72,28,.13)',
   },
   active: {
     idle:
-      '0 0 4px rgba(255,239,202,.8), 0 0 13px rgba(250,196,94,.5), 0 0 25px rgba(196,120,42,.2)',
+      '0 0 0 1px rgba(255,246,220,.22), 0 0 14px rgba(255,232,174,.58), 0 0 34px rgba(238,160,58,.28), 0 0 68px rgba(130,74,28,.13)',
     peak:
-      '0 0 5px rgba(255,244,214,.88), 0 0 16px rgba(253,201,100,.6), 0 0 29px rgba(196,120,42,.24)',
+      '0 0 0 1px rgba(255,249,228,.28), 0 0 18px rgba(255,237,188,.68), 0 0 44px rgba(242,167,62,.35), 0 0 78px rgba(130,74,28,.16)',
   },
   signature: {
     idle:
-      '0 0 4px rgba(255,239,202,.82), 0 0 13px rgba(250,196,94,.54), 0 0 25px rgba(196,120,42,.22)',
+      '0 0 0 1px rgba(255,248,226,.24), 0 0 15px rgba(255,235,182,.62), 0 0 38px rgba(241,165,60,.3), 0 0 72px rgba(132,76,30,.14)',
     peak:
-      '0 0 5px rgba(255,244,214,.9), 0 0 17px rgba(253,201,100,.64), 0 0 30px rgba(196,120,42,.26)',
+      '0 0 0 1px rgba(255,250,232,.32), 0 0 20px rgba(255,240,196,.74), 0 0 50px rgba(246,174,68,.38), 0 0 88px rgba(132,76,30,.18)',
   },
 };
 
@@ -1793,8 +1793,12 @@ export default function AtlasMap({
                 const isSingleSearchResultMarker = Boolean(
                   q && highlightedIds.size === 1 && isHighlighted,
                 );
+                const isExactRevealMarker = Boolean(
+                  isExactEventMarker || isSingleSearchResultMarker,
+                );
+                const isSelectedMarker = Boolean(isSelected);
                 const isStrongActiveMarker = Boolean(
-                  isSelected || isExactEventMarker || isSingleSearchResultMarker,
+                  isSelectedMarker || isExactRevealMarker,
                 );
                 const primaryEventProfile = getEventProfileById(
                   primaryEvent.id,
@@ -1808,7 +1812,22 @@ export default function AtlasMap({
                     ]
                   : MARKER_BASE_SHADOWS_BY_INTENSITY.standard;
                 const firstEventIndex = Math.min(...eventIndices);
-                const pulseDuration = 2.4 + (firstEventIndex % 3) * 0.35;
+                const markerStateClass = isCluster
+                  ? 'marker-pulse--cluster'
+                  : isExactRevealMarker
+                    ? 'marker-pulse--exact-reveal'
+                    : isSelectedMarker
+                      ? 'marker-pulse--selected'
+                      : isHighlighted
+                        ? 'marker-pulse--broad-highlighted'
+                        : 'marker-pulse--inactive';
+                const pulseDuration = isExactRevealMarker
+                  ? 1.9
+                  : isSelectedMarker
+                    ? 3.4
+                    : isHighlighted
+                      ? 2.65
+                      : 3.15 + (firstEventIndex % 3) * 0.32;
                 const pulseDelay = firstEventIndex * 0.26;
                 const markerLayerLift = isStrongActiveMarker
                   ? 34
@@ -1819,15 +1838,17 @@ export default function AtlasMap({
                       : 0;
                 const markerScaleBase = isCluster
                   ? Math.min(
-                      isStrongActiveMarker ? 1.82 : 1.65,
+                      isStrongActiveMarker ? 1.76 : 1.58,
                       1.16 +
                         events.length * 0.09 +
                         (isStrongActiveMarker ? 0.18 : isHighlighted ? 0.08 : 0),
                     )
-                  : isStrongActiveMarker
-                    ? 1.62
+                  : isExactRevealMarker
+                    ? 1.86
+                    : isSelectedMarker
+                      ? 1.76
                     : isHighlighted
-                      ? 1.38
+                      ? 1.36
                       : 1;
                 const markerLabelEvent = exactHighlightedEvent ??
                   (!isCluster ? primaryEvent : null);
@@ -1896,7 +1917,7 @@ export default function AtlasMap({
                           >
                             <span
                               aria-hidden="true"
-                              className={`marker-pulse${
+                              className={`marker-pulse ${markerStateClass}${
                                 isHighlighted ? ' marker-pulse--highlighted' : ''
                               }${
                                 isStrongActiveMarker
@@ -1911,54 +1932,26 @@ export default function AtlasMap({
                                   '--marker-scale-base': markerScaleBase,
                                   '--marker-shadow-idle': isCluster
                                     ? isStrongActiveMarker
-                                      ? '0 0 0 2px rgba(255,250,226,.28), 0 0 13px rgba(255,252,235,.96), 0 0 38px rgba(255,216,122,.78), 0 0 86px rgba(220,145,48,.42), 0 0 132px rgba(145,81,30,.2)'
+                                      ? '0 0 0 2px rgba(255,250,226,.26), 0 0 18px rgba(255,248,220,.88), 0 0 48px rgba(255,216,122,.66), 0 0 96px rgba(220,145,48,.34), 0 0 142px rgba(145,81,30,.18)'
                                       : isHighlighted
-                                        ? '0 0 8px rgba(255,247,219,.82), 0 0 26px rgba(255,205,106,.56), 0 0 64px rgba(211,132,43,.28), 0 0 108px rgba(145,81,30,.14)'
-                                        : '0 0 6px rgba(255,232,184,.54), 0 0 19px rgba(242,178,77,.36), 0 0 48px rgba(186,111,40,.2), 0 0 82px rgba(128,72,29,.11)'
+                                        ? '0 0 12px rgba(255,244,214,.76), 0 0 34px rgba(255,205,106,.52), 0 0 72px rgba(211,132,43,.26), 0 0 112px rgba(145,81,30,.13)'
+                                        : '0 0 9px rgba(255,232,184,.5), 0 0 26px rgba(242,178,77,.34), 0 0 56px rgba(186,111,40,.19), 0 0 86px rgba(128,72,29,.1)'
                                     : isStrongActiveMarker
-                                      ? '0 0 0 2px rgba(255,250,226,.42), 0 0 12px rgba(255,254,242,1), 0 0 34px rgba(255,224,138,.98), 0 0 74px rgba(223,146,48,.58), 0 0 112px rgba(145,81,30,.24)'
+                                      ? '0 0 0 2px rgba(255,250,226,.34), 0 0 16px rgba(255,254,242,.96), 0 0 40px rgba(255,224,138,.82), 0 0 82px rgba(223,146,48,.48), 0 0 116px rgba(145,81,30,.22)'
                                       : isHighlighted
-                                        ? '0 0 5px rgba(255,251,232,.96), 0 0 17px rgba(255,210,112,.72), 0 0 34px rgba(223,146,48,.3)'
+                                        ? '0 0 8px rgba(255,249,226,.88), 0 0 22px rgba(255,210,112,.62), 0 0 46px rgba(223,146,48,.28)'
                                         : markerBaseShadows.idle,
                                   '--marker-shadow-peak': isCluster
                                     ? isStrongActiveMarker
-                                      ? '0 0 0 3px rgba(255,252,235,.36), 0 0 16px rgba(255,254,242,1), 0 0 48px rgba(255,226,142,.9), 0 0 104px rgba(225,151,52,.5), 0 0 152px rgba(145,81,30,.24)'
+                                      ? '0 0 0 3px rgba(255,252,235,.34), 0 0 22px rgba(255,254,242,.96), 0 0 60px rgba(255,226,142,.82), 0 0 112px rgba(225,151,52,.42), 0 0 160px rgba(145,81,30,.22)'
                                       : isHighlighted
-                                        ? '0 0 10px rgba(255,250,229,.9), 0 0 34px rgba(255,214,122,.66), 0 0 78px rgba(217,140,45,.34), 0 0 124px rgba(145,81,30,.16)'
-                                        : '0 0 7px rgba(255,238,197,.62), 0 0 25px rgba(248,190,88,.45), 0 0 60px rgba(196,120,42,.24), 0 0 96px rgba(128,72,29,.13)'
+                                        ? '0 0 14px rgba(255,248,224,.84), 0 0 42px rgba(255,214,122,.62), 0 0 86px rgba(217,140,45,.32), 0 0 130px rgba(145,81,30,.15)'
+                                        : '0 0 11px rgba(255,238,197,.58), 0 0 32px rgba(248,190,88,.42), 0 0 66px rgba(196,120,42,.23), 0 0 100px rgba(128,72,29,.12)'
                                     : isStrongActiveMarker
-                                      ? '0 0 0 3px rgba(255,252,235,.5), 0 0 16px rgba(255,254,242,1), 0 0 44px rgba(255,228,146,1), 0 0 88px rgba(223,146,48,.66), 0 0 128px rgba(145,81,30,.28)'
+                                      ? '0 0 0 3px rgba(255,252,235,.44), 0 0 22px rgba(255,254,242,1), 0 0 56px rgba(255,228,146,.94), 0 0 96px rgba(223,146,48,.56), 0 0 136px rgba(145,81,30,.25)'
                                       : isHighlighted
-                                        ? '0 0 7px rgba(255,253,238,1), 0 0 22px rgba(255,218,130,.84), 0 0 40px rgba(223,146,48,.36)'
+                                        ? '0 0 10px rgba(255,252,234,.96), 0 0 30px rgba(255,218,130,.78), 0 0 56px rgba(223,146,48,.34)'
                                         : markerBaseShadows.peak,
-                                  '--marker-glint-span': isCluster
-                                    ? '21px'
-                                    : '15px',
-                                  '--marker-glint-thickness': isCluster
-                                    ? '1.5px'
-                                    : '1px',
-                                  '--marker-glint-opacity': isCluster
-                                    ? isStrongActiveMarker
-                                      ? 0.92
-                                      : isHighlighted
-                                        ? 0.72
-                                        : 0.18
-                                    : isStrongActiveMarker
-                                      ? 0.96
-                                      : isHighlighted
-                                        ? 0.78
-                                        : 0.08,
-                                  '--marker-glint-soft-opacity': isCluster
-                                    ? isStrongActiveMarker
-                                      ? 0.52
-                                      : isHighlighted
-                                        ? 0.36
-                                        : 0.08
-                                    : isStrongActiveMarker
-                                      ? 0.56
-                                      : isHighlighted
-                                        ? 0.34
-                                        : 0.04,
                                   animationDuration: `${pulseDuration}s`,
                                   animationDelay: `${pulseDelay}s`,
                                 } as CSSProperties
@@ -2396,43 +2389,102 @@ export default function AtlasMap({
               animation-timing-function: ease-in-out;
               animation-iteration-count: infinite;
               animation-fill-mode: both;
-              will-change: transform, box-shadow, filter, outline-offset;
+              will-change: transform, box-shadow, filter, outline-offset, opacity;
               transform-origin: center;
+              --marker-brightness-idle: 1;
+              --marker-brightness-peak: 1.07;
+              --marker-saturation-idle: 1;
+              --marker-saturation-peak: 1.08;
+              --marker-ring-opacity: 0.1;
+              --marker-bloom-opacity: 0.2;
+              --marker-bloom-size: 190%;
+            }
+
+            .marker-pulse--inactive {
+              opacity: 0.9;
+              --marker-ring-opacity: 0.08;
+              --marker-bloom-opacity: 0.16;
+            }
+
+            .marker-pulse--broad-highlighted {
+              border-color: rgba(255, 241, 202, 0.26) !important;
+              --marker-brightness-idle: 1.13;
+              --marker-brightness-peak: 1.25;
+              --marker-saturation-idle: 1.1;
+              --marker-saturation-peak: 1.18;
+              --marker-ring-opacity: 0.22;
+              --marker-bloom-opacity: 0.36;
+              --marker-bloom-size: 230%;
+            }
+
+            .marker-pulse--exact-reveal {
+              border-color: rgba(255, 250, 226, 0.56) !important;
+              outline: 1px solid rgba(255, 238, 184, 0.5);
+              outline-offset: 5px;
+              --marker-brightness-idle: 1.34;
+              --marker-brightness-peak: 1.55;
+              --marker-saturation-idle: 1.16;
+              --marker-saturation-peak: 1.26;
+              --marker-ring-opacity: 0.5;
+              --marker-bloom-opacity: 0.66;
+              --marker-bloom-size: 285%;
+            }
+
+            .marker-pulse--selected {
+              border-color: rgba(255, 248, 222, 0.48) !important;
+              outline: 1px solid rgba(255, 232, 168, 0.38);
+              outline-offset: 4px;
+              --marker-brightness-idle: 1.25;
+              --marker-brightness-peak: 1.4;
+              --marker-saturation-idle: 1.14;
+              --marker-saturation-peak: 1.22;
+              --marker-ring-opacity: 0.38;
+              --marker-bloom-opacity: 0.54;
+              --marker-bloom-size: 265%;
+            }
+
+            .marker-pulse--cluster {
+              --marker-ring-opacity: 0.18;
+              --marker-bloom-opacity: 0.34;
+              --marker-bloom-size: 245%;
             }
 
             .marker-pulse--highlighted {
-              border-color: rgba(255, 241, 202, 0.28) !important;
-              --marker-brightness-idle: 1.12;
-              --marker-brightness-peak: 1.24;
-              --marker-saturation-idle: 1.12;
-              --marker-saturation-peak: 1.18;
+              border-color: rgba(255, 241, 202, 0.26) !important;
             }
 
             .marker-pulse--strong-active {
-              border-color: rgba(255, 250, 226, 0.52) !important;
-              outline: 1px solid rgba(255, 236, 177, 0.42);
-              outline-offset: 3px;
-              --marker-brightness-idle: 1.22;
-              --marker-brightness-peak: 1.38;
-              --marker-saturation-idle: 1.16;
-              --marker-saturation-peak: 1.24;
+              border-color: rgba(255, 250, 226, 0.5) !important;
             }
 
             @media (max-width: 767px) {
-              .marker-pulse--highlighted {
+              .marker-pulse--inactive {
                 width: 18px !important;
                 height: 18px !important;
               }
 
-              .marker-pulse--strong-active {
-                width: 23px !important;
-                height: 23px !important;
+              .marker-pulse--broad-highlighted {
+                width: 22px !important;
+                height: 22px !important;
+              }
+
+              .marker-pulse--exact-reveal {
+                width: 30px !important;
+                height: 30px !important;
+                outline-width: 1.5px;
+                outline-offset: 6px;
+              }
+
+              .marker-pulse--selected {
+                width: 32px !important;
+                height: 32px !important;
                 outline-width: 1.5px;
                 outline-offset: 5px;
-                --marker-brightness-idle: 1.36;
-                --marker-brightness-peak: 1.56;
-                --marker-saturation-idle: 1.18;
-                --marker-saturation-peak: 1.28;
+              }
+
+              .marker-pulse--cluster {
+                width: 32px !important;
+                height: 32px !important;
               }
             }
 
@@ -2442,29 +2494,28 @@ export default function AtlasMap({
               position: absolute;
               left: 50%;
               top: 50%;
-              width: var(--marker-glint-span, 15px);
-              height: var(--marker-glint-thickness, 1px);
+              width: var(--marker-bloom-size, 190%);
+              height: var(--marker-bloom-size, 190%);
               border-radius: 999px;
-              background: linear-gradient(
-                90deg,
-                rgba(255, 237, 177, 0),
-                rgba(255, 249, 226, var(--marker-glint-opacity, 0.5)),
-                rgba(255, 237, 177, 0)
+              background: radial-gradient(
+                circle,
+                rgba(255, 250, 226, var(--marker-ring-opacity, 0.12)) 0 16%,
+                rgba(255, 214, 122, var(--marker-bloom-opacity, 0.2)) 24%,
+                rgba(226, 146, 54, calc(var(--marker-bloom-opacity, 0.2) * 0.42)) 46%,
+                rgba(120, 70, 28, 0) 72%
               );
-              box-shadow: 0 0 6px
-                rgba(255, 214, 122, var(--marker-glint-soft-opacity, 0.2));
               pointer-events: none;
               transform: translate(-50%, -50%);
             }
 
             .marker-pulse::after {
-              width: var(--marker-glint-thickness, 1px);
-              height: var(--marker-glint-span, 15px);
-              background: linear-gradient(
-                180deg,
-                rgba(255, 237, 177, 0),
-                rgba(255, 249, 226, var(--marker-glint-soft-opacity, 0.2)),
-                rgba(255, 237, 177, 0)
+              width: calc(var(--marker-bloom-size, 190%) * 0.66);
+              height: calc(var(--marker-bloom-size, 190%) * 0.66);
+              background: radial-gradient(
+                circle,
+                rgba(255, 255, 242, calc(var(--marker-ring-opacity, 0.12) * 0.78)) 0 18%,
+                rgba(255, 225, 146, calc(var(--marker-bloom-opacity, 0.2) * 0.42)) 36%,
+                rgba(255, 225, 146, 0) 66%
               );
             }
 
