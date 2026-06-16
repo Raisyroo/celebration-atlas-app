@@ -193,6 +193,72 @@ body.event-detail-scroll::-webkit-scrollbar {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Mobile event cards are viewport UI, independent of map art scale/position. */
+@media (max-width: 767px) and (orientation: portrait) {
+  .atlas-card,
+  .atlas-cluster-panel {
+    position: fixed !important;
+    left: max(12px, env(safe-area-inset-left)) !important;
+    right: max(12px, env(safe-area-inset-right)) !important;
+    bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    max-height: min(
+      74svh,
+      calc(100svh - max(18px, env(safe-area-inset-top)) - 24px - env(safe-area-inset-bottom))
+    ) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    z-index: 30 !important;
+  }
+
+  @supports (height: 100dvh) {
+    .atlas-card,
+    .atlas-cluster-panel {
+      max-height: min(
+        74dvh,
+        calc(100dvh - max(18px, env(safe-area-inset-top)) - 24px - env(safe-area-inset-bottom))
+      ) !important;
+    }
+  }
+
+  .atlas-hero--card-open .atlas-search-dock {
+    bottom: calc(-42px + env(safe-area-inset-bottom)) !important;
+    opacity: 0.42;
+    transform: scale(0.96);
+    transform-origin: center bottom;
+    pointer-events: none;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 932px) {
+  .home-phone-landscape-scroll .atlas-card,
+  .home-phone-landscape-scroll .atlas-cluster-panel {
+    position: fixed !important;
+    left: max(12px, env(safe-area-inset-left)) !important;
+    right: max(12px, env(safe-area-inset-right)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    max-height: min(78svh, calc(100svh - 22px - env(safe-area-inset-top))) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    z-index: 30 !important;
+  }
+
+  @supports (height: 100dvh) {
+    .home-phone-landscape-scroll .atlas-card,
+    .home-phone-landscape-scroll .atlas-cluster-panel {
+      max-height: min(78dvh, calc(100dvh - 22px - env(safe-area-inset-top))) !important;
+    }
+  }
+
+  .home-phone-landscape-scroll .atlas-hero--card-open .atlas-search-dock {
+    opacity: 0.38;
+    pointer-events: none;
+  }
+}
+
 /* Responsive atlas framing (tablet/desktop only; mobile remains unchanged) */
 /* Keep framed desktop atlas layout only in true landscape; portrait stays edge-to-edge. */
 @media (min-width: 768px) and (orientation: landscape) {
