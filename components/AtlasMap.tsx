@@ -2254,7 +2254,13 @@ export default function AtlasMap({
               shortcutGroups={HOME_DISCOVERY_SHORTCUT_GROUPS}
               showShortcutGroups={false}
             />
-            <div style={styles.searchInputWrap}>
+            <form
+              style={styles.searchInputWrap}
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitSearch();
+              }}
+            >
               <span style={styles.searchPrefix}>Ask Celebration Atlas</span>
               <span
                 aria-hidden="true"
@@ -2310,7 +2316,32 @@ export default function AtlasMap({
                 autoCapitalize="none"
                 spellCheck={false}
               />
-            </div>
+              <button
+                type="submit"
+                aria-label="Submit Atlas question"
+                className="atlas-search-submit"
+                style={styles.searchSubmitButton}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                }}
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  focusable="false"
+                  style={styles.searchSubmitIcon}
+                >
+                  <path
+                    d="M5 12h12.2M13 7.8 17.2 12 13 16.2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </button>
+            </form>
           </div>
           <style jsx>{`
             .atlas-search-input--pulse {
@@ -2335,6 +2366,29 @@ export default function AtlasMap({
 
             .atlas-search-query--fade {
               opacity: 0;
+            }
+
+            .atlas-search-submit {
+              transition:
+                transform 180ms ease,
+                border-color 180ms ease,
+                box-shadow 180ms ease,
+                color 180ms ease;
+            }
+
+            .atlas-search-submit:hover,
+            .atlas-search-submit:focus-visible {
+              border-color: rgba(255, 235, 184, 0.66);
+              color: rgba(255, 250, 232, 0.98);
+              box-shadow:
+                inset 0 0 0 1px rgba(255, 250, 226, 0.12),
+                0 0 18px rgba(255, 207, 116, 0.32),
+                0 7px 18px rgba(2, 5, 12, 0.24);
+              transform: translateY(-50%) scale(1.03);
+            }
+
+            .atlas-search-submit:active {
+              transform: translateY(-50%) scale(0.97);
             }
 
             .marker-pulse {
@@ -3025,7 +3079,7 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    maxWidth: '100%',
+    maxWidth: 'calc(100% - 58px)',
     pointerEvents: 'none',
     userSelect: 'none',
     WebkitUserSelect: 'none',
@@ -3035,7 +3089,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     inset: 0,
     width: '100%',
-    padding: '26px 17px 9px',
+    padding: '26px 66px 9px 17px',
     borderRadius: 24,
     border: 'none',
     background: 'transparent',
@@ -3048,6 +3102,36 @@ const styles: Record<string, CSSProperties> = {
     textShadow: 'none',
     filter: 'none',
     boxShadow: 'none',
+  },
+  searchSubmitButton: {
+    position: 'absolute',
+    right: 9,
+    top: '50%',
+    zIndex: 2,
+    display: 'grid',
+    placeItems: 'center',
+    width: 42,
+    height: 42,
+    minWidth: 42,
+    minHeight: 42,
+    padding: 0,
+    borderRadius: 999,
+    border: '1px solid rgba(255, 226, 170, 0.44)',
+    background:
+      'radial-gradient(circle at 32% 24%, rgba(255, 247, 218, 0.24), rgba(255, 205, 112, 0.12) 38%, rgba(11, 15, 22, 0.56) 100%)',
+    color: 'rgba(255, 235, 190, 0.9)',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255, 250, 226, 0.08), 0 0 14px rgba(255, 207, 116, 0.22), 0 6px 16px rgba(2, 5, 12, 0.22)',
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    transform: 'translateY(-50%)',
+  },
+  searchSubmitIcon: {
+    width: 21,
+    height: 21,
+    filter: 'drop-shadow(0 1px 3px rgba(2, 3, 7, 0.66))',
   },
   card: {
     position: 'absolute',
