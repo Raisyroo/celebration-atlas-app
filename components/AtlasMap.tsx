@@ -1135,6 +1135,10 @@ export default function AtlasMap({
       }
 
       if (activePointers.length === 1 && panGestureRef.current) {
+        const shouldLetPhoneLandscapeScroll =
+          isPhoneLandscape && mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
+        if (shouldLetPhoneLandscapeScroll) return;
+
         const pan = panGestureRef.current;
         const deltaX = event.clientX - pan.startX;
         const deltaY = event.clientY - pan.startY;
@@ -1157,7 +1161,7 @@ export default function AtlasMap({
         setMapTransform(nextTransform);
       }
     },
-    [mapTransform.scale],
+    [isPhoneLandscape, mapTransform.scale],
   );
 
   const handleMapGesturePointerEnd = useCallback(
@@ -1645,6 +1649,9 @@ export default function AtlasMap({
   }, []);
 
   const isAtlasPanelOpen = Boolean(renderedEvent || selectedCluster);
+  const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
+  const shouldAllowPhoneLandscapeNativeScroll =
+    isPhoneLandscape && isMapAtMinimumZoom;
   const mapLayerTransform = `translate3d(${mapTransform.translateX + (prefersReducedMotion ? 0 : parallaxOffset.x * 0.55)}px, ${mapTransform.translateY + (prefersReducedMotion ? 0 : parallaxOffset.y * 0.55)}px, 0) scale(${BASE_SCALE * mapTransform.scale})`;
 
   return (
@@ -1666,6 +1673,7 @@ export default function AtlasMap({
         }`}
         style={{
           ...styles.mapFrame,
+          touchAction: shouldAllowPhoneLandscapeNativeScroll ? 'pan-y' : 'none',
           ...(isDesktop && !isVerificationMode ? styles.mapFrameDesktop : null),
         }}
         onPointerDown={handleMapGesturePointerDown}
@@ -1701,6 +1709,7 @@ export default function AtlasMap({
         <div
           style={{
             ...styles.mapContent,
+            touchAction: shouldAllowPhoneLandscapeNativeScroll ? 'pan-y' : 'none',
             transform: mapLayerTransform,
           }}
         >
