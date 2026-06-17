@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 // Future national atlas boundary.
@@ -39,11 +40,14 @@ export default function NationalAtlasShell({ children, highlightedStateSlug }: N
         <figure style={styles.mapStage} aria-label="Interactive preview for the future U.S. Atlas map">
           <div style={styles.mapGlow} aria-hidden="true" />
           <div style={styles.nationalMapFrame}>
-            <div style={styles.nationalMapBackdrop} aria-hidden="true" />
-            <div style={styles.nationalMapLandmass} aria-hidden="true" />
-            <div style={styles.nationalMapWest} aria-hidden="true" />
-            <div style={styles.nationalMapEast} aria-hidden="true" />
-            <div style={styles.nationalMapFlorida} aria-hidden="true" />
+            <Image
+              src="/maps/us-atlas-preview.webp"
+              alt="Illustrated U.S. map preview for the national Celebration Atlas"
+              fill
+              priority
+              sizes="(max-width: 768px) 96vw, 80rem"
+              style={styles.nationalMapImage}
+            />
             <div
               style={{
                 ...styles.michiganPortal,
@@ -56,8 +60,6 @@ export default function NationalAtlasShell({ children, highlightedStateSlug }: N
               <span style={styles.michiganDot} aria-hidden="true" />
               <span style={styles.michiganLabel}>Michigan</span>
             </div>
-            <div style={styles.nationalMapSignalOne} aria-hidden="true" />
-            <div style={styles.nationalMapSignalTwo} aria-hidden="true" />
           </div>
           <figcaption style={styles.caption}>
             Development preview. The national visual is intentionally partial: Michigan is the available state doorway,
@@ -167,13 +169,6 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     width: '100%',
   },
-  mapFrame: {
-    aspectRatio: '16 / 10',
-    maxHeight: 'min(66svh, 45rem)',
-    position: 'relative',
-    width: '100%',
-    zIndex: 1,
-  },
   mapGlow: {
     background:
       'radial-gradient(circle at 50% 45%, rgba(246, 190, 119, 0.27), transparent 54%), radial-gradient(circle at 28% 32%, rgba(123, 173, 189, 0.2), transparent 32%)',
@@ -182,70 +177,25 @@ const styles: Record<string, CSSProperties> = {
     opacity: 0.78,
     position: 'absolute',
   },
-  mapImage: {
-    objectFit: 'contain',
-  },
 
   nationalMapFrame: {
-    aspectRatio: '16 / 8.6',
+    alignItems: 'center',
+    aspectRatio: '16 / 9',
+    background: 'linear-gradient(180deg, rgba(28, 45, 63, 0.72), rgba(9, 16, 27, 0.9))',
     borderRadius: '2.4rem',
     boxShadow:
       '0 32px 95px rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(255, 236, 196, 0.1)',
+    display: 'flex',
+    justifyContent: 'center',
     maxHeight: 'min(62svh, 42rem)',
     overflow: 'hidden',
     position: 'relative',
     width: '100%',
     zIndex: 1,
   },
-  nationalMapBackdrop: {
-    background:
-      'radial-gradient(circle at 52% 42%, rgba(251, 216, 157, 0.2), transparent 46%), linear-gradient(180deg, rgba(28, 45, 63, 0.82), rgba(9, 16, 27, 0.96))',
-    inset: 0,
-    position: 'absolute',
-  },
-  nationalMapLandmass: {
-    background:
-      'linear-gradient(135deg, rgba(223, 179, 111, 0.68), rgba(107, 147, 128, 0.48))',
-    borderRadius: '52% 48% 45% 48% / 38% 42% 50% 46%',
-    filter: 'drop-shadow(0 18px 34px rgba(0, 0, 0, 0.28))',
-    height: '50%',
-    left: '19%',
-    opacity: 0.82,
-    position: 'absolute',
-    top: '23%',
-    transform: 'rotate(-4deg)',
-    width: '62%',
-  },
-  nationalMapWest: {
-    background: 'rgba(167, 121, 82, 0.55)',
-    borderRadius: '55% 30% 45% 54% / 40% 45% 52% 46%',
-    height: '48%',
-    left: '13%',
-    position: 'absolute',
-    top: '25%',
-    transform: 'rotate(-10deg)',
-    width: '27%',
-  },
-  nationalMapEast: {
-    background: 'rgba(187, 156, 99, 0.62)',
-    borderRadius: '46% 58% 48% 38% / 34% 40% 62% 54%',
-    height: '42%',
-    left: '57%',
-    position: 'absolute',
-    top: '26%',
-    transform: 'rotate(8deg)',
-    width: '23%',
-  },
-  nationalMapFlorida: {
-    borderBottom: '3.4rem solid rgba(187, 156, 99, 0.56)',
-    borderLeft: '1.1rem solid transparent',
-    borderRight: '0.55rem solid transparent',
-    height: 0,
-    left: '74%',
-    position: 'absolute',
-    top: '58%',
-    transform: 'rotate(-26deg)',
-    width: 0,
+  nationalMapImage: {
+    objectFit: 'contain',
+    padding: 'clamp(0.45rem, 2vw, 1.6rem)',
   },
   michiganPortal: {
     alignItems: 'center',
@@ -288,24 +238,6 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.08em',
     padding: '0.38rem 0.58rem',
     textTransform: 'uppercase',
-  },
-  nationalMapSignalOne: {
-    background: 'rgba(123, 173, 189, 0.22)',
-    borderRadius: '999px',
-    height: '7rem',
-    left: '25%',
-    position: 'absolute',
-    top: '40%',
-    width: '7rem',
-  },
-  nationalMapSignalTwo: {
-    background: 'rgba(251, 216, 157, 0.16)',
-    borderRadius: '999px',
-    height: '5.5rem',
-    left: '50%',
-    position: 'absolute',
-    top: '22%',
-    width: '5.5rem',
   },
   caption: {
     color: 'rgba(255, 244, 219, 0.62)',
@@ -408,15 +340,5 @@ const styles: Record<string, CSSProperties> = {
     fontSize: '0.95rem',
     lineHeight: 1.65,
     margin: 0,
-  },
-  missingMapNotice: {
-    background: 'rgba(255, 246, 220, 0.08)',
-    borderRadius: '1.25rem',
-    color: 'rgba(255, 244, 219, 0.72)',
-    fontSize: '0.95rem',
-    lineHeight: 1.6,
-    margin: 'clamp(2rem, 7vw, 5rem) auto 0',
-    maxWidth: '58rem',
-    padding: '1rem 1.1rem',
   },
 };
