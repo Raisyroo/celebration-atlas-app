@@ -2443,31 +2443,13 @@ export default function AtlasMap({
               --marker-bloom-size: 230%;
             }
 
+            /* Temporary reliable exact-event pulse restored. Global U.S./state marker language should be designed later as a shared marker system, not tuned here as a Romeo-only fix. */
             .marker-pulse--exact-reveal,
             .atlas-marker--exact,
             .marker-pulse[data-atlas-marker-state='exact-event'] {
               border-color: rgba(255, 252, 232, 0.72) !important;
               outline: 2px solid rgba(255, 239, 190, 0.58);
               outline-offset: 7px;
-              border-radius: 0 !important;
-              clip-path: polygon(
-                50% 0%,
-                58% 31%,
-                91% 18%,
-                70% 46%,
-                100% 50%,
-                70% 58%,
-                82% 91%,
-                54% 70%,
-                50% 100%,
-                42% 70%,
-                9% 82%,
-                30% 54%,
-                0% 50%,
-                30% 42%,
-                18% 9%,
-                46% 30%
-              );
               opacity: 1 !important;
               background:
                 radial-gradient(circle at 50% 50%, rgba(255, 255, 248, 1) 0 18%, rgba(255, 245, 205, 0.98) 28%, rgba(255, 219, 126, 0.76) 46%, rgba(255, 190, 78, 0.22) 66%, rgba(255, 190, 78, 0) 88%) !important;
