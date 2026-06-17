@@ -1,6 +1,4 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { existsSync } from 'fs';
-import Image from 'next/image';
 import Link from 'next/link';
 
 // Future national atlas boundary.
@@ -17,15 +15,13 @@ import Link from 'next/link';
 // - this shell must never claim national completeness while Atlas coverage is
 //   still partial or uneven.
 
-const nationalPreviewMapSrc = '/maps/us-atlas-preview.webp';
-const nationalPreviewMapFile = 'public/maps/us-atlas-preview.webp';
-const hasNationalPreviewMap = existsSync(nationalPreviewMapFile);
-
 interface NationalAtlasShellProps {
   children?: ReactNode;
+  highlightedStateSlug?: string;
 }
 
-export default function NationalAtlasShell({ children }: NationalAtlasShellProps) {
+export default function NationalAtlasShell({ children, highlightedStateSlug }: NationalAtlasShellProps) {
+  const isMichiganHighlighted = highlightedStateSlug === 'michigan';
   return (
     <section aria-label="Future national Celebration Atlas gateway" style={styles.shell}>
       <div style={styles.ambientGlow} aria-hidden="true" />
@@ -40,30 +36,34 @@ export default function NationalAtlasShell({ children }: NationalAtlasShellProps
           </p>
         </header>
 
-        {hasNationalPreviewMap ? (
-          <figure style={styles.mapStage} aria-label="Visual preview only for the future U.S. Atlas map">
-            <div style={styles.mapGlow} aria-hidden="true" />
-            <div style={styles.mapFrame}>
-              <Image
-                src={nationalPreviewMapSrc}
-                alt="Development preview map artwork for the future national Celebration Atlas gateway"
-                fill
-                sizes="(min-width: 1024px) 92vw, 100vw"
-                style={styles.mapImage}
-                priority={false}
-              />
+        <figure style={styles.mapStage} aria-label="Interactive preview for the future U.S. Atlas map">
+          <div style={styles.mapGlow} aria-hidden="true" />
+          <div style={styles.nationalMapFrame}>
+            <div style={styles.nationalMapBackdrop} aria-hidden="true" />
+            <div style={styles.nationalMapLandmass} aria-hidden="true" />
+            <div style={styles.nationalMapWest} aria-hidden="true" />
+            <div style={styles.nationalMapEast} aria-hidden="true" />
+            <div style={styles.nationalMapFlorida} aria-hidden="true" />
+            <div
+              style={{
+                ...styles.michiganPortal,
+                ...(isMichiganHighlighted ? styles.michiganPortalActive : null),
+              }}
+              aria-label={isMichiganHighlighted ? 'Michigan highlighted on national atlas preview' : 'Michigan state portal'}
+              role="img"
+            >
+              <span style={styles.michiganPulse} aria-hidden="true" />
+              <span style={styles.michiganDot} aria-hidden="true" />
+              <span style={styles.michiganLabel}>Michigan</span>
             </div>
-            <figcaption style={styles.caption}>
-              Visual preview only. No state clicks, stars, coordinates, clusters, search wiring, or constellation
-              lines are active in this development route.
-            </figcaption>
-          </figure>
-        ) : (
-          <div style={styles.missingMapNotice} role="status">
-            The visual U.S. map preview is missing. Add <code>{nationalPreviewMapFile}</code> to render this
-            development-only national gateway artwork.
+            <div style={styles.nationalMapSignalOne} aria-hidden="true" />
+            <div style={styles.nationalMapSignalTwo} aria-hidden="true" />
           </div>
-        )}
+          <figcaption style={styles.caption}>
+            Development preview. The national visual is intentionally partial: Michigan is the available state doorway,
+            and Celebration Search can emphasize Michigan or known Michigan events without changing the live prototype.
+          </figcaption>
+        </figure>
 
         <section style={styles.statePortal} aria-label="Available state atlas">
           <div style={styles.statePortalHeader}>
@@ -184,6 +184,128 @@ const styles: Record<string, CSSProperties> = {
   },
   mapImage: {
     objectFit: 'contain',
+  },
+
+  nationalMapFrame: {
+    aspectRatio: '16 / 8.6',
+    borderRadius: '2.4rem',
+    boxShadow:
+      '0 32px 95px rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(255, 236, 196, 0.1)',
+    maxHeight: 'min(62svh, 42rem)',
+    overflow: 'hidden',
+    position: 'relative',
+    width: '100%',
+    zIndex: 1,
+  },
+  nationalMapBackdrop: {
+    background:
+      'radial-gradient(circle at 52% 42%, rgba(251, 216, 157, 0.2), transparent 46%), linear-gradient(180deg, rgba(28, 45, 63, 0.82), rgba(9, 16, 27, 0.96))',
+    inset: 0,
+    position: 'absolute',
+  },
+  nationalMapLandmass: {
+    background:
+      'linear-gradient(135deg, rgba(223, 179, 111, 0.68), rgba(107, 147, 128, 0.48))',
+    borderRadius: '52% 48% 45% 48% / 38% 42% 50% 46%',
+    filter: 'drop-shadow(0 18px 34px rgba(0, 0, 0, 0.28))',
+    height: '50%',
+    left: '19%',
+    opacity: 0.82,
+    position: 'absolute',
+    top: '23%',
+    transform: 'rotate(-4deg)',
+    width: '62%',
+  },
+  nationalMapWest: {
+    background: 'rgba(167, 121, 82, 0.55)',
+    borderRadius: '55% 30% 45% 54% / 40% 45% 52% 46%',
+    height: '48%',
+    left: '13%',
+    position: 'absolute',
+    top: '25%',
+    transform: 'rotate(-10deg)',
+    width: '27%',
+  },
+  nationalMapEast: {
+    background: 'rgba(187, 156, 99, 0.62)',
+    borderRadius: '46% 58% 48% 38% / 34% 40% 62% 54%',
+    height: '42%',
+    left: '57%',
+    position: 'absolute',
+    top: '26%',
+    transform: 'rotate(8deg)',
+    width: '23%',
+  },
+  nationalMapFlorida: {
+    borderBottom: '3.4rem solid rgba(187, 156, 99, 0.56)',
+    borderLeft: '1.1rem solid transparent',
+    borderRight: '0.55rem solid transparent',
+    height: 0,
+    left: '74%',
+    position: 'absolute',
+    top: '58%',
+    transform: 'rotate(-26deg)',
+    width: 0,
+  },
+  michiganPortal: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: '0.45rem',
+    left: '66%',
+    position: 'absolute',
+    top: '31%',
+    transform: 'translate(-50%, -50%)',
+  },
+  michiganPortalActive: {
+    filter: 'drop-shadow(0 0 22px rgba(251, 216, 157, 0.82))',
+  },
+  michiganDot: {
+    background: '#fbd89d',
+    border: '2px solid rgba(255, 244, 219, 0.92)',
+    borderRadius: '999px',
+    boxShadow: '0 0 24px rgba(251, 216, 157, 0.8)',
+    display: 'block',
+    height: '1rem',
+    width: '1rem',
+    zIndex: 2,
+  },
+  michiganPulse: {
+    background: 'rgba(251, 216, 157, 0.22)',
+    border: '1px solid rgba(251, 216, 157, 0.55)',
+    borderRadius: '999px',
+    height: '3.2rem',
+    left: '-1.1rem',
+    position: 'absolute',
+    top: '-1.1rem',
+    width: '3.2rem',
+  },
+  michiganLabel: {
+    background: 'rgba(8, 13, 22, 0.58)',
+    border: '1px solid rgba(251, 216, 157, 0.2)',
+    borderRadius: '999px',
+    color: '#fff4db',
+    fontSize: '0.78rem',
+    letterSpacing: '0.08em',
+    padding: '0.38rem 0.58rem',
+    textTransform: 'uppercase',
+  },
+  nationalMapSignalOne: {
+    background: 'rgba(123, 173, 189, 0.22)',
+    borderRadius: '999px',
+    height: '7rem',
+    left: '25%',
+    position: 'absolute',
+    top: '40%',
+    width: '7rem',
+  },
+  nationalMapSignalTwo: {
+    background: 'rgba(251, 216, 157, 0.16)',
+    borderRadius: '999px',
+    height: '5.5rem',
+    left: '50%',
+    position: 'absolute',
+    top: '22%',
+    width: '5.5rem',
   },
   caption: {
     color: 'rgba(255, 244, 219, 0.62)',

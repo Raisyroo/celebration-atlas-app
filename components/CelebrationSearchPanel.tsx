@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useState, type CSSProperties } from 'react';
 import { parseCelebrationSearchMock } from '../data/celebrationSearchMockParser';
+import { getEventProfileById } from '../data/eventProfiles';
 import type {
   AtlasSearchResult,
   AtlasSearchScope,
@@ -32,6 +33,9 @@ export default function CelebrationSearchPanel({
     : currentScope;
   const showMichiganCta =
     result?.command.scope === 'state' && result.command.stateSlug === 'michigan';
+  const eventMatch = result?.command.eventId
+    ? getEventProfileById(result.command.eventId)
+    : undefined;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,7 +52,7 @@ export default function CelebrationSearchPanel({
 
   return (
     <section aria-label="Celebration Search command panel" style={styles.panel}>
-      <p style={styles.label}>Celebration Search</p>
+      <p style={styles.label}>Ask Celebration Atlas</p>
       <form onSubmit={handleSubmit} style={styles.form}>
         <label htmlFor="celebration-search-query" style={styles.visuallyHidden}>
           Ask Celebration Search for a festival, state, category, or timeframe
@@ -58,7 +62,7 @@ export default function CelebrationSearchPanel({
             id="celebration-search-query"
             value={queryText}
             onChange={(event) => setQueryText(event.target.value)}
-            placeholder="Ask for music festivals in Michigan"
+            placeholder="Try Michigan, Show me Michigan, or Romeo Peach Festival"
             style={styles.input}
             type="search"
           />
@@ -93,6 +97,18 @@ export default function CelebrationSearchPanel({
 
           {result.command.needsClarification && result.command.clarificationQuestion ? (
             <p style={styles.clarification}>{result.command.clarificationQuestion}</p>
+          ) : null}
+
+          {eventMatch ? (
+            <div style={styles.michiganCtaGroup}>
+              <Link href={`/events/${eventMatch.slug}`} style={styles.michiganCta} aria-label={`Open ${eventMatch.name}`}>
+                <span style={styles.michiganCtaKicker}>Event doorway</span>
+                <span style={styles.michiganCtaText}>Open {eventMatch.name}</span>
+              </Link>
+              <p style={styles.michiganCtaNote}>
+                Known event match. The national preview highlights the Michigan doorway and offers the existing event route.
+              </p>
+            </div>
           ) : null}
 
           {showMichiganCta ? (

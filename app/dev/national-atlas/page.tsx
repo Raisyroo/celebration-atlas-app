@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import CelebrationSearchPanel from '../../../components/CelebrationSearchPanel';
 import DevNationalAtlasScrollBoundary from './DevNationalAtlasScrollBoundary';
-import NationalAtlasShell from '../../../components/NationalAtlasShell';
+import DevNationalAtlasDemo from './DevNationalAtlasDemo';
 
 export const metadata: Metadata = {
   title: 'Development Preview — National Atlas Shell',
@@ -13,9 +12,7 @@ export default function DevNationalAtlasPage() {
   return (
     <DevNationalAtlasScrollBoundary>
       <main aria-label="Development Preview — National Atlas">
-        <NationalAtlasShell>
-          <CelebrationSearchPanel currentScope="national" />
-        </NationalAtlasShell>
+        <DevNationalAtlasDemo />
       </main>
     </DevNationalAtlasScrollBoundary>
   );
