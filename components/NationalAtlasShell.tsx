@@ -1,5 +1,4 @@
 import type { CSSProperties, ReactNode } from "react";
-import Image from "next/image";
 
 // Future national atlas boundary.
 //
@@ -38,12 +37,10 @@ export default function NationalAtlasShell({
         >
           <div style={styles.mapGlow} aria-hidden="true" />
           <div style={styles.nationalMapFrame}>
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element -- Dev investor preview must expose the raw public map asset, not Next image optimization. */}
+            <img
               src="/maps/us-atlas-preview.webp"
-              alt="Illustrated U.S. map preview for the national Celebration Atlas"
-              fill
-              priority
-              sizes="100vw"
+              alt="Celebration Atlas U.S. map"
               style={styles.nationalMapImage}
             />
             <div
@@ -121,8 +118,12 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 1,
   },
   nationalMapImage: {
+    boxSizing: "border-box",
+    display: "block",
+    height: "100%",
     objectFit: "contain",
     padding: "clamp(0.25rem, 1.6vw, 1.1rem)",
+    width: "100%",
   },
   michiganPortal: {
     alignItems: "center",
