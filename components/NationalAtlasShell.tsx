@@ -29,41 +29,35 @@ export default function NationalAtlasShell({
       aria-label="Future national Celebration Atlas gateway"
       style={styles.shell}
     >
-      <div style={styles.ambientGlow} aria-hidden="true" />
-      <div style={styles.content}>
-        <figure
-          style={styles.mapStage}
-          aria-label="Interactive preview for the future U.S. Atlas map"
+      <figure
+        style={styles.mapStage}
+        aria-label="Interactive preview for the future U.S. Atlas map"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- Dev investor preview must expose the raw public map asset, not Next image optimization. */}
+        <img
+          src="/maps/us-atlas-preview.webp"
+          alt="Celebration Atlas U.S. map"
+          style={styles.nationalMapImage}
+        />
+        <div
+          style={{
+            ...styles.michiganPortal,
+            ...(isMichiganHighlighted ? styles.michiganPortalActive : null),
+          }}
+          aria-label={
+            isMichiganHighlighted
+              ? "Michigan highlighted on national atlas preview"
+              : "Michigan state portal"
+          }
+          role="img"
         >
-          <div style={styles.mapGlow} aria-hidden="true" />
-          <div style={styles.nationalMapFrame}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- Dev investor preview must expose the raw public map asset, not Next image optimization. */}
-            <img
-              src="/maps/us-atlas-preview.webp"
-              alt="Celebration Atlas U.S. map"
-              style={styles.nationalMapImage}
-            />
-            <div
-              style={{
-                ...styles.michiganPortal,
-                ...(isMichiganHighlighted ? styles.michiganPortalActive : null),
-              }}
-              aria-label={
-                isMichiganHighlighted
-                  ? "Michigan highlighted on national atlas preview"
-                  : "Michigan state portal"
-              }
-              role="img"
-            >
-              <span style={styles.michiganPulse} aria-hidden="true" />
-              <span style={styles.michiganDot} aria-hidden="true" />
-              <span style={styles.michiganLabel}>Michigan</span>
-            </div>
-          </div>
-        </figure>
+          <span style={styles.michiganPulse} aria-hidden="true" />
+          <span style={styles.michiganDot} aria-hidden="true" />
+          <span style={styles.michiganLabel}>Michigan</span>
+        </div>
+      </figure>
 
-        {children ? <div style={styles.searchSlot}>{children}</div> : null}
-      </div>
+      {children ? <div style={styles.searchSlot}>{children}</div> : null}
     </section>
   );
 }
@@ -73,56 +67,27 @@ export type { NationalAtlasShellProps };
 
 const styles: Record<string, CSSProperties> = {
   shell: {
-    minHeight: "100svh",
-    width: "100%",
-    overflow: "hidden",
-    background:
-      "radial-gradient(circle at 50% 8%, rgba(251, 216, 157, 0.2), transparent 31%), radial-gradient(circle at 18% 34%, rgba(104, 148, 164, 0.15), transparent 30%), linear-gradient(180deg, #151e2b 0%, #101723 50%, #070d16 100%)",
+    background: "#050812",
     color: "#f8ead2",
+    minHeight: "100vh",
+    overflow: "hidden",
+    padding: 0,
     position: "relative",
-  },
-  ambientGlow: {
-    background:
-      "linear-gradient(120deg, transparent 0%, rgba(255, 232, 181, 0.08) 42%, transparent 68%)",
-    inset: 0,
-    opacity: 0.7,
-    pointerEvents: "none",
-    position: "absolute",
-  },
-  content: {
-    minHeight: "100svh",
-    position: "relative",
-    zIndex: 1,
+    width: "100vw",
   },
   mapStage: {
     inset: 0,
     margin: 0,
+    overflow: "hidden",
     position: "absolute",
-  },
-  mapGlow: {
-    background:
-      "radial-gradient(circle at 50% 45%, rgba(246, 190, 119, 0.27), transparent 54%), radial-gradient(circle at 28% 32%, rgba(123, 173, 189, 0.2), transparent 32%)",
-    filter: "blur(28px)",
-    inset: "3% 4% 12%",
-    opacity: 0.78,
-    position: "absolute",
-  },
-  nationalMapFrame: {
-    alignItems: "center",
-    display: "flex",
-    inset:
-      "clamp(0.75rem, 2.5vw, 2rem) clamp(0.75rem, 3vw, 3rem) clamp(6.8rem, 16svh, 9rem)",
-    justifyContent: "center",
-    overflow: "visible",
-    position: "absolute",
-    zIndex: 1,
   },
   nationalMapImage: {
-    boxSizing: "border-box",
     display: "block",
     height: "100%",
-    objectFit: "contain",
-    padding: "clamp(0.25rem, 1.6vw, 1.1rem)",
+    inset: 0,
+    objectFit: "cover",
+    objectPosition: "center",
+    position: "absolute",
     width: "100%",
   },
   michiganPortal: {
@@ -133,6 +98,7 @@ const styles: Record<string, CSSProperties> = {
     position: "absolute",
     top: "31%",
     transform: "translate(-50%, -50%)",
+    zIndex: 2,
   },
   michiganPortalActive: {
     filter: "drop-shadow(0 0 22px rgba(251, 216, 157, 0.82))",
