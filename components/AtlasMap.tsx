@@ -2556,11 +2556,13 @@ export default function AtlasMap({
 
             @media (max-width: 767px) {
               .atlas-map-image {
-                object-position: center 34% !important;
+                object-fit: contain !important;
+                object-position: center 26% !important;
               }
 
               .atlas-map-image--atmosphere {
-                object-position: center 30% !important;
+                object-fit: cover !important;
+                object-position: center 24% !important;
               }
 
               .atlas-search-dock {
@@ -2619,8 +2621,8 @@ export default function AtlasMap({
               }
 
               .mobile-atlas-title {
-                font-size: clamp(30px, 9.4vw, 40px) !important;
-                letter-spacing: 0.11em !important;
+                font-size: clamp(27px, 8.4vw, 34px) !important;
+                letter-spacing: 0.105em !important;
               }
 
               .mobile-atlas-subtitle {
@@ -3694,7 +3696,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 16,
     right: 16,
-    top: 'calc(8px + env(safe-area-inset-top))',
+    top: 'calc(14px + env(safe-area-inset-top))',
     zIndex: Z_INDEX.searchDock - 1,
     display: 'grid',
     justifyItems: 'center',
@@ -3716,10 +3718,10 @@ const styles: Record<string, CSSProperties> = {
     margin: 0,
     color: 'rgba(255, 246, 226, 0.98)',
     fontFamily: 'Georgia, Times New Roman, serif',
-    fontSize: 'clamp(35px, 10.8vw, 52px)',
+    fontSize: 'clamp(30px, 9.2vw, 44px)',
     fontWeight: 400,
     lineHeight: 0.84,
-    letterSpacing: '0.145em',
+    letterSpacing: '0.13em',
     textTransform: 'uppercase',
   },
   mobileStateSubtitle: {
