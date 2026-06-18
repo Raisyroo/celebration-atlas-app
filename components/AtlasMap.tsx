@@ -48,6 +48,12 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
 ];
 const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
+const MOBILE_AMBIENT_EVENT_LIMIT = 4;
+const MOBILE_FLOATING_EVENT_IDS = [
+  'mackinac-lilac',
+  'traverse-city-cherry',
+  'holland-tulip-time',
+] as const;
 
 // Current interaction policy:
 // - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
@@ -976,6 +982,17 @@ export default function AtlasMap({
       displayMarkerLayouts,
     ],
   );
+  const ambientMobileEvents = useMemo(
+    () => ATLAS_EVENTS.slice(0, MOBILE_AMBIENT_EVENT_LIMIT),
+    [],
+  );
+  const floatingMobileEvents = useMemo(
+    () =>
+      MOBILE_FLOATING_EVENT_IDS.map((eventId) =>
+        ATLAS_EVENTS.find((event) => event.id === eventId),
+      ).filter((event): event is AtlasEvent => Boolean(event)),
+    [],
+  );
   const visibleMarkerGroups = exactEventIntent
     ? displayMarkerLayouts
         .filter((layout) => layout.event.id === exactEventIntent.eventId)
@@ -1660,6 +1677,8 @@ export default function AtlasMap({
   }, []);
 
   const isAtlasPanelOpen = Boolean(renderedEvent || selectedCluster);
+  const shouldShowMobileAmbientAtlas =
+    !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
     isPhoneLandscape && isMapAtMinimumZoom;
@@ -2056,6 +2075,38 @@ export default function AtlasMap({
         />
       ) : null}
 
+      {shouldShowMobileAmbientAtlas ? (
+        <>
+          <header style={styles.mobileAtlasIdentity} aria-label="Celebration Atlas Michigan">
+            <p style={styles.mobileBrand}>✦ Celebration Atlas</p>
+            <h1 style={styles.mobileStateTitle}>Michigan</h1>
+            <p style={styles.mobileStateSubtitle}>Explore. Celebrate. Connect.</p>
+          </header>
+
+          <div style={styles.mobileFloatingCards} aria-label="Featured Michigan celebrations">
+            {floatingMobileEvents.map((event, index) => (
+              <button
+                key={event.id}
+                type="button"
+                aria-label={`Open ${event.name}`}
+                onClick={() => setSelectedId(event.id)}
+                style={{
+                  ...styles.mobileFloatingCard,
+                  ...(index === 0
+                    ? styles.mobileFloatingCardOne
+                    : index === 1
+                      ? styles.mobileFloatingCardTwo
+                      : styles.mobileFloatingCardThree),
+                }}
+              >
+                <span style={styles.mobileFloatingCardTitle}>{event.name}</span>
+                <span style={styles.mobileFloatingCardMeta}>{event.location}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+
       {!shouldShowCalibration && !isVerificationMode && isDesktop ? (
         <aside
           style={styles.desktopIntroPanel}
@@ -2361,6 +2412,32 @@ export default function AtlasMap({
                 </svg>
               </button>
             </form>
+            {shouldShowMobileAmbientAtlas ? (
+              <section
+                style={styles.mobileLiveStrip}
+                aria-label="Live and upcoming in Michigan"
+              >
+                <div style={styles.mobileLiveStripHeader}>
+                  <span>Live / Upcoming in Michigan</span>
+                  <span style={styles.mobileLiveStripHint}>Known Atlas data</span>
+                </div>
+                <div style={styles.mobileLiveStripScroller}>
+                  {ambientMobileEvents.map((event) => (
+                    <button
+                      key={event.id}
+                      type="button"
+                      aria-label={`Open ${event.name}`}
+                      onClick={() => setSelectedId(event.id)}
+                      style={styles.mobileLiveCard}
+                    >
+                      <span style={styles.mobileLiveCardTitle}>{event.name}</span>
+                      <span style={styles.mobileLiveCardMeta}>{event.location}</span>
+                      <span style={styles.mobileLiveCardCategory}>{event.category}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </div>
           <style jsx>{`
             .atlas-search-input--pulse {
@@ -3445,6 +3522,158 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 650,
     textDecoration: 'none',
     boxShadow: '0 0 18px rgba(255,194,104,.24)',
+  },
+
+  mobileAtlasIdentity: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    top: 'calc(18px + env(safe-area-inset-top))',
+    zIndex: Z_INDEX.searchDock - 1,
+    display: 'grid',
+    justifyItems: 'center',
+    gap: 4,
+    pointerEvents: 'none',
+    textAlign: 'center',
+    textShadow: '0 2px 14px rgba(2, 4, 8, 0.92), 0 0 26px rgba(255, 207, 116, 0.22)',
+  },
+  mobileBrand: {
+    margin: 0,
+    color: 'rgba(255, 226, 170, 0.94)',
+    fontSize: 13,
+    fontWeight: 800,
+    letterSpacing: 2.6,
+    textTransform: 'uppercase',
+  },
+  mobileStateTitle: {
+    margin: 0,
+    color: 'rgba(255, 246, 226, 0.98)',
+    fontFamily: 'Georgia, Times New Roman, serif',
+    fontSize: 'clamp(48px, 15vw, 74px)',
+    fontWeight: 400,
+    lineHeight: 0.92,
+    letterSpacing: '0.16em',
+    textTransform: 'uppercase',
+  },
+  mobileStateSubtitle: {
+    margin: 0,
+    color: 'rgba(255, 245, 226, 0.86)',
+    fontSize: 16,
+    letterSpacing: 0.35,
+  },
+  mobileFloatingCards: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: Z_INDEX.markers + 24,
+    pointerEvents: 'none',
+  },
+  mobileFloatingCard: {
+    position: 'absolute',
+    display: 'grid',
+    gap: 3,
+    maxWidth: 168,
+    padding: '9px 11px',
+    borderRadius: 16,
+    border: '1px solid rgba(255, 220, 150, 0.34)',
+    background: 'linear-gradient(160deg, rgba(11, 17, 25, 0.72), rgba(7, 10, 15, 0.48))',
+    color: '#f9edcf',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 12px 26px rgba(0, 0, 0, 0.32), 0 0 18px rgba(255, 198, 96, 0.16)',
+    backdropFilter: 'blur(4px) saturate(1.06)',
+    WebkitBackdropFilter: 'blur(4px) saturate(1.06)',
+    pointerEvents: 'auto',
+    textAlign: 'left',
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+  },
+  mobileFloatingCardOne: {
+    left: '8%',
+    top: '30%',
+  },
+  mobileFloatingCardTwo: {
+    right: '7%',
+    top: '43%',
+  },
+  mobileFloatingCardThree: {
+    left: '12%',
+    top: '56%',
+  },
+  mobileFloatingCardTitle: {
+    fontSize: 13,
+    fontWeight: 800,
+    lineHeight: 1.12,
+  },
+  mobileFloatingCardMeta: {
+    color: 'rgba(255, 239, 205, 0.72)',
+    fontSize: 11,
+    lineHeight: 1.15,
+  },
+  mobileLiveStrip: {
+    marginTop: 10,
+    padding: '10px 10px 11px',
+    borderRadius: 18,
+    border: '1px solid rgba(255, 226, 170, 0.2)',
+    background: 'linear-gradient(180deg, rgba(9, 14, 22, 0.64), rgba(5, 8, 13, 0.46))',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.04), 0 14px 32px rgba(0, 0, 0, 0.22)',
+    backdropFilter: 'blur(5px)',
+    WebkitBackdropFilter: 'blur(5px)',
+  },
+  mobileLiveStripHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    margin: '0 2px 8px',
+    color: 'rgba(255, 243, 218, 0.94)',
+    fontSize: 14,
+    fontWeight: 750,
+  },
+  mobileLiveStripHint: {
+    color: 'rgba(255, 210, 128, 0.76)',
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    whiteSpace: 'nowrap',
+  },
+  mobileLiveStripScroller: {
+    display: 'flex',
+    gap: 8,
+    overflowX: 'auto',
+    paddingBottom: 2,
+    WebkitOverflowScrolling: 'touch',
+    scrollbarWidth: 'none',
+  },
+  mobileLiveCard: {
+    flex: '0 0 134px',
+    display: 'grid',
+    gap: 4,
+    minHeight: 84,
+    padding: '10px 11px',
+    borderRadius: 14,
+    border: '1px solid rgba(255, 226, 170, 0.18)',
+    background: 'linear-gradient(160deg, rgba(24, 31, 43, 0.48), rgba(8, 12, 18, 0.38))',
+    color: '#f7e9c8',
+    textAlign: 'left',
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+  },
+  mobileLiveCardTitle: {
+    fontSize: 12,
+    fontWeight: 800,
+    lineHeight: 1.14,
+  },
+  mobileLiveCardMeta: {
+    color: 'rgba(255, 239, 205, 0.66)',
+    fontSize: 11,
+    lineHeight: 1.16,
+  },
+  mobileLiveCardCategory: {
+    alignSelf: 'end',
+    color: 'rgba(255, 211, 134, 0.76)',
+    fontSize: 9,
+    fontWeight: 850,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
   },
 
   desktopIntroPanel: {
