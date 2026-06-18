@@ -2592,13 +2592,13 @@ export default function AtlasMap({
 
             @media (max-width: 767px) and (max-height: 720px) {
               .mobile-atlas-brand {
-                font-size: 10px !important;
-                letter-spacing: 1.8px !important;
+                font-size: 9px !important;
+                letter-spacing: 1.5px !important;
               }
 
               .mobile-atlas-title {
-                font-size: clamp(34px, 11vw, 48px) !important;
-                letter-spacing: 0.12em !important;
+                font-size: clamp(30px, 9.4vw, 40px) !important;
+                letter-spacing: 0.11em !important;
               }
 
               .mobile-atlas-subtitle {
@@ -3672,11 +3672,11 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 16,
     right: 16,
-    top: 'calc(12px + env(safe-area-inset-top))',
+    top: 'calc(8px + env(safe-area-inset-top))',
     zIndex: Z_INDEX.searchDock - 1,
     display: 'grid',
     justifyItems: 'center',
-    gap: 2,
+    gap: 0,
     pointerEvents: 'none',
     textAlign: 'center',
     textShadow: '0 2px 14px rgba(2, 4, 8, 0.92), 0 0 26px rgba(255, 207, 116, 0.22)',
@@ -3684,26 +3684,28 @@ const styles: Record<string, CSSProperties> = {
   mobileBrand: {
     margin: 0,
     color: 'rgba(255, 226, 170, 0.94)',
-    fontSize: 12,
+    fontSize: 10.5,
     fontWeight: 800,
-    letterSpacing: 2.2,
+    letterSpacing: 1.9,
     textTransform: 'uppercase',
+    lineHeight: 1.05,
   },
   mobileStateTitle: {
     margin: 0,
     color: 'rgba(255, 246, 226, 0.98)',
     fontFamily: 'Georgia, Times New Roman, serif',
-    fontSize: 'clamp(42px, 13vw, 66px)',
+    fontSize: 'clamp(35px, 10.8vw, 52px)',
     fontWeight: 400,
-    lineHeight: 0.9,
-    letterSpacing: '0.16em',
+    lineHeight: 0.84,
+    letterSpacing: '0.145em',
     textTransform: 'uppercase',
   },
   mobileStateSubtitle: {
     margin: 0,
     color: 'rgba(255, 245, 226, 0.86)',
-    fontSize: 14,
-    letterSpacing: 0.28,
+    fontSize: 11.5,
+    letterSpacing: 0.18,
+    lineHeight: 1.05,
   },
   mobileFloatingCards: {
     position: 'absolute',
