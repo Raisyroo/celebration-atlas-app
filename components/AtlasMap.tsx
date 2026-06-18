@@ -1741,13 +1741,20 @@ export default function AtlasMap({
             transform: mapLayerTransform,
           }}
         >
-          <img
-            src="/maps/michigan-atlas-base.webp"
-            alt=""
-            aria-hidden
-            draggable={false}
-            style={styles.atmosphereMapImage}
-          />
+          <picture>
+            <source
+              media="(max-width: 767px)"
+              srcSet="/maps/michigan-atlas-base-wide.webp"
+            />
+            <img
+              className="atlas-map-image atlas-map-image--atmosphere"
+              src="/maps/michigan-atlas-base.webp"
+              alt=""
+              aria-hidden
+              draggable={false}
+              style={styles.atmosphereMapImage}
+            />
+          </picture>
         </div>
 
         <div
@@ -1757,12 +1764,19 @@ export default function AtlasMap({
             transform: mapLayerTransform,
           }}
         >
-          <img
-            src="/maps/michigan-atlas-base.webp"
-            alt="Michigan Atlas"
-            draggable={false}
-            style={styles.mapImage}
-          />
+          <picture>
+            <source
+              media="(max-width: 767px)"
+              srcSet="/maps/michigan-atlas-base-wide.webp"
+            />
+            <img
+              className="atlas-map-image"
+              src="/maps/michigan-atlas-base.webp"
+              alt="Michigan Atlas"
+              draggable={false}
+              style={styles.mapImage}
+            />
+          </picture>
 
           <div
             style={{
@@ -2541,6 +2555,14 @@ export default function AtlasMap({
             }
 
             @media (max-width: 767px) {
+              .atlas-map-image {
+                object-position: center 34% !important;
+              }
+
+              .atlas-map-image--atmosphere {
+                object-position: center 30% !important;
+              }
+
               .atlas-search-dock {
                 padding: 8px 12px calc(10px + env(safe-area-inset-bottom)) !important;
               }
