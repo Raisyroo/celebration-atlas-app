@@ -888,6 +888,7 @@ export default function AtlasMap({
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [searchPulseTick, setSearchPulseTick] = useState(0);
+  const [isMobileLiveSheetExpanded, setIsMobileLiveSheetExpanded] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
@@ -1679,6 +1680,9 @@ export default function AtlasMap({
   const isAtlasPanelOpen = Boolean(renderedEvent || selectedCluster);
   const shouldShowMobileAmbientAtlas =
     !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
+
+  const isMobileLiveSheetVisuallyExpanded =
+    shouldShowMobileAmbientAtlas && isMobileLiveSheetExpanded;
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
     isPhoneLandscape && isMapAtMinimumZoom;
@@ -2078,9 +2082,9 @@ export default function AtlasMap({
       {shouldShowMobileAmbientAtlas ? (
         <>
           <header style={styles.mobileAtlasIdentity} aria-label="Celebration Atlas Michigan">
-            <p style={styles.mobileBrand}>✦ Celebration Atlas</p>
-            <h1 style={styles.mobileStateTitle}>Michigan</h1>
-            <p style={styles.mobileStateSubtitle}>Explore. Celebrate. Connect.</p>
+            <p className="mobile-atlas-brand" style={styles.mobileBrand}>✦ Celebration Atlas</p>
+            <h1 className="mobile-atlas-title" style={styles.mobileStateTitle}>Michigan</h1>
+            <p className="mobile-atlas-subtitle" style={styles.mobileStateSubtitle}>Explore. Celebrate. Connect.</p>
           </header>
 
           <div style={styles.mobileFloatingCards} aria-label="Featured Michigan celebrations">
@@ -2090,6 +2094,7 @@ export default function AtlasMap({
                 type="button"
                 aria-label={`Open ${event.name}`}
                 onClick={() => setSelectedId(event.id)}
+                className={`mobile-floating-card mobile-floating-card--${index + 1}`}
                 style={{
                   ...styles.mobileFloatingCard,
                   ...(index === 0
@@ -2414,14 +2419,25 @@ export default function AtlasMap({
             </form>
             {shouldShowMobileAmbientAtlas ? (
               <section
+                className={`mobile-live-sheet ${isMobileLiveSheetVisuallyExpanded ? 'mobile-live-sheet--expanded' : ''}`}
                 style={styles.mobileLiveStrip}
                 aria-label="Live and upcoming in Michigan"
               >
-                <div style={styles.mobileLiveStripHeader}>
+                <button
+                  type="button"
+                  className="mobile-live-sheet-toggle"
+                  style={styles.mobileLiveStripHeader}
+                  aria-expanded={isMobileLiveSheetVisuallyExpanded}
+                  onClick={() =>
+                    setIsMobileLiveSheetExpanded((isExpanded) => !isExpanded)
+                  }
+                >
                   <span>Live / Upcoming in Michigan</span>
-                  <span style={styles.mobileLiveStripHint}>Known Atlas data</span>
-                </div>
-                <div style={styles.mobileLiveStripScroller}>
+                  <span style={styles.mobileLiveStripHint}>
+                    {isMobileLiveSheetVisuallyExpanded ? 'Collapse' : 'Peek'}
+                  </span>
+                </button>
+                <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
                   {ambientMobileEvents.map((event) => (
                     <button
                       key={event.id}
@@ -2485,6 +2501,124 @@ export default function AtlasMap({
 
             .atlas-search-submit:active {
               transform: translateY(-50%) scale(0.97);
+            }
+
+
+            .mobile-live-sheet-toggle {
+              width: 100%;
+              border: 0;
+              background: transparent;
+              cursor: pointer;
+              touch-action: manipulation;
+              appearance: none;
+              -webkit-appearance: none;
+            }
+
+            .mobile-live-sheet-scroller {
+              max-height: 0;
+              opacity: 0;
+              overflow: hidden !important;
+              pointer-events: none;
+              transform: translateY(4px);
+              transition:
+                max-height 260ms ease,
+                opacity 220ms ease,
+                transform 260ms ease;
+            }
+
+            .mobile-live-sheet--expanded .mobile-live-sheet-scroller {
+              max-height: min(30dvh, 220px);
+              opacity: 1;
+              overflow-x: auto !important;
+              overflow-y: hidden !important;
+              pointer-events: auto;
+              transform: translateY(0);
+            }
+
+            @media (max-width: 767px) {
+              .atlas-search-dock {
+                padding: 8px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+              }
+
+              .atlas-search-dock form {
+                min-height: 50px !important;
+                border-radius: 20px !important;
+                padding: 15px 14px 8px !important;
+              }
+
+              .atlas-search-dock input {
+                padding: 23px 58px 7px 14px !important;
+                border-radius: 20px !important;
+              }
+
+              .atlas-search-dock form > span:first-child {
+                top: 6px !important;
+                left: 14px !important;
+                font-size: 10px !important;
+              }
+
+              .atlas-search-submit {
+                right: 8px !important;
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px !important;
+                min-height: 36px !important;
+              }
+
+              .mobile-live-sheet {
+                margin-top: 6px !important;
+                padding: 7px 9px !important;
+                border-radius: 15px !important;
+              }
+
+              .mobile-live-sheet-toggle {
+                margin: 0 !important;
+                font-size: 12px !important;
+              }
+
+              .mobile-live-sheet--expanded {
+                padding-bottom: 10px !important;
+              }
+
+              .mobile-live-sheet--expanded .mobile-live-sheet-scroller {
+                padding-top: 7px;
+              }
+            }
+
+            @media (max-width: 767px) and (max-height: 720px) {
+              .mobile-atlas-brand {
+                font-size: 10px !important;
+                letter-spacing: 1.8px !important;
+              }
+
+              .mobile-atlas-title {
+                font-size: clamp(34px, 11vw, 48px) !important;
+                letter-spacing: 0.12em !important;
+              }
+
+              .mobile-atlas-subtitle {
+                display: none !important;
+              }
+
+              .mobile-floating-card {
+                max-width: 142px !important;
+                padding: 7px 9px !important;
+                border-radius: 13px !important;
+              }
+
+              .mobile-floating-card--3 {
+                display: none !important;
+              }
+            }
+
+            @media (max-width: 767px) and (max-height: 640px) {
+              .mobile-floating-card--2 {
+                display: none !important;
+              }
+
+              .mobile-live-sheet--expanded .mobile-live-sheet-scroller {
+                max-height: min(26dvh, 160px);
+              }
             }
 
             .marker-pulse {
