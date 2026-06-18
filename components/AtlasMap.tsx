@@ -48,7 +48,7 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
 ];
 const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
-const MOBILE_AMBIENT_EVENT_LIMIT = 4;
+const MOBILE_AMBIENT_EVENT_LIMIT = 2;
 const MOBILE_FLOATING_EVENT_IDS = [
   'mackinac-lilac',
   'traverse-city-cherry',
@@ -991,7 +991,9 @@ export default function AtlasMap({
     () =>
       MOBILE_FLOATING_EVENT_IDS.map((eventId) =>
         ATLAS_EVENTS.find((event) => event.id === eventId),
-      ).filter((event): event is AtlasEvent => Boolean(event)),
+      )
+        .filter((event): event is AtlasEvent => Boolean(event))
+        .slice(0, 2),
     [],
   );
   const visibleMarkerGroups = exactEventIntent
@@ -1686,8 +1688,15 @@ export default function AtlasMap({
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
     isPhoneLandscape && isMapAtMinimumZoom;
-  const mapLayerScale = (isPhoneLandscape ? 1 : BASE_SCALE) * mapTransform.scale;
-  const mapLayerTransform = `translate3d(${mapTransform.translateX + (prefersReducedMotion ? 0 : parallaxOffset.x * 0.55)}px, ${mapTransform.translateY + (prefersReducedMotion ? 0 : parallaxOffset.y * 0.55)}px, 0) scale(${mapLayerScale})`;
+  const mobileAmbientMapScale = shouldShowMobileAmbientAtlas ? 0.9 : 1;
+  const mobileAmbientMapLift = shouldShowMobileAmbientAtlas ? -22 : 0;
+  const mapLayerScale =
+    (isPhoneLandscape ? 1 : BASE_SCALE) * mapTransform.scale * mobileAmbientMapScale;
+  const mapLayerTranslateY =
+    mapTransform.translateY +
+    (prefersReducedMotion ? 0 : parallaxOffset.y * 0.55) +
+    mobileAmbientMapLift;
+  const mapLayerTransform = `translate3d(${mapTransform.translateX + (prefersReducedMotion ? 0 : parallaxOffset.x * 0.55)}px, ${mapLayerTranslateY}px, 0) scale(${mapLayerScale})`;
 
   return (
     <section
@@ -2434,7 +2443,7 @@ export default function AtlasMap({
                 >
                   <span>Live / Upcoming in Michigan</span>
                   <span style={styles.mobileLiveStripHint}>
-                    {isMobileLiveSheetVisuallyExpanded ? 'Collapse' : 'Peek'}
+                    {isMobileLiveSheetVisuallyExpanded ? 'Collapse' : 'Expand'}
                   </span>
                 </button>
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
@@ -2515,11 +2524,12 @@ export default function AtlasMap({
             }
 
             .mobile-live-sheet-scroller {
-              max-height: 0;
-              opacity: 0;
-              overflow: hidden !important;
-              pointer-events: none;
-              transform: translateY(4px);
+              max-height: 96px;
+              opacity: 1;
+              overflow-x: auto !important;
+              overflow-y: hidden !important;
+              pointer-events: auto;
+              transform: translateY(0);
               transition:
                 max-height 260ms ease,
                 opacity 220ms ease,
@@ -2527,12 +2537,7 @@ export default function AtlasMap({
             }
 
             .mobile-live-sheet--expanded .mobile-live-sheet-scroller {
-              max-height: min(30dvh, 220px);
-              opacity: 1;
-              overflow-x: auto !important;
-              overflow-y: hidden !important;
-              pointer-events: auto;
-              transform: translateY(0);
+              max-height: min(32dvh, 240px);
             }
 
             @media (max-width: 767px) {
@@ -2572,7 +2577,7 @@ export default function AtlasMap({
               }
 
               .mobile-live-sheet-toggle {
-                margin: 0 !important;
+                margin: 0 0 5px !important;
                 font-size: 12px !important;
               }
 
@@ -2581,7 +2586,7 @@ export default function AtlasMap({
               }
 
               .mobile-live-sheet--expanded .mobile-live-sheet-scroller {
-                padding-top: 7px;
+                padding-top: 2px;
               }
             }
 
@@ -2609,6 +2614,10 @@ export default function AtlasMap({
               .mobile-floating-card--3 {
                 display: none !important;
               }
+
+              .mobile-live-sheet-scroller {
+                max-height: 82px;
+              }
             }
 
             @media (max-width: 767px) and (max-height: 640px) {
@@ -2616,8 +2625,9 @@ export default function AtlasMap({
                 display: none !important;
               }
 
+              .mobile-live-sheet-scroller,
               .mobile-live-sheet--expanded .mobile-live-sheet-scroller {
-                max-height: min(26dvh, 160px);
+                max-height: 72px;
               }
             }
 
@@ -3662,11 +3672,11 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 16,
     right: 16,
-    top: 'calc(18px + env(safe-area-inset-top))',
+    top: 'calc(12px + env(safe-area-inset-top))',
     zIndex: Z_INDEX.searchDock - 1,
     display: 'grid',
     justifyItems: 'center',
-    gap: 4,
+    gap: 2,
     pointerEvents: 'none',
     textAlign: 'center',
     textShadow: '0 2px 14px rgba(2, 4, 8, 0.92), 0 0 26px rgba(255, 207, 116, 0.22)',
@@ -3674,26 +3684,26 @@ const styles: Record<string, CSSProperties> = {
   mobileBrand: {
     margin: 0,
     color: 'rgba(255, 226, 170, 0.94)',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 800,
-    letterSpacing: 2.6,
+    letterSpacing: 2.2,
     textTransform: 'uppercase',
   },
   mobileStateTitle: {
     margin: 0,
     color: 'rgba(255, 246, 226, 0.98)',
     fontFamily: 'Georgia, Times New Roman, serif',
-    fontSize: 'clamp(48px, 15vw, 74px)',
+    fontSize: 'clamp(42px, 13vw, 66px)',
     fontWeight: 400,
-    lineHeight: 0.92,
+    lineHeight: 0.9,
     letterSpacing: '0.16em',
     textTransform: 'uppercase',
   },
   mobileStateSubtitle: {
     margin: 0,
     color: 'rgba(255, 245, 226, 0.86)',
-    fontSize: 16,
-    letterSpacing: 0.35,
+    fontSize: 14,
+    letterSpacing: 0.28,
   },
   mobileFloatingCards: {
     position: 'absolute',
@@ -3705,9 +3715,9 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     display: 'grid',
     gap: 3,
-    maxWidth: 168,
-    padding: '9px 11px',
-    borderRadius: 16,
+    maxWidth: 146,
+    padding: '7px 9px',
+    borderRadius: 14,
     border: '1px solid rgba(255, 220, 150, 0.34)',
     background: 'linear-gradient(160deg, rgba(11, 17, 25, 0.72), rgba(7, 10, 15, 0.48))',
     color: '#f9edcf',
@@ -3720,30 +3730,30 @@ const styles: Record<string, CSSProperties> = {
     touchAction: 'manipulation',
   },
   mobileFloatingCardOne: {
-    left: '8%',
-    top: '30%',
+    left: '7%',
+    top: '27%',
   },
   mobileFloatingCardTwo: {
-    right: '7%',
-    top: '43%',
+    right: '6%',
+    top: '39%',
   },
   mobileFloatingCardThree: {
-    left: '12%',
-    top: '56%',
+    left: '10%',
+    top: '51%',
   },
   mobileFloatingCardTitle: {
-    fontSize: 13,
+    fontSize: 11.5,
     fontWeight: 800,
-    lineHeight: 1.12,
+    lineHeight: 1.1,
   },
   mobileFloatingCardMeta: {
     color: 'rgba(255, 239, 205, 0.72)',
-    fontSize: 11,
-    lineHeight: 1.15,
+    fontSize: 10,
+    lineHeight: 1.12,
   },
   mobileLiveStrip: {
-    marginTop: 10,
-    padding: '10px 10px 11px',
+    marginTop: 6,
+    padding: '7px 9px 8px',
     borderRadius: 18,
     border: '1px solid rgba(255, 226, 170, 0.2)',
     background: 'linear-gradient(180deg, rgba(9, 14, 22, 0.64), rgba(5, 8, 13, 0.46))',
@@ -3758,7 +3768,7 @@ const styles: Record<string, CSSProperties> = {
     gap: 10,
     margin: '0 2px 8px',
     color: 'rgba(255, 243, 218, 0.94)',
-    fontSize: 14,
+    fontSize: 12.5,
     fontWeight: 750,
   },
   mobileLiveStripHint: {
@@ -3771,18 +3781,18 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveStripScroller: {
     display: 'flex',
-    gap: 8,
+    gap: 7,
     overflowX: 'auto',
     paddingBottom: 2,
     WebkitOverflowScrolling: 'touch',
     scrollbarWidth: 'none',
   },
   mobileLiveCard: {
-    flex: '0 0 134px',
+    flex: '1 1 0',
     display: 'grid',
-    gap: 4,
-    minHeight: 84,
-    padding: '10px 11px',
+    gap: 3,
+    minHeight: 62,
+    padding: '8px 9px',
     borderRadius: 14,
     border: '1px solid rgba(255, 226, 170, 0.18)',
     background: 'linear-gradient(160deg, rgba(24, 31, 43, 0.48), rgba(8, 12, 18, 0.38))',
@@ -3792,19 +3802,19 @@ const styles: Record<string, CSSProperties> = {
     touchAction: 'manipulation',
   },
   mobileLiveCardTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 800,
-    lineHeight: 1.14,
+    lineHeight: 1.1,
   },
   mobileLiveCardMeta: {
     color: 'rgba(255, 239, 205, 0.66)',
-    fontSize: 11,
-    lineHeight: 1.16,
+    fontSize: 10,
+    lineHeight: 1.12,
   },
   mobileLiveCardCategory: {
     alignSelf: 'end',
     color: 'rgba(255, 211, 134, 0.76)',
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: 850,
     letterSpacing: 0.9,
     textTransform: 'uppercase',
