@@ -366,6 +366,33 @@ const FALLBACK_THUMBNAIL_BY_ICON: Record<
   heritage: '◈',
 };
 
+
+type EventStatusBadge = 'LIVE' | 'UPCOMING';
+
+function parseReliableEventDate(dateText: string | undefined): Date | null {
+  if (!dateText) return null;
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateText);
+  if (!match) return null;
+
+  const [, year, month, day] = match;
+  return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+}
+
+function getEventStatusBadge(event: AtlasEvent, now = new Date()): EventStatusBadge | null {
+  const start = parseReliableEventDate(event.dateRange?.startDate);
+  const end = parseReliableEventDate(event.dateRange?.endDate ?? event.dateRange?.startDate);
+
+  if (!start || !end) return null;
+
+  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+  if (today >= start && today <= end) return 'LIVE';
+  if (today < start) return 'UPCOMING';
+
+  return null;
+}
+
 function getEventThumbnail(event: AtlasEvent):
   | { kind: 'image'; src: string; alt: string }
   | { kind: 'fallback'; glyph: string; label: string } {
@@ -2637,22 +2664,40 @@ export default function AtlasMap({
                   </span>
                 </button>
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
-                  {ambientMobileEvents.map((event) => (
-                    <button
-                      key={event.id}
-                      type="button"
-                      aria-label={`Open ${event.name}`}
-                      onClick={() => setSelectedId(event.id)}
-                      style={styles.mobileLiveCard}
-                    >
-                      <EventThumbnail event={event} variant="live" />
-                      <span style={styles.mobileLiveCardCopy}>
-                        <span style={styles.mobileLiveCardTitle}>{event.name}</span>
-                        <span style={styles.mobileLiveCardMeta}>{event.location}</span>
-                        <span style={styles.mobileLiveCardCategory}>{event.category}</span>
-                      </span>
-                    </button>
-                  ))}
+                  {ambientMobileEvents.map((event) => {
+                    const statusBadge = getEventStatusBadge(event);
+
+                    return (
+                      <button
+                        key={event.id}
+                        type="button"
+                        aria-label={`Open ${event.name}`}
+                        onClick={() => setSelectedId(event.id)}
+                        style={styles.mobileLiveCard}
+                      >
+                        <span style={styles.mobileLiveCardMedia}>
+                          <EventThumbnail event={event} variant="live" />
+                          {statusBadge ? (
+                            <span
+                              style={{
+                                ...styles.mobileLiveStatusBadge,
+                                ...(statusBadge === 'LIVE'
+                                  ? styles.mobileLiveStatusBadgeLive
+                                  : styles.mobileLiveStatusBadgeUpcoming),
+                              }}
+                            >
+                              {statusBadge}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span style={styles.mobileLiveCardCopy}>
+                          <span style={styles.mobileLiveCardTitle}>{event.name}</span>
+                          <span style={styles.mobileLiveCardMeta}>{event.location}</span>
+                          <span style={styles.mobileLiveCardCategory}>{event.category}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </section>
             ) : null}
@@ -4116,6 +4161,37 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'left',
     cursor: 'pointer',
     touchAction: 'manipulation',
+  },
+  mobileLiveCardMedia: {
+    position: 'relative',
+    flexShrink: 0,
+    display: 'grid',
+  },
+  mobileLiveStatusBadge: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    zIndex: 1,
+    padding: '2px 5px',
+    borderRadius: 999,
+    fontSize: 7.5,
+    fontWeight: 900,
+    letterSpacing: 0.65,
+    lineHeight: 1,
+    textTransform: 'uppercase',
+    boxShadow: '0 3px 10px rgba(0, 0, 0, 0.32)',
+    backdropFilter: 'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)',
+  },
+  mobileLiveStatusBadgeLive: {
+    border: '1px solid rgba(255, 185, 150, 0.5)',
+    background: 'linear-gradient(180deg, rgba(206, 76, 68, 0.92), rgba(122, 36, 36, 0.82))',
+    color: 'rgba(255, 246, 232, 0.96)',
+  },
+  mobileLiveStatusBadgeUpcoming: {
+    border: '1px solid rgba(129, 181, 214, 0.5)',
+    background: 'linear-gradient(180deg, rgba(62, 102, 132, 0.9), rgba(26, 48, 71, 0.82))',
+    color: 'rgba(232, 244, 255, 0.94)',
   },
   mobileLiveCardCopy: {
     display: 'grid',

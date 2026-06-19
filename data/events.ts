@@ -31,6 +31,10 @@ export type AtlasEvent = {
     intensity?: 'subtle' | 'medium' | 'signature';
   };
   regionAtmosphere?: 'lakeshore' | 'northwoods' | 'urban' | 'harvest' | 'winter';
+  dateRange?: {
+    startDate: string;
+    endDate?: string;
+  };
   cardMedia?: {
     mediaType?: 'image' | 'video';
     mediaSrc?: string;
@@ -86,6 +90,10 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     y: 40,
     atmosphere: atmosphere(['balloons'], 'subtle'),
     regionAtmosphere: 'harvest',
+    dateRange: {
+      startDate: '2026-09-03',
+      endDate: '2026-09-07',
+    },
     cardMedia: {
       mediaType: 'video',
       mediaSrc: '/event-media/romeo-peach-loop.mp4',
