@@ -54,6 +54,16 @@ const MOBILE_FLOATING_EVENT_IDS = [
   'traverse-city-cherry',
   'holland-tulip-time',
 ] as const;
+const MOBILE_FAVORITE_STORAGE_KEY = 'celebration-atlas:michigan:favorite';
+const MOBILE_MENU_ITEMS = [
+  'Explore Michigan',
+  'Saved Celebrations',
+  'Calendar',
+  'Submit a Celebration',
+  'Settings',
+  'Sign in / Create account',
+] as const;
+const MOBILE_FILTER_FIELDS = ['Date', 'Category', 'Location / nearby'] as const;
 
 // Current interaction policy:
 // - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
@@ -968,6 +978,9 @@ export default function AtlasMap({
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [isMobileLiveSheetExpanded, setIsMobileLiveSheetExpanded] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
@@ -978,6 +991,7 @@ export default function AtlasMap({
     useState(false);
   const [isCardMediaVisible, setIsCardMediaVisible] = useState(false);
   const cardMediaVideoRef = useRef<HTMLVideoElement | null>(null);
+  const hasLoadedMobileFavoriteRef = useRef(false);
   const cardMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -1725,6 +1739,34 @@ export default function AtlasMap({
   }, []);
 
   useEffect(() => {
+    const favoriteLoadTimer = window.setTimeout(() => {
+      try {
+        setIsMobileFavoriteSaved(
+          window.localStorage.getItem(MOBILE_FAVORITE_STORAGE_KEY) === 'true',
+        );
+      } catch {
+        setIsMobileFavoriteSaved(false);
+      } finally {
+        hasLoadedMobileFavoriteRef.current = true;
+      }
+    }, 0);
+
+    return () => window.clearTimeout(favoriteLoadTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedMobileFavoriteRef.current) return;
+    try {
+      window.localStorage.setItem(
+        MOBILE_FAVORITE_STORAGE_KEY,
+        isMobileFavoriteSaved ? 'true' : 'false',
+      );
+    } catch {
+      // Favorites still provide a polished visual toggle if storage is unavailable.
+    }
+  }, [isMobileFavoriteSaved]);
+
+  useEffect(() => {
     document.documentElement.classList.toggle(
       HOME_PHONE_LANDSCAPE_SCROLL_CLASS,
       isPhoneLandscape,
@@ -2188,6 +2230,23 @@ export default function AtlasMap({
 
       {shouldShowMobileAmbientAtlas ? (
         <>
+          <div style={styles.mobileChromeControls} aria-label="Mobile atlas controls">
+            <button type="button" aria-label="Open Michigan atlas menu" aria-expanded={isMobileMenuOpen} className="mobile-chrome-button" style={styles.mobileChromeButton} onClick={() => setIsMobileMenuOpen(true)}>
+              <span aria-hidden="true" style={styles.mobileHamburgerIcon}>☰</span>
+            </button>
+            <button type="button" aria-label={isMobileFavoriteSaved ? 'Remove Michigan from favorites' : 'Save Michigan to favorites'} aria-pressed={isMobileFavoriteSaved} className="mobile-chrome-button" style={{ ...styles.mobileChromeButton, ...styles.mobileFavoriteButton, ...(isMobileFavoriteSaved ? styles.mobileFavoriteButtonActive : null) }} onClick={() => setIsMobileFavoriteSaved((isSaved) => !isSaved)}>
+              <span aria-hidden="true">{isMobileFavoriteSaved ? '♥' : '♡'}</span>
+            </button>
+          </div>
+          <div style={styles.mobileSideControls} aria-label="Mobile map tools">
+            <button type="button" aria-label="Open atlas filters" aria-expanded={isMobileFilterOpen} className="mobile-tool-button" style={styles.mobileToolButton} onClick={() => setIsMobileFilterOpen(true)}>
+              <span aria-hidden="true">☷</span>
+              <span style={styles.mobileToolLabel}>Filters</span>
+            </button>
+            <button type="button" aria-label="Recenter Michigan atlas map" className="mobile-tool-button" style={styles.mobileToolButton} onClick={resetMapTransform}>
+              <span aria-hidden="true">◎</span>
+            </button>
+          </div>
           <header className="mobile-atlas-identity" style={styles.mobileAtlasIdentity} aria-label="Celebration Atlas Michigan">
             <p className="mobile-atlas-brand" style={styles.mobileBrand}>✦ Celebration Atlas</p>
             <h1 className="mobile-atlas-title" style={styles.mobileStateTitle}>Michigan</h1>
@@ -2220,6 +2279,39 @@ export default function AtlasMap({
             ))}
           </div>
         </>
+      ) : null}
+
+      {shouldShowMobileAmbientAtlas && isMobileMenuOpen ? (
+        <div style={styles.mobileSheetOverlay} onClick={() => setIsMobileMenuOpen(false)}>
+          <nav aria-label="Michigan atlas menu" style={styles.mobileMenuSheet} onClick={(event) => event.stopPropagation()}>
+            <div style={styles.mobileSheetHandle} />
+            <p style={styles.mobileSheetKicker}>Celebration Atlas</p>
+            {MOBILE_MENU_ITEMS.map((item) => (
+              <button key={item} type="button" style={styles.mobileMenuItem} onClick={() => setIsMobileMenuOpen(false)}>{item}</button>
+            ))}
+          </nav>
+        </div>
+      ) : null}
+
+      {shouldShowMobileAmbientAtlas && isMobileFilterOpen ? (
+        <div style={styles.mobileSheetOverlay} onClick={() => setIsMobileFilterOpen(false)}>
+          <section aria-label="Michigan atlas filters" style={styles.mobileFilterSheet} onClick={(event) => event.stopPropagation()}>
+            <div style={styles.mobileSheetHandle} />
+            <div style={styles.mobileFilterHeader}>
+              <div>
+                <p style={styles.mobileSheetKicker}>Refine Michigan</p>
+                <h2 style={styles.mobileSheetTitle}>Filters</h2>
+              </div>
+              <button type="button" style={styles.mobileSheetCloseButton} onClick={() => setIsMobileFilterOpen(false)} aria-label="Close filters">×</button>
+            </div>
+            {MOBILE_FILTER_FIELDS.map((field) => (
+              <button key={field} type="button" style={styles.mobileFilterRow}>
+                <span>{field}</span>
+                <span style={styles.mobileFilterRowMeta}>Coming soon</span>
+              </button>
+            ))}
+          </section>
+        </div>
       ) : null}
 
       {!shouldShowCalibration && !isVerificationMode && isDesktop ? (
@@ -3817,6 +3909,27 @@ const styles: Record<string, CSSProperties> = {
     textDecoration: 'none',
     boxShadow: '0 0 18px rgba(255,194,104,.24)',
   },
+
+
+  mobileChromeControls: { position: 'absolute', top: 'calc(18px + env(safe-area-inset-top))', left: 18, right: 18, zIndex: Z_INDEX.searchDock + 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', pointerEvents: 'none' },
+  mobileChromeButton: { width: 46, height: 46, borderRadius: 999, border: '1px solid rgba(255, 226, 170, 0.28)', background: 'radial-gradient(circle at 32% 20%, rgba(255, 238, 190, 0.14), rgba(12, 18, 28, 0.68) 58%, rgba(4, 7, 12, 0.76))', color: 'rgba(255, 224, 158, 0.96)', boxShadow: 'inset 0 0 0 1px rgba(255, 245, 214, 0.05), 0 12px 34px rgba(0, 0, 0, 0.36), 0 0 18px rgba(255, 201, 104, 0.12)', backdropFilter: 'blur(9px) saturate(1.08)', WebkitBackdropFilter: 'blur(9px) saturate(1.08)', display: 'grid', placeItems: 'center', fontSize: 25, lineHeight: 1, cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto' },
+  mobileHamburgerIcon: { transform: 'translateY(-1px)' },
+  mobileFavoriteButton: { fontSize: 31 },
+  mobileFavoriteButtonActive: { color: 'rgba(255, 244, 214, 0.98)', borderColor: 'rgba(255, 218, 140, 0.54)', boxShadow: 'inset 0 0 0 1px rgba(255, 245, 214, 0.09), 0 0 24px rgba(255, 193, 88, 0.24), 0 12px 34px rgba(0, 0, 0, 0.36)' },
+  mobileSideControls: { position: 'absolute', right: 17, bottom: 'calc(212px + env(safe-area-inset-bottom))', zIndex: Z_INDEX.searchDock + 1, display: 'grid', gap: 10, justifyItems: 'center', pointerEvents: 'none' },
+  mobileToolButton: { width: 44, minHeight: 44, borderRadius: 999, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(11, 17, 26, 0.72), rgba(5, 9, 15, 0.62))', color: 'rgba(255, 232, 184, 0.94)', boxShadow: 'inset 0 0 0 1px rgba(255, 245, 214, 0.05), 0 10px 26px rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', gap: 4, padding: 0, fontSize: 24, cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto' },
+  mobileToolLabel: { position: 'absolute', top: '100%', marginTop: 3, color: 'rgba(255, 244, 221, 0.86)', fontSize: 10, fontWeight: 700, textShadow: '0 1px 6px rgba(0, 0, 0, 0.86)' },
+  mobileSheetOverlay: { position: 'fixed', inset: 0, zIndex: Z_INDEX.searchDock + 10, background: 'rgba(0, 0, 0, 0.22)', display: 'grid', alignItems: 'end' },
+  mobileMenuSheet: { margin: '0 12px calc(12px + env(safe-area-inset-bottom))', padding: '10px 12px 14px', borderRadius: 24, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.94), rgba(5, 9, 15, 0.92))', boxShadow: '0 22px 70px rgba(0,0,0,.56), inset 0 0 0 1px rgba(255, 245, 214, 0.05)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
+  mobileSheetHandle: { width: 38, height: 4, margin: '0 auto 12px', borderRadius: 999, background: 'rgba(255, 226, 170, 0.34)' },
+  mobileSheetKicker: { margin: '0 0 10px', color: 'rgba(255, 211, 134, 0.78)', fontSize: 11, fontWeight: 850, letterSpacing: 1.5, textTransform: 'uppercase' },
+  mobileMenuItem: { width: '100%', padding: '12px 10px', border: 0, borderTop: '1px solid rgba(255, 226, 170, 0.1)', background: 'transparent', color: 'rgba(255, 242, 216, 0.94)', fontSize: 15, fontWeight: 700, textAlign: 'left' },
+  mobileFilterSheet: { margin: '0 12px calc(12px + env(safe-area-inset-bottom))', padding: '10px 14px 14px', borderRadius: 24, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.95), rgba(5, 9, 15, 0.93))' },
+  mobileFilterHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  mobileSheetTitle: { margin: '0 0 12px', color: 'rgba(255, 246, 226, 0.98)', fontSize: 22 },
+  mobileSheetCloseButton: { position: 'static', width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,225,160,.45)', background: 'rgba(22,26,35,.95)', color: '#ffebb9', fontSize: 22, lineHeight: 1, display: 'grid', placeItems: 'center' },
+  mobileFilterRow: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', border: 0, borderTop: '1px solid rgba(255, 226, 170, 0.12)', background: 'transparent', color: 'rgba(255, 242, 216, 0.94)', fontSize: 14, fontWeight: 750 },
+  mobileFilterRowMeta: { color: 'rgba(255, 211, 134, 0.62)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 },
 
   mobileAtlasIdentity: {
     position: 'absolute',
