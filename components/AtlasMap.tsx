@@ -328,6 +328,7 @@ const PHONE_LANDSCAPE_QUERY =
   '(orientation: landscape) and (max-height: 520px) and (max-width: 932px)';
 const HOME_DISCOVERY_SCROLL_CLASS = 'home-discovery-scroll';
 const HOME_PHONE_LANDSCAPE_SCROLL_CLASS = 'home-phone-landscape-scroll';
+const MOBILE_LANDING_MAP_LOWERING = '3dvh';
 
 // Central post-projection adjustment for the visible homepage marker/cluster
 // layer. Keep event lat/lng, anchor data, clustering, and marker styling
@@ -1690,13 +1691,18 @@ export default function AtlasMap({
     isPhoneLandscape && isMapAtMinimumZoom;
   const mobileAmbientMapScale = 1;
   const mobileAmbientMapLift = shouldShowMobileAmbientAtlas ? -22 : 0;
+  const mobileLandingMapLowering = shouldShowMobileAmbientAtlas
+    ? MOBILE_LANDING_MAP_LOWERING
+    : '0px';
   const mapLayerScale =
     (isPhoneLandscape ? 1 : BASE_SCALE) * mapTransform.scale * mobileAmbientMapScale;
+  const mapLayerTranslateX =
+    mapTransform.translateX + (prefersReducedMotion ? 0 : parallaxOffset.x * 0.55);
   const mapLayerTranslateY =
     mapTransform.translateY +
     (prefersReducedMotion ? 0 : parallaxOffset.y * 0.55) +
     mobileAmbientMapLift;
-  const mapLayerTransform = `translate3d(${mapTransform.translateX + (prefersReducedMotion ? 0 : parallaxOffset.x * 0.55)}px, ${mapLayerTranslateY}px, 0) scale(${mapLayerScale})`;
+  const mapLayerTransform = `translate3d(${mapLayerTranslateX}px, calc(${mapLayerTranslateY}px + ${mobileLandingMapLowering}), 0) scale(${mapLayerScale})`;
 
   return (
     <section
