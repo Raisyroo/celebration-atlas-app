@@ -1688,7 +1688,7 @@ export default function AtlasMap({
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
     isPhoneLandscape && isMapAtMinimumZoom;
-  const mobileAmbientMapScale = shouldShowMobileAmbientAtlas ? 0.9 : 1;
+  const mobileAmbientMapScale = 1;
   const mobileAmbientMapLift = shouldShowMobileAmbientAtlas ? -22 : 0;
   const mapLayerScale =
     (isPhoneLandscape ? 1 : BASE_SCALE) * mapTransform.scale * mobileAmbientMapScale;
