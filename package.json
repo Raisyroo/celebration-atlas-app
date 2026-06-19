@@ -15,7 +15,8 @@
     "atlas:complete:dry": "node scripts/atlas-complete-task.mjs --dry-run",
     "atlas:handoff": "node scripts/atlas-handoff.mjs",
     "atlas:runbook": "node scripts/atlas-runbook.mjs",
-    "atlas:doctor": "node scripts/atlas-doctor.mjs"
+    "atlas:doctor": "node scripts/atlas-doctor.mjs",
+    "atlas:generate-thumbnails": "node --experimental-strip-types scripts/generate-event-thumbnails.ts"
   },
   "dependencies": {
     "next": "16.2.6",

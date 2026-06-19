@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Generated event thumbnails stay local until asset storage is finalized.
+public/event-media/generated/*.webp
+public/event-media/fallback/*.webp

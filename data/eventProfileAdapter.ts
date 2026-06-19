@@ -1,5 +1,6 @@
 import type { AtlasEvent } from './events';
 import { EVENT_TIMING_METADATA } from './eventTimingMetadata';
+import { resolveEventThumbnail } from './eventThumbnail';
 import type {
   EventCoverageLevel,
   EventIndoorOutdoor,
@@ -177,6 +178,19 @@ function createMediaItems(event: AtlasEvent): EventMediaItem[] | undefined {
     }
   }
 
+  const thumbnail = resolveEventThumbnail(event);
+
+  addMediaItem({
+    id: `${event.id}-thumbnail`,
+    slot: 'thumbnailImage',
+    kind: 'image',
+    src: thumbnail.path,
+    title: `${event.name} thumbnail`,
+    alt: thumbnail.alt,
+    isPrimary: true,
+    confidence: thumbnail.mediaSourceType === 'override' ? 'medium' : 'low',
+  });
+
   if (event.cardMedia?.mediaSrc) {
     addMediaItem({
       id: `${event.id}-card-media`,
@@ -186,7 +200,7 @@ function createMediaItems(event: AtlasEvent): EventMediaItem[] | undefined {
       title: event.cardMedia.atmosphereTitle ?? event.atmosphereLabel,
       alt: `${event.name} media`,
       posterSrc: event.cardMedia.posterSrc,
-      isPrimary: true,
+      isPrimary: mediaItems.length === 0,
       confidence: 'low',
     });
   }
