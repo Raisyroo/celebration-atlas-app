@@ -2110,7 +2110,7 @@ export default function AtlasMap({
 
       {shouldShowMobileAmbientAtlas ? (
         <>
-          <header style={styles.mobileAtlasIdentity} aria-label="Celebration Atlas Michigan">
+          <header className="mobile-atlas-identity" style={styles.mobileAtlasIdentity} aria-label="Celebration Atlas Michigan">
             <p className="mobile-atlas-brand" style={styles.mobileBrand}>✦ Celebration Atlas</p>
             <h1 className="mobile-atlas-title" style={styles.mobileStateTitle}>Michigan</h1>
             <p className="mobile-atlas-subtitle" style={styles.mobileStateSubtitle}>Explore. Celebrate. Connect.</p>
@@ -2658,6 +2658,42 @@ export default function AtlasMap({
               .mobile-live-sheet-scroller,
               .mobile-live-sheet--expanded .mobile-live-sheet-scroller {
                 max-height: 72px;
+              }
+            }
+
+            @media (max-width: 480px) {
+              .mobile-atlas-identity {
+                top: calc(env(safe-area-inset-top) + 28px) !important;
+                gap: 7px !important;
+              }
+
+              .mobile-atlas-brand {
+                font-size: 20px !important;
+                letter-spacing: 0.08em !important;
+                line-height: 1.08 !important;
+                margin: 0 !important;
+                white-space: normal !important;
+              }
+
+              .mobile-atlas-title {
+                font-size: 52px !important;
+                letter-spacing: 0.08em !important;
+                line-height: 0.92 !important;
+                margin: 0 !important;
+                min-width: 0 !important;
+                width: auto !important;
+                max-width: 100% !important;
+                white-space: normal !important;
+                transform: none !important;
+              }
+
+              .mobile-atlas-subtitle {
+                display: block !important;
+                font-size: 19px !important;
+                letter-spacing: 0.03em !important;
+                line-height: 1.12 !important;
+                margin: 0 !important;
+                white-space: normal !important;
               }
             }
 
