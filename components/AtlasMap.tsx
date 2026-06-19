@@ -2873,6 +2873,18 @@ export default function AtlasMap({
               }
             }
 
+            @media (max-width: 767px) {
+              .mobile-atlas-identity {
+                padding-top: 18px !important;
+              }
+
+              .mobile-atlas-title {
+                font-size: 48px !important;
+                line-height: 0.95 !important;
+                letter-spacing: 0.04em !important;
+              }
+            }
+
             .marker-pulse {
               animation-name: markerPulse;
               animation-timing-function: ease-in-out;
