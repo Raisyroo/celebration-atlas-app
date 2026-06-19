@@ -339,6 +339,84 @@ const ATLAS_MARKER_PROJECTION_TRANSFORM = {
 } as const;
 
 type AtlasEvent = (typeof ATLAS_EVENTS)[number];
+
+const FALLBACK_THUMBNAIL_BY_ICON: Record<
+  NonNullable<AtlasEvent['iconType']>,
+  string
+> = {
+  music: '♪',
+  fair: '🎡',
+  food: '🍒',
+  fireworks: '✦',
+  flower: '✿',
+  harvest: '🍑',
+  waterfront: '≈',
+  winter: '❄',
+  art: '◆',
+  heritage: '◈',
+};
+
+function getEventThumbnail(event: AtlasEvent):
+  | { kind: 'image'; src: string; alt: string }
+  | { kind: 'fallback'; glyph: string; label: string } {
+  const thumbnailSrc =
+    event.cardMedia?.thumbnailSrc ??
+    event.cardMedia?.posterSrc ??
+    (event.cardMedia?.mediaType === 'image' ? event.cardMedia.mediaSrc : undefined) ??
+    event.detailPage?.posterSrc ??
+    (event.detailPage?.mediaType === 'image' ? event.detailPage.mediaSrc : undefined);
+
+  if (thumbnailSrc) {
+    return {
+      kind: 'image',
+      src: thumbnailSrc,
+      alt: event.cardMedia?.thumbnailAlt ?? `${event.name} local media thumbnail`,
+    };
+  }
+
+  return {
+    kind: 'fallback',
+    glyph: event.iconType ? FALLBACK_THUMBNAIL_BY_ICON[event.iconType] : '✦',
+    label: `${event.category} fallback visual`,
+  };
+}
+
+function EventThumbnail({
+  event,
+  variant,
+}: {
+  event: AtlasEvent;
+  variant: 'floating' | 'live';
+}) {
+  const thumbnail = getEventThumbnail(event);
+  const wrapStyle =
+    variant === 'live'
+      ? styles.eventThumbnailLive
+      : styles.eventThumbnailFloating;
+
+  if (thumbnail.kind === 'image') {
+    return (
+      <span style={{ ...styles.eventThumbnail, ...wrapStyle }}>
+        <img
+          src={thumbnail.src}
+          alt={thumbnail.alt}
+          style={styles.eventThumbnailImage}
+          loading="lazy"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      style={{ ...styles.eventThumbnail, ...wrapStyle }}
+      role="img"
+      aria-label={thumbnail.label}
+    >
+      <span style={styles.eventThumbnailFallbackGlyph}>{thumbnail.glyph}</span>
+    </span>
+  );
+}
 type MarkerPosition = { x: number; y: number };
 type MapTransform = { scale: number; translateX: number; translateY: number };
 type ActiveMapPointer = { pointerId: number; clientX: number; clientY: number };
@@ -2133,8 +2211,11 @@ export default function AtlasMap({
                       : styles.mobileFloatingCardThree),
                 }}
               >
-                <span style={styles.mobileFloatingCardTitle}>{event.name}</span>
-                <span style={styles.mobileFloatingCardMeta}>{event.location}</span>
+                <EventThumbnail event={event} variant="floating" />
+                <span style={styles.mobileFloatingCardText}>
+                  <span style={styles.mobileFloatingCardTitle}>{event.name}</span>
+                  <span style={styles.mobileFloatingCardMeta}>{event.location}</span>
+                </span>
               </button>
             ))}
           </div>
@@ -2475,9 +2556,12 @@ export default function AtlasMap({
                       onClick={() => setSelectedId(event.id)}
                       style={styles.mobileLiveCard}
                     >
-                      <span style={styles.mobileLiveCardTitle}>{event.name}</span>
-                      <span style={styles.mobileLiveCardMeta}>{event.location}</span>
-                      <span style={styles.mobileLiveCardCategory}>{event.category}</span>
+                      <EventThumbnail event={event} variant="live" />
+                      <span style={styles.mobileLiveCardCopy}>
+                        <span style={styles.mobileLiveCardTitle}>{event.name}</span>
+                        <span style={styles.mobileLiveCardMeta}>{event.location}</span>
+                        <span style={styles.mobileLiveCardCategory}>{event.category}</span>
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -3781,10 +3865,11 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileFloatingCard: {
     position: 'absolute',
-    display: 'grid',
-    gap: 3,
-    maxWidth: 146,
-    padding: '7px 9px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    maxWidth: 164,
+    padding: '6px 8px',
     borderRadius: 14,
     border: '1px solid rgba(255, 220, 150, 0.34)',
     background: 'linear-gradient(160deg, rgba(11, 17, 25, 0.72), rgba(7, 10, 15, 0.48))',
@@ -3809,6 +3894,11 @@ const styles: Record<string, CSSProperties> = {
     left: '10%',
     top: '51%',
   },
+  mobileFloatingCardText: {
+    display: 'grid',
+    gap: 3,
+    minWidth: 0,
+  },
   mobileFloatingCardTitle: {
     fontSize: 11.5,
     fontWeight: 800,
@@ -3818,6 +3908,41 @@ const styles: Record<string, CSSProperties> = {
     color: 'rgba(255, 239, 205, 0.72)',
     fontSize: 10,
     lineHeight: 1.12,
+  },
+  eventThumbnail: {
+    position: 'relative',
+    flexShrink: 0,
+    display: 'grid',
+    placeItems: 'center',
+    overflow: 'hidden',
+    border: '1px solid rgba(255, 226, 170, 0.26)',
+    background:
+      'radial-gradient(circle at 34% 22%, rgba(255, 239, 196, 0.22), rgba(255, 191, 95, 0.1) 36%, rgba(9, 13, 20, 0.74) 100%)',
+    color: 'rgba(255, 226, 170, 0.92)',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 0 12px rgba(255, 198, 96, 0.14)',
+  },
+  eventThumbnailFloating: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+  },
+  eventThumbnailLive: {
+    width: 46,
+    minHeight: 58,
+    borderRadius: 13,
+  },
+  eventThumbnailImage: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  eventThumbnailFallbackGlyph: {
+    fontSize: 18,
+    lineHeight: 1,
+    filter: 'drop-shadow(0 1px 4px rgba(2, 3, 7, 0.8))',
   },
   mobileLiveStrip: {
     marginTop: 6,
@@ -3857,10 +3982,11 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveCard: {
     flex: '1 1 0',
-    display: 'grid',
-    gap: 3,
-    minHeight: 62,
-    padding: '8px 9px',
+    display: 'flex',
+    alignItems: 'stretch',
+    gap: 8,
+    minHeight: 74,
+    padding: '7px 8px',
     borderRadius: 14,
     border: '1px solid rgba(255, 226, 170, 0.18)',
     background: 'linear-gradient(160deg, rgba(24, 31, 43, 0.48), rgba(8, 12, 18, 0.38))',
@@ -3868,6 +3994,11 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'left',
     cursor: 'pointer',
     touchAction: 'manipulation',
+  },
+  mobileLiveCardCopy: {
+    display: 'grid',
+    gap: 3,
+    minWidth: 0,
   },
   mobileLiveCardTitle: {
     fontSize: 11,
