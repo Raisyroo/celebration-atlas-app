@@ -39,6 +39,8 @@ export type AtlasEvent = {
     mediaPosition?: string;
     mediaScale?: number;
     mediaMaskProfile?: 'romeoPeach';
+    thumbnailSrc?: string;
+    thumbnailAlt?: string;
     mediaDelayMs?: number;
     mediaFadeDurationMs?: number;
   };
@@ -91,6 +93,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       mediaPosition: '43% 18%',
       mediaScale: 1,
       mediaMaskProfile: 'romeoPeach',
+      thumbnailSrc: '/event-media/romeo/romeo-peach-memory-bg-v1.webp',
+      thumbnailAlt: 'Atmospheric Romeo Peach Festival memory artwork',
       mediaDelayMs: 900,
       mediaFadeDurationMs: 1300,
     },
@@ -169,6 +173,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       mediaPosition: '56% 36%',
       mediaScale: 1.04,
       mediaMaskProfile: 'romeoPeach',
+      thumbnailSrc: '/event-media/electric-forest-poster.jpg',
+      thumbnailAlt: 'Electric Forest atmospheric poster frame',
       mediaDelayMs: 0,
       mediaFadeDurationMs: 900,
     },
