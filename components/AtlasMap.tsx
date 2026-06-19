@@ -1039,7 +1039,6 @@ export default function AtlasMap({
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [searchPulseTick, setSearchPulseTick] = useState(0);
-  const [isMobileLiveSheetExpanded, setIsMobileLiveSheetExpanded] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useState(false);
@@ -1866,8 +1865,6 @@ export default function AtlasMap({
   const shouldShowMobileAmbientAtlas =
     !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
 
-  const isMobileLiveSheetVisuallyExpanded =
-    shouldShowMobileAmbientAtlas && isMobileLiveSheetExpanded;
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
     isPhoneLandscape && isMapAtMinimumZoom;
@@ -2680,24 +2677,10 @@ export default function AtlasMap({
             </form>
             {shouldShowMobileAmbientAtlas ? (
               <section
-                className={`mobile-live-sheet ${isMobileLiveSheetVisuallyExpanded ? 'mobile-live-sheet--expanded' : ''}`}
+                className="mobile-live-sheet"
                 style={styles.mobileLiveStrip}
-                aria-label="Live and upcoming in Michigan"
+                aria-label="Michigan event rail"
               >
-                <button
-                  type="button"
-                  className="mobile-live-sheet-toggle"
-                  style={styles.mobileLiveStripHeader}
-                  aria-expanded={isMobileLiveSheetVisuallyExpanded}
-                  onClick={() =>
-                    setIsMobileLiveSheetExpanded((isExpanded) => !isExpanded)
-                  }
-                >
-                  <span style={styles.mobileLiveStripTitle}>Live / Upcoming in Michigan</span>
-                  <span style={styles.mobileLiveStripHint}>
-                    {isMobileLiveSheetVisuallyExpanded ? 'Collapse' : 'View All'}
-                  </span>
-                </button>
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
                   {ambientMobileEvents.map((event) => {
                     const statusBadge = getEventStatusBadge(event);
@@ -2798,7 +2781,7 @@ export default function AtlasMap({
             }
 
             .mobile-live-sheet-scroller {
-              max-height: 96px;
+              max-height: 97px;
               opacity: 1;
               overflow-x: auto !important;
               overflow-y: hidden !important;
@@ -2808,10 +2791,6 @@ export default function AtlasMap({
                 max-height 260ms ease,
                 opacity 220ms ease,
                 transform 260ms ease;
-            }
-
-            .mobile-live-sheet--expanded .mobile-live-sheet-scroller {
-              max-height: min(32dvh, 240px);
             }
 
             @media (max-width: 767px) {
@@ -2859,19 +2838,6 @@ export default function AtlasMap({
                 padding: 7px 9px !important;
                 border-radius: 15px !important;
               }
-
-              .mobile-live-sheet-toggle {
-                margin: 0 0 5px !important;
-                font-size: 12px !important;
-              }
-
-              .mobile-live-sheet--expanded {
-                padding-bottom: 10px !important;
-              }
-
-              .mobile-live-sheet--expanded .mobile-live-sheet-scroller {
-                padding-top: 2px;
-              }
             }
 
             @media (max-width: 767px) and (max-height: 720px) {
@@ -2900,7 +2866,7 @@ export default function AtlasMap({
               }
 
               .mobile-live-sheet-scroller {
-                max-height: 82px;
+                max-height: 97px;
               }
             }
 
@@ -2909,9 +2875,8 @@ export default function AtlasMap({
                 display: none !important;
               }
 
-              .mobile-live-sheet-scroller,
-              .mobile-live-sheet--expanded .mobile-live-sheet-scroller {
-                max-height: 72px;
+              .mobile-live-sheet-scroller {
+                max-height: 97px;
               }
             }
 
@@ -4131,8 +4096,9 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 11,
   },
   eventThumbnailLive: {
-    width: 62,
-    minHeight: 70,
+    width: '100%',
+    height: '100%',
+    minHeight: 0,
     alignSelf: 'stretch',
     border: 0,
     borderRadius: 0,
@@ -4152,7 +4118,7 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveStrip: {
     marginTop: 6,
-    padding: '8px 9px 9px',
+    padding: '7px 8px 8px',
     borderRadius: 19,
     border: '1px solid rgba(255, 226, 170, 0.22)',
     background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.72), rgba(5, 8, 13, 0.52))',
@@ -4160,45 +4126,22 @@ const styles: Record<string, CSSProperties> = {
     backdropFilter: 'blur(5px)',
     WebkitBackdropFilter: 'blur(5px)',
   },
-  mobileLiveStripHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    margin: '0 3px 8px',
-    color: 'rgba(255, 243, 218, 0.96)',
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: 0.9,
-    textTransform: 'uppercase',
-  },
-  mobileLiveStripTitle: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 6,
-  },
-  mobileLiveStripHint: {
-    color: 'rgba(255, 210, 128, 0.76)',
-    fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    whiteSpace: 'nowrap',
-  },
   mobileLiveStripScroller: {
     display: 'flex',
     gap: 7,
     overflowX: 'auto',
-    paddingBottom: 2,
+    paddingBottom: 1,
     WebkitOverflowScrolling: 'touch',
     scrollbarWidth: 'none',
   },
   mobileLiveCard: {
-    flex: '0 0 218px',
-    display: 'flex',
+    flex: '0 0 106px',
+    display: 'grid',
+    gridTemplateRows: '44px minmax(0, 1fr)',
     alignItems: 'stretch',
     gap: 0,
-    minHeight: 70,
+    minHeight: 96,
+    maxHeight: 96,
     padding: 0,
     overflow: 'hidden',
     borderRadius: 15,
@@ -4211,9 +4154,9 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveCardMedia: {
     position: 'relative',
-    flexShrink: 0,
     display: 'grid',
-    alignSelf: 'stretch',
+    minWidth: 0,
+    minHeight: 0,
   },
   mobileLiveStatusBadge: {
     position: 'absolute',
@@ -4243,25 +4186,33 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveCardCopy: {
     display: 'grid',
-    alignContent: 'center',
-    gap: 3,
+    gridTemplateRows: '1fr auto auto',
+    alignContent: 'start',
+    gap: 2,
     minWidth: 0,
-    padding: '8px 9px 8px 10px',
+    padding: '5px 7px 6px',
   },
   mobileLiveCardTitle: {
-    fontSize: 11,
+    display: '-webkit-box',
+    overflow: 'hidden',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 2,
+    fontSize: 9.8,
     fontWeight: 800,
-    lineHeight: 1.1,
+    lineHeight: 1.05,
   },
   mobileLiveCardMeta: {
+    overflow: 'hidden',
     color: 'rgba(255, 239, 205, 0.66)',
-    fontSize: 10,
-    lineHeight: 1.12,
+    fontSize: 8.6,
+    lineHeight: 1.08,
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   mobileLiveCardDate: {
     alignSelf: 'end',
     color: 'rgba(255, 211, 134, 0.82)',
-    fontSize: 9,
+    fontSize: 7.8,
     fontWeight: 900,
     letterSpacing: 0.75,
     textTransform: 'uppercase',
