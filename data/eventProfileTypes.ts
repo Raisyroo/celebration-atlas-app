@@ -25,6 +25,7 @@ export type EventSourceType =
 export type ConfidenceLevel = 'unknown' | 'low' | 'medium' | 'high' | 'verified';
 
 export type EventMediaSlot =
+  | 'thumbnailImage'
   | 'heroImage'
   | 'introVideo'
   | 'atmosphereLoop'

@@ -44,7 +44,10 @@ export type AtlasEvent = {
     mediaScale?: number;
     mediaMaskProfile?: 'romeoPeach';
     thumbnailSrc?: string;
+    thumbnailOverrideSrc?: string;
     thumbnailAlt?: string;
+    thumbnailSourceType?: 'override' | 'generated' | 'fallback';
+    thumbnailGenerationStatus?: 'manualOverride' | 'generated' | 'fallbackReady' | 'needsGeneration' | 'failed';
     mediaDelayMs?: number;
     mediaFadeDurationMs?: number;
   };
@@ -101,7 +104,9 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       mediaPosition: '43% 18%',
       mediaScale: 1,
       mediaMaskProfile: 'romeoPeach',
-      thumbnailSrc: '/event-media/romeo/romeo-peach-memory-bg-v1.webp',
+      thumbnailOverrideSrc: '/event-media/romeo/romeo-peach-memory-bg-v1.webp',
+      thumbnailSourceType: 'override',
+      thumbnailGenerationStatus: 'manualOverride',
       thumbnailAlt: 'Atmospheric Romeo Peach Festival memory artwork',
       mediaDelayMs: 900,
       mediaFadeDurationMs: 1300,
@@ -181,7 +186,9 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       mediaPosition: '56% 36%',
       mediaScale: 1.04,
       mediaMaskProfile: 'romeoPeach',
-      thumbnailSrc: '/event-media/electric-forest-poster.jpg',
+      thumbnailOverrideSrc: '/event-media/electric-forest-poster.jpg',
+      thumbnailSourceType: 'override',
+      thumbnailGenerationStatus: 'manualOverride',
       thumbnailAlt: 'Electric Forest atmospheric poster frame',
       mediaDelayMs: 0,
       mediaFadeDurationMs: 900,

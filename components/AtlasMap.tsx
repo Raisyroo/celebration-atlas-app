@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
+import { getManifestEventThumbnail } from '../data/eventThumbnailManifest';
 import {
   getEventProfileById,
   searchEventProfiles,
@@ -394,20 +395,16 @@ function getEventStatusBadge(event: AtlasEvent, now = new Date()): EventStatusBa
 }
 
 function getEventThumbnail(event: AtlasEvent):
-  | { kind: 'image'; src: string; alt: string }
+  | { kind: 'image'; src: string; alt: string; sourceType: 'manifest' }
   | { kind: 'fallback'; glyph: string; label: string } {
-  const thumbnailSrc =
-    event.cardMedia?.thumbnailSrc ??
-    event.cardMedia?.posterSrc ??
-    (event.cardMedia?.mediaType === 'image' ? event.cardMedia.mediaSrc : undefined) ??
-    event.detailPage?.posterSrc ??
-    (event.detailPage?.mediaType === 'image' ? event.detailPage.mediaSrc : undefined);
+  const manifestThumbnail = getManifestEventThumbnail(event.id);
 
-  if (thumbnailSrc) {
+  if (manifestThumbnail) {
     return {
       kind: 'image',
-      src: thumbnailSrc,
-      alt: event.cardMedia?.thumbnailAlt ?? `${event.name} local media thumbnail`,
+      src: manifestThumbnail.dataUri,
+      alt: `${event.name} Celebration Atlas generated thumbnail`,
+      sourceType: 'manifest',
     };
   }
 
@@ -433,7 +430,7 @@ function EventThumbnail({
 
   if (thumbnail.kind === 'image') {
     return (
-      <span style={{ ...styles.eventThumbnail, ...wrapStyle }}>
+      <span style={{ ...styles.eventThumbnail, ...wrapStyle }} data-thumbnail-source={thumbnail.sourceType}>
         <img
           src={thumbnail.src}
           alt={thumbnail.alt}
