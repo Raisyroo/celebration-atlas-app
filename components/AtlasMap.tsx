@@ -393,6 +393,42 @@ function getEventStatusBadge(event: AtlasEvent, now = new Date()): EventStatusBa
   return null;
 }
 
+
+function formatMobileEventDate(event: AtlasEvent): string {
+  const start = parseReliableEventDate(event.dateRange?.startDate);
+  const end = parseReliableEventDate(event.dateRange?.endDate);
+
+  if (!start) return 'Date TBA';
+
+  const month = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(start);
+  const startDay = new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(start);
+
+  if (!end || start.getTime() === end.getTime()) {
+    return `${month} ${startDay}`;
+  }
+
+  const endMonth = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(end);
+  const endDay = new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(end);
+
+  if (month === endMonth) {
+    return `${month} ${startDay}–${endDay}`;
+  }
+
+  return `${month} ${startDay}–${endMonth} ${endDay}`;
+}
+
 function getEventThumbnail(event: AtlasEvent):
   | { kind: 'image'; src: string; alt: string; sourceType: 'override' | 'generated' }
   | { kind: 'fallback'; glyph: string; label: string } {
@@ -2657,14 +2693,15 @@ export default function AtlasMap({
                     setIsMobileLiveSheetExpanded((isExpanded) => !isExpanded)
                   }
                 >
-                  <span>Live / Upcoming in Michigan</span>
+                  <span style={styles.mobileLiveStripTitle}>Live / Upcoming in Michigan</span>
                   <span style={styles.mobileLiveStripHint}>
-                    {isMobileLiveSheetVisuallyExpanded ? 'Collapse' : 'Expand'}
+                    {isMobileLiveSheetVisuallyExpanded ? 'Collapse' : 'View All'}
                   </span>
                 </button>
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
                   {ambientMobileEvents.map((event) => {
                     const statusBadge = getEventStatusBadge(event);
+                    const eventDate = formatMobileEventDate(event);
 
                     return (
                       <button
@@ -2692,7 +2729,7 @@ export default function AtlasMap({
                         <span style={styles.mobileLiveCardCopy}>
                           <span style={styles.mobileLiveCardTitle}>{event.name}</span>
                           <span style={styles.mobileLiveCardMeta}>{event.location}</span>
-                          <span style={styles.mobileLiveCardCategory}>{event.category}</span>
+                          <span style={styles.mobileLiveCardDate}>{eventDate}</span>
                         </span>
                       </button>
                     );
@@ -4094,9 +4131,12 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 11,
   },
   eventThumbnailLive: {
-    width: 46,
-    minHeight: 58,
-    borderRadius: 13,
+    width: 62,
+    minHeight: 70,
+    alignSelf: 'stretch',
+    border: 0,
+    borderRadius: 0,
+    boxShadow: 'none',
   },
   eventThumbnailImage: {
     position: 'absolute',
@@ -4112,11 +4152,11 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveStrip: {
     marginTop: 6,
-    padding: '7px 9px 8px',
-    borderRadius: 18,
-    border: '1px solid rgba(255, 226, 170, 0.2)',
-    background: 'linear-gradient(180deg, rgba(9, 14, 22, 0.64), rgba(5, 8, 13, 0.46))',
-    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.04), 0 14px 32px rgba(0, 0, 0, 0.22)',
+    padding: '8px 9px 9px',
+    borderRadius: 19,
+    border: '1px solid rgba(255, 226, 170, 0.22)',
+    background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.72), rgba(5, 8, 13, 0.52))',
+    boxShadow: 'inset 0 1px 0 rgba(255, 244, 214, 0.08), 0 14px 32px rgba(0, 0, 0, 0.24)',
     backdropFilter: 'blur(5px)',
     WebkitBackdropFilter: 'blur(5px)',
   },
@@ -4125,10 +4165,17 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
-    margin: '0 2px 8px',
-    color: 'rgba(255, 243, 218, 0.94)',
-    fontSize: 12.5,
-    fontWeight: 750,
+    margin: '0 3px 8px',
+    color: 'rgba(255, 243, 218, 0.96)',
+    fontSize: 11,
+    fontWeight: 900,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+  },
+  mobileLiveStripTitle: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
   },
   mobileLiveStripHint: {
     color: 'rgba(255, 210, 128, 0.76)',
@@ -4147,15 +4194,16 @@ const styles: Record<string, CSSProperties> = {
     scrollbarWidth: 'none',
   },
   mobileLiveCard: {
-    flex: '1 1 0',
+    flex: '0 0 218px',
     display: 'flex',
     alignItems: 'stretch',
-    gap: 8,
-    minHeight: 74,
-    padding: '7px 8px',
-    borderRadius: 14,
-    border: '1px solid rgba(255, 226, 170, 0.18)',
-    background: 'linear-gradient(160deg, rgba(24, 31, 43, 0.48), rgba(8, 12, 18, 0.38))',
+    gap: 0,
+    minHeight: 70,
+    padding: 0,
+    overflow: 'hidden',
+    borderRadius: 15,
+    border: '1px solid rgba(255, 226, 170, 0.19)',
+    background: 'linear-gradient(150deg, rgba(29, 36, 48, 0.78), rgba(7, 11, 18, 0.7))',
     color: '#f7e9c8',
     textAlign: 'left',
     cursor: 'pointer',
@@ -4165,6 +4213,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     flexShrink: 0,
     display: 'grid',
+    alignSelf: 'stretch',
   },
   mobileLiveStatusBadge: {
     position: 'absolute',
@@ -4194,8 +4243,10 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveCardCopy: {
     display: 'grid',
+    alignContent: 'center',
     gap: 3,
     minWidth: 0,
+    padding: '8px 9px 8px 10px',
   },
   mobileLiveCardTitle: {
     fontSize: 11,
@@ -4207,12 +4258,12 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 10,
     lineHeight: 1.12,
   },
-  mobileLiveCardCategory: {
+  mobileLiveCardDate: {
     alignSelf: 'end',
-    color: 'rgba(255, 211, 134, 0.76)',
-    fontSize: 8.5,
-    fontWeight: 850,
-    letterSpacing: 0.9,
+    color: 'rgba(255, 211, 134, 0.82)',
+    fontSize: 9,
+    fontWeight: 900,
+    letterSpacing: 0.75,
     textTransform: 'uppercase',
   },
 
