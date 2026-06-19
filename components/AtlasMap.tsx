@@ -2556,7 +2556,7 @@ export default function AtlasMap({
 
             @media (max-width: 767px) {
               .atlas-map-image {
-                object-fit: contain !important;
+                object-fit: cover !important;
                 object-position: center 26% !important;
               }
 
