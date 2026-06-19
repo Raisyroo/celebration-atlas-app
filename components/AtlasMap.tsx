@@ -2243,9 +2243,6 @@ export default function AtlasMap({
               <span aria-hidden="true">☷</span>
               <span style={styles.mobileToolLabel}>Filters</span>
             </button>
-            <button type="button" aria-label="Recenter Michigan atlas map" className="mobile-tool-button" style={styles.mobileToolButton} onClick={resetMapTransform}>
-              <span aria-hidden="true">◎</span>
-            </button>
           </div>
           <header className="mobile-atlas-identity" style={styles.mobileAtlasIdentity} aria-label="Celebration Atlas Michigan">
             <p className="mobile-atlas-brand" style={styles.mobileBrand}>✦ Celebration Atlas</p>
@@ -3924,12 +3921,12 @@ const styles: Record<string, CSSProperties> = {
 
 
   mobileChromeControls: { position: 'absolute', top: 'calc(18px + env(safe-area-inset-top))', left: 18, right: 18, zIndex: Z_INDEX.searchDock + 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', pointerEvents: 'none' },
-  mobileChromeButton: { width: 46, height: 46, borderRadius: 999, border: '1px solid rgba(255, 226, 170, 0.28)', background: 'radial-gradient(circle at 32% 20%, rgba(255, 238, 190, 0.14), rgba(12, 18, 28, 0.68) 58%, rgba(4, 7, 12, 0.76))', color: 'rgba(255, 224, 158, 0.96)', boxShadow: 'inset 0 0 0 1px rgba(255, 245, 214, 0.05), 0 12px 34px rgba(0, 0, 0, 0.36), 0 0 18px rgba(255, 201, 104, 0.12)', backdropFilter: 'blur(9px) saturate(1.08)', WebkitBackdropFilter: 'blur(9px) saturate(1.08)', display: 'grid', placeItems: 'center', fontSize: 25, lineHeight: 1, cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto' },
+  mobileChromeButton: { width: 38, height: 38, borderRadius: 999, border: '1px solid rgba(255, 226, 170, 0.28)', background: 'radial-gradient(circle at 32% 20%, rgba(255, 238, 190, 0.14), rgba(12, 18, 28, 0.68) 58%, rgba(4, 7, 12, 0.76))', color: 'rgba(255, 224, 158, 0.96)', boxShadow: 'inset 0 0 0 1px rgba(255, 245, 214, 0.05), 0 12px 34px rgba(0, 0, 0, 0.36), 0 0 18px rgba(255, 201, 104, 0.12)', backdropFilter: 'blur(9px) saturate(1.08)', WebkitBackdropFilter: 'blur(9px) saturate(1.08)', display: 'grid', placeItems: 'center', fontSize: 20, lineHeight: 1, cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto' },
   mobileHamburgerIcon: { transform: 'translateY(-1px)' },
-  mobileFavoriteButton: { fontSize: 31 },
+  mobileFavoriteButton: { fontSize: 25 },
   mobileFavoriteButtonActive: { color: 'rgba(255, 244, 214, 0.98)', borderColor: 'rgba(255, 218, 140, 0.54)', boxShadow: 'inset 0 0 0 1px rgba(255, 245, 214, 0.09), 0 0 24px rgba(255, 193, 88, 0.24), 0 12px 34px rgba(0, 0, 0, 0.36)' },
   mobileSideControls: { position: 'absolute', right: 17, bottom: 'calc(212px + env(safe-area-inset-bottom))', zIndex: Z_INDEX.searchDock + 1, display: 'grid', gap: 10, justifyItems: 'center', pointerEvents: 'none' },
-  mobileToolButton: { width: 44, minHeight: 44, borderRadius: 999, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(11, 17, 26, 0.72), rgba(5, 9, 15, 0.62))', color: 'rgba(255, 232, 184, 0.94)', boxShadow: 'inset 0 0 0 1px rgba(255, 245, 214, 0.05), 0 10px 26px rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', gap: 4, padding: 0, fontSize: 24, cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto' },
+  mobileToolButton: { width: 38, minHeight: 38, height: 38, borderRadius: 999, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(11, 17, 26, 0.72), rgba(5, 9, 15, 0.62))', color: 'rgba(255, 232, 184, 0.94)', boxShadow: 'inset 0 0 0 1px rgba(255, 245, 214, 0.05), 0 10px 26px rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', gap: 4, padding: 0, fontSize: 19, cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto' },
   mobileToolLabel: { position: 'absolute', top: '100%', marginTop: 3, color: 'rgba(255, 244, 221, 0.86)', fontSize: 10, fontWeight: 700, textShadow: '0 1px 6px rgba(0, 0, 0, 0.86)' },
   mobileSheetOverlay: { position: 'fixed', inset: 0, zIndex: Z_INDEX.searchDock + 10, background: 'rgba(0, 0, 0, 0.22)', display: 'grid', alignItems: 'end' },
   mobileMenuSheet: { margin: '0 12px calc(12px + env(safe-area-inset-bottom))', padding: '10px 12px 14px', borderRadius: 24, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.94), rgba(5, 9, 15, 0.92))', boxShadow: '0 22px 70px rgba(0,0,0,.56), inset 0 0 0 1px rgba(255, 245, 214, 0.05)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
