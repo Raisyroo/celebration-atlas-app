@@ -1744,7 +1744,7 @@ export default function AtlasMap({
           <picture>
             <source
               media="(max-width: 767px)"
-              srcSet="/maps/michigan-atlas-base-wide.webp"
+              srcSet="/maps/michigan-atlas-base-tall.webp"
             />
             <img
               className="atlas-map-image atlas-map-image--atmosphere"
@@ -1767,7 +1767,7 @@ export default function AtlasMap({
           <picture>
             <source
               media="(max-width: 767px)"
-              srcSet="/maps/michigan-atlas-base-wide.webp"
+              srcSet="/maps/michigan-atlas-base-tall.webp"
             />
             <img
               className="atlas-map-image"
