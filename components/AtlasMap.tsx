@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
-import { getManifestEventThumbnail } from '../data/eventThumbnailManifest';
 import {
   getEventProfileById,
   searchEventProfiles,
@@ -395,16 +394,19 @@ function getEventStatusBadge(event: AtlasEvent, now = new Date()): EventStatusBa
 }
 
 function getEventThumbnail(event: AtlasEvent):
-  | { kind: 'image'; src: string; alt: string; sourceType: 'manifest' }
+  | { kind: 'image'; src: string; alt: string; sourceType: 'override' | 'generated' }
   | { kind: 'fallback'; glyph: string; label: string } {
-  const manifestThumbnail = getManifestEventThumbnail(event.id);
+  const explicitThumbnailSrc =
+    event.cardMedia?.thumbnailOverrideSrc ?? event.cardMedia?.thumbnailSrc;
 
-  if (manifestThumbnail) {
+  if (explicitThumbnailSrc) {
     return {
       kind: 'image',
-      src: manifestThumbnail.dataUri,
-      alt: `${event.name} Celebration Atlas generated thumbnail`,
-      sourceType: 'manifest',
+      src: explicitThumbnailSrc,
+      alt:
+        event.cardMedia?.thumbnailAlt ??
+        `${event.name} Celebration Atlas generated thumbnail`,
+      sourceType: event.cardMedia?.thumbnailOverrideSrc ? 'override' : 'generated',
     };
   }
 
