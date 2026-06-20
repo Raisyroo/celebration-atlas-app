@@ -2870,10 +2870,11 @@ export default function AtlasMap({
               }
 
               .mobile-floating-card {
-                width: max-content !important;
-                max-width: min(216px, calc(100vw - 28px)) !important;
+                width: min(204px, calc(100vw - 28px)) !important;
+                min-width: min(184px, calc(100vw - 28px)) !important;
+                max-width: min(204px, calc(100vw - 28px)) !important;
                 min-height: 56px !important;
-                padding: 8px 10px 8px 62px !important;
+                padding: 7px 8px 7px 60px !important;
                 border-radius: 13px !important;
               }
 
@@ -4051,10 +4052,11 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     display: 'flex',
     alignItems: 'center',
-    width: 'max-content',
-    maxWidth: 'min(232px, calc(100vw - 28px))',
+    width: 'min(216px, calc(100vw - 28px))',
+    minWidth: 'min(190px, calc(100vw - 28px))',
+    maxWidth: 'min(216px, calc(100vw - 28px))',
     minHeight: 58,
-    padding: '8px 10px 8px 62px',
+    padding: '7px 9px 7px 62px',
     borderRadius: 14,
     border: '1px solid rgba(255, 220, 150, 0.34)',
     backgroundColor: 'rgba(8, 12, 18, 0.82)',
@@ -4076,8 +4078,6 @@ const styles: Record<string, CSSProperties> = {
     bottom: 0,
     width: 58,
     overflow: 'hidden',
-    borderRadius: '13px 0 0 13px',
-    borderRight: '1px solid rgba(255, 220, 150, 0.28)',
     backgroundPosition: 'center',
     backgroundSize: 'cover',
     backgroundRepeat: 'no-repeat',
@@ -4100,12 +4100,20 @@ const styles: Record<string, CSSProperties> = {
     display: 'grid',
     gap: 3,
     minWidth: 0,
-    width: 'max-content',
-    maxWidth: 150,
+    width: '100%',
+    maxWidth: 145,
+    padding: '5px 6px',
+    borderRadius: 10,
+    background: 'linear-gradient(180deg, rgba(9, 13, 20, 0.72), rgba(5, 8, 13, 0.58))',
+    backdropFilter: 'blur(10px) saturate(1.08)',
+    WebkitBackdropFilter: 'blur(10px) saturate(1.08)',
   },
   mobileFloatingCardTitle: {
-    display: 'block',
-    maxWidth: 150,
+    display: '-webkit-box',
+    maxWidth: 133,
+    overflow: 'hidden',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 2,
     fontSize: 12,
     fontWeight: 800,
     lineHeight: 1.08,
@@ -4113,7 +4121,7 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileFloatingCardMeta: {
     display: 'block',
-    maxWidth: 150,
+    maxWidth: 133,
     color: 'rgba(255, 239, 205, 0.86)',
     fontSize: 10.5,
     lineHeight: 1.12,
