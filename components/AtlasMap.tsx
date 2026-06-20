@@ -2476,6 +2476,10 @@ export default function AtlasMap({
       ) : null}
 
       {!shouldShowCalibration && !isVerificationMode && renderedEvent && safeEventCard ? (
+        <div className="atlas-card-backdrop" aria-hidden="true" />
+      ) : null}
+
+      {!shouldShowCalibration && !isVerificationMode && renderedEvent && safeEventCard ? (
         <article
           ref={cardRef}
           className="atlas-card"
@@ -2486,8 +2490,8 @@ export default function AtlasMap({
             background: `linear-gradient(160deg, rgba(16,21,30,.34), rgba(9,12,18,.2) 58%, rgba(7,10,15,.3)), radial-gradient(circle at 82% 12%, ${cardTheme.wash}, rgba(7,10,15,0) 52%)`,
             opacity: isCardVisible ? 1 : 0,
             transform: isCardVisible
-              ? 'translateY(0)'
-              : `translateY(${cardEnterOffset}px)`,
+              ? 'translateY(var(--atlas-card-open-y, 0px))'
+              : `translateY(calc(var(--atlas-card-open-y, 0px) + ${cardEnterOffset}px))`,
             pointerEvents: isCardVisible ? 'auto' : 'none',
             transition: isCardVisible
               ? 'opacity 360ms ease, transform 360ms ease'
@@ -2504,6 +2508,7 @@ export default function AtlasMap({
           </button>
           {hasCardMedia && hasCardMediaSource ? (
             <div
+              className="atlas-card-media"
               style={{
                 ...styles.cardMediaWrap,
                 opacity: isCardMediaVisible ? 1 : 0,
@@ -2525,7 +2530,7 @@ export default function AtlasMap({
               <span style={styles.cardMediaOverlay} aria-hidden="true" />
             </div>
           ) : null}
-          <div style={styles.cardContent}>
+          <div className="atlas-card-content" style={styles.cardContent}>
             <div style={styles.cardHeaderRow}>
               <div style={styles.cardTitleGroup}>
                 <p style={styles.cardLocation}>{safeEventCard.location}</p>

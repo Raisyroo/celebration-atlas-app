@@ -212,6 +212,11 @@ body.event-detail-scroll::-webkit-scrollbar {
   -webkit-overflow-scrolling: touch;
 }
 
+
+.atlas-card-backdrop {
+  display: none;
+}
+
 /* Mobile event cards are viewport UI, independent of map art scale/position. */
 @media (max-width: 767px) and (orientation: portrait) {
   .atlas-card,
@@ -219,12 +224,7 @@ body.event-detail-scroll::-webkit-scrollbar {
     position: fixed !important;
     left: max(12px, env(safe-area-inset-left)) !important;
     right: max(12px, env(safe-area-inset-right)) !important;
-    bottom: calc(12px + env(safe-area-inset-bottom)) !important;
     width: auto !important;
-    max-height: min(
-      74svh,
-      calc(100svh - max(18px, env(safe-area-inset-top)) - 24px - env(safe-area-inset-bottom))
-    ) !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     overscroll-behavior: contain;
@@ -232,13 +232,65 @@ body.event-detail-scroll::-webkit-scrollbar {
     z-index: 30 !important;
   }
 
+  .atlas-card {
+    --atlas-card-open-y: -50%;
+    top: 48% !important;
+    bottom: auto !important;
+    min-height: min(640px, 78svh);
+    max-height: min(
+      84svh,
+      calc(100svh - max(18px, env(safe-area-inset-top)) - 34px - env(safe-area-inset-bottom))
+    ) !important;
+  }
+
+  .atlas-cluster-panel {
+    bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+    max-height: min(
+      74svh,
+      calc(100svh - max(18px, env(safe-area-inset-top)) - 24px - env(safe-area-inset-bottom))
+    ) !important;
+  }
+
+  .atlas-card-backdrop {
+    position: fixed;
+    inset: 0;
+    display: block;
+    background: rgba(1, 4, 10, 0.58);
+    backdrop-filter: blur(2px) saturate(0.9);
+    -webkit-backdrop-filter: blur(2px) saturate(0.9);
+    z-index: 29;
+    pointer-events: none;
+  }
+
+  .atlas-card .atlas-card-media {
+    position: relative !important;
+    inset: auto !important;
+    height: clamp(250px, 42svh, 390px);
+  }
+
+  .atlas-card .atlas-card-content {
+    padding: 16px 16px 18px !important;
+    background: linear-gradient(180deg, rgba(7, 10, 16, 0.72), rgba(7, 10, 16, 0.94));
+  }
+
   @supports (height: 100dvh) {
-    .atlas-card,
+    .atlas-card {
+      min-height: min(640px, 78dvh);
+      max-height: min(
+        84dvh,
+        calc(100dvh - max(18px, env(safe-area-inset-top)) - 34px - env(safe-area-inset-bottom))
+      ) !important;
+    }
+
     .atlas-cluster-panel {
       max-height: min(
         74dvh,
         calc(100dvh - max(18px, env(safe-area-inset-top)) - 24px - env(safe-area-inset-bottom))
       ) !important;
+    }
+
+    .atlas-card .atlas-card-media {
+      height: clamp(250px, 42dvh, 390px);
     }
   }
 
