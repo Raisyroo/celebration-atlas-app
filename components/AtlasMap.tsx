@@ -2692,6 +2692,7 @@ export default function AtlasMap({
                         type="button"
                         aria-label={`Open ${event.name}`}
                         onClick={() => setSelectedId(event.id)}
+                        className="mobile-live-card"
                         style={styles.mobileLiveCard}
                       >
                         <span style={styles.mobileLiveCardMedia}>
@@ -2782,10 +2783,11 @@ export default function AtlasMap({
             }
 
             .mobile-live-sheet-scroller {
-              max-height: 97px;
+              max-height: 122px;
               opacity: 1;
               overflow-x: auto !important;
               overflow-y: hidden !important;
+              scroll-snap-type: x proximity;
               pointer-events: auto;
               transform: translateY(0);
               transition:
@@ -2839,6 +2841,13 @@ export default function AtlasMap({
                 padding: 0 !important;
                 border-radius: 0 !important;
               }
+
+              .mobile-live-card {
+                flex: 0 0 clamp(108px, 30vw, 120px) !important;
+                min-height: 110px !important;
+                max-height: 110px !important;
+                scroll-snap-align: start;
+              }
             }
 
             @media (max-width: 767px) and (max-height: 720px) {
@@ -2867,7 +2876,7 @@ export default function AtlasMap({
               }
 
               .mobile-live-sheet-scroller {
-                max-height: 97px;
+                max-height: 122px;
               }
             }
 
@@ -2877,7 +2886,7 @@ export default function AtlasMap({
               }
 
               .mobile-live-sheet-scroller {
-                max-height: 97px;
+                max-height: 122px;
               }
             }
 
@@ -4138,15 +4147,15 @@ const styles: Record<string, CSSProperties> = {
     padding: '2px 0 10px',
     WebkitOverflowScrolling: 'touch',
     scrollbarWidth: 'none',
+    scrollSnapType: 'x proximity',
   },
   mobileLiveCard: {
-    flex: '0 0 96px',
     display: 'grid',
     gridTemplateRows: '1fr',
     alignItems: 'stretch',
     gap: 0,
-    minHeight: 104,
-    maxHeight: 104,
+    minHeight: 110,
+    maxHeight: 110,
     padding: 0,
     overflow: 'hidden',
     borderRadius: 15,
@@ -4156,6 +4165,7 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'left',
     cursor: 'pointer',
     touchAction: 'manipulation',
+    scrollSnapAlign: 'start',
     boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.04), 0 9px 22px rgba(0, 0, 0, 0.34)',
   },
   mobileLiveCardMedia: {
