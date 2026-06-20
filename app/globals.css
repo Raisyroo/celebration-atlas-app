@@ -262,15 +262,28 @@ body.event-detail-scroll::-webkit-scrollbar {
     pointer-events: none;
   }
 
+  .atlas-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
   .atlas-card .atlas-card-media {
-    position: relative !important;
-    inset: auto !important;
-    height: clamp(250px, 42svh, 390px);
+    position: absolute !important;
+    inset: 0 !important;
+    height: auto;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  .atlas-card .atlas-card-media > img {
+    display: none;
   }
 
   .atlas-card .atlas-card-content {
-    padding: 16px 16px 18px !important;
-    background: linear-gradient(180deg, rgba(7, 10, 16, 0.72), rgba(7, 10, 16, 0.94));
+    width: 100%;
+    padding: 108px 16px 18px !important;
+    background: linear-gradient(180deg, rgba(4, 7, 13, 0) 0%, rgba(5, 8, 14, 0.46) 34%, rgba(5, 8, 14, 0.82) 100%);
   }
 
   @supports (height: 100dvh) {
@@ -289,9 +302,6 @@ body.event-detail-scroll::-webkit-scrollbar {
       ) !important;
     }
 
-    .atlas-card .atlas-card-media {
-      height: clamp(250px, 42dvh, 390px);
-    }
   }
 
   .atlas-hero--card-open .atlas-search-dock {

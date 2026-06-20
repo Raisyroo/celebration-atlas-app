@@ -2511,6 +2511,11 @@ export default function AtlasMap({
               className="atlas-card-media"
               style={{
                 ...styles.cardMediaWrap,
+                backgroundImage: `url(${largeCardBackgroundImageSrc})`,
+                backgroundPosition:
+                  selectedMedia?.mediaPosition ??
+                  styles.cardMediaLayer.objectPosition,
+                backgroundSize: 'cover',
                 opacity: isCardMediaVisible ? 1 : 0,
                 transitionDuration: `${mediaFadeDurationMs}ms`,
               }}
