@@ -1,4 +1,5 @@
 import type { AtlasEvent } from './events';
+import { resolveExplicitEventThumbnail } from './eventThumbnail';
 
 export type SafeAtlasEventCard = {
   id: AtlasEvent['id'];
@@ -27,8 +28,17 @@ export type SafeAtlasEventCard = {
 };
 
 export function deriveSafeAtlasEventCard(event: AtlasEvent): SafeAtlasEventCard {
-  const media =
-    event.cardMedia?.mediaSrc || event.cardMedia?.posterSrc
+  const explicitThumbnail = resolveExplicitEventThumbnail(event);
+  const media = explicitThumbnail
+    ? {
+        mediaType: 'image' as const,
+        mediaSrc: explicitThumbnail.path,
+        mediaPosition: event.cardMedia?.mediaPosition,
+        mediaScale: event.cardMedia?.mediaScale,
+        mediaDelayMs: event.cardMedia?.mediaDelayMs,
+        mediaFadeDurationMs: event.cardMedia?.mediaFadeDurationMs,
+      }
+    : event.cardMedia?.mediaSrc || event.cardMedia?.posterSrc
       ? {
           mediaType: event.cardMedia.mediaType,
           mediaSrc: event.cardMedia.mediaSrc,

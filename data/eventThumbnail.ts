@@ -21,7 +21,9 @@ export function getGeneratedEventThumbnailPath(event: Pick<AtlasEvent, 'id'>): s
   return `/event-media/generated/${event.id}-thumb.webp`;
 }
 
-export function resolveEventThumbnail(event: AtlasEvent): EventThumbnailMetadata {
+export function resolveExplicitEventThumbnail(
+  event: AtlasEvent,
+): EventThumbnailMetadata | null {
   if (event.cardMedia?.thumbnailOverrideSrc) {
     return {
       path: event.cardMedia.thumbnailOverrideSrc,
@@ -39,6 +41,14 @@ export function resolveEventThumbnail(event: AtlasEvent): EventThumbnailMetadata
       generationStatus: event.cardMedia.thumbnailGenerationStatus ?? 'generated',
     };
   }
+
+  return null;
+}
+
+export function resolveEventThumbnail(event: AtlasEvent): EventThumbnailMetadata {
+  const explicitThumbnail = resolveExplicitEventThumbnail(event);
+
+  if (explicitThumbnail) return explicitThumbnail;
 
   return {
     path: getGeneratedEventThumbnailPath(event),
