@@ -460,7 +460,7 @@ function getFloatingCardBackgroundStyle(event: AtlasEvent): CSSProperties {
   if (thumbnail.kind === 'image') {
     return {
       backgroundImage:
-        'linear-gradient(90deg, rgba(5, 8, 13, 0.2) 0%, rgba(5, 8, 13, 0.18) 34%, rgba(9, 13, 20, 0.48) 58%, rgba(9, 13, 20, 0.64) 100%), radial-gradient(circle at 86% 22%, rgba(255, 230, 170, 0.18), rgba(255, 186, 94, 0.08) 36%, rgba(5, 8, 13, 0.38) 100%)',
+        'linear-gradient(90deg, rgba(6, 10, 16, 0.18) 0%, rgba(6, 10, 16, 0.14) 30%, rgba(9, 13, 20, 0.34) 54%, rgba(9, 13, 20, 0.5) 100%), radial-gradient(circle at 84% 18%, rgba(255, 233, 184, 0.16), rgba(255, 190, 94, 0.07) 38%, rgba(7, 10, 16, 0.3) 100%)',
     };
   }
 
@@ -2872,9 +2872,9 @@ export default function AtlasMap({
               .mobile-floating-card {
                 width: fit-content !important;
                 min-width: 0 !important;
-                max-width: min(198px, calc(100vw - 28px)) !important;
-                min-height: 54px !important;
-                padding: 7px 8px 7px 58px !important;
+                max-width: min(184px, calc(100vw - 28px)) !important;
+                min-height: 52px !important;
+                padding: 6px 8px 6px 54px !important;
                 border-radius: 13px !important;
               }
 
@@ -4054,19 +4054,19 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     width: 'fit-content',
     minWidth: 0,
-    maxWidth: 'min(206px, calc(100vw - 28px))',
-    minHeight: 56,
-    padding: '7px 8px 7px 60px',
+    maxWidth: 'min(188px, calc(100vw - 28px))',
+    minHeight: 52,
+    padding: '6px 8px 6px 54px',
     borderRadius: 14,
     border: '1px solid rgba(255, 220, 150, 0.34)',
-    backgroundColor: 'rgba(8, 12, 18, 0.5)',
-    backdropFilter: 'blur(13px) saturate(1.16)',
-    WebkitBackdropFilter: 'blur(13px) saturate(1.16)',
+    backgroundColor: 'rgba(9, 13, 20, 0.36)',
+    backdropFilter: 'blur(15px) saturate(1.18)',
+    WebkitBackdropFilter: 'blur(15px) saturate(1.18)',
     backgroundPosition: 'center',
     backgroundSize: 'cover',
     backgroundRepeat: 'no-repeat',
     color: '#f9edcf',
-    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 12px 26px rgba(0, 0, 0, 0.32), 0 0 18px rgba(255, 198, 96, 0.16)',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.06), inset 22px 0 34px rgba(255, 238, 200, 0.035), 0 12px 26px rgba(0, 0, 0, 0.3), 0 0 18px rgba(255, 198, 96, 0.14)',
     pointerEvents: 'auto',
     textAlign: 'left',
     cursor: 'pointer',
@@ -4078,12 +4078,12 @@ const styles: Record<string, CSSProperties> = {
     left: 0,
     top: 0,
     bottom: 0,
-    width: 66,
+    width: 62,
     overflow: 'hidden',
-    borderRadius: '13px 18px 18px 13px',
-    boxShadow: 'inset -18px 0 24px rgba(5, 8, 13, 0.28)',
-    maskImage: 'linear-gradient(90deg, #000 0%, #000 70%, rgba(0, 0, 0, 0.72) 86%, rgba(0, 0, 0, 0.18) 100%)',
-    WebkitMaskImage: 'linear-gradient(90deg, #000 0%, #000 70%, rgba(0, 0, 0, 0.72) 86%, rgba(0, 0, 0, 0.18) 100%)',
+    borderRadius: '13px 20px 20px 13px',
+    boxShadow: 'inset -16px 0 24px rgba(6, 9, 15, 0.24)',
+    maskImage: 'linear-gradient(90deg, #000 0%, #000 62%, rgba(0, 0, 0, 0.76) 78%, rgba(0, 0, 0, 0.3) 92%, rgba(0, 0, 0, 0.06) 100%)',
+    WebkitMaskImage: 'linear-gradient(90deg, #000 0%, #000 62%, rgba(0, 0, 0, 0.76) 78%, rgba(0, 0, 0, 0.3) 92%, rgba(0, 0, 0, 0.06) 100%)',
     backgroundPosition: 'center',
     backgroundSize: 'cover',
     backgroundRepeat: 'no-repeat',
@@ -4104,31 +4104,25 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     zIndex: 1,
     display: 'grid',
-    gap: 3,
+    gap: 2,
     minWidth: 0,
     width: 'max-content',
-    maxWidth: 132,
-    padding: '5px 5px 5px 7px',
-    borderRadius: '12px 10px 10px 16px',
-    background: 'linear-gradient(90deg, rgba(9, 13, 20, 0.34), rgba(9, 13, 20, 0.62) 38%, rgba(5, 8, 13, 0.5) 100%)',
-    backdropFilter: 'blur(14px) saturate(1.18)',
-    WebkitBackdropFilter: 'blur(14px) saturate(1.18)',
-    boxShadow: 'inset 1px 0 0 rgba(255, 244, 214, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+    maxWidth: 116,
   },
   mobileFloatingCardTitle: {
     display: '-webkit-box',
-    maxWidth: 120,
+    maxWidth: 112,
     overflow: 'hidden',
     WebkitBoxOrient: 'vertical',
     WebkitLineClamp: 2,
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: 800,
     lineHeight: 1.08,
     textShadow: '0 1px 6px rgba(0, 0, 0, 0.85)',
   },
   mobileFloatingCardMeta: {
     display: 'block',
-    maxWidth: 120,
+    maxWidth: 112,
     color: 'rgba(255, 239, 205, 0.86)',
     fontSize: 10.5,
     lineHeight: 1.12,
