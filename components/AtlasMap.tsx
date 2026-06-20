@@ -460,7 +460,7 @@ function getFloatingCardBackgroundStyle(event: AtlasEvent): CSSProperties {
   if (thumbnail.kind === 'image') {
     return {
       backgroundImage:
-        'linear-gradient(90deg, rgba(8, 12, 18, 0.72) 0%, rgba(8, 12, 18, 0.94) 43%, rgba(5, 8, 13, 0.96) 100%)',
+        'linear-gradient(180deg, rgba(8, 12, 18, 0.94), rgba(5, 8, 13, 0.96))',
     };
   }
 
@@ -485,9 +485,7 @@ function FloatingCardImage({ event }: { event: AtlasEvent }) {
       }}
       data-thumbnail-source={thumbnail.sourceType}
       aria-hidden="true"
-    >
-      <span style={styles.mobileFloatingCardImageFade} />
-    </span>
+    />
   );
 }
 
@@ -2872,10 +2870,10 @@ export default function AtlasMap({
               }
 
               .mobile-floating-card {
-                min-width: 142px !important;
-                max-width: 150px !important;
-                min-height: 66px !important;
-                padding: 10px 10px 9px 56px !important;
+                width: max-content !important;
+                max-width: min(216px, calc(100vw - 28px)) !important;
+                min-height: 56px !important;
+                padding: 8px 10px 8px 62px !important;
                 border-radius: 13px !important;
               }
 
@@ -4052,11 +4050,11 @@ const styles: Record<string, CSSProperties> = {
   mobileFloatingCard: {
     position: 'absolute',
     display: 'flex',
-    alignItems: 'flex-end',
-    minWidth: 154,
-    maxWidth: 174,
-    minHeight: 76,
-    padding: '12px 12px 10px 62px',
+    alignItems: 'center',
+    width: 'max-content',
+    maxWidth: 'min(232px, calc(100vw - 28px))',
+    minHeight: 58,
+    padding: '8px 10px 8px 62px',
     borderRadius: 14,
     border: '1px solid rgba(255, 220, 150, 0.34)',
     backgroundColor: 'rgba(8, 12, 18, 0.82)',
@@ -4079,15 +4077,10 @@ const styles: Record<string, CSSProperties> = {
     width: 58,
     overflow: 'hidden',
     borderRadius: '13px 0 0 13px',
+    borderRight: '1px solid rgba(255, 220, 150, 0.28)',
     backgroundPosition: 'center',
     backgroundSize: 'cover',
     backgroundRepeat: 'no-repeat',
-  },
-  mobileFloatingCardImageFade: {
-    position: 'absolute',
-    inset: 0,
-    background:
-      'linear-gradient(90deg, rgba(5, 8, 13, 0) 0%, rgba(5, 8, 13, 0.2) 58%, rgba(5, 8, 13, 0.86) 100%), linear-gradient(180deg, rgba(5, 8, 13, 0.08) 0%, rgba(5, 8, 13, 0.34) 100%)',
   },
   mobileFloatingCardOne: {
     left: '7%',
@@ -4107,14 +4100,20 @@ const styles: Record<string, CSSProperties> = {
     display: 'grid',
     gap: 3,
     minWidth: 0,
+    width: 'max-content',
+    maxWidth: 150,
   },
   mobileFloatingCardTitle: {
+    display: 'block',
+    maxWidth: 150,
     fontSize: 12,
     fontWeight: 800,
     lineHeight: 1.08,
     textShadow: '0 1px 6px rgba(0, 0, 0, 0.85)',
   },
   mobileFloatingCardMeta: {
+    display: 'block',
+    maxWidth: 150,
     color: 'rgba(255, 239, 205, 0.86)',
     fontSize: 10.5,
     lineHeight: 1.12,
