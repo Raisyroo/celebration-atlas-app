@@ -2836,8 +2836,8 @@ export default function AtlasMap({
 
               .mobile-live-sheet {
                 margin-top: 6px !important;
-                padding: 7px 9px !important;
-                border-radius: 15px !important;
+                padding: 0 !important;
+                border-radius: 0 !important;
               }
             }
 
@@ -4121,13 +4121,13 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveStrip: {
     marginTop: 6,
-    padding: '7px 8px 8px',
-    borderRadius: 19,
-    border: '1px solid rgba(255, 226, 170, 0.22)',
-    background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.72), rgba(5, 8, 13, 0.52))',
-    boxShadow: 'inset 0 1px 0 rgba(255, 244, 214, 0.08), 0 14px 32px rgba(0, 0, 0, 0.24)',
-    backdropFilter: 'blur(5px)',
-    WebkitBackdropFilter: 'blur(5px)',
+    padding: 0,
+    borderRadius: 0,
+    border: 0,
+    background: 'transparent',
+    boxShadow: 'none',
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
   },
   mobileLiveStripScroller: {
     display: 'flex',
