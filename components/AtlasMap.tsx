@@ -3891,7 +3891,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     inset: 0,
     background:
-      'linear-gradient(180deg, rgba(3, 5, 10, 0.18) 0%, rgba(4, 6, 12, 0.52) 48%, rgba(3, 5, 10, 0.82) 100%), linear-gradient(90deg, rgba(3, 5, 10, 0.56) 0%, rgba(3, 5, 10, 0.18) 54%, rgba(3, 5, 10, 0.42) 100%)',
+      'linear-gradient(180deg, rgba(3, 5, 10, 0.04) 0%, rgba(3, 5, 10, 0) 42%, rgba(3, 5, 10, 0.38) 100%)',
   },
   closeButton: {
     position: 'absolute',
