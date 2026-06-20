@@ -2599,6 +2599,7 @@ export default function AtlasMap({
               }}
             >
               <span style={styles.searchPrefix}>Ask Celebration Atlas</span>
+              <span className="atlas-search-helper" style={styles.searchHelperText}>Tell me what to find in Michigan</span>
               <span
                 aria-hidden="true"
                 className={`atlas-search-query ${isSubmittedQueryFading ? 'atlas-search-query--fade' : ''}`}
@@ -2787,7 +2788,7 @@ export default function AtlasMap({
             }
 
             .mobile-live-sheet-scroller {
-              max-height: 122px;
+              max-height: 94px;
               opacity: 1;
               overflow-x: auto !important;
               overflow-y: visible !important;
@@ -2816,28 +2817,40 @@ export default function AtlasMap({
               }
 
               .atlas-search-dock form {
-                min-height: 50px !important;
-                border-radius: 20px !important;
-                padding: 15px 14px 8px !important;
+                min-height: 64px !important;
+                border-radius: 22px !important;
+                padding: 18px 14px 10px !important;
               }
 
               .atlas-search-dock input {
-                padding: 23px 58px 7px 14px !important;
-                border-radius: 20px !important;
+                padding: 36px 58px 9px 14px !important;
+                border-radius: 22px !important;
               }
 
               .atlas-search-dock form > span:first-child {
-                top: 6px !important;
+                top: 8px !important;
                 left: 14px !important;
+                font-size: 10.5px !important;
+              }
+
+              .atlas-search-helper {
+                display: block !important;
+                top: 23px !important;
+                left: 14px !important;
+                right: 58px !important;
                 font-size: 10px !important;
+              }
+
+              .atlas-search-query {
+                padding-top: 27px !important;
               }
 
               .atlas-search-submit {
                 right: 8px !important;
-                width: 36px !important;
-                height: 36px !important;
-                min-width: 36px !important;
-                min-height: 36px !important;
+                width: 38px !important;
+                height: 38px !important;
+                min-width: 38px !important;
+                min-height: 38px !important;
               }
 
               .mobile-live-sheet {
@@ -2847,9 +2860,9 @@ export default function AtlasMap({
               }
 
               .mobile-live-card {
-                flex: 0 0 clamp(108px, 30vw, 120px) !important;
-                min-height: 110px !important;
-                max-height: 110px !important;
+                flex: 0 0 clamp(88px, 24vw, 98px) !important;
+                min-height: 82px !important;
+                max-height: 82px !important;
                 scroll-snap-align: start;
               }
             }
@@ -2883,7 +2896,7 @@ export default function AtlasMap({
               }
 
               .mobile-live-sheet-scroller {
-                max-height: 122px;
+                max-height: 94px;
               }
             }
 
@@ -2893,7 +2906,7 @@ export default function AtlasMap({
               }
 
               .mobile-live-sheet-scroller {
-                max-height: 122px;
+                max-height: 94px;
               }
             }
 
@@ -3715,11 +3728,11 @@ const styles: Record<string, CSSProperties> = {
     minHeight: 58,
     width: '100%',
     borderRadius: 24,
-    border: '1px solid rgba(255, 226, 170, 0.42)',
+    border: '1px solid rgba(255, 231, 184, 0.58)',
     background:
-      'linear-gradient(180deg, rgba(15, 20, 30, 0.76), rgba(6, 9, 14, 0.64))',
+      'linear-gradient(180deg, rgba(22, 28, 40, 0.84), rgba(7, 10, 16, 0.72))',
     boxShadow:
-      'inset 0 0 0 1px rgba(255, 244, 214, 0.07), 0 18px 42px rgba(2, 5, 12, 0.32), 0 0 18px rgba(252, 201, 102, 0.2)',
+      'inset 0 0 0 1px rgba(255, 248, 224, 0.11), 0 20px 48px rgba(2, 5, 12, 0.42), 0 0 26px rgba(252, 201, 102, 0.28)',
     padding: '18px 17px 10px',
   },
   searchPrefix: {
@@ -3734,6 +3747,22 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 700,
     letterSpacing: 0.16,
     textTransform: 'uppercase',
+  },
+  searchHelperText: {
+    position: 'absolute',
+    top: 23,
+    left: 17,
+    right: 66,
+    color: 'rgba(255, 230, 181, 0.68)',
+    fontSize: 10.5,
+    fontWeight: 500,
+    letterSpacing: 0.08,
+    lineHeight: 1.1,
+    display: 'none',
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
   searchQueryText: {
     marginLeft: 0,
@@ -4184,10 +4213,10 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveStripScroller: {
     display: 'flex',
-    gap: 7,
+    gap: 6,
     overflowX: 'auto',
     overflowY: 'visible',
-    padding: '2px 0 12px',
+    padding: '1px 0 8px',
     WebkitOverflowScrolling: 'touch',
     scrollbarWidth: 'none',
     scrollSnapType: 'x proximity',
@@ -4197,19 +4226,19 @@ const styles: Record<string, CSSProperties> = {
     gridTemplateRows: '1fr',
     alignItems: 'stretch',
     gap: 0,
-    minHeight: 110,
-    maxHeight: 110,
+    minHeight: 82,
+    maxHeight: 82,
     padding: 0,
     overflow: 'hidden',
-    borderRadius: 15,
-    border: '1px solid rgba(255, 220, 150, 0.3)',
-    background: 'rgba(5, 8, 13, 0.62)',
+    borderRadius: 12,
+    border: '1px solid rgba(255, 220, 150, 0.2)',
+    background: 'rgba(5, 8, 13, 0.48)',
     color: '#f7e9c8',
     textAlign: 'left',
     cursor: 'pointer',
     touchAction: 'manipulation',
     scrollSnapAlign: 'start',
-    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.04), 0 9px 22px rgba(0, 0, 0, 0.34)',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.03), 0 6px 15px rgba(0, 0, 0, 0.26)',
   },
   mobileLiveCardMedia: {
     position: 'relative',
@@ -4231,9 +4260,9 @@ const styles: Record<string, CSSProperties> = {
     top: 6,
     left: 6,
     zIndex: 2,
-    padding: '3px 6px',
+    padding: '2px 5px',
     borderRadius: 999,
-    fontSize: 7.4,
+    fontSize: 6.6,
     fontWeight: 900,
     letterSpacing: 0.65,
     lineHeight: 1,
@@ -4262,7 +4291,7 @@ const styles: Record<string, CSSProperties> = {
     alignContent: 'end',
     gap: 2,
     minWidth: 0,
-    padding: '34px 7px 9px',
+    padding: '25px 6px 7px',
     pointerEvents: 'none',
   },
   mobileLiveCardTitle: {
@@ -4271,7 +4300,7 @@ const styles: Record<string, CSSProperties> = {
     WebkitBoxOrient: 'vertical',
     WebkitLineClamp: 2,
     color: 'rgba(255, 246, 226, 0.98)',
-    fontSize: 10.2,
+    fontSize: 8.8,
     fontWeight: 800,
     lineHeight: 1.08,
     marginBottom: 1,
@@ -4280,7 +4309,7 @@ const styles: Record<string, CSSProperties> = {
   mobileLiveCardMeta: {
     overflow: 'hidden',
     color: 'rgba(255, 239, 205, 0.82)',
-    fontSize: 8.7,
+    fontSize: 7.4,
     lineHeight: 1.08,
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -4289,7 +4318,7 @@ const styles: Record<string, CSSProperties> = {
   mobileLiveCardDate: {
     alignSelf: 'end',
     color: 'rgba(255, 218, 145, 0.94)',
-    fontSize: 7.8,
+    fontSize: 6.8,
     fontWeight: 900,
     letterSpacing: 0.75,
     textTransform: 'uppercase',
