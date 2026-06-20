@@ -2304,9 +2304,7 @@ export default function AtlasMap({
             </button>
           </div>
           <header className="mobile-atlas-identity" style={styles.mobileAtlasIdentity} aria-label="Celebration Atlas Michigan">
-            <p className="mobile-atlas-brand" style={styles.mobileBrand}>✦ Celebration Atlas</p>
             <h1 className="mobile-atlas-title" style={styles.mobileStateTitle}>Michigan</h1>
-            <p className="mobile-atlas-subtitle" style={styles.mobileStateSubtitle}>Explore. Celebrate. Connect.</p>
           </header>
 
           <div style={styles.mobileFloatingCards} aria-label="Featured Michigan celebrations">
@@ -3982,8 +3980,8 @@ const styles: Record<string, CSSProperties> = {
   mobileFavoriteButton: { fontSize: 22 },
   mobileFavoriteButtonActive: { color: 'rgba(255, 244, 214, 0.98)', textShadow: '0 1px 8px rgba(0, 0, 0, 0.78), 0 0 10px rgba(255, 193, 88, 0.24)' },
   mobileSideControls: { position: 'absolute', right: 'max(6px, env(safe-area-inset-right))', bottom: 'calc(212px + env(safe-area-inset-bottom))', zIndex: Z_INDEX.searchDock + 1, display: 'grid', gap: 6, justifyItems: 'center', pointerEvents: 'none' },
-  mobileToolButton: { width: 46, minHeight: 46, height: 46, borderRadius: 0, border: 0, background: 'transparent', color: 'rgba(255, 232, 184, 0.9)', boxShadow: 'none', display: 'grid', placeItems: 'center', gap: 2, padding: 0, fontSize: 17, textShadow: '0 1px 7px rgba(0, 0, 0, 0.76)', cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto', appearance: 'none', WebkitAppearance: 'none' },
-  mobileToolLabel: { position: 'absolute', top: 'calc(100% - 5px)', marginTop: 0, color: 'rgba(255, 244, 221, 0.78)', fontSize: 9, fontWeight: 700, textShadow: '0 1px 6px rgba(0, 0, 0, 0.86)' },
+  mobileToolButton: { position: 'relative', width: 46, minHeight: 46, height: 46, borderRadius: 0, border: 0, background: 'transparent', color: 'rgba(255, 232, 184, 0.9)', boxShadow: 'none', display: 'grid', placeItems: 'center', gap: 2, padding: 0, fontSize: 17, textShadow: '0 1px 7px rgba(0, 0, 0, 0.76)', cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto', appearance: 'none', WebkitAppearance: 'none' },
+  mobileToolLabel: { position: 'absolute', top: 'calc(100% - 5px)', left: '50%', transform: 'translateX(-50%)', width: 'max-content', marginTop: 0, color: 'rgba(255, 244, 221, 0.78)', fontSize: 9, fontWeight: 700, textShadow: '0 1px 6px rgba(0, 0, 0, 0.86)' },
   mobileSheetOverlay: { position: 'fixed', inset: 0, zIndex: Z_INDEX.searchDock + 10, background: 'rgba(0, 0, 0, 0.22)', display: 'grid', alignItems: 'end' },
   mobileMenuSheet: { margin: '0 12px calc(12px + env(safe-area-inset-bottom))', padding: '10px 12px 14px', borderRadius: 24, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.94), rgba(5, 9, 15, 0.92))', boxShadow: '0 22px 70px rgba(0,0,0,.56), inset 0 0 0 1px rgba(255, 245, 214, 0.05)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
   mobileSheetHandle: { width: 38, height: 4, margin: '0 auto 12px', borderRadius: 999, background: 'rgba(255, 226, 170, 0.34)' },
@@ -4000,7 +3998,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 16,
     right: 16,
-    top: 'calc(14px + env(safe-area-inset-top))',
+    top: 'calc(25px + env(safe-area-inset-top))',
     zIndex: Z_INDEX.searchDock - 1,
     display: 'grid',
     justifyItems: 'center',
