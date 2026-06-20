@@ -2784,7 +2784,7 @@ export default function AtlasMap({
               max-height: 122px;
               opacity: 1;
               overflow-x: auto !important;
-              overflow-y: hidden !important;
+              overflow-y: visible !important;
               scroll-snap-type: x proximity;
               pointer-events: auto;
               transform: translateY(0);
@@ -4127,14 +4127,7 @@ const styles: Record<string, CSSProperties> = {
     filter: 'drop-shadow(0 1px 4px rgba(2, 3, 7, 0.8))',
   },
   mobileLiveStrip: {
-    marginTop: 8,
-    padding: 0,
-    borderRadius: 0,
-    border: 0,
-    background: 'transparent',
-    boxShadow: 'none',
-    backdropFilter: 'none',
-    WebkitBackdropFilter: 'none',
+    marginTop: 6,
     overflow: 'visible',
   },
   mobileLiveStripScroller: {
@@ -4142,7 +4135,7 @@ const styles: Record<string, CSSProperties> = {
     gap: 7,
     overflowX: 'auto',
     overflowY: 'visible',
-    padding: '2px 0 10px',
+    padding: '2px 0 12px',
     WebkitOverflowScrolling: 'touch',
     scrollbarWidth: 'none',
     scrollSnapType: 'x proximity',
