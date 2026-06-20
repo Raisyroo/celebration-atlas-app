@@ -459,7 +459,8 @@ function getFloatingCardBackgroundStyle(event: AtlasEvent): CSSProperties {
 
   if (thumbnail.kind === 'image') {
     return {
-      backgroundImage: `linear-gradient(90deg, rgba(5, 8, 13, 0.84) 0%, rgba(5, 8, 13, 0.58) 48%, rgba(5, 8, 13, 0.18) 100%), linear-gradient(180deg, rgba(5, 8, 13, 0.12) 0%, rgba(5, 8, 13, 0.72) 100%), url(${thumbnail.src})`,
+      backgroundImage:
+        'linear-gradient(90deg, rgba(8, 12, 18, 0.72) 0%, rgba(8, 12, 18, 0.94) 43%, rgba(5, 8, 13, 0.96) 100%)',
     };
   }
 
@@ -469,6 +470,26 @@ function getFloatingCardBackgroundStyle(event: AtlasEvent): CSSProperties {
   };
 }
 
+function FloatingCardImage({ event }: { event: AtlasEvent }) {
+  const thumbnail = getEventThumbnail(event);
+
+  if (thumbnail.kind !== 'image') {
+    return null;
+  }
+
+  return (
+    <span
+      style={{
+        ...styles.mobileFloatingCardImageWrap,
+        backgroundImage: `url(${thumbnail.src})`,
+      }}
+      data-thumbnail-source={thumbnail.sourceType}
+      aria-hidden="true"
+    >
+      <span style={styles.mobileFloatingCardImageFade} />
+    </span>
+  );
+}
 
 function FloatingCardFallbackGlyph({ event }: { event: AtlasEvent }) {
   const thumbnail = getEventThumbnail(event);
@@ -2345,6 +2366,7 @@ export default function AtlasMap({
                       : styles.mobileFloatingCardThree),
                 }}
               >
+                <FloatingCardImage event={event} />
                 <FloatingCardFallbackGlyph event={event} />
                 <span style={styles.mobileFloatingCardText}>
                   <span style={styles.mobileFloatingCardTitle}>{event.name}</span>
@@ -2853,7 +2875,7 @@ export default function AtlasMap({
                 min-width: 142px !important;
                 max-width: 150px !important;
                 min-height: 66px !important;
-                padding: 10px 10px 9px !important;
+                padding: 10px 10px 9px 56px !important;
                 border-radius: 13px !important;
               }
 
@@ -4034,7 +4056,7 @@ const styles: Record<string, CSSProperties> = {
     minWidth: 154,
     maxWidth: 174,
     minHeight: 76,
-    padding: '12px 12px 10px',
+    padding: '12px 12px 10px 62px',
     borderRadius: 14,
     border: '1px solid rgba(255, 220, 150, 0.34)',
     backgroundColor: 'rgba(8, 12, 18, 0.82)',
@@ -4047,6 +4069,25 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'left',
     cursor: 'pointer',
     touchAction: 'manipulation',
+    overflow: 'hidden',
+  },
+  mobileFloatingCardImageWrap: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 58,
+    overflow: 'hidden',
+    borderRadius: '13px 0 0 13px',
+    backgroundPosition: 'center',
+    backgroundSize: 'cover',
+    backgroundRepeat: 'no-repeat',
+  },
+  mobileFloatingCardImageFade: {
+    position: 'absolute',
+    inset: 0,
+    background:
+      'linear-gradient(90deg, rgba(5, 8, 13, 0) 0%, rgba(5, 8, 13, 0.2) 58%, rgba(5, 8, 13, 0.86) 100%), linear-gradient(180deg, rgba(5, 8, 13, 0.08) 0%, rgba(5, 8, 13, 0.34) 100%)',
   },
   mobileFloatingCardOne: {
     left: '7%',
