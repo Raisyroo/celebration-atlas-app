@@ -12,6 +12,7 @@ import {
   searchEventProfiles,
 } from '../data/eventProfiles';
 import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
+import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
 import { resolveExactEventIntent } from '../data/exactEventIntent';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
 import {
@@ -432,17 +433,17 @@ function formatMobileEventDate(event: AtlasEvent): string {
 function getEventThumbnail(event: AtlasEvent):
   | { kind: 'image'; src: string; alt: string; sourceType: 'override' | 'generated' }
   | { kind: 'fallback'; glyph: string; label: string } {
-  const explicitThumbnailSrc =
-    event.cardMedia?.thumbnailOverrideSrc ?? event.cardMedia?.thumbnailSrc;
+  const explicitThumbnail = resolveExplicitEventThumbnail(event);
 
-  if (explicitThumbnailSrc) {
+  if (explicitThumbnail) {
     return {
       kind: 'image',
-      src: explicitThumbnailSrc,
-      alt:
-        event.cardMedia?.thumbnailAlt ??
-        `${event.name} Celebration Atlas generated thumbnail`,
-      sourceType: event.cardMedia?.thumbnailOverrideSrc ? 'override' : 'generated',
+      src: explicitThumbnail.path,
+      alt: explicitThumbnail.alt,
+      sourceType:
+        explicitThumbnail.mediaSourceType === 'override'
+          ? 'override'
+          : 'generated',
     };
   }
 
