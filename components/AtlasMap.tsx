@@ -47,7 +47,6 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
   { label: 'Guide', shortcuts: DISCOVERY_SHORTCUTS },
   { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
 ];
-const DEFAULT_MEDIA_PLAY_START_OFFSET_MS = 180;
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
 const MOBILE_AMBIENT_EVENT_LIMIT = 2;
 const MOBILE_FLOATING_EVENT_IDS = [
@@ -1079,11 +1078,7 @@ export default function AtlasMap({
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
     null,
   );
-  const [cardMediaVideoKey, setCardMediaVideoKey] = useState(0);
-  const [showCardMediaVideoFallback, setShowCardMediaVideoFallback] =
-    useState(false);
   const [isCardMediaVisible, setIsCardMediaVisible] = useState(false);
-  const cardMediaVideoRef = useRef<HTMLVideoElement | null>(null);
   const hasLoadedMobileFavoriteRef = useRef(false);
   const cardMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -1212,12 +1207,15 @@ export default function AtlasMap({
     ? deriveSafeAtlasEventCard(renderedEvent)
     : null;
   const selectedMedia = safeEventCard?.media;
-  const hasCardMedia = Boolean(selectedMedia);
-  const hasCardMediaSource = Boolean(
-    selectedMedia?.mediaSrc || selectedMedia?.posterSrc,
-  );
-  const isVideoMedia =
-    selectedMedia?.mediaType === 'video' && Boolean(selectedMedia?.mediaSrc);
+  const largeCardThumbnail = renderedEvent
+    ? getEventThumbnail(renderedEvent)
+    : null;
+  const largeCardBackgroundImageSrc =
+    largeCardThumbnail?.kind === 'image'
+      ? largeCardThumbnail.src
+      : selectedMedia?.posterSrc ?? selectedMedia?.mediaSrc;
+  const hasCardMedia = Boolean(selectedMedia || largeCardBackgroundImageSrc);
+  const hasCardMediaSource = Boolean(largeCardBackgroundImageSrc);
   const mediaFadeDurationMs = selectedMedia?.mediaFadeDurationMs ?? 1300;
   const mediaDelayMs = selectedMedia?.mediaDelayMs ?? 0;
   const cardBaseTheme = safeEventCard
@@ -1607,9 +1605,15 @@ export default function AtlasMap({
       const selectedEvent = ATLAS_EVENTS.find(
         (event) => event.id === selectedId,
       );
-      if (!selectedEvent?.cardMedia?.mediaSrc) return;
-      setCardMediaVideoKey((prev) => prev + 1);
-      setShowCardMediaVideoFallback(false);
+      if (!selectedEvent) return;
+      const selectedThumbnail = getEventThumbnail(selectedEvent);
+      if (
+        selectedThumbnail.kind !== 'image' &&
+        !selectedEvent.cardMedia?.mediaSrc &&
+        !selectedEvent.cardMedia?.posterSrc
+      ) {
+        return;
+      }
     });
 
     return () => {
@@ -1624,22 +1628,6 @@ export default function AtlasMap({
       cardMediaFadeTimerRef.current = null;
     }, mediaDelayMs);
   }, [hasCardMediaSource, isCardVisible, mediaDelayMs]);
-
-  useEffect(() => {
-    if (!isVideoMedia || !isCardVisible || !isCardMediaVisible) return;
-    const video = cardMediaVideoRef.current;
-    if (!video) return;
-    const playbackStartTimer = setTimeout(() => {
-      video.currentTime = 0;
-      video.play().catch(() => {
-        setShowCardMediaVideoFallback(true);
-      });
-    }, DEFAULT_MEDIA_PLAY_START_OFFSET_MS);
-
-    return () => {
-      clearTimeout(playbackStartTimer);
-    };
-  }, [isVideoMedia, isCardVisible, isCardMediaVisible, cardMediaVideoKey]);
 
   const runDiscoverySearch = useCallback((searchText: string) => {
     const trimmedQuery = searchText.trim();
@@ -2503,53 +2491,18 @@ export default function AtlasMap({
               }}
               aria-hidden="true"
             >
-              {isVideoMedia ? (
-                <video
-                  key={cardMediaVideoKey}
-                  ref={cardMediaVideoRef}
-                  style={{
-                    ...styles.cardMediaLayer,
-                    opacity: showCardMediaVideoFallback ? 0 : 1,
-                    objectPosition:
-                      selectedMedia?.mediaPosition ??
-                      styles.cardMediaLayer.objectPosition,
-                    transform: `scale(${selectedMedia?.mediaScale ?? 1})`,
-                  }}
-                  src={selectedMedia?.mediaSrc}
-                  poster={selectedMedia?.posterSrc || undefined}
-                  muted
-                  playsInline
-                  controls={false}
-                  preload="metadata"
-                  onEnded={(event) => {
-                    const element = event.currentTarget;
-                    element.pause();
-                    if (
-                      Number.isFinite(element.duration) &&
-                      element.duration > 0
-                    ) {
-                      element.currentTime = element.duration;
-                    }
-                  }}
-                  onError={() => setShowCardMediaVideoFallback(true)}
-                />
-              ) : null}
               <img
-                src={selectedMedia?.posterSrc ?? selectedMedia?.mediaSrc}
+                src={largeCardBackgroundImageSrc}
                 alt=""
                 style={{
                   ...styles.cardMediaLayer,
-                  opacity: isVideoMedia
-                    ? showCardMediaVideoFallback
-                      ? 1
-                      : 0
-                    : 1,
                   objectPosition:
                     selectedMedia?.mediaPosition ??
                     styles.cardMediaLayer.objectPosition,
                   transform: `scale(${selectedMedia?.mediaScale ?? 1})`,
                 }}
               />
+              <span style={styles.cardMediaOverlay} aria-hidden="true" />
             </div>
           ) : null}
           <div style={styles.cardContent}>
@@ -3855,9 +3808,8 @@ const styles: Record<string, CSSProperties> = {
     bottom: '18vh',
   },
   cardMediaWrap: {
-    position: 'relative',
-    height: 104,
-    margin: '0 0 2px',
+    position: 'absolute',
+    inset: 0,
     pointerEvents: 'none',
     userSelect: 'none',
     WebkitUserSelect: 'none',
@@ -3865,10 +3817,6 @@ const styles: Record<string, CSSProperties> = {
     overflow: 'hidden',
     opacity: 0,
     transition: 'opacity 1300ms ease',
-    maskImage:
-      'linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,.96) 66%, rgba(0,0,0,0) 100%)',
-    WebkitMaskImage:
-      'linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,.96) 66%, rgba(0,0,0,0) 100%)',
     zIndex: 0,
   },
   cardMediaLayer: {
@@ -3878,7 +3826,12 @@ const styles: Record<string, CSSProperties> = {
     height: '100%',
     objectFit: 'cover',
     objectPosition: '43% 18%',
-    transition: 'opacity 260ms ease',
+  },
+  cardMediaOverlay: {
+    position: 'absolute',
+    inset: 0,
+    background:
+      'linear-gradient(180deg, rgba(3, 5, 10, 0.18) 0%, rgba(4, 6, 12, 0.52) 48%, rgba(3, 5, 10, 0.82) 100%), linear-gradient(90deg, rgba(3, 5, 10, 0.56) 0%, rgba(3, 5, 10, 0.18) 54%, rgba(3, 5, 10, 0.42) 100%)',
   },
   closeButton: {
     position: 'absolute',
