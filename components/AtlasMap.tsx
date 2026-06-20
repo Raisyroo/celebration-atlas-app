@@ -453,6 +453,37 @@ function getEventThumbnail(event: AtlasEvent):
   };
 }
 
+
+function getFloatingCardBackgroundStyle(event: AtlasEvent): CSSProperties {
+  const thumbnail = getEventThumbnail(event);
+
+  if (thumbnail.kind === 'image') {
+    return {
+      backgroundImage: `linear-gradient(90deg, rgba(5, 8, 13, 0.84) 0%, rgba(5, 8, 13, 0.58) 48%, rgba(5, 8, 13, 0.18) 100%), linear-gradient(180deg, rgba(5, 8, 13, 0.12) 0%, rgba(5, 8, 13, 0.72) 100%), url(${thumbnail.src})`,
+    };
+  }
+
+  return {
+    backgroundImage:
+      'linear-gradient(90deg, rgba(5, 8, 13, 0.84) 0%, rgba(5, 8, 13, 0.58) 48%, rgba(5, 8, 13, 0.18) 100%), radial-gradient(circle at 82% 24%, rgba(255, 239, 196, 0.24), rgba(255, 191, 95, 0.11) 34%, rgba(9, 13, 20, 0.78) 100%)',
+  };
+}
+
+
+function FloatingCardFallbackGlyph({ event }: { event: AtlasEvent }) {
+  const thumbnail = getEventThumbnail(event);
+
+  if (thumbnail.kind !== 'fallback') {
+    return null;
+  }
+
+  return (
+    <span aria-hidden="true" style={styles.mobileFloatingCardFallbackGlyph}>
+      {thumbnail.glyph}
+    </span>
+  );
+}
+
 function EventThumbnail({
   event,
   variant,
@@ -2317,6 +2348,7 @@ export default function AtlasMap({
                 className={`mobile-floating-card mobile-floating-card--${index + 1}`}
                 style={{
                   ...styles.mobileFloatingCard,
+                  ...getFloatingCardBackgroundStyle(event),
                   ...(index === 0
                     ? styles.mobileFloatingCardOne
                     : index === 1
@@ -2324,7 +2356,7 @@ export default function AtlasMap({
                       : styles.mobileFloatingCardThree),
                 }}
               >
-                <EventThumbnail event={event} variant="floating" />
+                <FloatingCardFallbackGlyph event={event} />
                 <span style={styles.mobileFloatingCardText}>
                   <span style={styles.mobileFloatingCardTitle}>{event.name}</span>
                   <span style={styles.mobileFloatingCardMeta}>{event.location}</span>
@@ -2864,8 +2896,10 @@ export default function AtlasMap({
               }
 
               .mobile-floating-card {
-                max-width: 142px !important;
-                padding: 7px 9px !important;
+                min-width: 142px !important;
+                max-width: 150px !important;
+                min-height: 66px !important;
+                padding: 10px 10px 9px !important;
                 border-radius: 13px !important;
               }
 
@@ -4042,17 +4076,19 @@ const styles: Record<string, CSSProperties> = {
   mobileFloatingCard: {
     position: 'absolute',
     display: 'flex',
-    alignItems: 'center',
-    gap: 7,
-    maxWidth: 164,
-    padding: '6px 8px',
+    alignItems: 'flex-end',
+    minWidth: 154,
+    maxWidth: 174,
+    minHeight: 76,
+    padding: '12px 12px 10px',
     borderRadius: 14,
     border: '1px solid rgba(255, 220, 150, 0.34)',
-    background: 'linear-gradient(160deg, rgba(11, 17, 25, 0.72), rgba(7, 10, 15, 0.48))',
+    backgroundColor: 'rgba(8, 12, 18, 0.82)',
+    backgroundPosition: 'center',
+    backgroundSize: 'cover',
+    backgroundRepeat: 'no-repeat',
     color: '#f9edcf',
     boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.06), 0 12px 26px rgba(0, 0, 0, 0.32), 0 0 18px rgba(255, 198, 96, 0.16)',
-    backdropFilter: 'blur(4px) saturate(1.06)',
-    WebkitBackdropFilter: 'blur(4px) saturate(1.06)',
     pointerEvents: 'auto',
     textAlign: 'left',
     cursor: 'pointer',
@@ -4071,19 +4107,32 @@ const styles: Record<string, CSSProperties> = {
     top: '51%',
   },
   mobileFloatingCardText: {
+    position: 'relative',
+    zIndex: 1,
     display: 'grid',
     gap: 3,
     minWidth: 0,
   },
   mobileFloatingCardTitle: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: 800,
-    lineHeight: 1.1,
+    lineHeight: 1.08,
+    textShadow: '0 1px 6px rgba(0, 0, 0, 0.85)',
   },
   mobileFloatingCardMeta: {
-    color: 'rgba(255, 239, 205, 0.72)',
-    fontSize: 10,
+    color: 'rgba(255, 239, 205, 0.86)',
+    fontSize: 10.5,
     lineHeight: 1.12,
+    textShadow: '0 1px 5px rgba(0, 0, 0, 0.86)',
+  },
+  mobileFloatingCardFallbackGlyph: {
+    position: 'absolute',
+    right: 10,
+    top: 8,
+    color: 'rgba(255, 226, 170, 0.28)',
+    fontSize: 38,
+    lineHeight: 1,
+    filter: 'drop-shadow(0 1px 8px rgba(2, 3, 7, 0.7))',
   },
   eventThumbnail: {
     position: 'relative',
