@@ -615,6 +615,13 @@ body.atlas-story-card-open {
 }
 
 
+
+/* Keep the full-event briefing scrim above the photo and below every text layer. */
+.atlas-card-copy--briefing > :not(.atlas-briefing-readability-scrim) {
+  position: relative;
+  z-index: 1;
+}
+
 @media (min-width: 768px) and (orientation: landscape) {
   .atlas-card:has(.atlas-card-content--briefing) {
     width: min(620px, calc(100vw - 72px));
