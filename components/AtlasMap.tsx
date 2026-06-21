@@ -2630,16 +2630,14 @@ export default function AtlasMap({
             style={fullCardBriefing ? styles.briefingCardContent : styles.cardContent}
           >
             <div
-              className={`atlas-card-copy${fullCardBriefing ? ' atlas-card-copy--briefing' : ''}`}
+              className={`atlas-card-copy atlas-card-copy--full-event${fullCardBriefing ? ' atlas-card-copy--briefing' : ''}`}
               style={fullCardBriefing ? styles.briefingCardCopy : undefined}
             >
-              {fullCardBriefing ? (
-                <div
-                  className="atlas-briefing-readability-scrim"
-                  style={styles.briefingReadabilityScrim}
-                  aria-hidden="true"
-                />
-              ) : null}
+              <div
+                className="atlas-full-event-readability-scrim"
+                style={styles.fullEventReadabilityScrim}
+                aria-hidden="true"
+              />
               <div style={fullCardBriefing ? styles.briefingHeader : styles.cardHeaderRow}>
                 <div style={styles.cardTitleGroup}>
                   <p style={styles.cardLocation}>{safeEventCard.location}</p>
@@ -4094,7 +4092,7 @@ const styles: Record<string, CSSProperties> = {
     padding: '22px 8px 18px',
     isolation: 'isolate',
   },
-  briefingReadabilityScrim: {
+  fullEventReadabilityScrim: {
     position: 'absolute',
     zIndex: 0,
     left: '-16px',
@@ -4103,8 +4101,6 @@ const styles: Record<string, CSSProperties> = {
     height: 'calc(100% + 72px)',
     pointerEvents: 'none',
     display: 'block',
-    background:
-      'radial-gradient(ellipse 72% 54% at 42% 18%, rgba(4, 8, 14, 0.56) 0%, rgba(4, 8, 14, 0.50) 40%, rgba(4, 8, 14, 0.28) 70%, rgba(4, 8, 14, 0) 100%), radial-gradient(ellipse 72% 58% at 42% 52%, rgba(4, 8, 14, 0.54) 0%, rgba(4, 8, 14, 0.50) 44%, rgba(4, 8, 14, 0.28) 72%, rgba(4, 8, 14, 0) 100%), radial-gradient(ellipse 72% 54% at 42% 86%, rgba(4, 8, 14, 0.52) 0%, rgba(4, 8, 14, 0.48) 42%, rgba(4, 8, 14, 0.26) 72%, rgba(4, 8, 14, 0) 100%), linear-gradient(90deg, rgba(4, 8, 14, 0) 0%, rgba(4, 8, 14, 0.34) 14%, rgba(4, 8, 14, 0.50) 34%, rgba(4, 8, 14, 0.48) 62%, rgba(4, 8, 14, 0.22) 80%, rgba(4, 8, 14, 0) 100%)',
   },
   briefingHeader: {
     display: 'flex',
