@@ -1080,6 +1080,48 @@ export default function RomeoAtlasWindowPage({
     >
       <style>{`
           .romeo-memory-scroll::-webkit-scrollbar { display: none; }
+          .romeo-atlas-inner-window > .romeo-memory-scroll::before {
+            content: "";
+            position: absolute;
+            z-index: 0;
+            left: clamp(-2.4rem, -8vw, -1.1rem);
+            right: clamp(-3.8rem, -14vw, -1.8rem);
+            top: clamp(-2.2rem, -8svh, -1rem);
+            bottom: clamp(-2.8rem, -10svh, -1.2rem);
+            pointer-events: none;
+            background:
+              radial-gradient(
+                ellipse 98% 118% at 27% 58%,
+                rgba(3, 4, 7, 0.58) 0%,
+                rgba(4, 5, 8, 0.56) 42%,
+                rgba(5, 7, 11, 0.46) 61%,
+                rgba(7, 8, 12, 0.24) 78%,
+                transparent 100%
+              ),
+              radial-gradient(
+                ellipse 86% 48% at 28% 10%,
+                rgba(5, 6, 10, 0.34) 0%,
+                rgba(5, 6, 10, 0.30) 46%,
+                rgba(6, 8, 12, 0.16) 72%,
+                transparent 100%
+              ),
+              linear-gradient(
+                102deg,
+                transparent 0%,
+                rgba(4, 5, 8, 0.31) 10%,
+                rgba(4, 5, 8, 0.45) 29%,
+                rgba(3, 4, 7, 0.58) 48%,
+                rgba(3, 4, 7, 0.50) 66%,
+                rgba(4, 5, 8, 0.28) 81%,
+                transparent 100%
+              );
+            filter: blur(18px);
+            transform: translate3d(-1.2%, 0, 0) scale(1.035);
+          }
+          .romeo-atlas-inner-window > .romeo-memory-scroll > * {
+            position: relative;
+            z-index: 1;
+          }
           .romeo-atlas-back-link {
             transition:
               color 180ms ease,
