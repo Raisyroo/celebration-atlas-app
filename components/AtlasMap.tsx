@@ -2633,6 +2633,7 @@ export default function AtlasMap({
               className={`atlas-card-copy${fullCardBriefing ? ' atlas-card-copy--briefing' : ''}`}
               style={fullCardBriefing ? styles.briefingCardCopy : undefined}
             >
+              {fullCardBriefing ? <span style={styles.briefingReadabilityScrim} aria-hidden="true" /> : null}
               <div style={fullCardBriefing ? styles.briefingHeader : styles.cardHeaderRow}>
                 <div style={styles.cardTitleGroup}>
                   <p style={styles.cardLocation}>{safeEventCard.location}</p>
@@ -4086,6 +4087,23 @@ const styles: Record<string, CSSProperties> = {
     margin: '0 auto',
     padding: '22px 8px 18px',
     isolation: 'isolate',
+  },
+  briefingReadabilityScrim: {
+    position: 'absolute',
+    zIndex: -1,
+    left: '-6%',
+    right: '-4%',
+    top: '-12px',
+    bottom: '-20px',
+    pointerEvents: 'none',
+    background:
+      'linear-gradient(100deg, rgba(1, 3, 7, 0.24) 0%, rgba(1, 3, 7, 0.18) 34%, rgba(1, 3, 7, 0.08) 58%, rgba(1, 3, 7, 0) 86%), radial-gradient(ellipse 92% 72% at 30% 58%, rgba(1, 3, 7, 0.28) 0%, rgba(1, 3, 7, 0.2) 42%, rgba(1, 3, 7, 0.08) 66%, rgba(1, 3, 7, 0) 88%), radial-gradient(ellipse 78% 52% at 28% 84%, rgba(1, 3, 7, 0.24) 0%, rgba(1, 3, 7, 0.15) 46%, rgba(1, 3, 7, 0) 82%)',
+    maskImage:
+      'linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.44) 7%, rgba(0, 0, 0, 0.92) 24%, black 58%, rgba(0, 0, 0, 0.78) 86%, transparent 100%), linear-gradient(90deg, black 0%, rgba(0, 0, 0, 0.94) 52%, rgba(0, 0, 0, 0.54) 76%, transparent 100%)',
+    WebkitMaskImage:
+      'linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.44) 7%, rgba(0, 0, 0, 0.92) 24%, black 58%, rgba(0, 0, 0, 0.78) 86%, transparent 100%), linear-gradient(90deg, black 0%, rgba(0, 0, 0, 0.94) 52%, rgba(0, 0, 0, 0.54) 76%, transparent 100%)',
+    maskComposite: 'intersect',
+    WebkitMaskComposite: 'source-in',
   },
   briefingHeader: {
     display: 'flex',
