@@ -311,45 +311,47 @@ body.atlas-story-card-open {
     isolation: isolate;
   }
 
-  .atlas-card .atlas-card-content::before,
-  .atlas-card .atlas-card-content::after {
+  .atlas-card .atlas-card-copy {
+    position: relative;
+    max-width: min(84%, 360px);
+    isolation: isolate;
+  }
+
+  .atlas-card .atlas-card-copy::before,
+  .atlas-card .atlas-card-copy::after {
     content: "";
     position: absolute;
     pointer-events: none;
     z-index: 0;
   }
 
-  .atlas-card .atlas-card-content::before {
-    top: 78px;
-    bottom: -18%;
-    left: -22px;
-    width: min(88%, 430px);
+  .atlas-card .atlas-card-copy::before {
+    top: -34px;
+    bottom: -34px;
+    left: -26px;
+    right: -52px;
     background:
-      radial-gradient(ellipse at 19% 46%, rgba(3, 5, 10, 0.52) 0%, rgba(3, 5, 10, 0.36) 34%, rgba(3, 5, 10, 0.16) 61%, rgba(3, 5, 10, 0) 82%),
-      linear-gradient(90deg, rgba(2, 4, 9, 0.58) 0%, rgba(2, 4, 9, 0.39) 38%, rgba(2, 4, 9, 0.16) 68%, rgba(2, 4, 9, 0) 100%),
-      linear-gradient(180deg, rgba(2, 4, 9, 0.10) 0%, rgba(2, 4, 9, 0.30) 34%, rgba(2, 4, 9, 0.50) 72%, rgba(2, 4, 9, 0.35) 100%);
-    filter: blur(18px);
+      radial-gradient(ellipse at 18% 50%, rgba(3, 5, 10, 0.56) 0%, rgba(3, 5, 10, 0.38) 38%, rgba(3, 5, 10, 0.16) 66%, rgba(3, 5, 10, 0) 86%),
+      linear-gradient(90deg, rgba(2, 4, 9, 0.52) 0%, rgba(2, 4, 9, 0.34) 45%, rgba(2, 4, 9, 0.13) 74%, rgba(2, 4, 9, 0) 100%),
+      linear-gradient(180deg, rgba(2, 4, 9, 0) 0%, rgba(2, 4, 9, 0.34) 14%, rgba(2, 4, 9, 0.46) 50%, rgba(2, 4, 9, 0.34) 86%, rgba(2, 4, 9, 0) 100%);
+    filter: blur(20px);
     transform: translate3d(0, 0, 0);
   }
 
-  .atlas-card .atlas-card-content::after {
-    top: 0;
-    left: -28px;
-    width: min(74%, 360px);
-    height: 44%;
+  .atlas-card .atlas-card-copy::after {
+    top: -58px;
+    left: -34px;
+    right: -70px;
+    height: min(42%, 220px);
     background:
-      radial-gradient(ellipse at 22% 64%, rgba(5, 7, 13, 0.32) 0%, rgba(5, 7, 13, 0.20) 40%, rgba(5, 7, 13, 0) 78%),
-      linear-gradient(90deg, rgba(4, 6, 12, 0.30) 0%, rgba(4, 6, 12, 0.15) 55%, rgba(4, 6, 12, 0) 100%);
-    filter: blur(20px);
+      radial-gradient(ellipse at 22% 70%, rgba(5, 7, 13, 0.26) 0%, rgba(5, 7, 13, 0.14) 46%, rgba(5, 7, 13, 0) 82%),
+      linear-gradient(180deg, rgba(4, 6, 12, 0) 0%, rgba(4, 6, 12, 0.15) 44%, rgba(4, 6, 12, 0) 100%);
+    filter: blur(22px);
   }
 
-  .atlas-card .atlas-card-content > * {
+  .atlas-card .atlas-card-copy > * {
     position: relative;
     z-index: 1;
-  }
-
-  .atlas-card .atlas-card-content > :not(.atlas-card-media) {
-    max-width: min(84%, 360px);
   }
 
   .atlas-card .atlas-card-content p,
