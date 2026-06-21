@@ -2625,56 +2625,58 @@ export default function AtlasMap({
             </div>
           ) : null}
           <div className="atlas-card-content" style={styles.cardContent}>
-            <div style={styles.cardHeaderRow}>
-              <div style={styles.cardTitleGroup}>
-                <p style={styles.cardLocation}>{safeEventCard.location}</p>
-                <h3 style={styles.cardTitle}>{safeEventCard.name}</h3>
-                {largeCardDateRange ? (
-                  <p style={styles.cardDateLine}>{largeCardDateRange}</p>
-                ) : null}
+            <div className="atlas-card-copy">
+              <div style={styles.cardHeaderRow}>
+                <div style={styles.cardTitleGroup}>
+                  <p style={styles.cardLocation}>{safeEventCard.location}</p>
+                  <h3 style={styles.cardTitle}>{safeEventCard.name}</h3>
+                  {largeCardDateRange ? (
+                    <p style={styles.cardDateLine}>{largeCardDateRange}</p>
+                  ) : null}
+                </div>
+                <p style={styles.cardCategoryTag}>
+                  {safeEventCard.cardTag ?? safeEventCard.category}
+                </p>
               </div>
-              <p style={styles.cardCategoryTag}>
-                {safeEventCard.cardTag ?? safeEventCard.category}
-              </p>
+              <p style={styles.cardBody}>{safeEventCard.description}</p>
+              {safeEventCard.atmosphereLabel ? (
+                <p style={styles.cardAtmosphere}>
+                  <span aria-hidden="true" style={styles.cardAtmosphereGlyph}>
+                    ✦
+                  </span>
+                  {safeEventCard.atmosphereLabel}
+                </p>
+              ) : null}
+              {largeCardStoryDetails.length > 0 ? (
+                <div style={styles.cardStoryDetailList}>
+                  {largeCardStoryDetails.map((detail, index) => (
+                    <section key={`${detail.title}-${index}`} style={styles.cardStoryDetail}>
+                      <h4 style={styles.cardStoryDetailTitle}>{detail.title}</h4>
+                      <p style={styles.cardStoryDetailBody}>{detail.body}</p>
+                    </section>
+                  ))}
+                </div>
+              ) : null}
+              <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
+              {safeEventCard.detailAction ? (
+                safeEventCard.id === 'electric-forest' ? (
+                  <button
+                    type="button"
+                    style={styles.enterEventButton}
+                    onClick={() => startElectricForestTransition(safeEventCard.id)}
+                  >
+                    {safeEventCard.detailAction.label}
+                  </button>
+                ) : (
+                  <Link
+                    href={safeEventCard.detailAction.href}
+                    style={styles.enterEventLink}
+                  >
+                    {safeEventCard.detailAction.label}
+                  </Link>
+                )
+              ) : null}
             </div>
-            <p style={styles.cardBody}>{safeEventCard.description}</p>
-            {safeEventCard.atmosphereLabel ? (
-              <p style={styles.cardAtmosphere}>
-                <span aria-hidden="true" style={styles.cardAtmosphereGlyph}>
-                  ✦
-                </span>
-                {safeEventCard.atmosphereLabel}
-              </p>
-            ) : null}
-            {largeCardStoryDetails.length > 0 ? (
-              <div style={styles.cardStoryDetailList}>
-                {largeCardStoryDetails.map((detail, index) => (
-                  <section key={`${detail.title}-${index}`} style={styles.cardStoryDetail}>
-                    <h4 style={styles.cardStoryDetailTitle}>{detail.title}</h4>
-                    <p style={styles.cardStoryDetailBody}>{detail.body}</p>
-                  </section>
-                ))}
-              </div>
-            ) : null}
-            <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
-            {safeEventCard.detailAction ? (
-              safeEventCard.id === 'electric-forest' ? (
-                <button
-                  type="button"
-                  style={styles.enterEventButton}
-                  onClick={() => startElectricForestTransition(safeEventCard.id)}
-                >
-                  {safeEventCard.detailAction.label}
-                </button>
-              ) : (
-                <Link
-                  href={safeEventCard.detailAction.href}
-                  style={styles.enterEventLink}
-                >
-                  {safeEventCard.detailAction.label}
-                </Link>
-              )
-            ) : null}
           </div>
           <span
             style={{
