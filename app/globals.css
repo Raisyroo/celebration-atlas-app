@@ -201,6 +201,17 @@ body.event-detail-scroll::-webkit-scrollbar {
   }
 }
 
+html.atlas-story-card-open,
+body.atlas-story-card-open {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none;
+}
+
+.atlas-card .atlas-card-content::-webkit-scrollbar {
+  display: none;
+}
+
 .atlas-card,
 .atlas-cluster-panel {
   bottom: var(--atlas-card-command-clearance) !important;
@@ -210,6 +221,10 @@ body.event-detail-scroll::-webkit-scrollbar {
   overflow-y: auto !important;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+.atlas-card {
+  overflow: hidden !important;
 }
 
 
@@ -226,7 +241,7 @@ body.event-detail-scroll::-webkit-scrollbar {
     right: max(12px, env(safe-area-inset-right)) !important;
     width: auto !important;
     overflow-x: hidden !important;
-    overflow-y: auto !important;
+    overflow-y: hidden !important;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     z-index: 30 !important;
@@ -283,9 +298,15 @@ body.event-detail-scroll::-webkit-scrollbar {
 
   .atlas-card .atlas-card-content {
     width: 100%;
-    padding: 108px 16px 18px !important;
+    height: 100%;
+    max-height: 100%;
+    padding: 112px 12px 16px !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     background:
-      linear-gradient(180deg, rgba(4, 7, 13, 0.03) 0%, rgba(5, 8, 14, 0.54) 38%, rgba(5, 8, 14, 0.88) 100%);
+      linear-gradient(180deg, rgba(4, 7, 13, 0.02) 0%, rgba(5, 8, 14, 0.28) 34%, rgba(5, 8, 14, 0.76) 72%, rgba(5, 8, 14, 0.94) 100%);
   }
 
   @supports (height: 100dvh) {
@@ -543,4 +564,10 @@ body.event-detail-scroll::-webkit-scrollbar {
 
 .romeo-mode-lens:active {
   transform: translateY(1px) scale(0.97);
+}
+
+@media (max-width: 767px) and (orientation: portrait) {
+  .atlas-cluster-panel {
+    overflow-y: auto !important;
+  }
 }

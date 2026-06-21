@@ -394,6 +394,80 @@ function getEventStatusBadge(event: AtlasEvent, now = new Date()): EventStatusBa
 }
 
 
+
+function formatEventDateRange(event: AtlasEvent): string | null {
+  const start = parseReliableEventDate(event.dateRange?.startDate);
+  const end = parseReliableEventDate(event.dateRange?.endDate);
+
+  if (!start) return null;
+
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
+  if (!end || start.getTime() === end.getTime()) {
+    return formatter.format(start);
+  }
+
+  const sameYear = start.getUTCFullYear() === end.getUTCFullYear();
+  const sameMonth = sameYear && start.getUTCMonth() === end.getUTCMonth();
+
+  if (sameMonth) {
+    return `${new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(start)} ${start.getUTCDate()}–${end.getUTCDate()}, ${start.getUTCFullYear()}`;
+  }
+
+  return sameYear
+    ? `${new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }).format(start)} – ${formatter.format(end)}`
+    : `${formatter.format(start)} – ${formatter.format(end)}`;
+}
+
+function getEventStoryDetails(event: AtlasEvent): { title: string; body: string }[] {
+  const details: { title: string; body: string }[] = [];
+
+  if (event.detailPage?.atmosphereLine) {
+    details.push({ title: 'Field note', body: event.detailPage.atmosphereLine });
+  }
+
+  event.detailPage?.storySections?.forEach((section, index) => {
+    details.push({ title: index === 0 ? 'Highlights' : 'Story note', body: section });
+  });
+
+  if (event.detailPage?.eventSnapshot) {
+    const snapshot = event.detailPage.eventSnapshot;
+    const snapshotLines = [
+      snapshot.typicalMonth ? `Typical month: ${snapshot.typicalMonth}` : null,
+      snapshot.setting ? `Setting: ${snapshot.setting}` : null,
+      snapshot.bestFor ? `Best for: ${snapshot.bestFor}` : null,
+      snapshot.signatureMoment ? `Signature moment: ${snapshot.signatureMoment}` : null,
+    ].filter(Boolean);
+
+    if (snapshotLines.length > 0) {
+      details.push({ title: 'Planning snapshot', body: snapshotLines.join(' · ') });
+    }
+  }
+
+  if (event.atlasNotes?.length) {
+    details.push({ title: 'Atlas notes', body: event.atlasNotes.join(' ') });
+  }
+
+  if (event.localFlavor?.length) {
+    details.push({ title: 'Food and local flavor', body: event.localFlavor.join(' ') });
+  }
+
+  if (event.atlasMemories?.length) {
+    details.push({ title: 'Memory layer', body: event.atlasMemories.join(' ') });
+  }
+
+  if (event.detailPage?.archivalNote) {
+    details.push({ title: 'Source note', body: event.detailPage.archivalNote });
+  }
+
+  return details;
+}
+
 function formatMobileEventDate(event: AtlasEvent): string {
   const start = parseReliableEventDate(event.dateRange?.startDate);
   const end = parseReliableEventDate(event.dateRange?.endDate);
@@ -1235,6 +1309,8 @@ export default function AtlasMap({
       : selectedMedia?.posterSrc ?? selectedMedia?.mediaSrc;
   const hasCardMedia = Boolean(selectedMedia || largeCardBackgroundImageSrc);
   const hasCardMediaSource = Boolean(largeCardBackgroundImageSrc);
+  const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
+  const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
   const mediaFadeDurationMs = selectedMedia?.mediaFadeDurationMs ?? 1300;
   const mediaDelayMs = selectedMedia?.mediaDelayMs ?? 0;
   const cardBaseTheme = safeEventCard
@@ -1885,6 +1961,17 @@ export default function AtlasMap({
   }, [isPhoneLandscape]);
 
   useEffect(() => {
+    const shouldLockStoryCardScroll = Boolean(renderedEvent);
+    document.documentElement.classList.toggle('atlas-story-card-open', shouldLockStoryCardScroll);
+    document.body.classList.toggle('atlas-story-card-open', shouldLockStoryCardScroll);
+
+    return () => {
+      document.documentElement.classList.remove('atlas-story-card-open');
+      document.body.classList.remove('atlas-story-card-open');
+    };
+  }, [renderedEvent]);
+
+  useEffect(() => {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       if (queryFadeTimerRef.current) clearTimeout(queryFadeTimerRef.current);
@@ -1901,6 +1988,7 @@ export default function AtlasMap({
   }, []);
 
   const isAtlasPanelOpen = Boolean(renderedEvent || selectedCluster);
+  const isStoryCardOpen = Boolean(renderedEvent);
   const shouldShowMobileAmbientAtlas =
     !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
 
@@ -1928,6 +2016,7 @@ export default function AtlasMap({
         'atlas-hero',
         isPhoneLandscape ? 'atlas-hero--phone-landscape' : '',
         isAtlasPanelOpen ? 'atlas-hero--card-open' : '',
+        isStoryCardOpen ? 'atlas-hero--story-card-open' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -2536,43 +2625,58 @@ export default function AtlasMap({
             </div>
           ) : null}
           <div className="atlas-card-content" style={styles.cardContent}>
-            <div style={styles.cardHeaderRow}>
-              <div style={styles.cardTitleGroup}>
-                <p style={styles.cardLocation}>{safeEventCard.location}</p>
-                <h3 style={styles.cardTitle}>{safeEventCard.name}</h3>
+            <div style={styles.cardStoryGlass}>
+              <div style={styles.cardHeaderRow}>
+                <div style={styles.cardTitleGroup}>
+                  <p style={styles.cardLocation}>{safeEventCard.location}</p>
+                  <h3 style={styles.cardTitle}>{safeEventCard.name}</h3>
+                  {largeCardDateRange ? (
+                    <p style={styles.cardDateLine}>{largeCardDateRange}</p>
+                  ) : null}
+                </div>
+                <p style={styles.cardCategoryTag}>
+                  {safeEventCard.cardTag ?? safeEventCard.category}
+                </p>
               </div>
-              <p style={styles.cardCategoryTag}>
-                {safeEventCard.cardTag ?? safeEventCard.category}
-              </p>
+              <p style={styles.cardBody}>{safeEventCard.description}</p>
+              {safeEventCard.atmosphereLabel ? (
+                <p style={styles.cardAtmosphere}>
+                  <span aria-hidden="true" style={styles.cardAtmosphereGlyph}>
+                    ✦
+                  </span>
+                  {safeEventCard.atmosphereLabel}
+                </p>
+              ) : null}
+              {largeCardStoryDetails.length > 0 ? (
+                <div style={styles.cardStoryDetailList}>
+                  {largeCardStoryDetails.map((detail, index) => (
+                    <section key={`${detail.title}-${index}`} style={styles.cardStoryDetail}>
+                      <h4 style={styles.cardStoryDetailTitle}>{detail.title}</h4>
+                      <p style={styles.cardStoryDetailBody}>{detail.body}</p>
+                    </section>
+                  ))}
+                </div>
+              ) : null}
+              <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
+              {safeEventCard.detailAction ? (
+                safeEventCard.id === 'electric-forest' ? (
+                  <button
+                    type="button"
+                    style={styles.enterEventButton}
+                    onClick={() => startElectricForestTransition(safeEventCard.id)}
+                  >
+                    {safeEventCard.detailAction.label}
+                  </button>
+                ) : (
+                  <Link
+                    href={safeEventCard.detailAction.href}
+                    style={styles.enterEventLink}
+                  >
+                    {safeEventCard.detailAction.label}
+                  </Link>
+                )
+              ) : null}
             </div>
-            <p style={styles.cardBody}>{safeEventCard.description}</p>
-            {safeEventCard.atmosphereLabel ? (
-              <p style={styles.cardAtmosphere}>
-                <span aria-hidden="true" style={styles.cardAtmosphereGlyph}>
-                  ✦
-                </span>
-                {safeEventCard.atmosphereLabel}
-              </p>
-            ) : null}
-            <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
-            {safeEventCard.detailAction ? (
-              safeEventCard.id === 'electric-forest' ? (
-                <button
-                  type="button"
-                  style={styles.enterEventButton}
-                  onClick={() => startElectricForestTransition(safeEventCard.id)}
-                >
-                  {safeEventCard.detailAction.label}
-                </button>
-              ) : (
-                <Link
-                  href={safeEventCard.detailAction.href}
-                  style={styles.enterEventLink}
-                >
-                  {safeEventCard.detailAction.label}
-                </Link>
-              )
-            ) : null}
           </div>
           <span
             style={{
@@ -3901,7 +4005,7 @@ const styles: Record<string, CSSProperties> = {
     height: 32,
     borderRadius: '50%',
     border: '1px solid rgba(255,225,160,.45)',
-    background: 'rgba(22,26,35,.95)',
+    background: 'rgba(13,18,27,.78)',
     color: '#ffebb9',
     fontSize: 22,
     lineHeight: 1,
@@ -3909,12 +4013,34 @@ const styles: Record<string, CSSProperties> = {
     placeItems: 'center',
     cursor: 'pointer',
     touchAction: 'none',
-    zIndex: 3,
+    zIndex: 4,
+    backdropFilter: 'blur(10px) saturate(1.12)',
+    WebkitBackdropFilter: 'blur(10px) saturate(1.12)',
   },
   cardContent: {
     position: 'relative',
     zIndex: 1,
-    padding: '14px 14px 16px',
+    minHeight: '100%',
+    maxHeight: 'inherit',
+    padding: '92px 12px 14px',
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',
+    scrollbarWidth: 'none',
+    background:
+      'linear-gradient(180deg, rgba(2, 5, 10, 0.02) 0%, rgba(3, 6, 12, 0.28) 28%, rgba(4, 7, 13, 0.72) 62%, rgba(4, 7, 13, 0.92) 100%)',
+  },
+  cardStoryGlass: {
+    borderRadius: 18,
+    padding: '15px 14px 16px',
+    border: '1px solid rgba(255, 231, 184, 0.18)',
+    background:
+      'linear-gradient(180deg, rgba(8, 12, 20, 0.38), rgba(5, 8, 14, 0.66) 42%, rgba(5, 8, 14, 0.84) 100%)',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255, 250, 226, 0.05), 0 18px 48px rgba(0, 0, 0, 0.34)',
+    backdropFilter: 'blur(14px) saturate(1.14)',
+    WebkitBackdropFilter: 'blur(14px) saturate(1.14)',
   },
   cardHeaderRow: {
     display: 'flex',
@@ -3942,6 +4068,15 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     color: 'rgba(255,238,203,.72)',
     textShadow: '0 1px 2px rgba(3,4,8,.8)',
+  },
+  cardDateLine: {
+    margin: '7px 0 0',
+    color: 'rgba(255, 226, 174, 0.82)',
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+    textShadow: '0 1px 2px rgba(2,3,7,.78)',
   },
   cardCategoryTag: {
     display: 'inline-flex',
@@ -3979,6 +4114,31 @@ const styles: Record<string, CSSProperties> = {
     color: '#f0e2c3',
     fontSize: 14,
     lineHeight: 1.42,
+    textShadow: '0 1px 3px rgba(2,3,6,.86)',
+  },
+  cardStoryDetailList: {
+    display: 'grid',
+    gap: 10,
+    marginTop: 14,
+    paddingTop: 12,
+    borderTop: '1px solid rgba(255, 229, 184, 0.14)',
+  },
+  cardStoryDetail: {
+    margin: 0,
+  },
+  cardStoryDetailTitle: {
+    margin: '0 0 4px',
+    color: 'rgba(255, 226, 170, 0.88)',
+    fontSize: 10,
+    fontWeight: 850,
+    letterSpacing: 1.25,
+    textTransform: 'uppercase',
+  },
+  cardStoryDetailBody: {
+    margin: 0,
+    color: 'rgba(246, 232, 203, 0.9)',
+    fontSize: 13,
+    lineHeight: 1.46,
     textShadow: '0 1px 3px rgba(2,3,6,.86)',
   },
   cardTrustLine: {
