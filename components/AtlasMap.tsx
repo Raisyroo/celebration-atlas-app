@@ -2626,7 +2626,7 @@ export default function AtlasMap({
             </div>
           ) : null}
           <div
-            className={`atlas-card-content${fullCardBriefing ? ' atlas-card-content--briefing' : ''}`}
+            className={`atlas-card-content atlas-card-content--full-event${fullCardBriefing ? ' atlas-card-content--briefing' : ''}`}
             style={fullCardBriefing ? styles.briefingCardContent : styles.cardContent}
           >
             <div
