@@ -304,7 +304,7 @@ body.atlas-story-card-open {
     min-height: 0;
     height: auto;
     max-height: none;
-    padding: calc(clamp(220px, 39svh, 300px) + env(safe-area-inset-top)) 22px calc(16px + env(safe-area-inset-bottom)) !important;
+    padding: calc(clamp(220px, 39svh, 300px) + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom)) !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     overscroll-behavior-x: none;
@@ -318,8 +318,9 @@ body.atlas-story-card-open {
   .atlas-card .atlas-card-copy {
     position: relative;
     box-sizing: border-box;
-    width: min(84%, 360px);
+    width: min(100%, 620px);
     max-width: 100%;
+    min-width: 0;
     isolation: isolate;
   }
 
@@ -632,7 +633,9 @@ body.atlas-story-card-open {
   }
 
   .atlas-card:has(.atlas-card-content--briefing) .atlas-card-copy {
-    width: 100%;
+    width: min(100%, 680px);
+    max-width: 100%;
+    min-width: 0;
   }
 
   .atlas-card:has(.atlas-card-content--briefing) .atlas-card-content {
