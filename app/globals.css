@@ -638,9 +638,10 @@ body.atlas-story-card-open {
 }
 
 .atlas-card:has(.atlas-card-content--briefing) .atlas-card-media {
-  height: clamp(260px, 46%, 360px);
-  bottom: auto !important;
-  filter: brightness(1.04) saturate(1.12) contrast(1.06);
+  inset: 0 !important;
+  height: auto !important;
+  bottom: 0 !important;
+  filter: brightness(1.02) saturate(1.1) contrast(1.04);
 }
 
 .atlas-card:has(.atlas-card-content--briefing) .atlas-card-media::after {
@@ -648,8 +649,21 @@ body.atlas-story-card-open {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(2,4,9,0) 44%, rgba(2,4,9,.76) 100%),
-    radial-gradient(circle at 50% 18%, rgba(255,222,154,.08), rgba(255,222,154,0) 58%);
+    radial-gradient(ellipse at 48% 70%, rgba(3, 5, 10, 0.58) 0%, rgba(3, 5, 10, 0.42) 30%, rgba(3, 5, 10, 0.16) 58%, rgba(3, 5, 10, 0) 82%),
+    linear-gradient(180deg, rgba(2, 4, 9, 0) 0%, rgba(2, 4, 9, 0.08) 44%, rgba(2, 4, 9, 0.34) 100%);
+  pointer-events: none;
+}
+
+.atlas-card-copy--briefing::before {
+  content: "";
+  position: absolute;
+  inset: -58px -34px -42px;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(3, 5, 10, 0.74) 0%, rgba(3, 5, 10, 0.58) 34%, rgba(3, 5, 10, 0.28) 62%, rgba(3, 5, 10, 0) 84%),
+    linear-gradient(90deg, rgba(3, 5, 10, 0) 0%, rgba(3, 5, 10, 0.38) 18%, rgba(3, 5, 10, 0.5) 50%, rgba(3, 5, 10, 0.38) 82%, rgba(3, 5, 10, 0) 100%);
+  filter: blur(18px);
+  pointer-events: none;
 }
 
 @media (min-width: 768px) and (orientation: landscape) {
@@ -674,6 +688,6 @@ body.atlas-story-card-open {
   }
 
   .atlas-card:has(.atlas-card-content--briefing) .atlas-card-content {
-    padding-top: calc(clamp(230px, 38svh, 300px) + env(safe-area-inset-top)) !important;
+    padding-top: calc(clamp(300px, 48svh, 390px) + env(safe-area-inset-top)) !important;
   }
 }
