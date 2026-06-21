@@ -315,6 +315,15 @@ body.atlas-story-card-open {
     isolation: isolate;
   }
 
+  .atlas-card .atlas-card-content--full-event {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .atlas-card .atlas-card-content--full-event::-webkit-scrollbar {
+    display: none;
+  }
+
   .atlas-card .atlas-card-copy {
     position: relative;
     box-sizing: border-box;
