@@ -2633,7 +2633,13 @@ export default function AtlasMap({
               className={`atlas-card-copy${fullCardBriefing ? ' atlas-card-copy--briefing' : ''}`}
               style={fullCardBriefing ? styles.briefingCardCopy : undefined}
             >
-              {fullCardBriefing ? <span style={styles.briefingReadabilityScrim} aria-hidden="true" /> : null}
+              {fullCardBriefing ? (
+                <span
+                  className="atlas-briefing-readability-scrim"
+                  style={styles.briefingReadabilityScrim}
+                  aria-hidden="true"
+                />
+              ) : null}
               <div style={fullCardBriefing ? styles.briefingHeader : styles.cardHeaderRow}>
                 <div style={styles.cardTitleGroup}>
                   <p style={styles.cardLocation}>{safeEventCard.location}</p>
@@ -4090,18 +4096,18 @@ const styles: Record<string, CSSProperties> = {
   },
   briefingReadabilityScrim: {
     position: 'absolute',
-    zIndex: -1,
-    left: '-6%',
-    right: '-4%',
-    top: '-12px',
-    bottom: '-20px',
+    zIndex: 0,
+    left: '-10%',
+    right: '-8%',
+    top: '-28px',
+    bottom: '-34px',
     pointerEvents: 'none',
     background:
-      'linear-gradient(100deg, rgba(1, 3, 7, 0.24) 0%, rgba(1, 3, 7, 0.18) 34%, rgba(1, 3, 7, 0.08) 58%, rgba(1, 3, 7, 0) 86%), radial-gradient(ellipse 92% 72% at 30% 58%, rgba(1, 3, 7, 0.28) 0%, rgba(1, 3, 7, 0.2) 42%, rgba(1, 3, 7, 0.08) 66%, rgba(1, 3, 7, 0) 88%), radial-gradient(ellipse 78% 52% at 28% 84%, rgba(1, 3, 7, 0.24) 0%, rgba(1, 3, 7, 0.15) 46%, rgba(1, 3, 7, 0) 82%)',
+      'linear-gradient(100deg, rgba(1, 3, 7, 0.54) 0%, rgba(1, 3, 7, 0.44) 34%, rgba(1, 3, 7, 0.24) 62%, rgba(1, 3, 7, 0) 90%), radial-gradient(ellipse 102% 82% at 30% 52%, rgba(1, 3, 7, 0.6) 0%, rgba(1, 3, 7, 0.42) 44%, rgba(1, 3, 7, 0.18) 68%, rgba(1, 3, 7, 0) 90%), radial-gradient(ellipse 88% 62% at 28% 86%, rgba(1, 3, 7, 0.5) 0%, rgba(1, 3, 7, 0.32) 48%, rgba(1, 3, 7, 0) 84%)',
     maskImage:
-      'linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.44) 7%, rgba(0, 0, 0, 0.92) 24%, black 58%, rgba(0, 0, 0, 0.78) 86%, transparent 100%), linear-gradient(90deg, black 0%, rgba(0, 0, 0, 0.94) 52%, rgba(0, 0, 0, 0.54) 76%, transparent 100%)',
+      'linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 5%, rgba(0, 0, 0, 0.86) 18%, black 54%, rgba(0, 0, 0, 0.82) 88%, transparent 100%), linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.72) 8%, black 28%, rgba(0, 0, 0, 0.9) 66%, rgba(0, 0, 0, 0.42) 84%, transparent 100%)',
     WebkitMaskImage:
-      'linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.44) 7%, rgba(0, 0, 0, 0.92) 24%, black 58%, rgba(0, 0, 0, 0.78) 86%, transparent 100%), linear-gradient(90deg, black 0%, rgba(0, 0, 0, 0.94) 52%, rgba(0, 0, 0, 0.54) 76%, transparent 100%)',
+      'linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 5%, rgba(0, 0, 0, 0.86) 18%, black 54%, rgba(0, 0, 0, 0.82) 88%, transparent 100%), linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.72) 8%, black 28%, rgba(0, 0, 0, 0.9) 66%, rgba(0, 0, 0, 0.42) 84%, transparent 100%)',
     maskComposite: 'intersect',
     WebkitMaskComposite: 'source-in',
   },
