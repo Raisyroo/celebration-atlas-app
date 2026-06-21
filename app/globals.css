@@ -240,9 +240,10 @@ body.atlas-story-card-open {
     left: max(12px, env(safe-area-inset-left)) !important;
     right: max(12px, env(safe-area-inset-right)) !important;
     width: auto !important;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     overflow-y: hidden !important;
     overscroll-behavior: contain;
+    overscroll-behavior-x: none;
     -webkit-overflow-scrolling: touch;
     z-index: 30 !important;
   }
@@ -298,12 +299,15 @@ body.atlas-story-card-open {
   .atlas-card .atlas-card-content {
     box-sizing: border-box;
     width: 100%;
+    max-width: 100%;
     flex: 1 1 auto;
     min-height: 0;
     height: auto;
     max-height: none;
-    padding: calc(96px + env(safe-area-inset-top)) 22px calc(16px + env(safe-area-inset-bottom)) !important;
+    padding: calc(clamp(220px, 39svh, 300px) + env(safe-area-inset-top)) 22px calc(16px + env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden !important;
     overflow-y: auto !important;
+    overscroll-behavior-x: none;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
@@ -313,7 +317,9 @@ body.atlas-story-card-open {
 
   .atlas-card .atlas-card-copy {
     position: relative;
-    max-width: min(84%, 360px);
+    box-sizing: border-box;
+    width: min(84%, 360px);
+    max-width: 100%;
     isolation: isolate;
   }
 
