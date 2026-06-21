@@ -2634,7 +2634,7 @@ export default function AtlasMap({
               style={fullCardBriefing ? styles.briefingCardCopy : undefined}
             >
               {fullCardBriefing ? (
-                <span
+                <div
                   className="atlas-briefing-readability-scrim"
                   style={styles.briefingReadabilityScrim}
                   aria-hidden="true"
@@ -4097,19 +4097,14 @@ const styles: Record<string, CSSProperties> = {
   briefingReadabilityScrim: {
     position: 'absolute',
     zIndex: 0,
-    left: '-10%',
-    right: '-8%',
-    top: '-28px',
-    bottom: '-34px',
+    left: '-16px',
+    top: '-36px',
+    width: 'calc(100% + 32px)',
+    height: 'calc(100% + 72px)',
     pointerEvents: 'none',
+    display: 'block',
     background:
-      'linear-gradient(100deg, rgba(1, 3, 7, 0.54) 0%, rgba(1, 3, 7, 0.44) 34%, rgba(1, 3, 7, 0.24) 62%, rgba(1, 3, 7, 0) 90%), radial-gradient(ellipse 102% 82% at 30% 52%, rgba(1, 3, 7, 0.6) 0%, rgba(1, 3, 7, 0.42) 44%, rgba(1, 3, 7, 0.18) 68%, rgba(1, 3, 7, 0) 90%), radial-gradient(ellipse 88% 62% at 28% 86%, rgba(1, 3, 7, 0.5) 0%, rgba(1, 3, 7, 0.32) 48%, rgba(1, 3, 7, 0) 84%)',
-    maskImage:
-      'linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 5%, rgba(0, 0, 0, 0.86) 18%, black 54%, rgba(0, 0, 0, 0.82) 88%, transparent 100%), linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.72) 8%, black 28%, rgba(0, 0, 0, 0.9) 66%, rgba(0, 0, 0, 0.42) 84%, transparent 100%)',
-    WebkitMaskImage:
-      'linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 5%, rgba(0, 0, 0, 0.86) 18%, black 54%, rgba(0, 0, 0, 0.82) 88%, transparent 100%), linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.72) 8%, black 28%, rgba(0, 0, 0, 0.9) 66%, rgba(0, 0, 0, 0.42) 84%, transparent 100%)',
-    maskComposite: 'intersect',
-    WebkitMaskComposite: 'source-in',
+      'radial-gradient(ellipse 72% 54% at 42% 18%, rgba(4, 8, 14, 0.56) 0%, rgba(4, 8, 14, 0.50) 40%, rgba(4, 8, 14, 0.28) 70%, rgba(4, 8, 14, 0) 100%), radial-gradient(ellipse 72% 58% at 42% 52%, rgba(4, 8, 14, 0.54) 0%, rgba(4, 8, 14, 0.50) 44%, rgba(4, 8, 14, 0.28) 72%, rgba(4, 8, 14, 0) 100%), radial-gradient(ellipse 72% 54% at 42% 86%, rgba(4, 8, 14, 0.52) 0%, rgba(4, 8, 14, 0.48) 42%, rgba(4, 8, 14, 0.26) 72%, rgba(4, 8, 14, 0) 100%), linear-gradient(90deg, rgba(4, 8, 14, 0) 0%, rgba(4, 8, 14, 0.34) 14%, rgba(4, 8, 14, 0.50) 34%, rgba(4, 8, 14, 0.48) 62%, rgba(4, 8, 14, 0.22) 80%, rgba(4, 8, 14, 0) 100%)',
   },
   briefingHeader: {
     display: 'flex',
