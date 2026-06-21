@@ -614,10 +614,37 @@ body.atlas-story-card-open {
   content: none;
 }
 
+.atlas-card-copy--full-event {
+  position: relative;
+  isolation: isolate;
+}
 
+.atlas-full-event-readability-scrim {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(4, 8, 14, 0) 0%,
+      rgba(4, 8, 14, 0.08) 12%,
+      rgba(4, 8, 14, 0.24) 28%,
+      rgba(4, 8, 14, 0.38) 45%,
+      rgba(4, 8, 14, 0.42) 68%,
+      rgba(4, 8, 14, 0.28) 86%,
+      rgba(4, 8, 14, 0.1) 95%,
+      rgba(4, 8, 14, 0) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(4, 8, 14, 0) 0%,
+      rgba(4, 8, 14, 0.18) 13%,
+      rgba(4, 8, 14, 0.28) 34%,
+      rgba(4, 8, 14, 0.28) 66%,
+      rgba(4, 8, 14, 0.16) 86%,
+      rgba(4, 8, 14, 0) 100%
+    );
+}
 
-/* Keep the full-event briefing scrim above the photo and below every text layer. */
-.atlas-card-copy--briefing > :not(.atlas-briefing-readability-scrim) {
+/* Keep the shared full-event scrim above the photo and below every text layer. */
+.atlas-card-copy--full-event > :not(.atlas-full-event-readability-scrim) {
   position: relative;
   z-index: 1;
 }
