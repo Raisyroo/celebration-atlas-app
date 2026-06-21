@@ -51,6 +51,14 @@ export type AtlasEvent = {
     mediaDelayMs?: number;
     mediaFadeDurationMs?: number;
   };
+  fullCardBriefing?: {
+    intro: string;
+    date: string;
+    venue: string;
+    source: string;
+    officialSite: string;
+    sections: { title: string; items?: string[]; body?: string }[];
+  };
   detailPage?: {
     shortStory: string;
     atmosphereLine?: string;
@@ -149,12 +157,12 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
   },
   {
     id: 'detroit-jazz',
-    name: 'Detroit Jazz Weekend',
+    name: 'Detroit Jazz Festival',
     location: 'Detroit, MI',
     latitude: 42.3314,
     longitude: -83.0458,
-    atmosphereLabel: 'Midnight jazz haze',
-    blurb: 'Open-air stages and night sets bring Michigan jazz scenes together near downtown Detroit.',
+    atmosphereLabel: 'Hart Plaza jazz weekend',
+    blurb: 'The world’s largest free jazz festival returns to Hart Plaza over Labor Day weekend with jazz legends and innovators.',
     category: 'Music',
     iconType: 'music',
     x: 75,
@@ -165,7 +173,52 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       thumbnailSrc: '/event-media/generated/detroit-jazz-thumb.webp',
       thumbnailSourceType: 'generated',
       thumbnailGenerationStatus: 'generated',
-      thumbnailAlt: 'Detroit Jazz Weekend generated thumbnail',
+      thumbnailAlt: 'Detroit Jazz Festival generated thumbnail',
+    },
+    dateRange: {
+      startDate: '2026-09-04',
+      endDate: '2026-09-07',
+    },
+    fullCardBriefing: {
+      intro:
+        'Don’t miss the 2026 Detroit Jazz Festival. The world’s largest free jazz festival returns to Hart Plaza in downtown Detroit over Labor Day weekend, September 4–7, with an all-star lineup of jazz legends and innovators.',
+      date: 'September 4–7, 2026',
+      venue: 'Hart Plaza, Downtown Detroit',
+      source: 'Detroit Jazz Festival',
+      officialSite: 'https://detroitjazzfest.org',
+      sections: [
+        {
+          title: '2026 Highlights',
+          items: [
+            'Ron Carter & Foursight',
+            'Bob James',
+            'Ravi Coltrane Quartet — Centennial Celebration',
+            'Kurt Elling & Yellowjackets Celebrate Weather Report',
+            'Artemis',
+            '2026 Artist-in-Residence Joe Lovano with special projects including Paramount Quartet and Coltrane 100',
+            'Take 6',
+            'Cindy Blackman Santana',
+            'Vijay Iyer Trio',
+            'Joey Alexander',
+            'Additional artists and programming',
+          ],
+        },
+        {
+          title: 'What to Expect',
+          body:
+            'Experience world-class jazz in the heart of Detroit — completely free and open to all. A must-attend celebration of music, culture, and community.',
+        },
+        {
+          title: 'Plan Your Visit',
+          items: [
+            'Hart Plaza, downtown Detroit',
+            'Public transit and People Mover access',
+            'Bring a chair or blanket for comfort where appropriate',
+            'Food and drink vendors on site',
+            'Review official festival guidance for current schedule and access details',
+          ],
+        },
+      ],
     },
   },
   {
