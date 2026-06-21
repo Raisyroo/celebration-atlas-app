@@ -621,26 +621,22 @@ body.atlas-story-card-open {
 
 .atlas-full-event-readability-scrim {
   background:
-    linear-gradient(
-      180deg,
-      rgba(4, 8, 14, 0) 0%,
-      rgba(4, 8, 14, 0.01) 14%,
-      rgba(4, 8, 14, 0.04) 24%,
-      rgba(4, 8, 14, 0.12) 35%,
-      rgba(4, 8, 14, 0.26) 50%,
-      rgba(4, 8, 14, 0.38) 66%,
-      rgba(4, 8, 14, 0.42) 78%,
-      rgba(4, 8, 14, 0.28) 88%,
-      rgba(4, 8, 14, 0.1) 96%,
+    radial-gradient(
+      ellipse 86% 72% at 50% 58%,
+      rgba(4, 8, 14, 0.36) 0%,
+      rgba(4, 8, 14, 0.28) 30%,
+      rgba(4, 8, 14, 0.14) 52%,
+      rgba(4, 8, 14, 0.04) 70%,
       rgba(4, 8, 14, 0) 100%
     ),
     linear-gradient(
-      90deg,
+      180deg,
       rgba(4, 8, 14, 0) 0%,
-      rgba(4, 8, 14, 0.18) 13%,
-      rgba(4, 8, 14, 0.28) 34%,
-      rgba(4, 8, 14, 0.28) 66%,
-      rgba(4, 8, 14, 0.16) 86%,
+      rgba(4, 8, 14, 0) 18%,
+      rgba(4, 8, 14, 0.08) 36%,
+      rgba(4, 8, 14, 0.2) 56%,
+      rgba(4, 8, 14, 0.16) 76%,
+      rgba(4, 8, 14, 0.04) 92%,
       rgba(4, 8, 14, 0) 100%
     );
 }
