@@ -1311,6 +1311,7 @@ export default function AtlasMap({
   const hasCardMediaSource = Boolean(largeCardBackgroundImageSrc);
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
   const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
+  const fullCardBriefing = renderedEvent?.fullCardBriefing;
   const mediaFadeDurationMs = selectedMedia?.mediaFadeDurationMs ?? 1300;
   const mediaDelayMs = selectedMedia?.mediaDelayMs ?? 0;
   const cardBaseTheme = safeEventCard
@@ -2624,13 +2625,24 @@ export default function AtlasMap({
               <span style={styles.cardMediaOverlay} aria-hidden="true" />
             </div>
           ) : null}
-          <div className="atlas-card-content" style={styles.cardContent}>
-            <div className="atlas-card-copy">
-              <div style={styles.cardHeaderRow}>
+          <div
+            className={`atlas-card-content${fullCardBriefing ? ' atlas-card-content--briefing' : ''}`}
+            style={fullCardBriefing ? styles.briefingCardContent : styles.cardContent}
+          >
+            <div
+              className={`atlas-card-copy${fullCardBriefing ? ' atlas-card-copy--briefing' : ''}`}
+              style={fullCardBriefing ? styles.briefingCardCopy : undefined}
+            >
+              <div style={fullCardBriefing ? styles.briefingHeader : styles.cardHeaderRow}>
                 <div style={styles.cardTitleGroup}>
                   <p style={styles.cardLocation}>{safeEventCard.location}</p>
-                  <h3 style={styles.cardTitle}>{safeEventCard.name}</h3>
-                  {largeCardDateRange ? (
+                  <h3 style={fullCardBriefing ? styles.briefingTitle : styles.cardTitle}>{safeEventCard.name}</h3>
+                  {fullCardBriefing ? (
+                    <>
+                      <p style={styles.cardDateLine}>{fullCardBriefing.date}</p>
+                      <p style={styles.briefingVenue}>{fullCardBriefing.venue}</p>
+                    </>
+                  ) : largeCardDateRange ? (
                     <p style={styles.cardDateLine}>{largeCardDateRange}</p>
                   ) : null}
                 </div>
@@ -2638,44 +2650,63 @@ export default function AtlasMap({
                   {safeEventCard.cardTag ?? safeEventCard.category}
                 </p>
               </div>
-              <p style={styles.cardBody}>{safeEventCard.description}</p>
-              {safeEventCard.atmosphereLabel ? (
-                <p style={styles.cardAtmosphere}>
-                  <span aria-hidden="true" style={styles.cardAtmosphereGlyph}>
-                    ✦
-                  </span>
-                  {safeEventCard.atmosphereLabel}
-                </p>
-              ) : null}
-              {largeCardStoryDetails.length > 0 ? (
-                <div style={styles.cardStoryDetailList}>
-                  {largeCardStoryDetails.map((detail, index) => (
-                    <section key={`${detail.title}-${index}`} style={styles.cardStoryDetail}>
-                      <h4 style={styles.cardStoryDetailTitle}>{detail.title}</h4>
-                      <p style={styles.cardStoryDetailBody}>{detail.body}</p>
-                    </section>
-                  ))}
-                </div>
-              ) : null}
-              <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
-              {safeEventCard.detailAction ? (
-                safeEventCard.id === 'electric-forest' ? (
-                  <button
-                    type="button"
-                    style={styles.enterEventButton}
-                    onClick={() => startElectricForestTransition(safeEventCard.id)}
-                  >
-                    {safeEventCard.detailAction.label}
-                  </button>
-                ) : (
-                  <Link
-                    href={safeEventCard.detailAction.href}
-                    style={styles.enterEventLink}
-                  >
-                    {safeEventCard.detailAction.label}
-                  </Link>
-                )
-              ) : null}
+              {fullCardBriefing ? (
+                <>
+                  <p style={styles.briefingIntro}>{fullCardBriefing.intro}</p>
+                  <div style={styles.briefingSectionList}>
+                    {fullCardBriefing.sections.map((section) => (
+                      <section key={section.title} style={styles.briefingSection}>
+                        <h4 style={styles.cardStoryDetailTitle}>{section.title}</h4>
+                        {section.body ? <p style={styles.cardStoryDetailBody}>{section.body}</p> : null}
+                        {section.items ? (
+                          <ul style={styles.briefingList}>
+                            {section.items.map((item) => (
+                              <li key={item} style={styles.briefingListItem}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </section>
+                    ))}
+                  </div>
+                  <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
+                  <p style={styles.briefingSource}>Source: {fullCardBriefing.source}</p>
+                  <a href={fullCardBriefing.officialSite} target="_blank" rel="noreferrer" style={styles.officialSiteButton}>
+                    Open Official Site
+                  </a>
+                </>
+              ) : (
+                <>
+                  <p style={styles.cardBody}>{safeEventCard.description}</p>
+                  {safeEventCard.atmosphereLabel ? (
+                    <p style={styles.cardAtmosphere}>
+                      <span aria-hidden="true" style={styles.cardAtmosphereGlyph}>✦</span>
+                      {safeEventCard.atmosphereLabel}
+                    </p>
+                  ) : null}
+                  {largeCardStoryDetails.length > 0 ? (
+                    <div style={styles.cardStoryDetailList}>
+                      {largeCardStoryDetails.map((detail, index) => (
+                        <section key={`${detail.title}-${index}`} style={styles.cardStoryDetail}>
+                          <h4 style={styles.cardStoryDetailTitle}>{detail.title}</h4>
+                          <p style={styles.cardStoryDetailBody}>{detail.body}</p>
+                        </section>
+                      ))}
+                    </div>
+                  ) : null}
+                  <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
+                  {safeEventCard.detailAction ? (
+                    safeEventCard.id === 'electric-forest' ? (
+                      <button type="button" style={styles.enterEventButton} onClick={() => startElectricForestTransition(safeEventCard.id)}>
+                        {safeEventCard.detailAction.label}
+                      </button>
+                    ) : (
+                      <Link href={safeEventCard.detailAction.href} style={styles.enterEventLink}>
+                        {safeEventCard.detailAction.label}
+                      </Link>
+                    )
+                  ) : null}
+                </>
+              )}
             </div>
           </div>
           <span
@@ -4028,6 +4059,118 @@ const styles: Record<string, CSSProperties> = {
     touchAction: 'pan-y',
     scrollbarWidth: 'none',
     background: 'transparent',
+  },
+
+  briefingCardContent: {
+    position: 'relative',
+    zIndex: 1,
+    minHeight: '100%',
+    maxHeight: 'inherit',
+    padding: 'clamp(230px, 42vh, 320px) 18px 18px',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',
+    scrollbarWidth: 'thin',
+    background:
+      'linear-gradient(180deg, rgba(3,5,10,0) 0%, rgba(3,5,10,.24) 30%, rgba(3,5,10,.82) 58%, rgba(3,5,10,.94) 100%)',
+  },
+  briefingCardCopy: {
+    position: 'relative',
+    display: 'grid',
+    gap: 12,
+    width: '100%',
+    maxWidth: 520,
+    margin: '0 auto',
+  },
+  briefingHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+    padding: '14px 14px 13px',
+    borderRadius: 18,
+    border: '1px solid rgba(255, 229, 184, 0.22)',
+    background: 'linear-gradient(160deg, rgba(10,14,22,.78), rgba(6,9,15,.56))',
+    boxShadow: '0 14px 32px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,244,214,.05)',
+    backdropFilter: 'blur(10px) saturate(1.08)',
+    WebkitBackdropFilter: 'blur(10px) saturate(1.08)',
+  },
+  briefingTitle: {
+    margin: 0,
+    fontSize: 26,
+    lineHeight: 1.02,
+    fontWeight: 780,
+    letterSpacing: 0.1,
+    color: '#ffebb9',
+    textShadow: '0 1px 3px rgba(2,3,6,.9), 0 0 16px rgba(255,229,173,.3)',
+  },
+  briefingVenue: {
+    margin: '5px 0 0',
+    color: 'rgba(246, 232, 203, 0.86)',
+    fontSize: 12,
+    lineHeight: 1.25,
+    fontWeight: 650,
+  },
+  briefingIntro: {
+    margin: 0,
+    padding: '13px 14px',
+    borderRadius: 16,
+    border: '1px solid rgba(255, 229, 184, 0.18)',
+    background: 'rgba(8, 12, 20, 0.68)',
+    color: '#f0e2c3',
+    fontSize: 14,
+    lineHeight: 1.48,
+    textShadow: '0 1px 3px rgba(2,3,6,.86)',
+  },
+  briefingSectionList: {
+    display: 'grid',
+    gap: 10,
+  },
+  briefingSection: {
+    padding: '12px 14px',
+    borderRadius: 16,
+    border: '1px solid rgba(255, 229, 184, 0.16)',
+    background: 'linear-gradient(180deg, rgba(15,20,30,.7), rgba(7,10,16,.62))',
+    boxShadow: 'inset 0 0 0 1px rgba(255,244,214,.04)',
+  },
+  briefingList: {
+    display: 'grid',
+    gap: 6,
+    margin: '8px 0 0',
+    paddingLeft: 18,
+    color: 'rgba(246, 232, 203, 0.92)',
+    fontSize: 13,
+    lineHeight: 1.36,
+  },
+  briefingListItem: {
+    paddingLeft: 2,
+  },
+  briefingSource: {
+    margin: 0,
+    color: 'rgba(255, 226, 174, 0.72)',
+    fontSize: 11,
+    lineHeight: 1.25,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  officialSiteButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    padding: '0 16px',
+    borderRadius: 999,
+    border: '1px solid rgba(255,230,183,.62)',
+    color: 'rgba(24, 18, 9, 0.96)',
+    background: 'linear-gradient(180deg, rgba(255,232,180,.96), rgba(230,170,80,.9))',
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: 850,
+    textDecoration: 'none',
+    boxShadow: '0 0 22px rgba(255,194,104,.28), 0 10px 22px rgba(0,0,0,.28)',
   },
   cardHeaderRow: {
     display: 'flex',

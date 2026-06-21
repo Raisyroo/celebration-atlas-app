@@ -630,3 +630,50 @@ body.atlas-story-card-open {
     overflow-y: auto !important;
   }
 }
+
+/* Detroit Jazz Festival long-form briefing card: scoped to cards with the briefing content class. */
+.atlas-card:has(.atlas-card-content--briefing) {
+  min-height: min(760px, 86dvh);
+  max-height: min(820px, calc(100dvh - 96px)) !important;
+}
+
+.atlas-card:has(.atlas-card-content--briefing) .atlas-card-media {
+  height: clamp(260px, 46%, 360px);
+  bottom: auto !important;
+  filter: brightness(1.04) saturate(1.12) contrast(1.06);
+}
+
+.atlas-card:has(.atlas-card-content--briefing) .atlas-card-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(2,4,9,0) 44%, rgba(2,4,9,.76) 100%),
+    radial-gradient(circle at 50% 18%, rgba(255,222,154,.08), rgba(255,222,154,0) 58%);
+}
+
+@media (min-width: 768px) and (orientation: landscape) {
+  .atlas-card:has(.atlas-card-content--briefing) {
+    width: min(620px, calc(100vw - 72px));
+    bottom: min(7vh, 72px) !important;
+  }
+}
+
+@media (max-width: 767px) and (orientation: portrait) {
+  .atlas-card:has(.atlas-card-content--briefing) {
+    top: 50% !important;
+    min-height: min(720px, 86svh);
+    max-height: min(
+      90svh,
+      calc(100svh - max(14px, env(safe-area-inset-top)) - 18px - env(safe-area-inset-bottom))
+    ) !important;
+  }
+
+  .atlas-card:has(.atlas-card-content--briefing) .atlas-card-copy {
+    width: 100%;
+  }
+
+  .atlas-card:has(.atlas-card-content--briefing) .atlas-card-content {
+    padding-top: calc(clamp(230px, 38svh, 300px) + env(safe-area-inset-top)) !important;
+  }
+}
