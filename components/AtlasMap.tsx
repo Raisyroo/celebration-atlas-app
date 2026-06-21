@@ -2576,7 +2576,7 @@ export default function AtlasMap({
             ...styles.card,
             borderColor: cardTheme.edge,
             boxShadow: `inset 0 0 0 1px rgba(255,241,203,.08), 0 0 18px ${cardTheme.glow}, 0 16px 36px rgba(0,0,0,.32)`,
-            background: `linear-gradient(160deg, rgba(16,21,30,.34), rgba(9,12,18,.2) 58%, rgba(7,10,15,.3)), radial-gradient(circle at 82% 12%, ${cardTheme.wash}, rgba(7,10,15,0) 52%)`,
+            background: 'rgba(7,10,15,.24)',
             opacity: isCardVisible ? 1 : 0,
             transform: isCardVisible
               ? 'translateY(var(--atlas-card-open-y, 0px))'
@@ -2625,58 +2625,56 @@ export default function AtlasMap({
             </div>
           ) : null}
           <div className="atlas-card-content" style={styles.cardContent}>
-            <div style={styles.cardStoryGlass}>
-              <div style={styles.cardHeaderRow}>
-                <div style={styles.cardTitleGroup}>
-                  <p style={styles.cardLocation}>{safeEventCard.location}</p>
-                  <h3 style={styles.cardTitle}>{safeEventCard.name}</h3>
-                  {largeCardDateRange ? (
-                    <p style={styles.cardDateLine}>{largeCardDateRange}</p>
-                  ) : null}
-                </div>
-                <p style={styles.cardCategoryTag}>
-                  {safeEventCard.cardTag ?? safeEventCard.category}
-                </p>
+            <div style={styles.cardHeaderRow}>
+              <div style={styles.cardTitleGroup}>
+                <p style={styles.cardLocation}>{safeEventCard.location}</p>
+                <h3 style={styles.cardTitle}>{safeEventCard.name}</h3>
+                {largeCardDateRange ? (
+                  <p style={styles.cardDateLine}>{largeCardDateRange}</p>
+                ) : null}
               </div>
-              <p style={styles.cardBody}>{safeEventCard.description}</p>
-              {safeEventCard.atmosphereLabel ? (
-                <p style={styles.cardAtmosphere}>
-                  <span aria-hidden="true" style={styles.cardAtmosphereGlyph}>
-                    ✦
-                  </span>
-                  {safeEventCard.atmosphereLabel}
-                </p>
-              ) : null}
-              {largeCardStoryDetails.length > 0 ? (
-                <div style={styles.cardStoryDetailList}>
-                  {largeCardStoryDetails.map((detail, index) => (
-                    <section key={`${detail.title}-${index}`} style={styles.cardStoryDetail}>
-                      <h4 style={styles.cardStoryDetailTitle}>{detail.title}</h4>
-                      <p style={styles.cardStoryDetailBody}>{detail.body}</p>
-                    </section>
-                  ))}
-                </div>
-              ) : null}
-              <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
-              {safeEventCard.detailAction ? (
-                safeEventCard.id === 'electric-forest' ? (
-                  <button
-                    type="button"
-                    style={styles.enterEventButton}
-                    onClick={() => startElectricForestTransition(safeEventCard.id)}
-                  >
-                    {safeEventCard.detailAction.label}
-                  </button>
-                ) : (
-                  <Link
-                    href={safeEventCard.detailAction.href}
-                    style={styles.enterEventLink}
-                  >
-                    {safeEventCard.detailAction.label}
-                  </Link>
-                )
-              ) : null}
+              <p style={styles.cardCategoryTag}>
+                {safeEventCard.cardTag ?? safeEventCard.category}
+              </p>
             </div>
+            <p style={styles.cardBody}>{safeEventCard.description}</p>
+            {safeEventCard.atmosphereLabel ? (
+              <p style={styles.cardAtmosphere}>
+                <span aria-hidden="true" style={styles.cardAtmosphereGlyph}>
+                  ✦
+                </span>
+                {safeEventCard.atmosphereLabel}
+              </p>
+            ) : null}
+            {largeCardStoryDetails.length > 0 ? (
+              <div style={styles.cardStoryDetailList}>
+                {largeCardStoryDetails.map((detail, index) => (
+                  <section key={`${detail.title}-${index}`} style={styles.cardStoryDetail}>
+                    <h4 style={styles.cardStoryDetailTitle}>{detail.title}</h4>
+                    <p style={styles.cardStoryDetailBody}>{detail.body}</p>
+                  </section>
+                ))}
+              </div>
+            ) : null}
+            <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
+            {safeEventCard.detailAction ? (
+              safeEventCard.id === 'electric-forest' ? (
+                <button
+                  type="button"
+                  style={styles.enterEventButton}
+                  onClick={() => startElectricForestTransition(safeEventCard.id)}
+                >
+                  {safeEventCard.detailAction.label}
+                </button>
+              ) : (
+                <Link
+                  href={safeEventCard.detailAction.href}
+                  style={styles.enterEventLink}
+                >
+                  {safeEventCard.detailAction.label}
+                </Link>
+              )
+            ) : null}
           </div>
           <span
             style={{
@@ -3954,13 +3952,10 @@ const styles: Record<string, CSSProperties> = {
     bottom: 120,
     padding: 0,
     borderRadius: 22,
-    background:
-      'linear-gradient(160deg, rgba(16,21,30,.34), rgba(9,12,18,.2) 58%, rgba(7,10,15,.3))',
+    background: 'rgba(7,10,15,.24)',
     border: '1px solid rgba(255,225,160,.4)',
     boxShadow:
       'inset 0 0 0 1px rgba(255,241,203,.08), 0 0 18px rgba(252,201,102,.24), 0 16px 36px rgba(0,0,0,.32)',
-    backdropFilter: 'blur(5px) saturate(1.08)',
-    WebkitBackdropFilter: 'blur(5px) saturate(1.08)',
     zIndex: Z_INDEX.card,
     willChange: 'opacity, transform',
     overflow: 'hidden',
@@ -3994,8 +3989,7 @@ const styles: Record<string, CSSProperties> = {
   cardMediaOverlay: {
     position: 'absolute',
     inset: 0,
-    background:
-      'linear-gradient(180deg, rgba(3, 5, 10, 0.04) 0%, rgba(3, 5, 10, 0) 42%, rgba(3, 5, 10, 0.38) 100%)',
+    background: 'transparent',
   },
   closeButton: {
     position: 'absolute',
@@ -4022,25 +4016,13 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 1,
     minHeight: '100%',
     maxHeight: 'inherit',
-    padding: '92px 12px 14px',
+    padding: '112px 22px 18px',
     overflowY: 'auto',
     overscrollBehavior: 'contain',
     WebkitOverflowScrolling: 'touch',
     touchAction: 'pan-y',
     scrollbarWidth: 'none',
-    background:
-      'linear-gradient(180deg, rgba(2, 5, 10, 0.02) 0%, rgba(3, 6, 12, 0.28) 28%, rgba(4, 7, 13, 0.72) 62%, rgba(4, 7, 13, 0.92) 100%)',
-  },
-  cardStoryGlass: {
-    borderRadius: 18,
-    padding: '15px 14px 16px',
-    border: '1px solid rgba(255, 231, 184, 0.18)',
-    background:
-      'linear-gradient(180deg, rgba(8, 12, 20, 0.38), rgba(5, 8, 14, 0.66) 42%, rgba(5, 8, 14, 0.84) 100%)',
-    boxShadow:
-      'inset 0 0 0 1px rgba(255, 250, 226, 0.05), 0 18px 48px rgba(0, 0, 0, 0.34)',
-    backdropFilter: 'blur(14px) saturate(1.14)',
-    WebkitBackdropFilter: 'blur(14px) saturate(1.14)',
+    background: 'transparent',
   },
   cardHeaderRow: {
     display: 'flex',
