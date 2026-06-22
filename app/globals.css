@@ -208,7 +208,15 @@ body.atlas-story-card-open {
   touch-action: none;
 }
 
-.atlas-card .atlas-card-content::-webkit-scrollbar {
+.atlas-card .atlas-card-content--full-event {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.atlas-card .atlas-card-content::-webkit-scrollbar,
+.atlas-card .atlas-card-content--full-event::-webkit-scrollbar {
   display: none;
 }
 
