@@ -4079,7 +4079,7 @@ const styles: Record<string, CSSProperties> = {
     overscrollBehaviorY: 'contain',
     WebkitOverflowScrolling: 'touch',
     touchAction: 'pan-y',
-    scrollbarWidth: 'thin',
+    scrollbarWidth: 'none',
     background: 'transparent',
   },
   briefingCardCopy: {
