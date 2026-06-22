@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function DevGeospatialMapTestPage() {
   return (
-    <main aria-label="Development Preview — Geospatial Map Test">
+    <main className="dev-geospatial-map-page" aria-label="Development Preview — Geospatial Map Test">
       <GeospatialMapTest />
     </main>
   );

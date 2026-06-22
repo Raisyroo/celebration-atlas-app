@@ -1,13 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ATLAS_EVENTS } from '../../../data/events';
 import { deriveSafeAtlasEventCard } from '../../../data/safeEventCard';
 import { searchEventProfiles } from '../../../data/eventProfiles';
 import { resolveExactEventIntent } from '../../../data/exactEventIntent';
 
 type ViewState = { centerLat: number; centerLng: number; zoom: number };
+type PointerPoint = { x: number; y: number };
+type PinchState = { distance: number; zoom: number } | null;
 
 const INITIAL_VIEW: ViewState = { centerLat: 44.3, centerLng: -85.2, zoom: 1.1 };
 const MIN_ZOOM = 0.75;
@@ -23,6 +25,11 @@ const mapEvents = ATLAS_EVENTS.filter(
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function getPointerDistance(points: PointerPoint[]) {
+  if (points.length < 2) return 0;
+  return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
 }
 
 function projectLatLngToViewport(
@@ -43,6 +50,19 @@ export default function GeospatialMapTest() {
   const [view, setView] = useState<ViewState>(INITIAL_VIEW);
   const [selectedId, setSelectedId] = useState<string | null>(mapEvents[0]?.id ?? null);
   const [query, setQuery] = useState('');
+  const activePointers = useRef(new Map<number, PointerPoint>());
+  const lastDragPoint = useRef<PointerPoint | null>(null);
+  const pinchState = useRef<PinchState>(null);
+
+  useEffect(() => {
+    document.documentElement.classList.add('dev-geospatial-map-scroll');
+    document.body.classList.add('dev-geospatial-map-scroll');
+
+    return () => {
+      document.documentElement.classList.remove('dev-geospatial-map-scroll');
+      document.body.classList.remove('dev-geospatial-map-scroll');
+    };
+  }, []);
 
   const highlightedIds = useMemo(() => {
     const trimmedQuery = query.trim();
@@ -75,6 +95,79 @@ export default function GeospatialMapTest() {
     setView((current) => ({ ...current, zoom: clamp(nextZoom, MIN_ZOOM, MAX_ZOOM) }));
   };
 
+  const panViewByPixels = (deltaX: number, deltaY: number) => {
+    setView((current) => {
+      const latitudeScale = Math.cos((current.centerLat * Math.PI) / 180) || 1;
+      const pixelsPerDegree = DEGREE_SCALE * current.zoom;
+
+      return {
+        ...current,
+        centerLat: clamp(current.centerLat + deltaY / pixelsPerDegree, 41.5, 47.8),
+        centerLng: clamp(current.centerLng - deltaX / (pixelsPerDegree * latitudeScale), -90.8, -81.4),
+      };
+    });
+  };
+
+  const handleMapPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.target instanceof Element && event.target.closest('button, input, a')) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const point = { x: event.clientX, y: event.clientY };
+    activePointers.current.set(event.pointerId, point);
+
+    if (activePointers.current.size === 1) {
+      lastDragPoint.current = point;
+      pinchState.current = null;
+      return;
+    }
+
+    const distance = getPointerDistance(Array.from(activePointers.current.values()));
+    if (distance > 0) {
+      pinchState.current = { distance, zoom: view.zoom };
+      lastDragPoint.current = null;
+    }
+  };
+
+  const handleMapPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!activePointers.current.has(event.pointerId)) return;
+    event.preventDefault();
+    const point = { x: event.clientX, y: event.clientY };
+    activePointers.current.set(event.pointerId, point);
+
+    if (activePointers.current.size >= 2) {
+      const distance = getPointerDistance(Array.from(activePointers.current.values()));
+      const activePinch = pinchState.current;
+      if (activePinch && distance > 0) {
+        setZoom(activePinch.zoom * (distance / activePinch.distance));
+      }
+      return;
+    }
+
+    if (!lastDragPoint.current) {
+      lastDragPoint.current = point;
+      return;
+    }
+
+    panViewByPixels(point.x - lastDragPoint.current.x, point.y - lastDragPoint.current.y);
+    lastDragPoint.current = point;
+  };
+
+  const handleMapPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    activePointers.current.delete(event.pointerId);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (activePointers.current.size === 1) {
+      lastDragPoint.current = Array.from(activePointers.current.values())[0] ?? null;
+      pinchState.current = null;
+      return;
+    }
+
+    lastDragPoint.current = null;
+    pinchState.current = null;
+  };
+
   const selectExactMatch = () => {
     const exactIntent = resolveExactEventIntent(query);
     if (!exactIntent || !mapEvents.some((event) => event.id === exactIntent.eventId)) return;
@@ -85,11 +178,11 @@ export default function GeospatialMapTest() {
   };
 
   return (
-    <div style={styles.pageShell}>
-      <section style={styles.auditPanel} aria-label="Coordinate and marker audit summary">
+    <div className="geospatialTestShell" style={styles.pageShell}>
+      <section className="geospatialTestAudit" style={styles.auditPanel} aria-label="Coordinate and marker audit summary">
         <p style={styles.kicker}>Diagnostic audit result</p>
-        <h1 style={styles.title}>Geospatial map test — isolated real-coordinate prototype</h1>
-        <ul style={styles.auditList}>
+        <h1 className="geospatialTestTitle" style={styles.title}>Geospatial map test — isolated real-coordinate prototype</h1>
+        <ul className="geospatialTestAuditList" style={styles.auditList}>
           <li>Reuses ATLAS_EVENTS latitude/longitude as the geographic source of truth.</li>
           <li>Reuses exact-event search resolution and safe event card derivation.</li>
           <li>Does not import or alter the illustrated Michigan projection, marker calibration, clusters, or homepage card wiring.</li>
@@ -97,8 +190,8 @@ export default function GeospatialMapTest() {
         </ul>
       </section>
 
-      <section style={styles.mapPanel} aria-label="Real-coordinate map prototype">
-        <div style={styles.toolbar}>
+      <section className="geospatialTestMapPanel" style={styles.mapPanel} aria-label="Real-coordinate map prototype">
+        <div className="geospatialTestToolbar" style={styles.toolbar}>
           <label style={styles.searchLabel}>
             Search exact event
             <input
@@ -113,8 +206,15 @@ export default function GeospatialMapTest() {
           <button type="button" onClick={() => setZoom(view.zoom / 1.22)} style={styles.controlButton}>Zoom out</button>
         </div>
 
-        <div style={styles.mapWrap}>
-          <div style={styles.mapCanvas}>
+        <div className="geospatialTestMapWrap" style={styles.mapWrap}>
+          <div
+            className="geospatialTestMapCanvas"
+            onPointerDown={handleMapPointerDown}
+            onPointerMove={handleMapPointerMove}
+            onPointerUp={handleMapPointerEnd}
+            onPointerCancel={handleMapPointerEnd}
+            style={styles.mapCanvas}
+          >
             <div style={styles.grid} aria-hidden="true" />
             <div style={{ ...styles.stateHint, left: '49%', top: '49%' }} aria-hidden="true">Michigan</div>
             {markers.map(({ event, point, isHighlighted }) => {
@@ -179,8 +279,8 @@ const styles: Record<string, React.CSSProperties> = {
   searchLabel: { display: 'grid', gap: 6, minWidth: 260, color: 'rgba(255,236,202,.76)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.12em' },
   searchInput: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '11px 14px', background: 'rgba(0,0,0,.28)', color: '#fff2d8' },
   controlButton: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '11px 14px', background: 'rgba(255,205,120,.1)', color: '#ffe8bd', cursor: 'pointer' },
-  mapWrap: { position: 'relative', width: '100%', overflow: 'auto', borderRadius: 24, border: '1px solid rgba(255,255,255,.08)' },
-  mapCanvas: { position: 'relative', width: MAP_WIDTH, height: MAP_HEIGHT, background: 'linear-gradient(150deg, rgba(25,68,86,.9), rgba(32,67,45,.78) 45%, rgba(31,42,57,.92))' },
+  mapWrap: { position: 'relative', width: '100%', overflowX: 'auto', overflowY: 'hidden', borderRadius: 24, border: '1px solid rgba(255,255,255,.08)', overscrollBehaviorX: 'contain' },
+  mapCanvas: { position: 'relative', width: MAP_WIDTH, height: MAP_HEIGHT, background: 'linear-gradient(150deg, rgba(25,68,86,.9), rgba(32,67,45,.78) 45%, rgba(31,42,57,.92))', touchAction: 'none', userSelect: 'none' },
   grid: { position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px)', backgroundSize: '80px 80px' },
   stateHint: { position: 'absolute', transform: 'translate(-50%, -50%)', color: 'rgba(255,244,218,.14)', fontSize: 86, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' },
   marker: { position: 'absolute', width: 22, height: 22, borderRadius: 999, border: 0, background: 'rgba(255,206,114,.24)', display: 'grid', placeItems: 'center', cursor: 'pointer', transition: 'transform 180ms ease, opacity 180ms ease, box-shadow 180ms ease' },
