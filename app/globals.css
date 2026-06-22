@@ -691,3 +691,90 @@ body.atlas-story-card-open {
     padding-top: calc(clamp(300px, 48svh, 390px) + env(safe-area-inset-top)) !important;
   }
 }
+
+html.dev-geospatial-map-scroll,
+body.dev-geospatial-map-scroll {
+  height: auto;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: auto;
+  scrollbar-width: auto;
+}
+
+body.dev-geospatial-map-scroll::-webkit-scrollbar {
+  display: block;
+}
+
+.dev-geospatial-map-page {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: visible;
+  touch-action: pan-y;
+}
+
+.geospatialTestMapCanvas {
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 767px) {
+  .geospatialTestShell {
+    min-height: auto !important;
+    padding: max(14px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom)) !important;
+    gap: 12px !important;
+  }
+
+  .geospatialTestAudit {
+    padding: 14px !important;
+    border-radius: 18px !important;
+  }
+
+  .geospatialTestTitle {
+    margin-bottom: 6px !important;
+    font-size: clamp(1.24rem, 6vw, 1.68rem) !important;
+    line-height: 1.08 !important;
+  }
+
+  .geospatialTestAuditList {
+    display: grid !important;
+    gap: 2px !important;
+    max-width: 34rem;
+    padding-left: 16px !important;
+    font-size: 0.78rem !important;
+    line-height: 1.35 !important;
+    color: rgba(255, 239, 210, 0.62) !important;
+  }
+
+  .geospatialTestAuditList li:nth-child(n + 3) {
+    display: none;
+  }
+
+  .geospatialTestMapPanel {
+    padding: 10px !important;
+    border-radius: 18px !important;
+    overflow: visible !important;
+  }
+
+  .geospatialTestToolbar {
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .geospatialTestToolbar label {
+    min-width: min(100%, 15rem) !important;
+    flex: 1 1 100%;
+  }
+
+  .geospatialTestToolbar button {
+    padding: 9px 11px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .geospatialTestMapWrap {
+    max-height: min(68svh, 620px);
+  }
+}
