@@ -1,299 +1,274 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ATLAS_EVENTS } from '../../../data/events';
-import { deriveSafeAtlasEventCard } from '../../../data/safeEventCard';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
 import { searchEventProfiles } from '../../../data/eventProfiles';
 import { resolveExactEventIntent } from '../../../data/exactEventIntent';
+import { deriveSafeAtlasEventCard } from '../../../data/safeEventCard';
 
-type ViewState = { centerLat: number; centerLng: number; zoom: number };
-type MapSize = { width: number; height: number };
-type PointerPoint = { x: number; y: number };
-type PinchState = { distance: number; zoom: number } | null;
+type EventFeatureProperties = {
+  eventId: string;
+  name: string;
+  category: AtlasEvent['category'];
+  location: string;
+};
 
-const INITIAL_VIEW: ViewState = { centerLat: 44.3, centerLng: -85.2, zoom: 1.1 };
-const MOBILE_INITIAL_ZOOM = 1.65;
-const MIN_ZOOM = 0.75;
-const MAX_ZOOM = 7;
-const MAP_WIDTH = 1000;
-const MAP_HEIGHT = 720;
-const DEGREE_SCALE = 96;
-const EVENT_LIMIT = 18;
+type PointGeometry = { type: 'Point'; coordinates: [number, number] };
+type EventFeature = { type: 'Feature'; id: string; geometry: PointGeometry; properties: EventFeatureProperties };
+type EventFeatureCollection = { type: 'FeatureCollection'; features: EventFeature[] };
+type MapFeature = { geometry: { type?: string; coordinates?: unknown }; properties?: Record<string, unknown> | null };
+
+type MapLibreSource = { getClusterExpansionZoom: (clusterId: number) => Promise<number> };
+type MapLibreMap = {
+  addControl: (control: unknown, position?: string) => void;
+  addLayer: (layer: Record<string, unknown>) => void;
+  addSource: (sourceId: string, source: Record<string, unknown>) => void;
+  dragRotate: { disable: () => void };
+  easeTo: (options: Record<string, unknown>) => void;
+  flyTo: (options: Record<string, unknown>) => void;
+  getCanvas: () => HTMLCanvasElement;
+  getCenter: () => { lat: number; lng: number };
+  getLayer: (layerId: string) => unknown;
+  getSource: (sourceId: string) => MapLibreSource;
+  getZoom: () => number;
+  isStyleLoaded: () => boolean;
+  on: (eventName: string, layerOrListener: string | ((event?: MapLibreMapLayerMouseEvent) => void), listener?: (event: MapLibreMapLayerMouseEvent) => void) => void;
+  remove: () => void;
+  setFilter: (layerId: string, filter: unknown[]) => void;
+  setPaintProperty: (layerId: string, property: string, value: unknown) => void;
+  touchZoomRotate: { disableRotation: () => void };
+};
+type MapLibreApi = {
+  AttributionControl: new (options?: Record<string, unknown>) => unknown;
+  Map: new (options: Record<string, unknown>) => MapLibreMap;
+  NavigationControl: new (options?: Record<string, unknown>) => unknown;
+};
+type MapLibreMapLayerMouseEvent = {
+  features?: MapFeature[];
+};
+
+const MAPLIBRE_CSS_HREF = 'https://unpkg.com/maplibre-gl@5.10.0/dist/maplibre-gl.css';
+const MAPLIBRE_SCRIPT_SRC = 'https://unpkg.com/maplibre-gl@5.10.0/dist/maplibre-gl.js';
+const DEVELOPMENT_BASEMAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+const EVENT_SOURCE_ID = 'atlas-events';
+const CLUSTER_LAYER_ID = 'atlas-event-clusters';
+const CLUSTER_COUNT_LAYER_ID = 'atlas-event-cluster-counts';
+const POINT_LAYER_ID = 'atlas-event-points';
+const POINT_HALO_LAYER_ID = 'atlas-event-point-halos';
+const SELECTED_LAYER_ID = 'atlas-event-selected-point';
+const HIGHLIGHT_LAYER_ID = 'atlas-event-highlight-point';
+const MICHIGAN_BOUNDS: [[number, number], [number, number]] = [[-91, 41.45], [-81.3, 48.4]];
+const INITIAL_CENTER: [number, number] = [-85.2, 44.3];
+const INITIAL_ZOOM = 5.55;
 
 const mapEvents = ATLAS_EVENTS.filter(
   (event) => Number.isFinite(event.latitude) && Number.isFinite(event.longitude),
-).slice(0, EVENT_LIMIT);
+);
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function getPointerDistance(points: PointerPoint[]) {
-  if (points.length < 2) return 0;
-  return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
-}
-
-function projectLatLngToViewport(
-  latitude: number,
-  longitude: number,
-  view: ViewState,
-  mapSize: MapSize,
-) {
-  const latitudeScale = Math.cos((view.centerLat * Math.PI) / 180) || 1;
-  const pixelsPerDegree = DEGREE_SCALE * view.zoom;
-
+function toEventFeature(event: AtlasEvent): EventFeature {
   return {
-    x: mapSize.width / 2 + (longitude - view.centerLng) * pixelsPerDegree * latitudeScale,
-    y: mapSize.height / 2 - (latitude - view.centerLat) * pixelsPerDegree,
+    type: 'Feature',
+    id: event.id,
+    geometry: { type: 'Point', coordinates: [event.longitude, event.latitude] },
+    properties: {
+      eventId: event.id,
+      name: event.name,
+      category: event.category,
+      location: event.location,
+    },
   };
 }
 
+function buildEventFeatureCollection(events: AtlasEvent[]): EventFeatureCollection {
+  return { type: 'FeatureCollection', features: events.map(toEventFeature) };
+}
+
+function ensureMapLibreStylesheet() {
+  if (document.querySelector(`link[href="${MAPLIBRE_CSS_HREF}"]`)) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = MAPLIBRE_CSS_HREF;
+  document.head.appendChild(link);
+}
+
+function loadMapLibre(): Promise<MapLibreApi> {
+  const existing = window.maplibregl;
+  if (existing) return Promise.resolve(existing as MapLibreApi);
+
+  return new Promise((resolve, reject) => {
+    const currentScript = document.querySelector<HTMLScriptElement>(`script[src="${MAPLIBRE_SCRIPT_SRC}"]`);
+    if (currentScript) {
+      currentScript.addEventListener('load', () => window.maplibregl ? resolve(window.maplibregl as MapLibreApi) : reject(new Error('MapLibre did not initialize.')), { once: true });
+      currentScript.addEventListener('error', () => reject(new Error('MapLibre script failed to load.')), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = MAPLIBRE_SCRIPT_SRC;
+    script.async = true;
+    script.onload = () => window.maplibregl ? resolve(window.maplibregl as MapLibreApi) : reject(new Error('MapLibre did not initialize.'));
+    script.onerror = () => reject(new Error('MapLibre script failed to load.'));
+    document.head.appendChild(script);
+  });
+}
+
+function getFeatureEventId(feature: MapFeature | undefined) {
+  const eventId = feature?.properties?.eventId;
+  return typeof eventId === 'string' ? eventId : null;
+}
+
 export default function GeospatialMapTest() {
-  const [view, setView] = useState<ViewState>(INITIAL_VIEW);
   const [selectedId, setSelectedId] = useState<string | null>(mapEvents[0]?.id ?? null);
   const [query, setQuery] = useState('');
-  const [mapSize, setMapSize] = useState<MapSize>({ width: MAP_WIDTH, height: MAP_HEIGHT });
-  const mapCanvasRef = useRef<HTMLDivElement | null>(null);
-  const hasUserAdjustedView = useRef(false);
-  const activePointers = useRef(new Map<number, PointerPoint>());
-  const lastDragPoint = useRef<PointerPoint | null>(null);
-  const pinchState = useRef<PinchState>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [cameraReadout, setCameraReadout] = useState('loading MapLibre camera…');
+  const mapNodeRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
 
-  useEffect(() => {
-    const canvas = mapCanvasRef.current;
-    if (!canvas) return undefined;
-
-    const updateMapSize = () => {
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return;
-      setMapSize({ width: rect.width, height: rect.height });
-      if (rect.width < 768 && !hasUserAdjustedView.current) {
-        setView((current) => ({ ...current, zoom: Math.max(current.zoom, MOBILE_INITIAL_ZOOM) }));
-      }
-    };
-
-    updateMapSize();
-    const resizeObserver = new ResizeObserver(updateMapSize);
-    resizeObserver.observe(canvas);
-    window.addEventListener('orientationchange', updateMapSize);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener('orientationchange', updateMapSize);
-    };
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.add('dev-geospatial-map-scroll');
-    document.body.classList.add('dev-geospatial-map-scroll');
-
-    return () => {
-      document.documentElement.classList.remove('dev-geospatial-map-scroll');
-      document.body.classList.remove('dev-geospatial-map-scroll');
-    };
-  }, []);
+  const eventFeatures = useMemo(() => buildEventFeatureCollection(mapEvents), []);
 
   const highlightedIds = useMemo(() => {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) return new Set<string>();
-
     const exactIntent = resolveExactEventIntent(trimmedQuery);
     if (exactIntent) return new Set([exactIntent.eventId]);
-
     return new Set(searchEventProfiles(trimmedQuery).map((profile) => profile.id));
+  }, [query]);
+
+  const exactHighlightedId = useMemo(() => {
+    const exactIntent = resolveExactEventIntent(query);
+    return exactIntent && mapEvents.some((event) => event.id === exactIntent.eventId) ? exactIntent.eventId : null;
   }, [query]);
 
   const selectedEvent = mapEvents.find((event) => event.id === selectedId) ?? null;
   const selectedCard = selectedEvent ? deriveSafeAtlasEventCard(selectedEvent) : null;
 
-  const markers = mapEvents.map((event) => ({
-    event,
-    point: projectLatLngToViewport(event.latitude, event.longitude, view, mapSize),
-    isHighlighted: highlightedIds.has(event.id),
-  }));
-
-  const nudgeView = (deltaLat: number, deltaLng: number) => {
-    hasUserAdjustedView.current = true;
-    setView((current) => ({
-      ...current,
-      centerLat: clamp(current.centerLat + deltaLat / current.zoom, 41.5, 47.8),
-      centerLng: clamp(current.centerLng + deltaLng / current.zoom, -90.8, -81.4),
-    }));
-  };
-
-  const setZoom = (nextZoom: number) => {
-    hasUserAdjustedView.current = true;
-    setView((current) => ({ ...current, zoom: clamp(nextZoom, MIN_ZOOM, MAX_ZOOM) }));
-  };
-
-  const panViewByPixels = (deltaX: number, deltaY: number) => {
-    hasUserAdjustedView.current = true;
-    setView((current) => {
-      const latitudeScale = Math.cos((current.centerLat * Math.PI) / 180) || 1;
-      const pixelsPerDegree = DEGREE_SCALE * current.zoom;
-
-      return {
-        ...current,
-        centerLat: clamp(current.centerLat + deltaY / pixelsPerDegree, 41.5, 47.8),
-        centerLng: clamp(current.centerLng - deltaX / (pixelsPerDegree * latitudeScale), -90.8, -81.4),
-      };
-    });
-  };
-
-  const handleMapPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.target instanceof Element && event.target.closest('button, input, a')) return;
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    const point = { x: event.clientX, y: event.clientY };
-    activePointers.current.set(event.pointerId, point);
-
-    if (activePointers.current.size === 1) {
-      lastDragPoint.current = point;
-      pinchState.current = null;
-      return;
+  const updateFeatureFilters = useCallback(() => {
+    const map = mapRef.current;
+    if (!map?.isStyleLoaded()) return;
+    const selectedFilter: unknown[] = selectedId ? ['==', ['get', 'eventId'], selectedId] : ['==', ['get', 'eventId'], ''];
+    const highlightFilter: unknown[] = exactHighlightedId ? ['==', ['get', 'eventId'], exactHighlightedId] : ['==', ['get', 'eventId'], ''];
+    if (map.getLayer(SELECTED_LAYER_ID)) map.setFilter(SELECTED_LAYER_ID, selectedFilter);
+    if (map.getLayer(HIGHLIGHT_LAYER_ID)) map.setFilter(HIGHLIGHT_LAYER_ID, highlightFilter);
+    if (map.getLayer(POINT_LAYER_ID)) {
+      map.setPaintProperty(POINT_LAYER_ID, 'circle-opacity', highlightedIds.size ? ['case', ['in', ['get', 'eventId'], ['literal', Array.from(highlightedIds)]], 1, 0.25] : 0.95);
     }
+  }, [exactHighlightedId, highlightedIds, selectedId]);
 
-    const distance = getPointerDistance(Array.from(activePointers.current.values()));
-    if (distance > 0) {
-      pinchState.current = { distance, zoom: view.zoom };
-      lastDragPoint.current = null;
-    }
-  };
+  useEffect(() => {
+    let cancelled = false;
+    ensureMapLibreStylesheet();
+    loadMapLibre()
+      .then((maplibregl) => {
+        if (cancelled || !mapNodeRef.current || mapRef.current) return;
+        const map = new maplibregl.Map({
+          container: mapNodeRef.current,
+          style: DEVELOPMENT_BASEMAP_STYLE,
+          center: INITIAL_CENTER,
+          zoom: INITIAL_ZOOM,
+          minZoom: 4,
+          maxZoom: 13,
+          maxBounds: MICHIGAN_BOUNDS,
+          attributionControl: false,
+        });
 
-  const handleMapPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!activePointers.current.has(event.pointerId)) return;
-    event.preventDefault();
-    const point = { x: event.clientX, y: event.clientY };
-    activePointers.current.set(event.pointerId, point);
+        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+        map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+        map.dragRotate.disable();
+        map.touchZoomRotate.disableRotation();
 
-    if (activePointers.current.size >= 2) {
-      const distance = getPointerDistance(Array.from(activePointers.current.values()));
-      const activePinch = pinchState.current;
-      if (activePinch && distance > 0) {
-        setZoom(activePinch.zoom * (distance / activePinch.distance));
-      }
-      return;
-    }
+        map.on('load', () => {
+          map.addSource(EVENT_SOURCE_ID, {
+            type: 'geojson',
+            data: eventFeatures,
+            cluster: true,
+            clusterRadius: 46,
+            clusterMaxZoom: 8,
+            promoteId: 'eventId',
+          });
 
-    if (!lastDragPoint.current) {
-      lastDragPoint.current = point;
-      return;
-    }
+          map.addLayer({ id: CLUSTER_LAYER_ID, type: 'circle', source: EVENT_SOURCE_ID, filter: ['has', 'point_count'], paint: { 'circle-color': '#d8a847', 'circle-radius': ['step', ['get', 'point_count'], 18, 8, 24, 18, 31], 'circle-opacity': 0.78, 'circle-stroke-color': '#fff0bf', 'circle-stroke-width': 1.2, 'circle-stroke-opacity': 0.72 } });
+          map.addLayer({ id: CLUSTER_COUNT_LAYER_ID, type: 'symbol', source: EVENT_SOURCE_ID, filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-size': 12, 'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'] }, paint: { 'text-color': '#120c05' } });
+          map.addLayer({ id: POINT_HALO_LAYER_ID, type: 'circle', source: EVENT_SOURCE_ID, filter: ['!', ['has', 'point_count']], paint: { 'circle-color': '#ffd36d', 'circle-radius': 11, 'circle-opacity': 0.16, 'circle-blur': 0.6 } });
+          map.addLayer({ id: POINT_LAYER_ID, type: 'circle', source: EVENT_SOURCE_ID, filter: ['!', ['has', 'point_count']], paint: { 'circle-color': '#f4bd4f', 'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 5, 9, 8, 12, 11], 'circle-stroke-color': '#fff1c8', 'circle-stroke-width': 1.4, 'circle-opacity': 0.95 } });
+          map.addLayer({ id: SELECTED_LAYER_ID, type: 'circle', source: EVENT_SOURCE_ID, filter: ['==', ['get', 'eventId'], ''], paint: { 'circle-color': '#fff2bd', 'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 12, 10, 18], 'circle-opacity': 0.32, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2, 'circle-stroke-opacity': 0.9 } });
+          map.addLayer({ id: HIGHLIGHT_LAYER_ID, type: 'circle', source: EVENT_SOURCE_ID, filter: ['==', ['get', 'eventId'], ''], paint: { 'circle-color': '#ffe08a', 'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 18, 10, 30], 'circle-opacity': 0.18, 'circle-stroke-color': '#ffefb4', 'circle-stroke-width': 2.4, 'circle-stroke-opacity': 0.9 } });
+        });
 
-    panViewByPixels(point.x - lastDragPoint.current.x, point.y - lastDragPoint.current.y);
-    lastDragPoint.current = point;
-  };
+        const updateReadout = () => {
+          const center = map.getCenter();
+          setCameraReadout(`center ${center.lat.toFixed(3)}, ${center.lng.toFixed(3)} · z${map.getZoom().toFixed(2)} · ${eventFeatures.features.length} GeoJSON features`);
+        };
+        map.on('moveend', updateReadout);
+        map.on('zoomend', updateReadout);
+        map.on('load', updateReadout);
 
-  const handleMapPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    activePointers.current.delete(event.pointerId);
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
+        map.on('click', CLUSTER_LAYER_ID, (event: MapLibreMapLayerMouseEvent) => {
+          const feature = event.features?.[0];
+          const clusterId = feature?.properties?.cluster_id;
+          if (typeof clusterId !== 'number' || !feature) return;
+          const source = map.getSource(EVENT_SOURCE_ID) as MapLibreSource;
+          source.getClusterExpansionZoom(clusterId).then((zoom) => {
+            const coordinates = feature.geometry.coordinates as [number, number];
+            map.easeTo({ center: coordinates, zoom: Math.min(zoom + 0.25, 12), duration: 650 });
+          });
+        });
 
-    if (activePointers.current.size === 1) {
-      lastDragPoint.current = Array.from(activePointers.current.values())[0] ?? null;
-      pinchState.current = null;
-      return;
-    }
+        map.on('click', POINT_LAYER_ID, (event: MapLibreMapLayerMouseEvent) => {
+          const eventId = getFeatureEventId(event.features?.[0]);
+          if (!eventId) return;
+          setSelectedId(eventId);
+        });
 
-    lastDragPoint.current = null;
-    pinchState.current = null;
-  };
+        [CLUSTER_LAYER_ID, POINT_LAYER_ID].forEach((layerId) => {
+          map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+          map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
+        });
 
-  const resetView = () => {
-    hasUserAdjustedView.current = false;
-    setView({
-      ...INITIAL_VIEW,
-      zoom: mapSize.width < 768 ? MOBILE_INITIAL_ZOOM : INITIAL_VIEW.zoom,
-    });
-  };
+        mapRef.current = map;
+      })
+      .catch((error: unknown) => setMapError(error instanceof Error ? error.message : 'MapLibre failed to load.'));
+
+    return () => {
+      cancelled = true;
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, [eventFeatures]);
+
+  useEffect(() => { updateFeatureFilters(); }, [updateFeatureFilters]);
 
   const selectExactMatch = () => {
     const exactIntent = resolveExactEventIntent(query);
-    if (!exactIntent || !mapEvents.some((event) => event.id === exactIntent.eventId)) return;
+    if (!exactIntent) return;
     const event = mapEvents.find((candidate) => candidate.id === exactIntent.eventId);
     if (!event) return;
-    hasUserAdjustedView.current = true;
     setSelectedId(event.id);
-    setView((current) => ({ ...current, centerLat: event.latitude, centerLng: event.longitude, zoom: Math.max(current.zoom, 2.4) }));
+    mapRef.current?.flyTo({ center: [event.longitude, event.latitude], zoom: Math.max(mapRef.current.getZoom(), 9.2), duration: 1100, essential: true });
   };
 
   return (
     <div className="geospatialTestShell" style={styles.pageShell}>
-      <section className="geospatialTestAudit" style={styles.auditPanel} aria-label="Coordinate and marker audit summary">
+      <section className="geospatialTestAudit" style={styles.auditPanel} aria-label="MapLibre geospatial audit summary">
         <p style={styles.kicker}>Diagnostic audit result</p>
-        <h1 className="geospatialTestTitle" style={styles.title}>Geospatial map test — isolated real-coordinate prototype</h1>
+        <h1 className="geospatialTestTitle" style={styles.title}>Geospatial map test — MapLibre real-map prototype</h1>
         <ul className="geospatialTestAuditList" style={styles.auditList}>
-          <li>Reuses ATLAS_EVENTS latitude/longitude as the geographic source of truth.</li>
+          <li>Reuses ATLAS_EVENTS latitude/longitude as the GeoJSON source of truth.</li>
           <li>Reuses exact-event search resolution and safe event card derivation.</li>
-          <li>Does not import or alter the illustrated Michigan projection, marker calibration, clusters, or homepage card wiring.</li>
-          <li>Provides simple API-key-free pan and zoom with true lat/lon placement for a small first event set.</li>
+          <li>Does not import or alter AtlasMap, MICHIGAN_MAP_ANCHORS, latLngToAtlasPosition, or illustrated-map calibration.</li>
+          <li>Replaces temporary custom projection, manual pan, zoom, and pinch handling with MapLibre Web Mercator navigation.</li>
         </ul>
       </section>
 
-      <section className="geospatialTestMapPanel" style={styles.mapPanel} aria-label="Real-coordinate map prototype">
+      <section className="geospatialTestMapPanel" style={styles.mapPanel} aria-label="Real MapLibre map prototype">
         <div className="geospatialTestToolbar" style={styles.toolbar}>
-          <label style={styles.searchLabel}>
-            Search exact event
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Try Romeo Peach Festival"
-              style={styles.searchInput}
-            />
-          </label>
+          <label style={styles.searchLabel}>Search exact event<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Try Romeo Peach Festival" style={styles.searchInput} /></label>
           <button type="button" onClick={selectExactMatch} style={styles.controlButton}>Open exact match</button>
-          <button type="button" onClick={() => setZoom(view.zoom * 1.22)} style={styles.controlButton}>Zoom in</button>
-          <button type="button" onClick={() => setZoom(view.zoom / 1.22)} style={styles.controlButton}>Zoom out</button>
         </div>
-
         <div className="geospatialTestMapWrap" style={styles.mapWrap}>
-          <div
-            ref={mapCanvasRef}
-            className="geospatialTestMapCanvas"
-            onPointerDown={handleMapPointerDown}
-            onPointerMove={handleMapPointerMove}
-            onPointerUp={handleMapPointerEnd}
-            onPointerCancel={handleMapPointerEnd}
-            style={styles.mapCanvas}
-          >
-            <div style={styles.grid} aria-hidden="true" />
-            <div style={{ ...styles.stateHint, left: '49%', top: '49%' }} aria-hidden="true">Michigan</div>
-            {markers.map(({ event, point, isHighlighted }) => {
-              const isSelected = event.id === selectedId;
-              const isOutside = point.x < -24 || point.x > mapSize.width + 24 || point.y < -24 || point.y > mapSize.height + 24;
-              return (
-                <button
-                  key={event.id}
-                  type="button"
-                  aria-label={`Open ${event.name}`}
-                  onClick={() => setSelectedId(event.id)}
-                  style={{
-                    ...styles.marker,
-                    left: point.x,
-                    top: point.y,
-                    opacity: isOutside ? 0 : highlightedIds.size > 0 && !isHighlighted ? 0.28 : 1,
-                    transform: `translate(-50%, -50%) scale(${isSelected ? 1.35 : isHighlighted ? 1.18 : 1})`,
-                    boxShadow: isSelected
-                      ? '0 0 0 2px rgba(255,246,210,.9), 0 0 28px rgba(255,203,104,.85)'
-                      : isHighlighted
-                        ? '0 0 0 1px rgba(255,237,190,.75), 0 0 20px rgba(255,203,104,.7)'
-                        : '0 0 0 1px rgba(255,231,180,.45), 0 0 15px rgba(255,180,80,.42)',
-                  }}
-                >
-                  <span style={styles.markerDot} />
-                </button>
-              );
-            })}
-          </div>
-          <div style={styles.panPad} aria-label="Pan controls">
-            <button type="button" onClick={() => nudgeView(0.55, 0)} style={styles.panButton}>↑</button>
-            <button type="button" onClick={() => nudgeView(0, -0.7)} style={styles.panButton}>←</button>
-            <button type="button" onClick={resetView} style={styles.panButton}>•</button>
-            <button type="button" onClick={() => nudgeView(0, 0.7)} style={styles.panButton}>→</button>
-            <button type="button" onClick={() => nudgeView(-0.55, 0)} style={styles.panButton}>↓</button>
-          </div>
+          <div ref={mapNodeRef} className="geospatialTestMapCanvas" style={styles.mapCanvas} />
+          <p style={styles.diagnosticReadout}>{mapError ?? cameraReadout}</p>
         </div>
       </section>
 
@@ -307,30 +282,38 @@ export default function GeospatialMapTest() {
           {selectedCard.detailAction ? <Link href={selectedCard.detailAction.href} style={styles.cardLink}>{selectedCard.detailAction.label}</Link> : null}
         </aside>
       ) : null}
+      <style jsx global>{`
+        .geospatialTestMapCanvas .maplibregl-canvas { outline: none; }
+        @media (max-width: 720px) {
+          .geospatialTestShell { padding: 14px !important; overflow-x: hidden; }
+          .geospatialTestTitle { font-size: 25px !important; }
+          .geospatialTestAudit { padding: 16px !important; }
+          .geospatialTestAuditList { font-size: 13px !important; }
+          .geospatialTestMapPanel { padding: 10px !important; border-radius: 20px !important; }
+          .geospatialTestToolbar { display: grid !important; align-items: stretch !important; }
+          .geospatialTestMapCanvas { height: 66vh !important; min-height: 390px !important; }
+          .geospatialTestSelectedCard { max-width: none !important; }
+        }
+      `}</style>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  pageShell: { minHeight: '100vh', padding: '32px', color: '#f7e6c2', background: 'radial-gradient(circle at top, #1c2b3e 0, #080b12 62%)', display: 'grid', gap: 20 },
+  pageShell: { minHeight: '100vh', padding: '32px', color: '#f7e6c2', background: 'radial-gradient(circle at top, #1c2b3e 0, #080b12 62%)', display: 'grid', gap: 20, overflowX: 'hidden' },
   auditPanel: { maxWidth: 1100, border: '1px solid rgba(255,220,160,.22)', borderRadius: 24, padding: 24, background: 'rgba(9,13,22,.68)' },
   kicker: { margin: 0, color: 'rgba(255,213,149,.72)', fontSize: 12, letterSpacing: '.18em', textTransform: 'uppercase' },
   title: { margin: '8px 0 12px', fontSize: 34, lineHeight: 1.05 },
   auditList: { margin: 0, paddingLeft: 20, color: 'rgba(255,239,210,.8)', lineHeight: 1.6 },
-  mapPanel: { border: '1px solid rgba(255,220,160,.18)', borderRadius: 28, padding: 18, background: 'rgba(5,8,14,.58)', overflow: 'hidden' },
+  mapPanel: { border: '1px solid rgba(255,220,160,.18)', borderRadius: 28, padding: 18, background: 'rgba(5,8,14,.58)', overflow: 'hidden', maxWidth: '100%' },
   toolbar: { display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'end', marginBottom: 14 },
-  searchLabel: { display: 'grid', gap: 6, minWidth: 260, color: 'rgba(255,236,202,.76)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.12em' },
+  searchLabel: { display: 'grid', gap: 6, minWidth: 'min(260px, 100%)', color: 'rgba(255,236,202,.76)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.12em' },
   searchInput: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '11px 14px', background: 'rgba(0,0,0,.28)', color: '#fff2d8' },
   controlButton: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '11px 14px', background: 'rgba(255,205,120,.1)', color: '#ffe8bd', cursor: 'pointer' },
   mapWrap: { position: 'relative', width: '100%', overflow: 'hidden', borderRadius: 24, border: '1px solid rgba(255,255,255,.08)', overscrollBehavior: 'contain' },
-  mapCanvas: { position: 'relative', width: MAP_WIDTH, height: MAP_HEIGHT, background: 'linear-gradient(150deg, rgba(25,68,86,.9), rgba(32,67,45,.78) 45%, rgba(31,42,57,.92))', touchAction: 'none', userSelect: 'none' },
-  grid: { position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px)', backgroundSize: '80px 80px' },
-  stateHint: { position: 'absolute', transform: 'translate(-50%, -50%)', color: 'rgba(255,244,218,.14)', fontSize: 86, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' },
-  marker: { position: 'absolute', width: 22, height: 22, borderRadius: 999, border: 0, background: 'rgba(255,206,114,.24)', display: 'grid', placeItems: 'center', cursor: 'pointer', transition: 'transform 180ms ease, opacity 180ms ease, box-shadow 180ms ease' },
-  markerDot: { width: 8, height: 8, borderRadius: 999, background: '#fff1c9' },
-  panPad: { position: 'absolute', right: 16, bottom: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 38px)', gap: 6 },
-  panButton: { width: 38, height: 38, borderRadius: 12, border: '1px solid rgba(255,236,202,.22)', background: 'rgba(5,8,14,.78)', color: '#ffe8bd', cursor: 'pointer' },
-  card: { maxWidth: 520, border: '1px solid rgba(255,220,160,.24)', borderRadius: 24, padding: 22, background: 'rgba(8,11,18,.78)', boxShadow: '0 24px 50px rgba(0,0,0,.32)' },
+  mapCanvas: { width: '100%', height: 'min(72vh, 760px)', minHeight: 540, background: '#090d14' },
+  diagnosticReadout: { position: 'absolute', left: 12, bottom: 8, margin: 0, padding: '5px 8px', borderRadius: 999, background: 'rgba(4,7,12,.62)', color: 'rgba(255,238,205,.62)', fontSize: 11, pointerEvents: 'none' },
+  card: { maxWidth: 560, border: '1px solid rgba(255,220,160,.24)', borderRadius: 24, padding: 22, background: 'rgba(8,11,18,.78)', boxShadow: '0 24px 50px rgba(0,0,0,.32)' },
   cardTitle: { margin: '8px 0 6px', fontSize: 26 },
   cardMeta: { margin: 0, color: 'rgba(255,230,190,.68)' },
   cardBody: { color: 'rgba(255,244,224,.84)', lineHeight: 1.55 },
