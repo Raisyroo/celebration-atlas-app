@@ -33,13 +33,14 @@ type MapLibreMap = {
   getSource: (sourceId: string) => MapLibreSource;
   getZoom: () => number;
   isStyleLoaded: () => boolean;
-  on: (eventName: string, layerOrListener: string | ((event?: MapLibreMapLayerMouseEvent) => void), listener?: (event: MapLibreMapLayerMouseEvent) => void) => void;
+  on: (eventName: string, layerOrListener: string | ((event?: MapLibreMapLayerMouseEvent | MapLibreErrorEvent) => void), listener?: (event: MapLibreMapLayerMouseEvent) => void) => void;
   remove: () => void;
   setFilter: (layerId: string, filter: unknown[]) => void;
   setPaintProperty: (layerId: string, property: string, value: unknown) => void;
   touchZoomRotate: { disableRotation: () => void };
 };
 type MapLibreApi = {
+  supported?: (options?: Record<string, unknown>) => boolean;
   AttributionControl: new (options?: Record<string, unknown>) => unknown;
   Map: new (options: Record<string, unknown>) => MapLibreMap;
   NavigationControl: new (options?: Record<string, unknown>) => unknown;
@@ -47,6 +48,12 @@ type MapLibreApi = {
 type MapLibreMapLayerMouseEvent = {
   features?: MapFeature[];
 };
+type MapLibreErrorEvent = {
+  error?: { message?: string; status?: number; statusText?: string; url?: string } | Error;
+  sourceId?: string;
+  tile?: { tileID?: { canonical?: { z?: number; x?: number; y?: number } } };
+};
+type DiagnosticState = { phase: string; detail: string; level?: 'info' | 'error' };
 
 const MAPLIBRE_CSS_HREF = 'https://unpkg.com/maplibre-gl@5.10.0/dist/maplibre-gl.css';
 const MAPLIBRE_SCRIPT_SRC = 'https://unpkg.com/maplibre-gl@5.10.0/dist/maplibre-gl.js';
@@ -61,6 +68,8 @@ const HIGHLIGHT_LAYER_ID = 'atlas-event-highlight-point';
 const MICHIGAN_BOUNDS: [[number, number], [number, number]] = [[-91, 41.45], [-81.3, 48.4]];
 const INITIAL_CENTER: [number, number] = [-85.2, 44.3];
 const INITIAL_ZOOM = 5.55;
+const LOAD_TIMEOUT_MS = 15000;
+const CONTAINER_TIMEOUT_MS = 6000;
 
 const mapEvents = ATLAS_EVENTS.filter(
   (event) => Number.isFinite(event.latitude) && Number.isFinite(event.longitude),
@@ -84,33 +93,91 @@ function buildEventFeatureCollection(events: AtlasEvent[]): EventFeatureCollecti
   return { type: 'FeatureCollection', features: events.map(toEventFeature) };
 }
 
-function ensureMapLibreStylesheet() {
-  if (document.querySelector(`link[href="${MAPLIBRE_CSS_HREF}"]`)) return;
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = MAPLIBRE_CSS_HREF;
-  document.head.appendChild(link);
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeoutId: number | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms.`)), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  });
+}
+
+function ensureMapLibreStylesheet(): Promise<void> {
+  const existing = document.querySelector<HTMLLinkElement>(`link[href="${MAPLIBRE_CSS_HREF}"]`);
+  if (existing) {
+    if (existing.sheet) return Promise.resolve();
+    return withTimeout(new Promise((resolve, reject) => {
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error(`MapLibre stylesheet failed to load: ${MAPLIBRE_CSS_HREF}`)), { once: true });
+    }), LOAD_TIMEOUT_MS, 'MapLibre stylesheet load');
+  }
+
+  return withTimeout(new Promise((resolve, reject) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = MAPLIBRE_CSS_HREF;
+    link.crossOrigin = 'anonymous';
+    link.onload = () => resolve();
+    link.onerror = () => reject(new Error(`MapLibre stylesheet failed to load: ${MAPLIBRE_CSS_HREF}`));
+    document.head.appendChild(link);
+  }), LOAD_TIMEOUT_MS, 'MapLibre stylesheet load');
 }
 
 function loadMapLibre(): Promise<MapLibreApi> {
   const existing = window.maplibregl;
   if (existing) return Promise.resolve(existing as MapLibreApi);
 
-  return new Promise((resolve, reject) => {
+  return withTimeout(new Promise((resolve, reject) => {
+    const finish = () => {
+      if (window.maplibregl) resolve(window.maplibregl as MapLibreApi);
+      else reject(new Error('MapLibre script loaded, but window.maplibregl is unavailable.'));
+    };
     const currentScript = document.querySelector<HTMLScriptElement>(`script[src="${MAPLIBRE_SCRIPT_SRC}"]`);
     if (currentScript) {
-      currentScript.addEventListener('load', () => window.maplibregl ? resolve(window.maplibregl as MapLibreApi) : reject(new Error('MapLibre did not initialize.')), { once: true });
-      currentScript.addEventListener('error', () => reject(new Error('MapLibre script failed to load.')), { once: true });
+      currentScript.addEventListener('load', finish, { once: true });
+      currentScript.addEventListener('error', () => reject(new Error(`MapLibre script failed to load: ${MAPLIBRE_SCRIPT_SRC}`)), { once: true });
       return;
     }
 
     const script = document.createElement('script');
     script.src = MAPLIBRE_SCRIPT_SRC;
-    script.async = true;
-    script.onload = () => window.maplibregl ? resolve(window.maplibregl as MapLibreApi) : reject(new Error('MapLibre did not initialize.'));
-    script.onerror = () => reject(new Error('MapLibre script failed to load.'));
+    script.async = false;
+    script.defer = true;
+    script.crossOrigin = 'anonymous';
+    script.onload = finish;
+    script.onerror = () => reject(new Error(`MapLibre script failed to load: ${MAPLIBRE_SCRIPT_SRC}`));
     document.head.appendChild(script);
-  });
+  }), LOAD_TIMEOUT_MS, 'MapLibre script load');
+}
+
+function waitForMeasuredContainer(node: HTMLDivElement, onDiagnostic: (state: DiagnosticState) => void): Promise<DOMRectReadOnly> {
+  const current = node.getBoundingClientRect();
+  if (current.width > 0 && current.height > 0) return Promise.resolve(current);
+
+  onDiagnostic({ phase: 'container', detail: 'Waiting for map container to report a non-zero width and height.' });
+  return withTimeout(new Promise((resolve) => {
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect ?? node.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        observer.disconnect();
+        resolve(rect);
+      }
+    });
+    observer.observe(node);
+  }), CONTAINER_TIMEOUT_MS, 'Map container measurement');
+}
+
+function describeMapLibreError(event?: MapLibreMapLayerMouseEvent | MapLibreErrorEvent) {
+  const mapErrorEvent = event as MapLibreErrorEvent | undefined;
+  const error = mapErrorEvent?.error;
+  const message = error instanceof Error ? error.message : error?.message;
+  const status = !(error instanceof Error) && error?.status ? ` (${error.status}${error.statusText ? ` ${error.statusText}` : ''})` : '';
+  const url = !(error instanceof Error) && error?.url ? ` · ${error.url}` : '';
+  const tile = mapErrorEvent?.tile?.tileID?.canonical;
+  const tileLabel = tile ? ` · tile z${tile.z}/${tile.x}/${tile.y}` : '';
+  const source = mapErrorEvent?.sourceId ? ` · source ${mapErrorEvent.sourceId}` : '';
+  return `${message || 'MapLibre emitted an unknown map/style/tile error.'}${status}${source}${tileLabel}${url}`;
 }
 
 function getFeatureEventId(feature: MapFeature | undefined) {
@@ -122,6 +189,8 @@ export default function GeospatialMapTest() {
   const [selectedId, setSelectedId] = useState<string | null>(mapEvents[0]?.id ?? null);
   const [query, setQuery] = useState('');
   const [mapError, setMapError] = useState<string | null>(null);
+  const [diagnostic, setDiagnostic] = useState<DiagnosticState>({ phase: 'idle', detail: 'loading MapLibre camera…' });
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [cameraReadout, setCameraReadout] = useState('loading MapLibre camera…');
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -158,11 +227,25 @@ export default function GeospatialMapTest() {
 
   useEffect(() => {
     let cancelled = false;
-    ensureMapLibreStylesheet();
-    loadMapLibre()
-      .then((maplibregl) => {
-        if (cancelled || !mapNodeRef.current || mapRef.current) return;
-        const map = new maplibregl.Map({
+    window.queueMicrotask(() => {
+      if (cancelled) return;
+      setMapError(null);
+      setDiagnostic({ phase: 'assets', detail: 'Requesting MapLibre script and stylesheet.' });
+    });
+    Promise.all([ensureMapLibreStylesheet(), loadMapLibre()])
+      .then(([, maplibregl]) => {
+        if (cancelled || !mapNodeRef.current || mapRef.current) return null;
+        setDiagnostic({ phase: 'script', detail: 'MapLibre script and stylesheet loaded; waiting for measured map frame.' });
+        if (maplibregl.supported && !maplibregl.supported()) throw new Error('MapLibre reports this browser does not support the required WebGL features.');
+        return waitForMeasuredContainer(mapNodeRef.current, setDiagnostic).then((rect) => ({ maplibregl, rect }));
+      })
+      .then((ready) => {
+        if (!ready || cancelled || !mapNodeRef.current || mapRef.current) return;
+        const { maplibregl, rect } = ready;
+        setDiagnostic({ phase: 'constructor', detail: `Creating MapLibre map in ${Math.round(rect.width)}×${Math.round(rect.height)} frame.` });
+        let map: MapLibreMap;
+        try {
+          map = new maplibregl.Map({
           container: mapNodeRef.current,
           style: DEVELOPMENT_BASEMAP_STYLE,
           center: INITIAL_CENTER,
@@ -172,13 +255,26 @@ export default function GeospatialMapTest() {
           maxBounds: MICHIGAN_BOUNDS,
           attributionControl: false,
         });
+        } catch (error) {
+          throw new Error(`MapLibre constructor error: ${error instanceof Error ? error.message : 'unknown constructor failure'}`);
+        }
+
+        setDiagnostic({ phase: 'style', detail: `Map created; requesting CARTO basemap style ${DEVELOPMENT_BASEMAP_STYLE}.` });
 
         map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
         map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
         map.dragRotate.disable();
         map.touchZoomRotate.disableRotation();
 
+        map.on('error', (event) => {
+          const message = describeMapLibreError(event);
+          setMapError(`MapLibre style/tile network error: ${message}`);
+          setDiagnostic({ phase: 'map-error', detail: message, level: 'error' });
+        });
+
         map.on('load', () => {
+          setMapError(null);
+          setDiagnostic({ phase: 'loaded', detail: 'CARTO basemap style loaded; adding Celebration Atlas GeoJSON layers.' });
           map.addSource(EVENT_SOURCE_ID, {
             type: 'geojson',
             data: eventFeatures,
@@ -228,16 +324,27 @@ export default function GeospatialMapTest() {
 
         mapRef.current = map;
       })
-      .catch((error: unknown) => setMapError(error instanceof Error ? error.message : 'MapLibre failed to load.'));
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : 'MapLibre failed to load.';
+        setMapError(message);
+        setDiagnostic({ phase: 'failed', detail: message, level: 'error' });
+      });
 
     return () => {
       cancelled = true;
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [eventFeatures]);
+  }, [eventFeatures, loadAttempt]);
 
   useEffect(() => { updateFeatureFilters(); }, [updateFeatureFilters]);
+
+  const retryMapLoad = () => {
+    mapRef.current?.remove();
+    mapRef.current = null;
+    setCameraReadout('loading MapLibre camera…');
+    setLoadAttempt((attempt) => attempt + 1);
+  };
 
   const selectExactMatch = () => {
     const exactIntent = resolveExactEventIntent(query);
@@ -268,7 +375,11 @@ export default function GeospatialMapTest() {
         </div>
         <div className="geospatialTestMapWrap" style={styles.mapWrap}>
           <div ref={mapNodeRef} className="geospatialTestMapCanvas" style={styles.mapCanvas} />
-          <p style={styles.diagnosticReadout}>{mapError ?? cameraReadout}</p>
+          <div style={mapError ? styles.diagnosticErrorPanel : styles.diagnosticReadout}>
+            <p style={styles.diagnosticLine}>{mapError ?? cameraReadout}</p>
+            <p style={styles.diagnosticLine}>Phase: {diagnostic.phase} · {diagnostic.detail}</p>
+            {mapError ? <button type="button" onClick={retryMapLoad} style={styles.retryButton}>Retry MapLibre load</button> : null}
+          </div>
         </div>
       </section>
 
@@ -312,7 +423,10 @@ const styles: Record<string, React.CSSProperties> = {
   controlButton: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '11px 14px', background: 'rgba(255,205,120,.1)', color: '#ffe8bd', cursor: 'pointer' },
   mapWrap: { position: 'relative', width: '100%', overflow: 'hidden', borderRadius: 24, border: '1px solid rgba(255,255,255,.08)', overscrollBehavior: 'contain' },
   mapCanvas: { width: '100%', height: 'min(72vh, 760px)', minHeight: 540, background: '#090d14' },
-  diagnosticReadout: { position: 'absolute', left: 12, bottom: 8, margin: 0, padding: '5px 8px', borderRadius: 999, background: 'rgba(4,7,12,.62)', color: 'rgba(255,238,205,.62)', fontSize: 11, pointerEvents: 'none' },
+  diagnosticReadout: { position: 'absolute', left: 12, right: 12, bottom: 8, margin: 0, padding: '5px 8px', borderRadius: 14, background: 'rgba(4,7,12,.62)', color: 'rgba(255,238,205,.72)', fontSize: 11, pointerEvents: 'none' },
+  diagnosticErrorPanel: { position: 'absolute', left: 12, right: 12, bottom: 8, margin: 0, padding: '10px 12px', borderRadius: 14, border: '1px solid rgba(255,118,118,.45)', background: 'rgba(45,9,12,.86)', color: '#ffe1d6', fontSize: 12, pointerEvents: 'auto', boxShadow: '0 14px 34px rgba(0,0,0,.35)' },
+  diagnosticLine: { margin: '0 0 4px' },
+  retryButton: { marginTop: 6, border: '1px solid rgba(255,230,190,.45)', borderRadius: 999, padding: '7px 11px', background: 'rgba(255,255,255,.08)', color: '#fff2d8', cursor: 'pointer' },
   card: { maxWidth: 560, border: '1px solid rgba(255,220,160,.24)', borderRadius: 24, padding: 22, background: 'rgba(8,11,18,.78)', boxShadow: '0 24px 50px rgba(0,0,0,.32)' },
   cardTitle: { margin: '8px 0 6px', fontSize: 26 },
   cardMeta: { margin: 0, color: 'rgba(255,230,190,.68)' },
