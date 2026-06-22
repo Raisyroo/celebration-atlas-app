@@ -8,10 +8,12 @@ import { searchEventProfiles } from '../../../data/eventProfiles';
 import { resolveExactEventIntent } from '../../../data/exactEventIntent';
 
 type ViewState = { centerLat: number; centerLng: number; zoom: number };
+type MapSize = { width: number; height: number };
 type PointerPoint = { x: number; y: number };
 type PinchState = { distance: number; zoom: number } | null;
 
 const INITIAL_VIEW: ViewState = { centerLat: 44.3, centerLng: -85.2, zoom: 1.1 };
+const MOBILE_INITIAL_ZOOM = 1.65;
 const MIN_ZOOM = 0.75;
 const MAX_ZOOM = 7;
 const MAP_WIDTH = 1000;
@@ -36,13 +38,14 @@ function projectLatLngToViewport(
   latitude: number,
   longitude: number,
   view: ViewState,
+  mapSize: MapSize,
 ) {
   const latitudeScale = Math.cos((view.centerLat * Math.PI) / 180) || 1;
   const pixelsPerDegree = DEGREE_SCALE * view.zoom;
 
   return {
-    x: MAP_WIDTH / 2 + (longitude - view.centerLng) * pixelsPerDegree * latitudeScale,
-    y: MAP_HEIGHT / 2 - (latitude - view.centerLat) * pixelsPerDegree,
+    x: mapSize.width / 2 + (longitude - view.centerLng) * pixelsPerDegree * latitudeScale,
+    y: mapSize.height / 2 - (latitude - view.centerLat) * pixelsPerDegree,
   };
 }
 
@@ -50,9 +53,36 @@ export default function GeospatialMapTest() {
   const [view, setView] = useState<ViewState>(INITIAL_VIEW);
   const [selectedId, setSelectedId] = useState<string | null>(mapEvents[0]?.id ?? null);
   const [query, setQuery] = useState('');
+  const [mapSize, setMapSize] = useState<MapSize>({ width: MAP_WIDTH, height: MAP_HEIGHT });
+  const mapCanvasRef = useRef<HTMLDivElement | null>(null);
+  const hasUserAdjustedView = useRef(false);
   const activePointers = useRef(new Map<number, PointerPoint>());
   const lastDragPoint = useRef<PointerPoint | null>(null);
   const pinchState = useRef<PinchState>(null);
+
+  useEffect(() => {
+    const canvas = mapCanvasRef.current;
+    if (!canvas) return undefined;
+
+    const updateMapSize = () => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      setMapSize({ width: rect.width, height: rect.height });
+      if (rect.width < 768 && !hasUserAdjustedView.current) {
+        setView((current) => ({ ...current, zoom: Math.max(current.zoom, MOBILE_INITIAL_ZOOM) }));
+      }
+    };
+
+    updateMapSize();
+    const resizeObserver = new ResizeObserver(updateMapSize);
+    resizeObserver.observe(canvas);
+    window.addEventListener('orientationchange', updateMapSize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('orientationchange', updateMapSize);
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.add('dev-geospatial-map-scroll');
@@ -79,11 +109,12 @@ export default function GeospatialMapTest() {
 
   const markers = mapEvents.map((event) => ({
     event,
-    point: projectLatLngToViewport(event.latitude, event.longitude, view),
+    point: projectLatLngToViewport(event.latitude, event.longitude, view, mapSize),
     isHighlighted: highlightedIds.has(event.id),
   }));
 
   const nudgeView = (deltaLat: number, deltaLng: number) => {
+    hasUserAdjustedView.current = true;
     setView((current) => ({
       ...current,
       centerLat: clamp(current.centerLat + deltaLat / current.zoom, 41.5, 47.8),
@@ -92,10 +123,12 @@ export default function GeospatialMapTest() {
   };
 
   const setZoom = (nextZoom: number) => {
+    hasUserAdjustedView.current = true;
     setView((current) => ({ ...current, zoom: clamp(nextZoom, MIN_ZOOM, MAX_ZOOM) }));
   };
 
   const panViewByPixels = (deltaX: number, deltaY: number) => {
+    hasUserAdjustedView.current = true;
     setView((current) => {
       const latitudeScale = Math.cos((current.centerLat * Math.PI) / 180) || 1;
       const pixelsPerDegree = DEGREE_SCALE * current.zoom;
@@ -168,11 +201,20 @@ export default function GeospatialMapTest() {
     pinchState.current = null;
   };
 
+  const resetView = () => {
+    hasUserAdjustedView.current = false;
+    setView({
+      ...INITIAL_VIEW,
+      zoom: mapSize.width < 768 ? MOBILE_INITIAL_ZOOM : INITIAL_VIEW.zoom,
+    });
+  };
+
   const selectExactMatch = () => {
     const exactIntent = resolveExactEventIntent(query);
     if (!exactIntent || !mapEvents.some((event) => event.id === exactIntent.eventId)) return;
     const event = mapEvents.find((candidate) => candidate.id === exactIntent.eventId);
     if (!event) return;
+    hasUserAdjustedView.current = true;
     setSelectedId(event.id);
     setView((current) => ({ ...current, centerLat: event.latitude, centerLng: event.longitude, zoom: Math.max(current.zoom, 2.4) }));
   };
@@ -208,6 +250,7 @@ export default function GeospatialMapTest() {
 
         <div className="geospatialTestMapWrap" style={styles.mapWrap}>
           <div
+            ref={mapCanvasRef}
             className="geospatialTestMapCanvas"
             onPointerDown={handleMapPointerDown}
             onPointerMove={handleMapPointerMove}
@@ -219,7 +262,7 @@ export default function GeospatialMapTest() {
             <div style={{ ...styles.stateHint, left: '49%', top: '49%' }} aria-hidden="true">Michigan</div>
             {markers.map(({ event, point, isHighlighted }) => {
               const isSelected = event.id === selectedId;
-              const isOutside = point.x < -24 || point.x > MAP_WIDTH + 24 || point.y < -24 || point.y > MAP_HEIGHT + 24;
+              const isOutside = point.x < -24 || point.x > mapSize.width + 24 || point.y < -24 || point.y > mapSize.height + 24;
               return (
                 <button
                   key={event.id}
@@ -247,7 +290,7 @@ export default function GeospatialMapTest() {
           <div style={styles.panPad} aria-label="Pan controls">
             <button type="button" onClick={() => nudgeView(0.55, 0)} style={styles.panButton}>↑</button>
             <button type="button" onClick={() => nudgeView(0, -0.7)} style={styles.panButton}>←</button>
-            <button type="button" onClick={() => setView(INITIAL_VIEW)} style={styles.panButton}>•</button>
+            <button type="button" onClick={resetView} style={styles.panButton}>•</button>
             <button type="button" onClick={() => nudgeView(0, 0.7)} style={styles.panButton}>→</button>
             <button type="button" onClick={() => nudgeView(-0.55, 0)} style={styles.panButton}>↓</button>
           </div>
@@ -255,7 +298,7 @@ export default function GeospatialMapTest() {
       </section>
 
       {selectedEvent && selectedCard ? (
-        <aside style={styles.card} aria-label="Selected event card">
+        <aside className="geospatialTestSelectedCard" style={styles.card} aria-label="Selected event card">
           <p style={styles.kicker}>Selected event</p>
           <h2 style={styles.cardTitle}>{selectedCard.name}</h2>
           <p style={styles.cardMeta}>{selectedCard.location} · {selectedEvent.latitude.toFixed(4)}, {selectedEvent.longitude.toFixed(4)}</p>
@@ -279,7 +322,7 @@ const styles: Record<string, React.CSSProperties> = {
   searchLabel: { display: 'grid', gap: 6, minWidth: 260, color: 'rgba(255,236,202,.76)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.12em' },
   searchInput: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '11px 14px', background: 'rgba(0,0,0,.28)', color: '#fff2d8' },
   controlButton: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '11px 14px', background: 'rgba(255,205,120,.1)', color: '#ffe8bd', cursor: 'pointer' },
-  mapWrap: { position: 'relative', width: '100%', overflowX: 'auto', overflowY: 'hidden', borderRadius: 24, border: '1px solid rgba(255,255,255,.08)', overscrollBehaviorX: 'contain' },
+  mapWrap: { position: 'relative', width: '100%', overflow: 'hidden', borderRadius: 24, border: '1px solid rgba(255,255,255,.08)', overscrollBehavior: 'contain' },
   mapCanvas: { position: 'relative', width: MAP_WIDTH, height: MAP_HEIGHT, background: 'linear-gradient(150deg, rgba(25,68,86,.9), rgba(32,67,45,.78) 45%, rgba(31,42,57,.92))', touchAction: 'none', userSelect: 'none' },
   grid: { position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px)', backgroundSize: '80px 80px' },
   stateHint: { position: 'absolute', transform: 'translate(-50%, -50%)', color: 'rgba(255,244,218,.14)', fontSize: 86, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' },

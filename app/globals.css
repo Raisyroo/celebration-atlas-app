@@ -760,21 +760,57 @@ body.dev-geospatial-map-scroll::-webkit-scrollbar {
   }
 
   .geospatialTestToolbar {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px !important;
     margin-bottom: 10px !important;
   }
 
   .geospatialTestToolbar label {
-    min-width: min(100%, 15rem) !important;
-    flex: 1 1 100%;
+    min-width: 0 !important;
+    width: 100%;
+    grid-column: 1 / -1;
   }
 
   .geospatialTestToolbar button {
+    min-height: 44px;
     padding: 9px 11px !important;
     font-size: 0.78rem !important;
   }
 
   .geospatialTestMapWrap {
-    max-height: min(68svh, 620px);
+    max-height: none;
+    overflow: hidden !important;
+    overscroll-behavior: contain;
+    touch-action: none;
+  }
+
+  .geospatialTestMapCanvas {
+    width: 100% !important;
+    height: clamp(55svh, 62svh, 70svh) !important;
+    min-height: 390px;
+    max-height: 620px;
+    touch-action: none;
+  }
+
+  .geospatialTestMapCanvas button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .geospatialTestSelectedCard {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 16px !important;
+    border-radius: 18px !important;
+  }
+
+  .geospatialTestSelectedCard h2 {
+    font-size: 1.16rem !important;
+  }
+
+  .geospatialTestSelectedCard p {
+    margin-top: 8px !important;
+    margin-bottom: 0 !important;
   }
 }
