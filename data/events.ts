@@ -39,6 +39,7 @@ export type AtlasEvent = {
     mediaType?: 'image' | 'video';
     mediaSrc?: string;
     posterSrc?: string;
+    flyerSrc?: string;
     atmosphereTitle?: string;
     mediaPosition?: string;
     mediaScale?: number;
@@ -108,6 +109,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     cardMedia: {
       mediaType: 'video',
       mediaSrc: '/event-media/romeo-peach-loop.mp4',
+      flyerSrc: '/event-media/flyers/romeo-peach-festival-flyer.png',
       atmosphereTitle: 'First Peach Queen',
       mediaPosition: '43% 18%',
       mediaScale: 1,

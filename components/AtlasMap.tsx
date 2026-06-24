@@ -1304,9 +1304,10 @@ export default function AtlasMap({
     ? getEventThumbnail(renderedEvent)
     : null;
   const largeCardBackgroundImageSrc =
-    largeCardThumbnail?.kind === 'image'
+    selectedMedia?.flyerSrc ??
+    (largeCardThumbnail?.kind === 'image'
       ? largeCardThumbnail.src
-      : selectedMedia?.posterSrc ?? selectedMedia?.mediaSrc;
+      : selectedMedia?.posterSrc ?? selectedMedia?.mediaSrc);
   const hasCardMedia = Boolean(selectedMedia || largeCardBackgroundImageSrc);
   const hasCardMediaSource = Boolean(largeCardBackgroundImageSrc);
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
