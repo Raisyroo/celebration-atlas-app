@@ -304,6 +304,10 @@ body.atlas-story-card-open {
     display: none;
   }
 
+  .atlas-card.atlas-card--flyer .atlas-card-media > img {
+    display: block;
+  }
+
   .atlas-card .atlas-card-content {
     box-sizing: border-box;
     width: 100%;
