@@ -7,10 +7,12 @@ export type SafeAtlasEventCard = {
   location: AtlasEvent['location'];
   category: AtlasEvent['category'];
   cardTag?: AtlasEvent['cardTag'];
+  flyerSrc?: AtlasEvent['flyerSrc'];
   description: AtlasEvent['blurb'];
   atmosphereLabel: string;
   media?: {
     mediaType?: NonNullable<AtlasEvent['cardMedia']>['mediaType'];
+    flyerSrc?: NonNullable<AtlasEvent['flyerSrc']>;
     mediaSrc?: NonNullable<AtlasEvent['cardMedia']>['mediaSrc'];
     posterSrc?: NonNullable<AtlasEvent['cardMedia']>['posterSrc'];
     atmosphereTitle?: NonNullable<AtlasEvent['cardMedia']>['atmosphereTitle'];
@@ -29,8 +31,18 @@ export type SafeAtlasEventCard = {
 
 export function deriveSafeAtlasEventCard(event: AtlasEvent): SafeAtlasEventCard {
   const explicitThumbnail = resolveExplicitEventThumbnail(event);
-  const media = explicitThumbnail
+  const media = event.flyerSrc
     ? {
+        mediaType: 'image' as const,
+        flyerSrc: event.flyerSrc,
+        mediaSrc: event.flyerSrc,
+        mediaPosition: event.cardMedia?.mediaPosition,
+        mediaScale: event.cardMedia?.mediaScale,
+        mediaDelayMs: event.cardMedia?.mediaDelayMs,
+        mediaFadeDurationMs: event.cardMedia?.mediaFadeDurationMs,
+      }
+    : explicitThumbnail
+      ? {
         mediaType: 'image' as const,
         mediaSrc: explicitThumbnail.path,
         mediaPosition: event.cardMedia?.mediaPosition,
@@ -58,6 +70,7 @@ export function deriveSafeAtlasEventCard(event: AtlasEvent): SafeAtlasEventCard 
     location: event.location,
     category: event.category,
     cardTag: event.cardTag,
+    flyerSrc: event.flyerSrc,
     description: event.blurb,
     atmosphereLabel: event.cardMedia?.atmosphereTitle ?? event.atmosphereLabel,
     media,

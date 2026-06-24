@@ -1304,11 +1304,13 @@ export default function AtlasMap({
     ? getEventThumbnail(renderedEvent)
     : null;
   const largeCardBackgroundImageSrc =
-    largeCardThumbnail?.kind === 'image'
-      ? largeCardThumbnail.src
-      : selectedMedia?.posterSrc ?? selectedMedia?.mediaSrc;
+    selectedMedia?.flyerSrc ??
+    selectedMedia?.posterSrc ??
+    selectedMedia?.mediaSrc ??
+    (largeCardThumbnail?.kind === 'image' ? largeCardThumbnail.src : undefined);
   const hasCardMedia = Boolean(selectedMedia || largeCardBackgroundImageSrc);
   const hasCardMediaSource = Boolean(largeCardBackgroundImageSrc);
+  const isFlyerCard = Boolean(selectedMedia?.flyerSrc);
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
   const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
   const fullCardBriefing = renderedEvent?.fullCardBriefing;
@@ -2572,12 +2574,13 @@ export default function AtlasMap({
       {!shouldShowCalibration && !isVerificationMode && renderedEvent && safeEventCard ? (
         <article
           ref={cardRef}
-          className="atlas-card"
+          className={`atlas-card${isFlyerCard ? ' atlas-card--flyer' : ''}`}
           style={{
             ...styles.card,
+            ...(isFlyerCard ? styles.flyerCard : null),
             borderColor: cardTheme.edge,
             boxShadow: `inset 0 0 0 1px rgba(255,241,203,.08), 0 0 18px ${cardTheme.glow}, 0 16px 36px rgba(0,0,0,.32)`,
-            background: 'rgba(7,10,15,.24)',
+            background: isFlyerCard ? 'rgba(7,10,15,.88)' : 'rgba(7,10,15,.24)',
             opacity: isCardVisible ? 1 : 0,
             transform: isCardVisible
               ? 'translateY(var(--atlas-card-open-y, 0px))'
@@ -2601,38 +2604,46 @@ export default function AtlasMap({
               className="atlas-card-media"
               style={{
                 ...styles.cardMediaWrap,
-                backgroundImage: `url(${largeCardBackgroundImageSrc})`,
+                ...(isFlyerCard ? styles.flyerCardMediaWrap : null),
+                backgroundImage: isFlyerCard
+                  ? 'none'
+                  : `url(${largeCardBackgroundImageSrc})`,
                 backgroundPosition:
                   selectedMedia?.mediaPosition ??
                   styles.cardMediaLayer.objectPosition,
-                backgroundSize: 'cover',
+                backgroundSize: isFlyerCard ? 'contain' : 'cover',
                 opacity: isCardMediaVisible ? 1 : 0,
                 transitionDuration: `${mediaFadeDurationMs}ms`,
               }}
-              aria-hidden="true"
+              aria-hidden={isFlyerCard ? undefined : true}
             >
               <img
                 src={largeCardBackgroundImageSrc}
-                alt=""
+                alt={isFlyerCard ? `${safeEventCard.name} flyer` : ''}
                 style={{
                   ...styles.cardMediaLayer,
-                  objectPosition:
-                    selectedMedia?.mediaPosition ??
-                    styles.cardMediaLayer.objectPosition,
-                  transform: `scale(${selectedMedia?.mediaScale ?? 1})`,
+                  ...(isFlyerCard ? styles.flyerCardMediaLayer : null),
+                  objectPosition: isFlyerCard
+                    ? 'center center'
+                    : selectedMedia?.mediaPosition ??
+                      styles.cardMediaLayer.objectPosition,
+                  transform: isFlyerCard
+                    ? 'none'
+                    : `scale(${selectedMedia?.mediaScale ?? 1})`,
                 }}
               />
-              <span style={styles.cardMediaOverlay} aria-hidden="true" />
+              {isFlyerCard ? null : <span style={styles.cardMediaOverlay} aria-hidden="true" />}
             </div>
           ) : null}
-          <div
-            className={`atlas-card-content atlas-card-content--full-event${fullCardBriefing ? ' atlas-card-content--briefing' : ''}`}
-            style={fullCardBriefing ? styles.briefingCardContent : styles.cardContent}
-          >
+          {isFlyerCard ? null : (
             <div
-              className={`atlas-card-copy atlas-card-copy--full-event${fullCardBriefing ? ' atlas-card-copy--briefing' : ''}`}
-              style={fullCardBriefing ? styles.briefingCardCopy : undefined}
+              className={`atlas-card-content atlas-card-content--full-event${fullCardBriefing ? ' atlas-card-content--briefing' : ''}`}
+              style={fullCardBriefing ? styles.briefingCardContent : styles.cardContent}
             >
+              <div
+                className={`atlas-card-copy atlas-card-copy--full-event${fullCardBriefing ? ' atlas-card-copy--briefing' : ''}`}
+                style={fullCardBriefing ? styles.briefingCardCopy : undefined}
+              >
               <div
                 className="atlas-full-event-readability-scrim"
                 style={styles.fullEventReadabilityScrim}
@@ -2714,13 +2725,16 @@ export default function AtlasMap({
               )}
             </div>
           </div>
-          <span
-            style={{
-              ...styles.cardAtmosphereOrb,
-              boxShadow: `0 0 26px ${cardTheme.glow}, 0 0 50px ${cardTheme.wash}`,
-            }}
-            aria-hidden="true"
-          />
+          )}
+          {isFlyerCard ? null : (
+            <span
+              style={{
+                ...styles.cardAtmosphereOrb,
+                boxShadow: `0 0 26px ${cardTheme.glow}, 0 0 50px ${cardTheme.wash}`,
+              }}
+              aria-hidden="true"
+            />
+          )}
         </article>
       ) : null}
 
@@ -4004,6 +4018,13 @@ const styles: Record<string, CSSProperties> = {
     width: 'min(56vw, 820px)',
     bottom: '18vh',
   },
+  flyerCard: {
+    left: 12,
+    right: 'auto',
+    width: 'min(calc(100vw - 24px), 430px)',
+    height: 'min(72vh, 645px)',
+    background: 'rgba(7,10,15,.88)',
+  },
   cardMediaWrap: {
     position: 'absolute',
     inset: 0,
@@ -4023,6 +4044,16 @@ const styles: Record<string, CSSProperties> = {
     height: '100%',
     objectFit: 'cover',
     objectPosition: '43% 18%',
+  },
+  flyerCardMediaWrap: {
+    display: 'grid',
+    placeItems: 'center',
+    padding: 0,
+  },
+  flyerCardMediaLayer: {
+    position: 'relative',
+    objectFit: 'contain',
+    objectPosition: 'center center',
   },
   cardMediaOverlay: {
     position: 'absolute',

@@ -21,6 +21,7 @@ export type AtlasEvent = {
   blurb: string;
   category: AtlasCategory;
   cardTag?: string;
+  flyerSrc?: `/event-media/${string}`;
   x: number;
   y: number;
   atlasNotes?: string[];
@@ -97,6 +98,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     blurb: 'A hometown peach celebration with orchard charm, live performances, and summer food traditions.',
     category: 'Festivals',
     iconType: 'harvest',
+    flyerSrc: '/event-media/flyers/romeo-peach-festival.webp',
     x: 66,
     y: 40,
     atmosphere: atmosphere(['balloons'], 'subtle'),
