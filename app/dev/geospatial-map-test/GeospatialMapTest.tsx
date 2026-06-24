@@ -2,7 +2,7 @@
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import Link from 'next/link';
+import Image from 'next/image';
 import maplibregl from 'maplibre-gl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
@@ -50,7 +50,6 @@ type MapLibreErrorEvent = {
   sourceId?: string;
   tile?: { tileID?: { canonical?: { z?: number; x?: number; y?: number } } };
 };
-type DiagnosticState = { phase: string; detail: string; level?: 'info' | 'error' };
 
 const DEVELOPMENT_BASEMAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 const EVENT_SOURCE_ID = 'atlas-events';
@@ -103,12 +102,19 @@ function getFeatureEventId(feature: MapFeature | undefined) {
   return typeof eventId === 'string' ? eventId : null;
 }
 
+function formatEventDate(event: AtlasEvent) {
+  if (!event.dateRange?.startDate) return 'Date to be announced';
+  const formatter = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  const start = new Date(`${event.dateRange.startDate}T00:00:00Z`);
+  if (!event.dateRange.endDate || event.dateRange.endDate === event.dateRange.startDate) return formatter.format(start);
+  const end = new Date(`${event.dateRange.endDate}T00:00:00Z`);
+  return `${formatter.format(start)} – ${formatter.format(end)}`;
+}
+
 export default function GeospatialMapTest() {
-  const [selectedId, setSelectedId] = useState<string | null>(mapEvents[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [mapError, setMapError] = useState<string | null>(null);
-  const [diagnostic, setDiagnostic] = useState<DiagnosticState>({ phase: 'startup', detail: 'Preparing MapLibre initialization.' });
-  const [cameraReadout, setCameraReadout] = useState('loading MapLibre camera…');
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
 
@@ -129,6 +135,8 @@ export default function GeospatialMapTest() {
 
   const selectedEvent = mapEvents.find((event) => event.id === selectedId) ?? null;
   const selectedCard = selectedEvent ? deriveSafeAtlasEventCard(selectedEvent) : null;
+  const selectedDate = selectedEvent ? formatEventDate(selectedEvent) : null;
+  const visibleSearchResults = useMemo(() => Array.from(highlightedIds).map((id) => mapEvents.find((event) => event.id === id)).filter((event): event is AtlasEvent => Boolean(event)).slice(0, 6), [highlightedIds]);
 
   const updateFeatureFilters = useCallback(() => {
     const map = mapRef.current;
@@ -148,18 +156,15 @@ export default function GeospatialMapTest() {
 
     const initializeMap = () => {
       setMapError(null);
-      setDiagnostic({ phase: 'assets', detail: 'Using installed MapLibre package and stylesheet.' });
       try {
         if (cancelled || mapRef.current) return;
 
         const container = mapNodeRef.current;
         if (!container) {
-          setDiagnostic({ phase: 'container', detail: 'Map container ref was not ready; waiting for the next frame.' });
           frameId = window.requestAnimationFrame(initializeMap);
           return;
         }
 
-        setDiagnostic({ phase: 'constructor', detail: 'Creating MapLibre map.' });
         const map = new maplibregl.Map({
           container,
           style: DEVELOPMENT_BASEMAP_STYLE,
@@ -171,22 +176,18 @@ export default function GeospatialMapTest() {
           attributionControl: false,
         });
 
-        setDiagnostic({ phase: 'style', detail: `Map created; requesting CARTO basemap style ${DEVELOPMENT_BASEMAP_STYLE}.` });
-
         map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
         map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
         map.dragRotate.disable();
         map.touchZoomRotate.disableRotation();
 
-        map.on('error', (event) => {
+        map.on('error', (event: MapLibreMapLayerMouseEvent | MapLibreErrorEvent | undefined) => {
           const message = describeMapLibreError(event as MapLibreMapLayerMouseEvent | MapLibreErrorEvent | undefined);
           setMapError(`MapLibre style/tile network error: ${message}`);
-          setDiagnostic({ phase: 'map-error', detail: message, level: 'error' });
         });
 
         map.on('load', () => {
           setMapError(null);
-          setDiagnostic({ phase: 'loaded', detail: 'CARTO basemap style loaded; adding Celebration Atlas GeoJSON layers.' });
           map.addSource(EVENT_SOURCE_ID, {
             type: 'geojson',
             data: eventFeatures,
@@ -203,14 +204,6 @@ export default function GeospatialMapTest() {
           map.addLayer({ id: SELECTED_LAYER_ID, type: 'circle', source: EVENT_SOURCE_ID, filter: ['==', ['get', 'eventId'], ''], paint: { 'circle-color': '#fff2bd', 'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 12, 10, 18], 'circle-opacity': 0.32, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2, 'circle-stroke-opacity': 0.9 } });
           map.addLayer({ id: HIGHLIGHT_LAYER_ID, type: 'circle', source: EVENT_SOURCE_ID, filter: ['==', ['get', 'eventId'], ''], paint: { 'circle-color': '#ffe08a', 'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 18, 10, 30], 'circle-opacity': 0.18, 'circle-stroke-color': '#ffefb4', 'circle-stroke-width': 2.4, 'circle-stroke-opacity': 0.9 } });
         });
-
-        const updateReadout = () => {
-          const center = map.getCenter();
-          setCameraReadout(`center ${center.lat.toFixed(3)}, ${center.lng.toFixed(3)} · z${map.getZoom().toFixed(2)} · ${eventFeatures.features.length} GeoJSON features`);
-        };
-        map.on('moveend', updateReadout);
-        map.on('zoomend', updateReadout);
-        map.on('load', updateReadout);
 
         map.on('click', CLUSTER_LAYER_ID, (event: MapLibreMapLayerMouseEvent) => {
           const feature = event.features?.[0];
@@ -238,7 +231,6 @@ export default function GeospatialMapTest() {
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'MapLibre failed to initialize.';
         setMapError(message);
-        setDiagnostic({ phase: 'failed', detail: message, level: 'error' });
       }
     };
 
@@ -254,50 +246,83 @@ export default function GeospatialMapTest() {
 
   useEffect(() => { updateFeatureFilters(); }, [updateFeatureFilters]);
 
+  const selectEvent = useCallback((event: AtlasEvent, shouldFly = false) => {
+    setSelectedId(event.id);
+    if (shouldFly) {
+      mapRef.current?.flyTo({ center: [event.longitude, event.latitude], zoom: Math.max(mapRef.current.getZoom(), 9.2), duration: 1100, essential: true });
+    }
+  }, []);
+
+
+  const handleSearchChange = (value: string) => {
+    setQuery(value);
+    const exactIntent = resolveExactEventIntent(value);
+    const event = exactIntent ? mapEvents.find((candidate) => candidate.id === exactIntent.eventId) : null;
+    if (event) selectEvent(event, true);
+  };
+
   const selectExactMatch = () => {
     const exactIntent = resolveExactEventIntent(query);
     if (!exactIntent) return;
     const event = mapEvents.find((candidate) => candidate.id === exactIntent.eventId);
     if (!event) return;
-    setSelectedId(event.id);
-    mapRef.current?.flyTo({ center: [event.longitude, event.latitude], zoom: Math.max(mapRef.current.getZoom(), 9.2), duration: 1100, essential: true });
+    selectEvent(event, true);
   };
 
   return (
     <div className="geospatialTestShell" style={styles.pageShell}>
-      <section className="geospatialTestAudit" style={styles.auditPanel} aria-label="MapLibre geospatial audit summary">
-        <p style={styles.kicker}>Diagnostic audit result</p>
-        <h1 className="geospatialTestTitle" style={styles.title}>Geospatial map test — MapLibre real-map prototype</h1>
-        <ul className="geospatialTestAuditList" style={styles.auditList}>
-          <li>Reuses ATLAS_EVENTS latitude/longitude as the GeoJSON source of truth.</li>
-          <li>Reuses exact-event search resolution and safe event card derivation.</li>
-          <li>Does not import or alter AtlasMap, MICHIGAN_MAP_ANCHORS, latLngToAtlasPosition, or illustrated-map calibration.</li>
-          <li>Uses the installed maplibre-gl package and stylesheet without CDN runtime loading.</li>
-        </ul>
+      <section className="geospatialTestIntro" style={styles.introPanel} aria-label="Celebration Atlas geospatial map test">
+        <p style={styles.kicker}>Celebration Atlas map loop</p>
+        <h1 className="geospatialTestTitle" style={styles.title}>Find a celebration on the map</h1>
+        <p style={styles.introCopy}>Search, tap a marker, or choose a thumbnail to open the same flyer-card experience.</p>
       </section>
 
-      <section className="geospatialTestMapPanel" style={styles.mapPanel} aria-label="Real MapLibre map prototype">
-        <div className="geospatialTestToolbar" style={styles.toolbar}>
-          <label style={styles.searchLabel}>Search exact event<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Try Romeo Peach Festival" style={styles.searchInput} /></label>
-          <button type="button" onClick={selectExactMatch} style={styles.controlButton}>Open exact match</button>
-        </div>
+      <section className="geospatialTestMapPanel" style={styles.mapPanel} aria-label="Celebration Atlas geospatial map">
+        <form className="geospatialTestToolbar" style={styles.toolbar} onSubmit={(event) => { event.preventDefault(); selectExactMatch(); }}>
+          <label style={styles.searchLabel}>Event search<input value={query} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Try Romeo Peach Festival" style={styles.searchInput} /></label>
+        </form>
+        {visibleSearchResults.length ? (
+          <div className="geospatialTestResults" style={styles.resultStrip} aria-label="Matching event thumbnails">
+            {visibleSearchResults.map((event) => {
+              const card = deriveSafeAtlasEventCard(event);
+              const imageSrc = card.media?.mediaSrc ?? card.media?.posterSrc;
+              return (
+                <button key={event.id} type="button" onClick={() => selectEvent(event, true)} style={event.id === selectedId ? { ...styles.resultCard, ...styles.resultCardActive } : styles.resultCard}>
+                  {imageSrc ? <Image src={imageSrc} alt="" width={48} height={48} style={styles.resultImage} /> : <span style={styles.resultImageFallback}>{event.category}</span>}
+                  <span style={styles.resultText}>{event.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
         <div className="geospatialTestMapWrap" style={styles.mapWrap}>
           <div ref={mapNodeRef} className="geospatialTestMapCanvas" style={styles.mapCanvas} />
-          <div style={mapError ? styles.diagnosticErrorPanel : styles.diagnosticReadout}>
-            <p style={styles.diagnosticLine}>{mapError ?? cameraReadout}</p>
-            <p style={styles.diagnosticLine}>Phase: {diagnostic.phase} · {diagnostic.detail}</p>
-          </div>
+          {mapError ? (
+            <div style={styles.mapErrorPanel} role="status">
+              <p style={styles.mapErrorText}>Map tiles are temporarily unavailable. Search and selected-event cards remain available.</p>
+            </div>
+          ) : null}
         </div>
       </section>
 
       {selectedEvent && selectedCard ? (
-        <aside className="geospatialTestSelectedCard" style={styles.card} aria-label="Selected event card">
-          <p style={styles.kicker}>Selected event</p>
+        <aside className="geospatialTestSelectedCard" style={styles.card} aria-label={`${selectedCard.name} flyer card`}>
+          {selectedCard.media?.mediaSrc || selectedCard.media?.posterSrc ? (
+            <div style={styles.cardMediaFrame}>
+              {selectedCard.media.mediaType === 'video' && selectedCard.media.mediaSrc ? (
+                <video src={selectedCard.media.mediaSrc} poster={selectedCard.media.posterSrc} style={styles.cardMedia} muted playsInline loop autoPlay />
+              ) : (
+                <Image src={selectedCard.media.mediaSrc ?? selectedCard.media.posterSrc ?? '/event-media/fallback/festivals-thumb.webp'} alt="" width={960} height={600} style={styles.cardMedia} />
+              )}
+            </div>
+          ) : null}
+          <p style={styles.kicker}>{selectedCard.category}</p>
           <h2 style={styles.cardTitle}>{selectedCard.name}</h2>
-          <p style={styles.cardMeta}>{selectedCard.location} · {selectedEvent.latitude.toFixed(4)}, {selectedEvent.longitude.toFixed(4)}</p>
+          <p style={styles.cardMeta}>{selectedCard.location}</p>
+          <p style={styles.cardDate}>{selectedDate}</p>
           <p style={styles.cardBody}>{selectedCard.description}</p>
-          <p style={styles.cardTrust}>{selectedCard.trustStatusCopy}</p>
-          {selectedCard.detailAction ? <Link href={selectedCard.detailAction.href} style={styles.cardLink}>{selectedCard.detailAction.label}</Link> : null}
+          <button type="button" disabled style={styles.disabledTicketButton} aria-label="Tickets and information link is not available yet because no manually approved URL has been added for this event.">Tickets & Info</button>
+          <p style={styles.ticketHelp}>No manually approved Tickets & Info URL has been added yet.</p>
         </aside>
       ) : null}
       <style jsx global>{`
@@ -305,8 +330,7 @@ export default function GeospatialMapTest() {
         @media (max-width: 720px) {
           .geospatialTestShell { padding: 14px !important; overflow-x: hidden; }
           .geospatialTestTitle { font-size: 25px !important; }
-          .geospatialTestAudit { padding: 16px !important; }
-          .geospatialTestAuditList { font-size: 13px !important; }
+          .geospatialTestIntro { padding: 16px !important; }
           .geospatialTestMapPanel { padding: 10px !important; border-radius: 20px !important; }
           .geospatialTestToolbar { display: grid !important; align-items: stretch !important; }
           .geospatialTestMapCanvas { height: 66vh !important; min-height: 390px !important; }
@@ -319,24 +343,31 @@ export default function GeospatialMapTest() {
 
 const styles: Record<string, React.CSSProperties> = {
   pageShell: { minHeight: '100vh', padding: '32px', color: '#f7e6c2', background: 'radial-gradient(circle at top, #1c2b3e 0, #080b12 62%)', display: 'grid', gap: 20, overflowX: 'hidden' },
-  auditPanel: { maxWidth: 1100, border: '1px solid rgba(255,220,160,.22)', borderRadius: 24, padding: 24, background: 'rgba(9,13,22,.68)' },
+  introPanel: { maxWidth: 980, border: '1px solid rgba(255,220,160,.22)', borderRadius: 24, padding: 24, background: 'rgba(9,13,22,.68)' },
   kicker: { margin: 0, color: 'rgba(255,213,149,.72)', fontSize: 12, letterSpacing: '.18em', textTransform: 'uppercase' },
   title: { margin: '8px 0 12px', fontSize: 34, lineHeight: 1.05 },
-  auditList: { margin: 0, paddingLeft: 20, color: 'rgba(255,239,210,.8)', lineHeight: 1.6 },
+  introCopy: { margin: 0, color: 'rgba(255,239,210,.82)', lineHeight: 1.55 },
   mapPanel: { border: '1px solid rgba(255,220,160,.18)', borderRadius: 28, padding: 18, background: 'rgba(5,8,14,.58)', overflow: 'hidden', maxWidth: '100%' },
   toolbar: { display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'end', marginBottom: 14 },
-  searchLabel: { display: 'grid', gap: 6, minWidth: 'min(260px, 100%)', color: 'rgba(255,236,202,.76)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.12em' },
-  searchInput: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '11px 14px', background: 'rgba(0,0,0,.28)', color: '#fff2d8' },
-  controlButton: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '11px 14px', background: 'rgba(255,205,120,.1)', color: '#ffe8bd', cursor: 'pointer' },
+  searchLabel: { display: 'grid', gap: 6, width: 'min(460px, 100%)', color: 'rgba(255,236,202,.76)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.12em' },
+  searchInput: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '12px 16px', background: 'rgba(0,0,0,.28)', color: '#fff2d8', fontSize: 16 },
+  resultStrip: { display: 'flex', gap: 10, overflowX: 'auto', padding: '0 0 14px' },
+  resultCard: { display: 'grid', gridTemplateColumns: '48px minmax(130px, 1fr)', alignItems: 'center', gap: 10, minWidth: 220, border: '1px solid rgba(255,220,160,.2)', borderRadius: 16, padding: 8, background: 'rgba(255,255,255,.06)', color: '#ffe8bd', textAlign: 'left', cursor: 'pointer' },
+  resultCardActive: { borderColor: 'rgba(255,239,180,.72)', boxShadow: '0 0 0 2px rgba(255,226,142,.16)' },
+  resultImage: { width: 48, height: 48, objectFit: 'cover', borderRadius: 12, background: '#20180c' },
+  resultImageFallback: { width: 48, height: 48, display: 'grid', placeItems: 'center', borderRadius: 12, background: 'rgba(255,211,109,.14)', fontSize: 10 },
+  resultText: { fontWeight: 700, lineHeight: 1.15 },
   mapWrap: { position: 'relative', width: '100%', overflow: 'hidden', borderRadius: 24, border: '1px solid rgba(255,255,255,.08)', overscrollBehavior: 'contain' },
   mapCanvas: { width: '100%', height: 'min(72vh, 760px)', minHeight: 540, background: '#090d14' },
-  diagnosticReadout: { position: 'absolute', left: 12, right: 12, bottom: 8, margin: 0, padding: '5px 8px', borderRadius: 14, background: 'rgba(4,7,12,.62)', color: 'rgba(255,238,205,.72)', fontSize: 11, pointerEvents: 'none' },
-  diagnosticErrorPanel: { position: 'absolute', left: 12, right: 12, bottom: 8, margin: 0, padding: '10px 12px', borderRadius: 14, border: '1px solid rgba(255,118,118,.45)', background: 'rgba(45,9,12,.86)', color: '#ffe1d6', fontSize: 12, pointerEvents: 'auto', boxShadow: '0 14px 34px rgba(0,0,0,.35)' },
-  diagnosticLine: { margin: '0 0 4px' },
-  card: { maxWidth: 560, border: '1px solid rgba(255,220,160,.24)', borderRadius: 24, padding: 22, background: 'rgba(8,11,18,.78)', boxShadow: '0 24px 50px rgba(0,0,0,.32)' },
-  cardTitle: { margin: '8px 0 6px', fontSize: 26 },
-  cardMeta: { margin: 0, color: 'rgba(255,230,190,.68)' },
-  cardBody: { color: 'rgba(255,244,224,.84)', lineHeight: 1.55 },
-  cardTrust: { color: 'rgba(255,214,152,.72)', fontSize: 13 },
-  cardLink: { color: '#ffe0a3', fontWeight: 700 },
+  mapErrorPanel: { position: 'absolute', left: 12, right: 12, bottom: 8, margin: 0, padding: '10px 12px', borderRadius: 14, border: '1px solid rgba(255,118,118,.35)', background: 'rgba(45,9,12,.82)', color: '#ffe1d6', fontSize: 12, pointerEvents: 'none', boxShadow: '0 14px 34px rgba(0,0,0,.35)' },
+  mapErrorText: { margin: 0 },
+  card: { maxWidth: 620, border: '1px solid rgba(255,220,160,.24)', borderRadius: 28, padding: 22, background: 'linear-gradient(180deg, rgba(37,23,15,.88), rgba(8,11,18,.88))', boxShadow: '0 24px 50px rgba(0,0,0,.32)' },
+  cardMediaFrame: { overflow: 'hidden', borderRadius: 22, border: '1px solid rgba(255,235,190,.18)', marginBottom: 18, background: '#110d09', aspectRatio: '16 / 10' },
+  cardMedia: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+  cardTitle: { margin: '8px 0 6px', fontSize: 30, lineHeight: 1.04 },
+  cardMeta: { margin: 0, color: 'rgba(255,230,190,.78)', fontWeight: 700 },
+  cardDate: { margin: '6px 0 0', color: 'rgba(255,213,149,.82)' },
+  cardBody: { color: 'rgba(255,244,224,.86)', lineHeight: 1.55 },
+  disabledTicketButton: { border: '1px solid rgba(255,220,160,.28)', borderRadius: 999, padding: '12px 18px', background: 'rgba(255,205,120,.12)', color: 'rgba(255,232,189,.62)', fontWeight: 800, cursor: 'not-allowed' },
+  ticketHelp: { margin: '8px 0 0', color: 'rgba(255,230,190,.58)', fontSize: 12 },
 };
