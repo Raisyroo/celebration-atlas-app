@@ -216,7 +216,9 @@ export default function GeospatialMapTest() {
           const feature = event.features?.[0];
           const clusterId = feature?.properties?.cluster_id;
           if (typeof clusterId !== 'number' || !feature) return;
-          const source = map.getSource(EVENT_SOURCE_ID) as MapLibreSource;
+          const rawSource = map.getSource(EVENT_SOURCE_ID);
+          if (!rawSource || !('getClusterExpansionZoom' in rawSource)) return;
+          const source = rawSource as unknown as MapLibreSource;
           source.getClusterExpansionZoom(clusterId).then((zoom) => {
             const coordinates = feature.geometry.coordinates as [number, number];
             map.easeTo({ center: coordinates, zoom: Math.min(zoom + 0.25, 12), duration: 650 });
