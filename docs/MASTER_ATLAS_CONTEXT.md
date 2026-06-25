@@ -1,5 +1,20 @@
 # Celebration Atlas Master Context
 
+## Current Working State — June 25, 2026
+
+* Main branch is stable.
+* MapLibre geospatial test works on desktop and iPhone.
+* `/dev/geospatial-map-test` is for map-engine testing only.
+* Normal home route `/` is the Celebration Atlas app experience.
+* Romeo flyer works locally when placed at `public/event-media/flyers/romeo-peach-festival.webp`.
+* `public/event-media/flyers/` is intentionally ignored by git because flyer binaries are local assets for now.
+* Do not use Codex/cloud to move or create binary images.
+* One task = one branch = one PR.
+* Never cherry-pick unless explicitly requested.
+* Never use dev routes to test production UI.
+* Home page and AtlasMap are sacred; audit before editing.
+* Future work should focus on stabilizing the mobile event-card flow, then layering the illustrated Michigan artwork over the real map foundation.
+
 ## Product Vision
 
 Celebration Atlas is an AI-first celebration discovery platform.
