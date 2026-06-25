@@ -5,6 +5,10 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { ATLAS_EVENTS } from '../../../data/events';
 import { latLngToAtlasPosition } from '../../../data/mapCalibration';
 import {
+  MICHIGAN_ARTWORK_CALIBRATIONS,
+  projectLatLngToCalibratedMichiganArtworkPosition,
+} from '../../../data/michiganArtworkCalibration';
+import {
   MICHIGAN_GEO_POLYGONS,
   MICHIGAN_REFERENCE_SVG,
   latLngToMichiganSvgPosition,
@@ -34,7 +38,7 @@ const ARTWORK_VARIANTS: ArtworkVariant[] = [
     imageSrc: '/maps/michigan-atlas-base.webp',
     frameAspectRatio: '1 / 1',
     notes: 'Production desktop/tablet painterly Michigan artwork asset.',
-    initial: { offsetX: 0, offsetY: 0, scale: 1, opacity: 0.62 },
+    initial: { offsetX: MICHIGAN_ARTWORK_CALIBRATIONS.desktop.offsetXPercent, offsetY: MICHIGAN_ARTWORK_CALIBRATIONS.desktop.offsetYPercent, scale: MICHIGAN_ARTWORK_CALIBRATIONS.desktop.scale, opacity: 0.62 },
   },
   {
     id: 'mobile',
@@ -42,7 +46,7 @@ const ARTWORK_VARIANTS: ArtworkVariant[] = [
     imageSrc: '/maps/michigan-atlas-base-tall.webp',
     frameAspectRatio: '9 / 16',
     notes: 'Tall mobile artwork variant; compressed sibling exists for delivery experiments.',
-    initial: { offsetX: 0, offsetY: 0, scale: 1, opacity: 0.62 },
+    initial: { offsetX: MICHIGAN_ARTWORK_CALIBRATIONS.mobile.offsetXPercent, offsetY: MICHIGAN_ARTWORK_CALIBRATIONS.mobile.offsetYPercent, scale: MICHIGAN_ARTWORK_CALIBRATIONS.mobile.scale, opacity: 0.62 },
   },
 ];
 
@@ -80,8 +84,13 @@ export default function MichiganArtworkCalibration() {
       event,
       geoPosition: latLngToMichiganSvgPosition(event.latitude, event.longitude),
       atlasPosition: latLngToAtlasPosition(event.latitude, event.longitude),
+      productionPosition: projectLatLngToCalibratedMichiganArtworkPosition(
+        event.latitude,
+        event.longitude,
+        activeVariant.id,
+      ),
     })),
-    [],
+    [activeVariant.id],
   );
 
   const exportPayload = useMemo(() => ({
@@ -154,14 +163,15 @@ export default function MichiganArtworkCalibration() {
             >
               <Image src={activeVariant.imageSrc} alt={`${activeVariant.label} illustrated Michigan artwork`} fill sizes="(max-width: 900px) 100vw, 680px" style={styles.artworkImage} priority />
             </div>
-            {eventMarkers.map(({ event, geoPosition, atlasPosition }) => (
+            {eventMarkers.map(({ event, geoPosition, atlasPosition, productionPosition }) => (
               <div key={event.id}>
                 <span title={`${event.name} geographic reference`} style={{ ...styles.geoMarker, left: `${geoPosition.x}%`, top: `${geoPosition.y}%` }} />
-                <span title={`${event.name} current atlas projection`} style={{ ...styles.atlasMarker, left: `${atlasPosition.x}%`, top: `${atlasPosition.y}%` }} />
+                <span title={`${event.name} legacy anchor projection`} style={{ ...styles.atlasMarker, left: `${atlasPosition.x}%`, top: `${atlasPosition.y}%` }} />
+                <span title={`${event.name} calibrated production candidate`} style={{ ...styles.productionMarker, left: `${productionPosition.x}%`, top: `${productionPosition.y}%` }} />
               </div>
             ))}
           </div>
-          <p style={styles.legend}><b>Blue dots</b> = raw latitude/longitude on geographic reference. <b>Gold rings</b> = existing latLngToAtlasPosition output for current illustrated artwork.</p>
+          <p style={styles.legend}><b>Blue dots</b> = raw latitude/longitude on geographic reference. <b>Gold rings</b> = legacy anchor projection. <b>Green dots</b> = new calibrated production candidate using the inverse artwork transform.</p>
         </section>
 
         <aside style={styles.controls} aria-label="Calibration controls">
@@ -206,6 +216,6 @@ const styles: Record<string, CSSProperties> = {
   page: { minHeight: '100vh', padding: '32px', color: '#f8efd9', background: 'radial-gradient(circle at top, #23314a 0, #080b12 55%)', fontFamily: 'Arial, sans-serif' },
   header: { maxWidth: 1060, margin: '0 auto 20px' }, kicker: { margin: 0, color: '#e0b85b', textTransform: 'uppercase', letterSpacing: 2, fontWeight: 800, fontSize: 12 }, title: { margin: '6px 0', fontSize: 38 }, intro: { maxWidth: 920, color: 'rgba(248,239,217,.78)', lineHeight: 1.6 },
   toolbar: { maxWidth: 1060, margin: '0 auto 18px', display: 'flex', gap: 10, flexWrap: 'wrap' }, variantButton: { border: '1px solid rgba(255,218,146,.35)', background: 'rgba(255,255,255,.06)', color: '#ffe8b6', padding: '10px 14px', borderRadius: 999, cursor: 'pointer', fontWeight: 800 }, variantButtonActive: { background: '#e0aa43', color: '#15100a' },
-  layout: { maxWidth: 1060, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 22, alignItems: 'start' }, stagePanel: { flex: '1 1 520px', minWidth: 0 }, stage: { position: 'relative', overflow: 'hidden', border: '1px solid rgba(255,222,166,.28)', borderRadius: 22, background: '#102238', boxShadow: '0 30px 90px rgba(0,0,0,.45)' }, referenceSvg: { position: 'absolute', inset: 0, width: '100%', height: '100%' }, artworkLayer: { position: 'absolute', left: '50%', top: '50%', width: '100%', height: '100%', transformOrigin: 'center', pointerEvents: 'none' }, artworkImage: { objectFit: 'contain' }, geoMarker: { position: 'absolute', width: 7, height: 7, borderRadius: '50%', background: '#62c7ff', transform: 'translate(-50%, -50%)', boxShadow: '0 0 0 2px rgba(1,13,29,.75), 0 0 10px #62c7ff' }, atlasMarker: { position: 'absolute', width: 14, height: 14, borderRadius: '50%', border: '2px solid #ffd36d', transform: 'translate(-50%, -50%)', boxShadow: '0 0 0 2px rgba(1,13,29,.65), 0 0 12px rgba(255,211,109,.9)' }, legend: { color: 'rgba(248,239,217,.78)', lineHeight: 1.5 },
+  layout: { maxWidth: 1060, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 22, alignItems: 'start' }, stagePanel: { flex: '1 1 520px', minWidth: 0 }, stage: { position: 'relative', overflow: 'hidden', border: '1px solid rgba(255,222,166,.28)', borderRadius: 22, background: '#102238', boxShadow: '0 30px 90px rgba(0,0,0,.45)' }, referenceSvg: { position: 'absolute', inset: 0, width: '100%', height: '100%' }, artworkLayer: { position: 'absolute', left: '50%', top: '50%', width: '100%', height: '100%', transformOrigin: 'center', pointerEvents: 'none' }, artworkImage: { objectFit: 'contain' }, geoMarker: { position: 'absolute', width: 7, height: 7, borderRadius: '50%', background: '#62c7ff', transform: 'translate(-50%, -50%)', boxShadow: '0 0 0 2px rgba(1,13,29,.75), 0 0 10px #62c7ff' }, atlasMarker: { position: 'absolute', width: 14, height: 14, borderRadius: '50%', border: '2px solid #ffd36d', transform: 'translate(-50%, -50%)', boxShadow: '0 0 0 2px rgba(1,13,29,.65), 0 0 12px rgba(255,211,109,.9)' }, productionMarker: { position: 'absolute', width: 10, height: 10, borderRadius: '50%', background: '#64e88f', transform: 'translate(-50%, -50%)', boxShadow: '0 0 0 2px rgba(1,13,29,.75), 0 0 13px rgba(100,232,143,.95)' }, legend: { color: 'rgba(248,239,217,.78)', lineHeight: 1.5 },
   controls: { flex: '1 1 320px', maxWidth: 360, minWidth: 0, border: '1px solid rgba(255,222,166,.22)', borderRadius: 22, padding: 18, background: 'rgba(8,12,18,.76)' }, panelTitle: { margin: '0 0 8px' }, notes: { color: 'rgba(248,239,217,.68)', lineHeight: 1.45 }, rangeLabel: { display: 'grid', gap: 8, margin: '16px 0', color: '#ffe7b0', fontSize: 14 }, rangeInput: { width: '100%' }, noRotation: { color: 'rgba(248,239,217,.66)', fontSize: 13, lineHeight: 1.45 }, copyButton: { width: '100%', padding: '11px 14px', borderRadius: 12, border: 0, background: '#f0bd55', color: '#140e08', fontWeight: 900, cursor: 'pointer' }, copyStatus: { color: '#9df0b0', fontWeight: 800 }, pre: { maxHeight: 320, overflow: 'auto', padding: 12, borderRadius: 12, background: 'rgba(0,0,0,.38)', color: '#dcecff', fontSize: 12, whiteSpace: 'pre-wrap' },
 };

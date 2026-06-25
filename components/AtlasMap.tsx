@@ -15,11 +15,13 @@ import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
 import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
 import { resolveExactEventIntent } from '../data/exactEventIntent';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
-import {
-  MICHIGAN_MAP_ANCHORS,
-  latLngToAtlasPosition,
-} from '../data/mapCalibration';
+import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
 import type { MichiganMapAnchor } from '../data/mapCalibration';
+import {
+  MICHIGAN_ARTWORK_MOBILE_MEDIA_QUERY,
+  projectLatLngToCalibratedMichiganArtworkPosition,
+} from '../data/michiganArtworkCalibration';
+import type { MichiganArtworkVariant } from '../data/michiganArtworkCalibration';
 import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
@@ -71,9 +73,10 @@ const MOBILE_FILTER_FIELDS = ['Date', 'Category', 'Location / nearby'] as const;
 //
 // Active homepage marker path:
 // app/page.tsx renders <AtlasMap />. Marker x/y is computed by
-// projectEventToMichiganArtworkPosition below, which delegates latitude/longitude
-// projection to the anchor-based latLngToAtlasPosition function in
-// data/mapCalibration.ts. The painterly image remains the visible basemap.
+// projectEventToMichiganArtworkPosition below, which delegates real
+// latitude/longitude projection to the shared calibrated Michigan artwork helper
+// in data/michiganArtworkCalibration.ts. The painterly image remains the visible
+// basemap; only markers move into artwork-relative positions.
 const BASE_SCALE = 1.03;
 const MAP_ZOOM_MIN_SCALE = 1;
 const MAP_ZOOM_MAX_SCALE = 2.5;
@@ -340,13 +343,9 @@ const HOME_DISCOVERY_SCROLL_CLASS = 'home-discovery-scroll';
 const HOME_PHONE_LANDSCAPE_SCROLL_CLASS = 'home-phone-landscape-scroll';
 const MOBILE_LANDING_MAP_LOWERING = '3dvh';
 
-// Central post-projection adjustment for the visible homepage marker/cluster
-// layer. Keep event lat/lng, anchor data, clustering, and marker styling
-// untouched; tune only translateX/translateY to shift the whole projected layer.
-const ATLAS_MARKER_PROJECTION_TRANSFORM = {
-  translateX: -7,
-  translateY: 0,
-} as const;
+// The previous global -7% marker translate is intentionally replaced by the
+// inverse workbench calibration in data/michiganArtworkCalibration.ts. Keeping a
+// second global shift here would double-apply calibration and hide future tuning.
 
 type AtlasEvent = (typeof ATLAS_EVENTS)[number];
 
@@ -681,29 +680,28 @@ const clampMarkerPercent = (value: number, offset = 0) => {
 
 const projectEventToMichiganArtworkPosition = (
   event: AtlasEvent,
+  artworkVariant: MichiganArtworkVariant,
 ): MarkerPosition => {
-  const artworkPosition = latLngToAtlasPosition(
+  const artworkPosition = projectLatLngToCalibratedMichiganArtworkPosition(
     event.latitude,
     event.longitude,
+    artworkVariant,
   );
 
   return {
-    x: clampMarkerPercent(
-      artworkPosition.x + ATLAS_MARKER_PROJECTION_TRANSFORM.translateX,
-    ),
-    y: clampMarkerPercent(
-      artworkPosition.y + ATLAS_MARKER_PROJECTION_TRANSFORM.translateY,
-    ),
+    x: clampMarkerPercent(artworkPosition.x),
+    y: clampMarkerPercent(artworkPosition.y),
   };
 };
 
 const resolveAtlasMarkerLayouts = (
   events: typeof ATLAS_EVENTS,
+  artworkVariant: MichiganArtworkVariant,
 ): AtlasMarkerLayout[] =>
   events.map((event, eventIndex) => ({
     event,
     eventIndex,
-    position: projectEventToMichiganArtworkPosition(event),
+    position: projectEventToMichiganArtworkPosition(event, artworkVariant),
   }));
 
 const getMarkerDistance = (a: MarkerPosition, b: MarkerPosition) =>
@@ -1108,6 +1106,8 @@ export default function AtlasMap({
     null,
   );
   const [isDesktop, setIsDesktop] = useState(false);
+  const [artworkVariant, setArtworkVariant] =
+    useState<MichiganArtworkVariant>('desktop');
   const [isPhoneLandscape, setIsPhoneLandscape] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [parallaxOffset, setParallaxOffset] = useState({ x: 0, y: 0 });
@@ -1221,8 +1221,8 @@ export default function AtlasMap({
       }));
   }, [discoveryResultLimit, exactEventIntent, highlightedIds, q]);
   const markerLayouts = useMemo(
-    () => resolveAtlasMarkerLayouts(ATLAS_EVENTS),
-    [],
+    () => resolveAtlasMarkerLayouts(ATLAS_EVENTS, artworkVariant),
+    [artworkVariant],
   );
   const displayMarkerLayouts = useMemo(
     () => resolveAtlasDisplayMarkerLayouts(markerLayouts),
@@ -1889,6 +1889,20 @@ export default function AtlasMap({
 
     return () => {
       desktopQuery.removeEventListener('change', syncDesktopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    const mobileArtworkQuery = window.matchMedia(
+      MICHIGAN_ARTWORK_MOBILE_MEDIA_QUERY,
+    );
+    const syncArtworkVariant = () =>
+      setArtworkVariant(mobileArtworkQuery.matches ? 'mobile' : 'desktop');
+    syncArtworkVariant();
+    mobileArtworkQuery.addEventListener('change', syncArtworkVariant);
+
+    return () => {
+      mobileArtworkQuery.removeEventListener('change', syncArtworkVariant);
     };
   }, []);
 
