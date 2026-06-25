@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run validate:flyers && next build",
     "start": "next start",
     "lint": "eslint",
     "atlas:check": "npm run lint && npm run build",
@@ -16,7 +16,9 @@
     "atlas:handoff": "node scripts/atlas-handoff.mjs",
     "atlas:runbook": "node scripts/atlas-runbook.mjs",
     "atlas:doctor": "node scripts/atlas-doctor.mjs",
-    "atlas:generate-thumbnails": "node --experimental-strip-types scripts/generate-event-thumbnails.ts"
+    "atlas:generate-thumbnails": "node --experimental-strip-types scripts/generate-event-thumbnails.ts",
+    "validate:flyers": "node --experimental-strip-types scripts/validate-flyers.ts",
+    "validate:flyers:local": "node --experimental-strip-types scripts/validate-flyers.ts --local"
   },
   "dependencies": {
     "next": "16.2.6",
