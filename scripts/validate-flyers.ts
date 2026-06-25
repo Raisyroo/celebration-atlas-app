@@ -1,4 +1,4 @@
-import { access } from 'node:fs/promises';
+import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { EVENT_FLYERS } from '../data/eventFlyers.ts';
 import { ATLAS_EVENTS } from '../data/events.ts';
@@ -90,15 +90,37 @@ for (const event of ATLAS_EVENTS) {
 
 }
 
+
+async function assertExactCaseFilePath(filePath: string): Promise<void> {
+  const parsedPath = path.parse(filePath);
+  const relativeSegments = path.relative(parsedPath.root, filePath).split(path.sep).filter(Boolean);
+  let currentPath = parsedPath.root;
+
+  for (const segment of relativeSegments) {
+    const entries = await readdir(currentPath);
+    if (!entries.includes(segment)) {
+      const caseInsensitiveMatch = entries.find((entry) => entry.toLowerCase() === segment.toLowerCase());
+      if (caseInsensitiveMatch) {
+        throw new Error(`Local flyer filename case mismatch (expected ${segment}, found ${caseInsensitiveMatch})`);
+      }
+      throw new Error('Missing local flyer file');
+    }
+    currentPath = path.join(currentPath, segment);
+  }
+
+  const fileStat = await stat(filePath);
+  if (!fileStat.isFile()) throw new Error('Local flyer path is not a file');
+}
+
 if (checkLocalFiles) {
   for (const [eventId, record] of flyerEntries) {
     if (record.assetMode !== 'local' || !record.src?.startsWith(LOCAL_RUNTIME_PREFIX)) continue;
     const relativeName = record.src.slice(LOCAL_RUNTIME_PREFIX.length);
     const publicPath = path.join(process.cwd(), LOCAL_PUBLIC_PREFIX, relativeName);
     try {
-      await access(publicPath);
-    } catch {
-      errors.push(`Missing local flyer file for ${eventId}: ${path.relative(process.cwd(), publicPath)}`);
+      await assertExactCaseFilePath(publicPath);
+    } catch (error) {
+      errors.push(`${error instanceof Error ? error.message : 'Missing local flyer file'} for ${eventId}: ${path.relative(process.cwd(), publicPath)}`);
     }
   }
 }
