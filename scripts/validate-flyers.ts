@@ -1,0 +1,113 @@
+import { access } from 'node:fs/promises';
+import path from 'node:path';
+import { EVENT_FLYERS } from '../data/eventFlyers.ts';
+import { ATLAS_EVENTS } from '../data/events.ts';
+
+const LOCAL_RUNTIME_PREFIX = '/event-media/flyers/';
+const LOCAL_PUBLIC_PREFIX = path.join('public', 'event-media', 'flyers');
+const args = new Set(process.argv.slice(2));
+const checkLocalFiles = args.has('--local');
+
+type FlyerRecord = {
+  src?: string;
+  assetMode?: string;
+  ticketsUrl?: string;
+};
+
+const errors: string[] = [];
+const eventIds = new Set<string>();
+const duplicateEventIds = new Set<string>();
+
+for (const event of ATLAS_EVENTS) {
+  if (eventIds.has(event.id)) duplicateEventIds.add(event.id);
+  eventIds.add(event.id);
+}
+
+for (const eventId of duplicateEventIds) {
+  errors.push(`Duplicate event id in ATLAS_EVENTS: ${eventId}`);
+}
+
+const flyerEntries = Object.entries(EVENT_FLYERS as Record<string, FlyerRecord>);
+const flyerIds = new Set<string>();
+const seenPaths = new Map<string, string>();
+
+for (const [eventId, record] of flyerEntries) {
+  if (flyerIds.has(eventId)) errors.push(`Duplicate flyer catalog entry: ${eventId}`);
+  flyerIds.add(eventId);
+
+  if (!eventIds.has(eventId)) errors.push(`Flyer catalog id does not match an ATLAS_EVENTS id: ${eventId}`);
+
+  if (record.assetMode !== 'local' && record.assetMode !== 'hosted') {
+    errors.push(`Unsupported assetMode for ${eventId}: ${String(record.assetMode)}`);
+  }
+
+  if (!record.src) {
+    errors.push(`Missing flyer src for ${eventId}`);
+    continue;
+  }
+
+  if (record.src.includes('/public/')) {
+    errors.push(`Flyer runtime path must not include /public/ for ${eventId}: ${record.src}`);
+  }
+
+  if (record.assetMode === 'local' && !record.src.startsWith(LOCAL_RUNTIME_PREFIX)) {
+    errors.push(`Local flyer src must start with ${LOCAL_RUNTIME_PREFIX} for ${eventId}: ${record.src}`);
+  }
+
+  if (record.assetMode === 'hosted' && !/^https:\/\//.test(record.src)) {
+    errors.push(`Hosted flyer src must be an https URL for ${eventId}: ${record.src}`);
+  }
+
+  if (record.ticketsUrl && !/^https:\/\//.test(record.ticketsUrl)) {
+    errors.push(`ticketsUrl must be an https URL for ${eventId}: ${record.ticketsUrl}`);
+  }
+
+  const existingEventId = seenPaths.get(record.src);
+  if (existingEventId) {
+    errors.push(`Duplicate flyer src used by ${existingEventId} and ${eventId}: ${record.src}`);
+  } else {
+    seenPaths.set(record.src, eventId);
+  }
+}
+
+for (const event of ATLAS_EVENTS) {
+  if (!event.flyerSrc) continue;
+
+  const existingEventId = seenPaths.get(event.flyerSrc);
+  if (existingEventId) {
+    errors.push(`Duplicate legacy event flyerSrc used by ${existingEventId} and ${event.id}: ${event.flyerSrc}`);
+  } else {
+    seenPaths.set(event.flyerSrc, event.id);
+  }
+
+  if (event.flyerSrc.includes('/public/')) {
+    errors.push(`Legacy event flyerSrc must not include /public/ for ${event.id}: ${event.flyerSrc}`);
+  }
+
+  if (!event.flyerSrc.startsWith('/event-media/')) {
+    errors.push(`Legacy event flyerSrc must start with /event-media/ for ${event.id}: ${event.flyerSrc}`);
+  }
+
+}
+
+if (checkLocalFiles) {
+  for (const [eventId, record] of flyerEntries) {
+    if (record.assetMode !== 'local' || !record.src?.startsWith(LOCAL_RUNTIME_PREFIX)) continue;
+    const relativeName = record.src.slice(LOCAL_RUNTIME_PREFIX.length);
+    const publicPath = path.join(process.cwd(), LOCAL_PUBLIC_PREFIX, relativeName);
+    try {
+      await access(publicPath);
+    } catch {
+      errors.push(`Missing local flyer file for ${eventId}: ${path.relative(process.cwd(), publicPath)}`);
+    }
+  }
+}
+
+if (errors.length) {
+  console.error(`Flyer validation failed with ${errors.length} issue(s):`);
+  for (const error of errors) console.error(`- ${error}`);
+  process.exit(1);
+}
+
+const mode = checkLocalFiles ? 'catalog and local files' : 'catalog';
+console.log(`Validated ${flyerEntries.length} flyer ${flyerEntries.length === 1 ? 'entry' : 'entries'} against ${ATLAS_EVENTS.length} events (${mode}).`);

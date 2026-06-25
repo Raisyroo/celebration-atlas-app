@@ -21,7 +21,7 @@ export type AtlasEvent = {
   blurb: string;
   category: AtlasCategory;
   cardTag?: string;
-  flyerSrc?: `/event-media/${string}`;
+  flyerSrc?: `/event-media/${string}` | `https://${string}`;
   x: number;
   y: number;
   atlasNotes?: string[];
@@ -98,7 +98,6 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     blurb: 'A hometown peach celebration with orchard charm, live performances, and summer food traditions.',
     category: 'Festivals',
     iconType: 'harvest',
-    flyerSrc: '/event-media/flyers/romeo-peach-festival.webp',
     x: 66,
     y: 40,
     atmosphere: atmosphere(['balloons'], 'subtle'),
@@ -346,7 +345,6 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     iconType: 'fair',
     searchAliases: ['Goodells Fair', 'St. Clair County Fair', '4-H Fair', 'Youth Fair'],
     pageArchetype: 'livingScrapbook',
-    flyerSrc: '/event-media/flyers/goodells-fair.webp',
     x: 79,
     y: 37,
     atmosphere: atmosphere(['ferrisGlow'], 'medium'),

@@ -1,0 +1,30 @@
+export type EventFlyerAssetMode = 'local' | 'hosted';
+
+export type EventFlyerRecord = {
+  src: `/event-media/flyers/${string}` | `https://${string}`;
+  assetMode: EventFlyerAssetMode;
+  ticketsUrl?: string;
+};
+
+export const EVENT_FLYERS = {
+  'romeo-peach': {
+    src: '/event-media/flyers/romeo-peach-festival.webp',
+    assetMode: 'local',
+  },
+  'goodells-fair': {
+    src: '/event-media/flyers/goodells-fair.webp',
+    assetMode: 'local',
+  },
+} as const satisfies Record<string, EventFlyerRecord>;
+
+export type EventFlyerEventId = keyof typeof EVENT_FLYERS;
+
+export function getEventFlyer(eventId: string): EventFlyerRecord | undefined {
+  return EVENT_FLYERS[eventId as EventFlyerEventId];
+}
+
+export function resolveEventFlyerSrc(event: { id: string; flyerSrc?: AtlasEventFlyerSrc }): AtlasEventFlyerSrc | undefined {
+  return getEventFlyer(event.id)?.src ?? event.flyerSrc;
+}
+
+type AtlasEventFlyerSrc = `/event-media/${string}` | `https://${string}`;
