@@ -3,7 +3,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import Link from 'next/link';
-import maplibregl from 'maplibre-gl';
+import maplibregl, { type GeoJSONSource } from 'maplibre-gl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
 import { searchEventProfiles } from '../../../data/eventProfiles';
@@ -22,7 +22,6 @@ type EventFeature = { type: 'Feature'; id: string; geometry: PointGeometry; prop
 type EventFeatureCollection = { type: 'FeatureCollection'; features: EventFeature[] };
 type MapFeature = { geometry: { type?: string; coordinates?: unknown }; properties?: Record<string, unknown> | null };
 
-type MapLibreSource = { getClusterExpansionZoom: (clusterId: number) => Promise<number> };
 type MapLibreMap = {
   addControl: (control: unknown, position?: string) => void;
   addLayer: (layer: Record<string, unknown>) => void;
@@ -33,7 +32,6 @@ type MapLibreMap = {
   getCanvas: () => HTMLCanvasElement;
   getCenter: () => { lat: number; lng: number };
   getLayer: (layerId: string) => unknown;
-  getSource: (sourceId: string) => MapLibreSource;
   getZoom: () => number;
   isStyleLoaded: () => boolean;
   on: (eventName: string, layerOrListener: string | ((event?: MapLibreMapLayerMouseEvent | MapLibreErrorEvent) => void), listener?: (event: MapLibreMapLayerMouseEvent) => void) => void;
@@ -216,7 +214,8 @@ export default function GeospatialMapTest() {
           const feature = event.features?.[0];
           const clusterId = feature?.properties?.cluster_id;
           if (typeof clusterId !== 'number' || !feature) return;
-          const source = map.getSource(EVENT_SOURCE_ID) as MapLibreSource;
+          const source = map.getSource(EVENT_SOURCE_ID) as GeoJSONSource | undefined;
+          if (!source) return;
           source.getClusterExpansionZoom(clusterId).then((zoom) => {
             const coordinates = feature.geometry.coordinates as [number, number];
             map.easeTo({ center: coordinates, zoom: Math.min(zoom + 0.25, 12), duration: 650 });
