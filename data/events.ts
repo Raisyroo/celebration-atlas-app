@@ -312,6 +312,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     cardTag: 'Arts & Culture',
     iconType: 'art',
     searchAliases: ['Black River Tattoo Convention', 'Port Huron tattoo convention', 'Blue Water tattoo convention'],
+    flyerSrc: '/event-media/flyers/black-river-tattoo-convention.webp',
     x: 82,
     y: 34,
     atmosphere: atmosphere([], 'subtle'),
