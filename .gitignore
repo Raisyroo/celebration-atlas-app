@@ -24,6 +24,30 @@
 .DS_Store
 *.pem
 
+# local backups and patches
+*~
+*.bak
+*.backup
+*.orig
+*.rej
+*.patch
+*.diff
+
+# temporary screenshots and test exports
+screenshots/
+test-exports/
+playwright-report/
+test-results/
+*.screenshot.*
+*screenshot*.png
+*screenshot*.jpg
+*screenshot*.jpeg
+*screenshot*.webp
+*test-export*.png
+*test-export*.jpg
+*test-export*.jpeg
+*test-export*.webp
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -40,6 +64,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Generated event thumbnails stay local until asset storage is finalized.
-public/event-media/generated/*.webp
+# Local event flyer uploads stay out of git.
+public/event-media/flyers/
+
+# Generated fallback thumbnails stay local until asset storage is finalized.
 public/event-media/fallback/*.webp
