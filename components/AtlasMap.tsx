@@ -2605,12 +2605,12 @@ export default function AtlasMap({
               style={{
                 ...styles.cardMediaWrap,
                 ...(isFlyerCard ? styles.flyerCardMediaWrap : null),
-                backgroundImage: isFlyerCard
-                  ? 'none'
-                  : `url(${largeCardBackgroundImageSrc})`,
-                backgroundPosition:
-                  selectedMedia?.mediaPosition ??
-                  styles.cardMediaLayer.objectPosition,
+                backgroundImage: `url(${largeCardBackgroundImageSrc})`,
+                backgroundPosition: isFlyerCard
+                  ? 'center'
+                  : selectedMedia?.mediaPosition ??
+                    styles.cardMediaLayer.objectPosition,
+                backgroundRepeat: 'no-repeat',
                 backgroundSize: isFlyerCard ? 'contain' : 'cover',
                 opacity: isCardMediaVisible ? 1 : 0,
                 transitionDuration: `${mediaFadeDurationMs}ms`,
