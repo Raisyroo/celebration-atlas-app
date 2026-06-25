@@ -345,6 +345,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     iconType: 'fair',
     searchAliases: ['Goodells Fair', 'St. Clair County Fair', '4-H Fair', 'Youth Fair'],
     pageArchetype: 'livingScrapbook',
+    flyerSrc: '/event-media/flyers/goodells-fair.webp',
     x: 79,
     y: 37,
     atmosphere: atmosphere(['ferrisGlow'], 'medium'),
