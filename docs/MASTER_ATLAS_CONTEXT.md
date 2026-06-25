@@ -15,6 +15,18 @@
 * Home page and AtlasMap are sacred; audit before editing.
 * Future work should focus on stabilizing the mobile event-card flow, then layering the illustrated Michigan artwork over the real map foundation.
 
+## Development Guardrails
+
+* One task, one branch, one PR.
+* No cherry-picking unless Ray explicitly asks.
+* No binary/image file handling in Codex/cloud.
+* Dev routes are isolated test routes, not production UI.
+* `/dev/geospatial-map-test` is only for MapLibre/map-engine testing.
+* `/` is the real Celebration Atlas app route.
+* Home page and AtlasMap require audit before edits.
+* Do not touch MapLibre, AtlasMap, event data, routes, or package files unless the task specifically requires it.
+* If a task fails, stop and report findings; do not create new branches or alternate fixes.
+
 ## Product Vision
 
 Celebration Atlas is an AI-first celebration discovery platform.
