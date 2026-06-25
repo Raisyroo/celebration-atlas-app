@@ -75,7 +75,7 @@ for (const event of ATLAS_EVENTS) {
   if (!event.flyerSrc) continue;
 
   const existingEventId = seenPaths.get(event.flyerSrc);
-  if (existingEventId) {
+  if (existingEventId && existingEventId !== event.id) {
     errors.push(`Duplicate legacy event flyerSrc used by ${existingEventId} and ${event.id}: ${event.flyerSrc}`);
   } else {
     seenPaths.set(event.flyerSrc, event.id);

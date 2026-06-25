@@ -15,6 +15,22 @@ export const EVENT_FLYERS = {
     src: '/event-media/flyers/goodells-fair.webp',
     assetMode: 'local',
   },
+  'black-river-tattoo': {
+    src: '/event-media/flyers/black-river-tattoo-convention.webp',
+    assetMode: 'local',
+  },
+  'alpena-brown-trout': {
+    src: '/event-media/flyers/brown-trout-festival.webp',
+    assetMode: 'local',
+  },
+  'mackinac-lilac': {
+    src: '/event-media/flyers/mackinac-island-lilac-festival.webp',
+    assetMode: 'local',
+  },
+  'upper-peninsula-state-fair': {
+    src: '/event-media/flyers/upper-peninsula-state-fair.webp',
+    assetMode: 'local',
+  },
 } as const satisfies Record<string, EventFlyerRecord>;
 
 export type EventFlyerEventId = keyof typeof EVENT_FLYERS;
