@@ -1,4 +1,5 @@
 import type { AtlasEvent } from './events';
+import { getLocalEventFlyerSrc } from './eventFlyers';
 import { resolveExplicitEventThumbnail } from './eventThumbnail';
 
 export type SafeAtlasEventCard = {
@@ -31,11 +32,12 @@ export type SafeAtlasEventCard = {
 
 export function deriveSafeAtlasEventCard(event: AtlasEvent): SafeAtlasEventCard {
   const explicitThumbnail = resolveExplicitEventThumbnail(event);
-  const media = event.flyerSrc
+  const flyerSrc = getLocalEventFlyerSrc(event.id) ?? event.flyerSrc;
+  const media = flyerSrc
     ? {
         mediaType: 'image' as const,
-        flyerSrc: event.flyerSrc,
-        mediaSrc: event.flyerSrc,
+        flyerSrc,
+        mediaSrc: flyerSrc,
         mediaPosition: event.cardMedia?.mediaPosition,
         mediaScale: event.cardMedia?.mediaScale,
         mediaDelayMs: event.cardMedia?.mediaDelayMs,
@@ -43,26 +45,26 @@ export function deriveSafeAtlasEventCard(event: AtlasEvent): SafeAtlasEventCard 
       }
     : explicitThumbnail
       ? {
-        mediaType: 'image' as const,
-        mediaSrc: explicitThumbnail.path,
-        mediaPosition: event.cardMedia?.mediaPosition,
-        mediaScale: event.cardMedia?.mediaScale,
-        mediaDelayMs: event.cardMedia?.mediaDelayMs,
-        mediaFadeDurationMs: event.cardMedia?.mediaFadeDurationMs,
-      }
-    : event.cardMedia?.mediaSrc || event.cardMedia?.posterSrc
-      ? {
-          mediaType: event.cardMedia.mediaType,
-          mediaSrc: event.cardMedia.mediaSrc,
-          posterSrc: event.cardMedia.posterSrc,
-          atmosphereTitle: event.cardMedia.atmosphereTitle,
-          mediaPosition: event.cardMedia.mediaPosition,
-          mediaScale: event.cardMedia.mediaScale,
-          mediaMaskProfile: event.cardMedia.mediaMaskProfile,
-          mediaDelayMs: event.cardMedia.mediaDelayMs,
-          mediaFadeDurationMs: event.cardMedia.mediaFadeDurationMs,
+          mediaType: 'image' as const,
+          mediaSrc: explicitThumbnail.path,
+          mediaPosition: event.cardMedia?.mediaPosition,
+          mediaScale: event.cardMedia?.mediaScale,
+          mediaDelayMs: event.cardMedia?.mediaDelayMs,
+          mediaFadeDurationMs: event.cardMedia?.mediaFadeDurationMs,
         }
-      : undefined;
+      : event.cardMedia?.mediaSrc || event.cardMedia?.posterSrc
+        ? {
+            mediaType: event.cardMedia.mediaType,
+            mediaSrc: event.cardMedia.mediaSrc,
+            posterSrc: event.cardMedia.posterSrc,
+            atmosphereTitle: event.cardMedia.atmosphereTitle,
+            mediaPosition: event.cardMedia.mediaPosition,
+            mediaScale: event.cardMedia.mediaScale,
+            mediaMaskProfile: event.cardMedia.mediaMaskProfile,
+            mediaDelayMs: event.cardMedia.mediaDelayMs,
+            mediaFadeDurationMs: event.cardMedia.mediaFadeDurationMs,
+          }
+        : undefined;
 
   return {
     id: event.id,
@@ -70,7 +72,7 @@ export function deriveSafeAtlasEventCard(event: AtlasEvent): SafeAtlasEventCard 
     location: event.location,
     category: event.category,
     cardTag: event.cardTag,
-    flyerSrc: event.flyerSrc,
+    flyerSrc,
     description: event.blurb,
     atmosphereLabel: event.cardMedia?.atmosphereTitle ?? event.atmosphereLabel,
     media,
