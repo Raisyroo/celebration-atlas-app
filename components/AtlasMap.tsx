@@ -51,11 +51,6 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
 ];
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
 const MOBILE_AMBIENT_EVENT_LIMIT = 2;
-const MOBILE_FLOATING_EVENT_IDS = [
-  'mackinac-lilac',
-  'traverse-city-cherry',
-  'holland-tulip-time',
-] as const;
 const MOBILE_FAVORITE_STORAGE_KEY = 'celebration-atlas:michigan:favorite';
 const MOBILE_MENU_ITEMS = [
   'Explore Michigan',
@@ -526,55 +521,6 @@ function getEventThumbnail(event: AtlasEvent):
   };
 }
 
-
-function getFloatingCardBackgroundStyle(event: AtlasEvent): CSSProperties {
-  const thumbnail = getEventThumbnail(event);
-
-  if (thumbnail.kind === 'image') {
-    return {
-      backgroundImage:
-        'linear-gradient(90deg, rgba(6, 10, 16, 0.18) 0%, rgba(6, 10, 16, 0.14) 30%, rgba(9, 13, 20, 0.34) 54%, rgba(9, 13, 20, 0.5) 100%), radial-gradient(circle at 84% 18%, rgba(255, 233, 184, 0.16), rgba(255, 190, 94, 0.07) 38%, rgba(7, 10, 16, 0.3) 100%)',
-    };
-  }
-
-  return {
-    backgroundImage:
-      'linear-gradient(90deg, rgba(5, 8, 13, 0.84) 0%, rgba(5, 8, 13, 0.58) 48%, rgba(5, 8, 13, 0.18) 100%), radial-gradient(circle at 82% 24%, rgba(255, 239, 196, 0.24), rgba(255, 191, 95, 0.11) 34%, rgba(9, 13, 20, 0.78) 100%)',
-  };
-}
-
-function FloatingCardImage({ event }: { event: AtlasEvent }) {
-  const thumbnail = getEventThumbnail(event);
-
-  if (thumbnail.kind !== 'image') {
-    return null;
-  }
-
-  return (
-    <span
-      style={{
-        ...styles.mobileFloatingCardImageWrap,
-        backgroundImage: `url(${thumbnail.src})`,
-      }}
-      data-thumbnail-source={thumbnail.sourceType}
-      aria-hidden="true"
-    />
-  );
-}
-
-function FloatingCardFallbackGlyph({ event }: { event: AtlasEvent }) {
-  const thumbnail = getEventThumbnail(event);
-
-  if (thumbnail.kind !== 'fallback') {
-    return null;
-  }
-
-  return (
-    <span aria-hidden="true" style={styles.mobileFloatingCardFallbackGlyph}>
-      {thumbnail.glyph}
-    </span>
-  );
-}
 
 function EventThumbnail({
   event,
@@ -1259,15 +1205,6 @@ export default function AtlasMap({
   );
   const ambientMobileEvents = useMemo(
     () => ATLAS_EVENTS.slice(0, MOBILE_AMBIENT_EVENT_LIMIT),
-    [],
-  );
-  const floatingMobileEvents = useMemo(
-    () =>
-      MOBILE_FLOATING_EVENT_IDS.map((eventId) =>
-        ATLAS_EVENTS.find((event) => event.id === eventId),
-      )
-        .filter((event): event is AtlasEvent => Boolean(event))
-        .slice(0, 2),
     [],
   );
   const visibleMarkerGroups = exactEventIntent
@@ -2451,34 +2388,6 @@ export default function AtlasMap({
           <header className="mobile-atlas-identity" style={styles.mobileAtlasIdentity} aria-label="Celebration Atlas Michigan">
             <h1 className="mobile-atlas-title" style={styles.mobileStateTitle}>Michigan</h1>
           </header>
-
-          <div style={styles.mobileFloatingCards} aria-label="Featured Michigan celebrations">
-            {floatingMobileEvents.map((event, index) => (
-              <button
-                key={event.id}
-                type="button"
-                aria-label={`Open ${event.name}`}
-                onClick={() => setSelectedId(event.id)}
-                className={`mobile-floating-card mobile-floating-card--${index + 1}`}
-                style={{
-                  ...styles.mobileFloatingCard,
-                  ...getFloatingCardBackgroundStyle(event),
-                  ...(index === 0
-                    ? styles.mobileFloatingCardOne
-                    : index === 1
-                      ? styles.mobileFloatingCardTwo
-                      : styles.mobileFloatingCardThree),
-                }}
-              >
-                <FloatingCardImage event={event} />
-                <FloatingCardFallbackGlyph event={event} />
-                <span style={styles.mobileFloatingCardText}>
-                  <span style={styles.mobileFloatingCardTitle}>{event.name}</span>
-                  <span style={styles.mobileFloatingCardMeta}>{event.location}</span>
-                </span>
-              </button>
-            ))}
-          </div>
         </>
       ) : null}
 
