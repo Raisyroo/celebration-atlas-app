@@ -1,9 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
 import { ATLAS_EVENTS } from "../../../data/events";
-import { latLngToAtlasPosition } from "../../../data/mapCalibration";
 import {
   MICHIGAN_ARTWORK_CALIBRATIONS,
   MICHIGAN_MOBILE_LATITUDE_VERTICAL_CORRECTION,
@@ -25,8 +30,27 @@ type CalibrationValues = {
   opacity: number;
 };
 
+type ArtworkVariantId = "desktop" | "mobile";
+
+type ControlPointArtworkPosition = {
+  x: number;
+  y: number;
+};
+
+type ControlPointDraft = Partial<
+  Record<ArtworkVariantId, ControlPointArtworkPosition>
+>;
+
+type MichiganControlPoint = {
+  id: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  defaultArtwork: Record<ArtworkVariantId, ControlPointArtworkPosition>;
+};
+
 type ArtworkVariant = {
-  id: "desktop" | "mobile";
+  id: ArtworkVariantId;
   label: string;
   imageSrc: string;
   frameAspectRatio: string;
@@ -65,6 +89,98 @@ const ARTWORK_VARIANTS: ArtworkVariant[] = [
 ];
 
 const MICHIGAN_CALIBRATION_SCROLL_CLASS = "dev-michigan-calibration-scroll";
+
+const MICHIGAN_CONTROL_POINTS: MichiganControlPoint[] = [
+  { city: "Detroit", latitude: 42.3314, longitude: -83.0458 },
+  { city: "Port Huron", latitude: 42.9709, longitude: -82.4249 },
+  { city: "Grand Rapids", latitude: 42.9634, longitude: -85.6681 },
+  { city: "Traverse City", latitude: 44.7631, longitude: -85.6206 },
+  { city: "Charlevoix", latitude: 45.3181, longitude: -85.2584 },
+  { city: "Mackinac / Straits", latitude: 45.8492, longitude: -84.6189 },
+  { city: "Alpena", latitude: 45.0617, longitude: -83.4328 },
+  { city: "Sault Ste. Marie", latitude: 46.4953, longitude: -84.3453 },
+  { city: "Escanaba", latitude: 45.7452, longitude: -87.0646 },
+  { city: "Marquette", latitude: 46.5436, longitude: -87.3954 },
+].map((point) => ({
+  ...point,
+  id: point.city
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, ""),
+  defaultArtwork: {
+    desktop: projectLatLngToCalibratedMichiganArtworkPosition(
+      point.latitude,
+      point.longitude,
+      "desktop",
+    ),
+    mobile: projectLatLngToCalibratedMichiganArtworkPosition(
+      point.latitude,
+      point.longitude,
+      "mobile",
+    ),
+  },
+}));
+
+const CONTROL_POINT_IDW_POWER = 2;
+const CONTROL_POINT_NEIGHBOR_COUNT = 4;
+const CONTROL_POINT_EPSILON = 0.0001;
+
+const getControlPointPosition = (
+  controlPoint: MichiganControlPoint,
+  variantId: ArtworkVariantId,
+  drafts: Record<string, ControlPointDraft>,
+) =>
+  drafts[controlPoint.id]?.[variantId] ?? controlPoint.defaultArtwork[variantId];
+
+const projectWithControlPoints = (
+  latitude: number,
+  longitude: number,
+  variantId: ArtworkVariantId,
+  drafts: Record<string, ControlPointDraft>,
+): ControlPointArtworkPosition => {
+  const weightedControlPoints = MICHIGAN_CONTROL_POINTS.map((controlPoint) => {
+    const latitudeDelta = latitude - controlPoint.latitude;
+    const longitudeDelta = longitude - controlPoint.longitude;
+
+    return {
+      controlPoint,
+      distanceSquared:
+        latitudeDelta * latitudeDelta + longitudeDelta * longitudeDelta,
+    };
+  }).sort((a, b) => a.distanceSquared - b.distanceSquared);
+
+  const exact = weightedControlPoints.find(
+    ({ distanceSquared }) => distanceSquared <= CONTROL_POINT_EPSILON,
+  );
+
+  if (exact) {
+    return getControlPointPosition(exact.controlPoint, variantId, drafts);
+  }
+
+  const totals = weightedControlPoints
+    .slice(0, CONTROL_POINT_NEIGHBOR_COUNT)
+    .reduce(
+      (accumulator, { controlPoint, distanceSquared }) => {
+        const position = getControlPointPosition(controlPoint, variantId, drafts);
+        const weight =
+          1 /
+          Math.max(distanceSquared, CONTROL_POINT_EPSILON) **
+            (CONTROL_POINT_IDW_POWER / 2);
+
+        return {
+          x: accumulator.x + position.x * weight,
+          y: accumulator.y + position.y * weight,
+          weight: accumulator.weight + weight,
+        };
+      },
+      { x: 0, y: 0, weight: 0 },
+    );
+
+  return {
+    x: Math.min(100, Math.max(0, totals.x / totals.weight)),
+    y: Math.min(100, Math.max(0, totals.y / totals.weight)),
+  };
+};
 
 const sampleEvents = ATLAS_EVENTS.filter(
   (event) =>
@@ -107,6 +223,12 @@ export default function MichiganArtworkCalibration() {
     mobile: ARTWORK_VARIANTS[1].initial,
   });
   const [copyStatus, setCopyStatus] = useState("");
+  const [selectedControlPointId, setSelectedControlPointId] = useState(
+    MICHIGAN_CONTROL_POINTS[0].id,
+  );
+  const [controlPointDrafts, setControlPointDrafts] = useState<
+    Record<string, ControlPointDraft>
+  >({});
 
   useEffect(() => {
     document.documentElement.classList.add(MICHIGAN_CALIBRATION_SCROLL_CLASS);
@@ -124,6 +246,17 @@ export default function MichiganArtworkCalibration() {
     ARTWORK_VARIANTS.find((variant) => variant.id === activeVariantId) ??
     ARTWORK_VARIANTS[0];
   const activeCalibration = calibrations[activeVariant.id];
+  const selectedControlPoint =
+    MICHIGAN_CONTROL_POINTS.find((point) => point.id === selectedControlPointId) ??
+    MICHIGAN_CONTROL_POINTS[0];
+  const selectedGeoPosition = latLngToMichiganSvgPosition(
+    selectedControlPoint.latitude,
+    selectedControlPoint.longitude,
+  );
+  const selectedSavedArtworkPosition =
+    selectedControlPoint.defaultArtwork[activeVariant.id];
+  const selectedDraftArtworkPosition =
+    controlPointDrafts[selectedControlPoint.id]?.[activeVariant.id];
 
   const eventMarkers = useMemo(
     () =>
@@ -133,14 +266,19 @@ export default function MichiganArtworkCalibration() {
           event.latitude,
           event.longitude,
         ),
-        atlasPosition: latLngToAtlasPosition(event.latitude, event.longitude),
         productionPosition: projectLatLngToCalibratedMichiganArtworkPosition(
           event.latitude,
           event.longitude,
           activeVariant.id,
         ),
+        candidatePosition: projectWithControlPoints(
+          event.latitude,
+          event.longitude,
+          activeVariant.id,
+          controlPointDrafts,
+        ),
       })),
-    [activeVariant.id],
+    [activeVariant.id, controlPointDrafts],
   );
 
   const exportPayload = useMemo(
@@ -180,6 +318,29 @@ export default function MichiganArtworkCalibration() {
         interpolation:
           "smoothstep latitude ramp; zero at and south of startLatitude, capped at maxYOffsetPercent at and north of endLatitude",
       },
+      controlPointInterpolation: {
+        method:
+          "inverse-distance weighting over the nearest named geographic control points",
+        neighborCount: CONTROL_POINT_NEIGHBOR_COUNT,
+        power: CONTROL_POINT_IDW_POWER,
+        productionBehavior:
+          "Not used by the homepage map in this PR; exported for Ray review and paste-back only.",
+      },
+      controlPoints: MICHIGAN_CONTROL_POINTS.map((point) => ({
+        id: point.id,
+        city: point.city,
+        latitude: point.latitude,
+        longitude: point.longitude,
+        rawGeographicReference: latLngToMichiganSvgPosition(
+          point.latitude,
+          point.longitude,
+        ),
+        artwork: {
+          desktop: controlPointDrafts[point.id]?.desktop ?? null,
+          mobile: controlPointDrafts[point.id]?.mobile ?? null,
+        },
+        savedCompatibilityArtwork: point.defaultArtwork,
+      })),
       variants: Object.fromEntries(
         ARTWORK_VARIANTS.map((variant) => [
           variant.id,
@@ -194,7 +355,7 @@ export default function MichiganArtworkCalibration() {
         ]),
       ),
     }),
-    [calibrations],
+    [calibrations, controlPointDrafts],
   );
 
   const updateCalibration = (field: keyof CalibrationValues, value: number) => {
@@ -202,6 +363,29 @@ export default function MichiganArtworkCalibration() {
       ...current,
       [activeVariant.id]: { ...current[activeVariant.id], [field]: value },
     }));
+  };
+
+  const handleStageClick = (event: MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+    setControlPointDrafts((current) => ({
+      ...current,
+      [selectedControlPoint.id]: {
+        ...current[selectedControlPoint.id],
+        [activeVariant.id]: { x: formatNumber(x), y: formatNumber(y) },
+      },
+    }));
+  };
+
+  const resetSelectedControlPoint = () => {
+    setControlPointDrafts((current) => {
+      const nextPointDraft = { ...current[selectedControlPoint.id] };
+      delete nextPointDraft[activeVariant.id];
+
+      return { ...current, [selectedControlPoint.id]: nextPointDraft };
+    });
   };
 
   const copyExport = async () => {
@@ -250,6 +434,7 @@ export default function MichiganArtworkCalibration() {
       <div style={styles.layout}>
         <section style={styles.stagePanel} aria-label={activeVariant.label}>
           <div
+            onClick={handleStageClick}
             style={{
               ...styles.stage,
               aspectRatio: activeVariant.frameAspectRatio,
@@ -273,7 +458,12 @@ export default function MichiganArtworkCalibration() {
               />
             </div>
             {eventMarkers.map(
-              ({ event, geoPosition, atlasPosition, productionPosition }) => (
+              ({
+                event,
+                geoPosition,
+                productionPosition,
+                candidatePosition,
+              }) => (
                 <div key={event.id}>
                   <span
                     title={`${event.name} geographic reference`}
@@ -284,36 +474,122 @@ export default function MichiganArtworkCalibration() {
                     }}
                   />
                   <span
-                    title={`${event.name} legacy anchor projection`}
+                    title={`${event.name} current legacy artwork projection`}
                     style={{
                       ...styles.atlasMarker,
-                      left: `${atlasPosition.x}%`,
-                      top: `${atlasPosition.y}%`,
+                      left: `${productionPosition.x}%`,
+                      top: `${productionPosition.y}%`,
                     }}
                   />
                   <span
-                    title={`${event.name} calibrated production candidate`}
+                    title={`${event.name} candidate control-point projection`}
                     style={{
-                      ...styles.productionMarker,
-                      left: `${productionPosition.x}%`,
-                      top: `${productionPosition.y}%`,
+                      ...styles.candidateMarker,
+                      left: `${candidatePosition.x}%`,
+                      top: `${candidatePosition.y}%`,
                     }}
                   />
                 </div>
               ),
             )}
+
+            <span
+              title={`${selectedControlPoint.city} raw geographic reference`}
+              style={{
+                ...styles.selectedGeoMarker,
+                left: `${selectedGeoPosition.x}%`,
+                top: `${selectedGeoPosition.y}%`,
+              }}
+            />
+            <span
+              title={`${selectedControlPoint.city} saved artwork location`}
+              style={{
+                ...styles.selectedSavedMarker,
+                left: `${selectedSavedArtworkPosition.x}%`,
+                top: `${selectedSavedArtworkPosition.y}%`,
+              }}
+            />
+            {selectedDraftArtworkPosition ? (
+              <span
+                title={`${selectedControlPoint.city} newly selected artwork location`}
+                style={{
+                  ...styles.selectedDraftMarker,
+                  left: `${selectedDraftArtworkPosition.x}%`,
+                  top: `${selectedDraftArtworkPosition.y}%`,
+                }}
+              />
+            ) : null}
           </div>
           <p style={styles.legend}>
             <b>Blue dots</b> = raw latitude/longitude on geographic reference.{" "}
-            <b>Gold rings</b> = legacy anchor projection. <b>Green dots</b> =
-            new calibrated production candidate using the inverse artwork
-            transform.
+            <b>Gold rings</b> = current legacy projection. <b>Green dots</b> =
+            candidate control-point interpolation. The larger selected-anchor
+            markers show raw reference, saved artwork, and newly clicked artwork
+            locations.
           </p>
         </section>
 
         <aside style={styles.controls} aria-label="Calibration controls">
           <h2 style={styles.panelTitle}>{activeVariant.label}</h2>
           <p style={styles.notes}>{activeVariant.notes}</p>
+
+          <section style={styles.controlPointPanel}>
+            <h3 style={styles.correctionTitle}>Control-point placement mode</h3>
+            <p style={styles.correctionHelp}>
+              Click the illustrated artwork to assign one named geographic anchor
+              for the active {activeVariant.id} variant. This calibrates shared
+              artwork anchors only, never individual events.
+            </p>
+            <label style={styles.selectLabel}>
+              Anchor
+              <select
+                value={selectedControlPoint.id}
+                onChange={(event) =>
+                  setSelectedControlPointId(event.currentTarget.value)
+                }
+                style={styles.selectInput}
+              >
+                {MICHIGAN_CONTROL_POINTS.map((point) => (
+                  <option key={point.id} value={point.id}>
+                    {point.city}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <dl style={styles.coordinateList}>
+              <div>
+                <dt>Real lat/lon</dt>
+                <dd>
+                  {selectedControlPoint.latitude}, {selectedControlPoint.longitude}
+                </dd>
+              </div>
+              <div>
+                <dt>Raw geographic reference</dt>
+                <dd>
+                  x {formatNumber(selectedGeoPosition.x)}%, y{" "}
+                  {formatNumber(selectedGeoPosition.y)}%
+                </dd>
+              </div>
+              <div>
+                <dt>Existing saved artwork</dt>
+                <dd>
+                  x {formatNumber(selectedSavedArtworkPosition.x)}%, y{" "}
+                  {formatNumber(selectedSavedArtworkPosition.y)}%
+                </dd>
+              </div>
+              <div>
+                <dt>New artwork click</dt>
+                <dd>
+                  {selectedDraftArtworkPosition
+                    ? `x ${formatNumber(selectedDraftArtworkPosition.x)}%, y ${formatNumber(selectedDraftArtworkPosition.y)}%`
+                    : "Not assigned for this variant yet."}
+                </dd>
+              </div>
+            </dl>
+            <button type="button" onClick={resetSelectedControlPoint} style={styles.secondaryButton}>
+              Reset this {activeVariant.id} anchor
+            </button>
+          </section>
           {activeVariant.id === "mobile" ? (
             <div style={styles.correctionPanel}>
               <h3 style={styles.correctionTitle}>
@@ -541,6 +817,7 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 22,
     background: "#102238",
     boxShadow: "0 30px 90px rgba(0,0,0,.45)",
+    cursor: "crosshair",
   },
   referenceSvg: {
     position: "absolute",
@@ -576,16 +853,34 @@ const styles: Record<string, CSSProperties> = {
     transform: "translate(-50%, -50%)",
     boxShadow: "0 0 0 2px rgba(1,13,29,.65), 0 0 12px rgba(255,211,109,.9)",
   },
-  productionMarker: {
+  candidateMarker: {
     position: "absolute",
-    width: 10,
-    height: 10,
+    width: 8,
+    height: 8,
     borderRadius: "50%",
-    background: "#64e88f",
+    background: "#31ff75",
     transform: "translate(-50%, -50%)",
-    boxShadow: "0 0 0 2px rgba(1,13,29,.75), 0 0 13px rgba(100,232,143,.95)",
+    boxShadow: "0 0 0 2px rgba(1,13,29,.75), 0 0 14px rgba(49,255,117,.98)",
   },
   legend: { color: "rgba(248,239,217,.78)", lineHeight: 1.5 },
+
+  selectedGeoMarker: {
+    position: "absolute", width: 18, height: 18, borderRadius: "50%", border: "3px solid #62c7ff", transform: "translate(-50%, -50%)", boxShadow: "0 0 0 3px rgba(1,13,29,.8)", pointerEvents: "none",
+  },
+  selectedSavedMarker: {
+    position: "absolute", width: 24, height: 24, borderRadius: "50%", border: "3px dashed #ffd36d", transform: "translate(-50%, -50%)", boxShadow: "0 0 0 3px rgba(1,13,29,.72)", pointerEvents: "none",
+  },
+  selectedDraftMarker: {
+    position: "absolute", width: 26, height: 26, borderRadius: "50%", border: "4px solid #31ff75", transform: "translate(-50%, -50%)", boxShadow: "0 0 0 3px rgba(1,13,29,.8), 0 0 18px rgba(49,255,117,.95)", pointerEvents: "none",
+  },
+  controlPointPanel: {
+    margin: "14px 0", padding: 12, borderRadius: 14, border: "1px solid rgba(49,255,117,.28)", background: "rgba(49,255,117,.08)",
+  },
+  selectLabel: { display: "grid", gap: 7, margin: "12px 0", color: "#ffe7b0", fontSize: 13, fontWeight: 800 },
+  selectInput: { width: "100%", borderRadius: 10, border: "1px solid rgba(255,218,146,.35)", background: "#121923", color: "#ffe8b6", padding: "9px 10px" },
+  coordinateList: { display: "grid", gap: 8, margin: "10px 0", color: "rgba(248,239,217,.76)", fontSize: 12, lineHeight: 1.35 },
+  secondaryButton: { width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid rgba(255,218,146,.32)", background: "rgba(255,255,255,.07)", color: "#ffe8b6", fontWeight: 800, cursor: "pointer" },
+
   controls: {
     flex: "1 1 320px",
     maxWidth: 360,
