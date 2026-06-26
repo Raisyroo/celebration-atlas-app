@@ -33,9 +33,9 @@ export const MICHIGAN_ARTWORK_MOBILE_MEDIA_QUERY = '(max-width: 767px)';
 // U.P. ease progressively downward. Tune this one block when the mobile artwork
 // changes or after future device testing.
 export const MICHIGAN_MOBILE_LATITUDE_VERTICAL_CORRECTION: MobileLatitudeVerticalCorrection = {
-  startLatitude: 43.4,
-  endLatitude: 46.6,
-  maxYOffsetPercent: 7.5,
+  startLatitude: 43.2,
+  endLatitude: 46.2,
+  maxYOffsetPercent: 12.5,
 } as const;
 
 export const MICHIGAN_ARTWORK_CALIBRATIONS: Record<
