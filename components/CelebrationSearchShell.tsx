@@ -132,7 +132,7 @@ export default function CelebrationSearchShell({
             <p className="celebration-search-shell__handoff">
               {highlightedEventCount} map{' '}
               {highlightedEventCount === 1 ? 'star is' : 'stars are'}
-              {' '}highlighted from this mock command. Marker taps, clusters, and
+              {' '}highlighted from this mock command. Marker taps and
               event cards stay manual.
             </p>
           ) : null}
