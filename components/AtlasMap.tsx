@@ -1001,6 +1001,11 @@ export default function AtlasMap({
     : isCelebrationSearchHighlightActive
       ? celebrationSearchHighlightedIdSet
       : constellationHighlightedIdSet;
+  const isSubmittedSearchActive = Boolean(q);
+  const hasSubmittedSearchMatches =
+    isSubmittedSearchActive && highlightedIds.size > 0;
+  const hasSubmittedSearchNoResults =
+    isSubmittedSearchActive && highlightedIds.size === 0;
   const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
     if (exactEventIntent || !q || highlightedIds.size === 0) return [];
 
@@ -1039,21 +1044,19 @@ export default function AtlasMap({
     ],
   );
   const ambientMobileEvents = ATLAS_EVENTS;
-  const visibleMarkerGroups = exactEventIntent
-    ? displayMarkerLayouts
-        .filter((layout) => layout.event.id === exactEventIntent.eventId)
-        .map((layout) => ({
-          id: `exact-${layout.event.id}`,
-          events: [layout.event],
-          eventIndices: [layout.eventIndex],
-          position: layout.position,
-        }))
-    : displayMarkerLayouts.map((layout) => ({
-        id: `event-${layout.event.id}`,
-        events: [layout.event],
-        eventIndices: [layout.eventIndex],
-        position: layout.position,
-      }));
+  const visibleMarkerGroups = displayMarkerLayouts
+    .filter((layout) => {
+      if (exactEventIntent) return layout.event.id === exactEventIntent.eventId;
+      if (hasSubmittedSearchMatches) return highlightedIds.has(layout.event.id);
+
+      return true;
+    })
+    .map((layout) => ({
+      id: exactEventIntent ? `exact-${layout.event.id}` : `event-${layout.event.id}`,
+      events: [layout.event],
+      eventIndices: [layout.eventIndex],
+      position: layout.position,
+    }));
 
   const selected = !isVerificationMode
     ? (ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null)
@@ -1771,8 +1774,10 @@ export default function AtlasMap({
 
   const isAtlasPanelOpen = Boolean(renderedEvent);
   const isStoryCardOpen = Boolean(renderedEvent);
-  const shouldShowMobileAmbientAtlas =
+  const shouldShowMobileChromeControls =
     !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
+  const shouldShowMobileAmbientAtlas =
+    shouldShowMobileChromeControls && !hasSubmittedSearchMatches;
 
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
@@ -2176,7 +2181,7 @@ export default function AtlasMap({
         />
       ) : null}
 
-      {shouldShowMobileAmbientAtlas ? (
+      {shouldShowMobileChromeControls ? (
         <>
           <div style={styles.mobileChromeControls} aria-label="Mobile atlas controls">
             <button type="button" aria-label="Open Michigan atlas menu" aria-expanded={isMobileMenuOpen} className="mobile-chrome-button" style={styles.mobileChromeButton} onClick={() => setIsMobileMenuOpen(true)}>
@@ -2198,7 +2203,7 @@ export default function AtlasMap({
         </>
       ) : null}
 
-      {shouldShowMobileAmbientAtlas && isMobileMenuOpen ? (
+      {shouldShowMobileChromeControls && isMobileMenuOpen ? (
         <div style={styles.mobileSheetOverlay} onClick={() => setIsMobileMenuOpen(false)}>
           <nav aria-label="Michigan atlas menu" style={styles.mobileMenuSheet} onClick={(event) => event.stopPropagation()}>
             <div style={styles.mobileSheetHandle} />
@@ -2210,7 +2215,7 @@ export default function AtlasMap({
         </div>
       ) : null}
 
-      {shouldShowMobileAmbientAtlas && isMobileFilterOpen ? (
+      {shouldShowMobileChromeControls && isMobileFilterOpen ? (
         <div style={styles.mobileSheetOverlay} onClick={() => setIsMobileFilterOpen(false)}>
           <section aria-label="Michigan atlas filters" style={styles.mobileFilterSheet} onClick={(event) => event.stopPropagation()}>
             <div style={styles.mobileSheetHandle} />
@@ -2432,10 +2437,16 @@ export default function AtlasMap({
             }}
           >
             <HomeDiscoveryLayer
-              query={submittedQuery}
-              resultCount={highlightedIds.size}
-              statusText={discoveryStatusText ?? undefined}
-              results={discoveryResultRows}
+              query={hasSubmittedSearchMatches ? '' : submittedQuery}
+              resultCount={hasSubmittedSearchMatches ? 0 : highlightedIds.size}
+              statusText={
+                hasSubmittedSearchMatches
+                  ? undefined
+                  : hasSubmittedSearchNoResults
+                    ? 'No matching celebrations found.'
+                    : discoveryStatusText ?? undefined
+              }
+              results={hasSubmittedSearchMatches ? [] : discoveryResultRows}
               shortcutGroups={HOME_DISCOVERY_SHORTCUT_GROUPS}
               showShortcutGroups={false}
             />
