@@ -562,6 +562,160 @@ type AtlasMarkerLayout = {
   position: MarkerPosition;
 };
 
+
+const MOBILE_TAG_SAFE_AREA_PERCENT = { left: 5, right: 5, top: 7, bottom: 18 };
+const MOBILE_TAG_GAP_PX = 6;
+const MOBILE_TAG_HEIGHT_PX = 24;
+const MOBILE_TAG_MAX_WIDTH_PX = 180;
+const MOBILE_TAG_MIN_WIDTH_PX = 72;
+const MOBILE_TAG_MEAN_GLYPH_WIDTH_PX = 6.6;
+const MOBILE_TAG_MEANINGFUL_MOVE_PX = 12;
+
+type MapViewportSize = { width: number; height: number };
+type MobileTagPlacementName =
+  | 'above'
+  | 'below'
+  | 'left'
+  | 'right'
+  | 'upper-left'
+  | 'upper-right'
+  | 'lower-left'
+  | 'lower-right';
+type MobileTagPlacement = {
+  eventId: string;
+  dx: number;
+  dy: number;
+  moved: boolean;
+  placement: MobileTagPlacementName;
+  width: number;
+  height: number;
+};
+type MobileTagRect = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+};
+
+const estimateMobileTagWidth = (label: string) =>
+  Math.min(
+    MOBILE_TAG_MAX_WIDTH_PX,
+    Math.max(
+      MOBILE_TAG_MIN_WIDTH_PX,
+      Math.ceil(label.length * MOBILE_TAG_MEAN_GLYPH_WIDTH_PX) + 22,
+    ),
+  );
+
+const getMobileTagRect = ({
+  marker,
+  dx,
+  dy,
+  width,
+  height,
+}: {
+  marker: { x: number; y: number };
+  dx: number;
+  dy: number;
+  width: number;
+  height: number;
+}): MobileTagRect => ({
+  left: marker.x + dx - width / 2,
+  right: marker.x + dx + width / 2,
+  top: marker.y + dy - height / 2,
+  bottom: marker.y + dy + height / 2,
+});
+
+const getMobileTagOverlapArea = (a: MobileTagRect, b: MobileTagRect) => {
+  const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+  const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+  return width * height;
+};
+
+const getMobileTagSafeAreaPenalty = (rect: MobileTagRect, viewport: MapViewportSize) => {
+  const safeLeft = (viewport.width * MOBILE_TAG_SAFE_AREA_PERCENT.left) / 100;
+  const safeRight = viewport.width - (viewport.width * MOBILE_TAG_SAFE_AREA_PERCENT.right) / 100;
+  const safeTop = (viewport.height * MOBILE_TAG_SAFE_AREA_PERCENT.top) / 100;
+  const safeBottom = viewport.height - (viewport.height * MOBILE_TAG_SAFE_AREA_PERCENT.bottom) / 100;
+
+  return (
+    Math.max(0, safeLeft - rect.left) +
+    Math.max(0, rect.right - safeRight) +
+    Math.max(0, safeTop - rect.top) +
+    Math.max(0, rect.bottom - safeBottom)
+  );
+};
+
+const resolveMobileSearchTagPlacements = ({
+  markerLayouts,
+  highlightedIds,
+  viewport,
+}: {
+  markerLayouts: AtlasMarkerLayout[];
+  highlightedIds: ReadonlySet<string>;
+  viewport: MapViewportSize | null;
+}): Map<string, MobileTagPlacement> => {
+  const placements = new Map<string, MobileTagPlacement>();
+  if (!viewport || viewport.width <= 0 || viewport.height <= 0) return placements;
+
+  const placedRects: MobileTagRect[] = [];
+  const markerPx = (position: MarkerPosition) => ({
+    x: (position.x / 100) * viewport.width,
+    y: (position.y / 100) * viewport.height,
+  });
+
+  markerLayouts
+    .filter((layout) => highlightedIds.has(layout.event.id))
+    .sort((a, b) => a.eventIndex - b.eventIndex)
+    .forEach((layout, visibleIndex) => {
+      const width = estimateMobileTagWidth(layout.event.name);
+      const height = MOBILE_TAG_HEIGHT_PX;
+      const marker = markerPx(layout.position);
+      const primaryDistance = height + MOBILE_TAG_GAP_PX + 10;
+      const lateralDistance = width / 2 + 20;
+      const diagonalX = Math.max(44, width / 2 + 10);
+      const diagonalY = height + 20;
+      const stackNudge = (visibleIndex % 3 - 1) * 10;
+      const candidates: { placement: MobileTagPlacementName; dx: number; dy: number }[] = [
+        { placement: 'above', dx: 0, dy: -primaryDistance },
+        { placement: 'below', dx: 0, dy: primaryDistance },
+        { placement: 'left', dx: -lateralDistance, dy: stackNudge },
+        { placement: 'right', dx: lateralDistance, dy: stackNudge },
+        { placement: 'upper-left', dx: -diagonalX, dy: -diagonalY },
+        { placement: 'upper-right', dx: diagonalX, dy: -diagonalY },
+        { placement: 'lower-left', dx: -diagonalX, dy: diagonalY },
+        { placement: 'lower-right', dx: diagonalX, dy: diagonalY },
+      ];
+
+      const ranked = candidates
+        .map((candidate, order) => {
+          const rect = getMobileTagRect({ marker, ...candidate, width, height });
+          const overlap = placedRects.reduce(
+            (total, placedRect) => total + getMobileTagOverlapArea(rect, placedRect),
+            0,
+          );
+          const safePenalty = getMobileTagSafeAreaPenalty(rect, viewport);
+          return { ...candidate, rect, order, score: overlap * 100 + safePenalty * 20 + order };
+        })
+        .sort((a, b) => a.score - b.score || a.order - b.order);
+
+      const best = ranked[0];
+      if (!best) return;
+
+      placedRects.push(best.rect);
+      placements.set(layout.event.id, {
+        eventId: layout.event.id,
+        dx: best.dx,
+        dy: best.dy,
+        moved: Math.hypot(best.dx, best.dy + primaryDistance) > MOBILE_TAG_MEANINGFUL_MOVE_PX,
+        placement: best.placement,
+        width,
+        height,
+      });
+    });
+
+  return placements;
+};
+
 type AtlasMapProps = {
   constellationHighlightedIds?: readonly string[];
   celebrationSearchHighlightedIds?: readonly string[];
@@ -944,6 +1098,7 @@ export default function AtlasMap({
   const shouldShowCalibration = showAtlasCalibration && !isVerificationMode;
   const initialEventParamHandledRef = useRef(false);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
+  const [mapViewportSize, setMapViewportSize] = useState<MapViewportSize | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1044,6 +1199,23 @@ export default function AtlasMap({
     ],
   );
   const ambientMobileEvents = ATLAS_EVENTS;
+  const mobileSearchTagPlacements = useMemo(
+    () =>
+      !isDesktop && hasSubmittedSearchMatches
+        ? resolveMobileSearchTagPlacements({
+            markerLayouts: displayMarkerLayouts,
+            highlightedIds,
+            viewport: mapViewportSize,
+          })
+        : new Map<string, MobileTagPlacement>(),
+    [
+      displayMarkerLayouts,
+      hasSubmittedSearchMatches,
+      highlightedIds,
+      isDesktop,
+      mapViewportSize,
+    ],
+  );
   const visibleMarkerGroups = displayMarkerLayouts
     .filter((layout) => {
       if (exactEventIntent) return layout.event.id === exactEventIntent.eventId;
@@ -1094,6 +1266,27 @@ export default function AtlasMap({
     cardBaseTheme,
     renderedEvent?.regionAtmosphere,
   );
+
+  useEffect(() => {
+    const frame = mapFrameRef.current;
+    if (!frame) return;
+
+    const syncMapViewportSize = () => {
+      const rect = frame.getBoundingClientRect();
+      setMapViewportSize({ width: rect.width, height: rect.height });
+    };
+
+    syncMapViewportSize();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', syncMapViewportSize);
+      return () => window.removeEventListener('resize', syncMapViewportSize);
+    }
+
+    const observer = new ResizeObserver(syncMapViewportSize);
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -2010,6 +2203,20 @@ export default function AtlasMap({
                 const shouldShowMarkerLabel = exactEventIntent
                   ? Boolean(exactHighlightedEvent)
                   : !isCluster && isHighlighted;
+                const mobileTagPlacement = markerLabelEvent
+                  ? mobileSearchTagPlacements.get(markerLabelEvent.id)
+                  : null;
+                const shouldUseMobileTagPlacement = Boolean(
+                  shouldShowMarkerLabel && mobileTagPlacement && !isDesktop,
+                );
+                const mobileTagDx = mobileTagPlacement?.dx ?? 0;
+                const mobileTagDy = mobileTagPlacement?.dy ?? 0;
+                const mobileTagConnectorLength = Math.max(
+                  0,
+                  Math.hypot(mobileTagDx, mobileTagDy) - 10,
+                );
+                const mobileTagConnectorAngle =
+                  (Math.atan2(mobileTagDy, mobileTagDx) * 180) / Math.PI;
                 return (
                   <div
                     key={id}
@@ -2036,6 +2243,16 @@ export default function AtlasMap({
                         </>
                       ) : (
                         <>
+                          {shouldUseMobileTagPlacement && mobileTagPlacement?.moved ? (
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                ...styles.mobileMarkerLabelConnector,
+                                width: mobileTagConnectorLength,
+                                transform: `rotate(${mobileTagConnectorAngle}deg)`,
+                              }}
+                            />
+                          ) : null}
                           <button
                             type="button"
                             aria-label={
@@ -2148,10 +2365,15 @@ export default function AtlasMap({
                             style={{
                               ...styles.markerLabel,
                               ...(isCluster ? styles.clusterLabel : null),
+                              ...(shouldUseMobileTagPlacement
+                                ? styles.mobileSearchMarkerLabel
+                                : null),
                               opacity: shouldShowMarkerLabel ? 1 : 0,
-                              transform: shouldShowMarkerLabel
-                                ? 'translate(-50%, -122%)'
-                                : 'translate(-50%, -116%)',
+                              transform: shouldUseMobileTagPlacement
+                                ? `translate(calc(-50% + ${mobileTagDx}px), calc(-50% + ${mobileTagDy}px))`
+                                : shouldShowMarkerLabel
+                                  ? 'translate(-50%, -122%)'
+                                  : 'translate(-50%, -116%)',
                               pointerEvents: shouldShowMarkerLabel
                                 ? 'auto'
                                 : 'none',
@@ -3565,6 +3787,30 @@ const styles: Record<string, CSSProperties> = {
     borderColor: 'rgba(255, 227, 170, 0.34)',
     background:
       'linear-gradient(180deg, rgba(31, 38, 54, 0.46), rgba(7, 10, 15, 0.28))',
+  },
+  mobileSearchMarkerLabel: {
+    top: '50%',
+    minWidth: MOBILE_TAG_MIN_WIDTH_PX,
+    height: MOBILE_TAG_HEIGHT_PX,
+    padding: '6px 10px 5px',
+    background:
+      'linear-gradient(180deg, rgba(25, 33, 48, 0.78), rgba(7, 10, 15, 0.68))',
+    borderColor: 'rgba(255, 231, 184, 0.48)',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255, 248, 224, 0.08), 0 6px 18px rgba(2, 5, 12, 0.34), 0 0 16px rgba(251, 203, 110, 0.2)',
+    touchAction: 'manipulation',
+  },
+  mobileMarkerLabelConnector: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    height: 1,
+    transformOrigin: '0 50%',
+    background:
+      'linear-gradient(90deg, rgba(255, 236, 194, 0.58), rgba(255, 236, 194, 0.08))',
+    boxShadow: '0 0 8px rgba(255, 218, 142, 0.32)',
+    pointerEvents: 'none',
+    zIndex: Z_INDEX.markers + 1,
   },
   searchDock: {
     position: 'absolute',
