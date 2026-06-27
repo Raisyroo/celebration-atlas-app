@@ -565,11 +565,12 @@ type AtlasMarkerLayout = {
 
 const MOBILE_TAG_SAFE_AREA_PERCENT = { left: 5, right: 5, top: 7, bottom: 18 };
 const MOBILE_TAG_GAP_PX = 6;
-const MOBILE_TAG_HEIGHT_PX = 24;
+const MOBILE_TAG_HEIGHT_PX = 28;
 const MOBILE_TAG_MAX_WIDTH_PX = 180;
 const MOBILE_TAG_MIN_WIDTH_PX = 72;
 const MOBILE_TAG_MEAN_GLYPH_WIDTH_PX = 6.6;
 const MOBILE_TAG_MEANINGFUL_MOVE_PX = 12;
+const MOBILE_TAG_TAP_BUFFER_PX = 4;
 
 type MapViewportSize = { width: number; height: number };
 type MobileTagPlacementName =
@@ -589,6 +590,7 @@ type MobileTagPlacement = {
   placement: MobileTagPlacementName;
   width: number;
   height: number;
+  zIndex: number;
 };
 type MobileTagRect = {
   left: number;
@@ -631,6 +633,13 @@ const getMobileTagOverlapArea = (a: MobileTagRect, b: MobileTagRect) => {
   return width * height;
 };
 
+const inflateMobileTagRect = (rect: MobileTagRect, buffer: number): MobileTagRect => ({
+  left: rect.left - buffer,
+  right: rect.right + buffer,
+  top: rect.top - buffer,
+  bottom: rect.bottom + buffer,
+});
+
 const getMobileTagSafeAreaPenalty = (rect: MobileTagRect, viewport: MapViewportSize) => {
   const safeLeft = (viewport.width * MOBILE_TAG_SAFE_AREA_PERCENT.left) / 100;
   const safeRight = viewport.width - (viewport.width * MOBILE_TAG_SAFE_AREA_PERCENT.right) / 100;
@@ -670,20 +679,25 @@ const resolveMobileSearchTagPlacements = ({
       const width = estimateMobileTagWidth(layout.event.name);
       const height = MOBILE_TAG_HEIGHT_PX;
       const marker = markerPx(layout.position);
-      const primaryDistance = height + MOBILE_TAG_GAP_PX + 10;
-      const lateralDistance = width / 2 + 20;
-      const diagonalX = Math.max(44, width / 2 + 10);
-      const diagonalY = height + 20;
-      const stackNudge = (visibleIndex % 3 - 1) * 10;
+      const primaryDistance = height + MOBILE_TAG_GAP_PX + 8;
+      const rowStep = height + MOBILE_TAG_GAP_PX;
+      const sideStep = Math.min(52, Math.max(24, width * 0.34));
+      const tightStackNudge = (visibleIndex % 3 - 1) * 8;
       const candidates: { placement: MobileTagPlacementName; dx: number; dy: number }[] = [
         { placement: 'above', dx: 0, dy: -primaryDistance },
+        { placement: 'upper-left', dx: -sideStep, dy: -primaryDistance - tightStackNudge },
+        { placement: 'upper-right', dx: sideStep, dy: -primaryDistance + tightStackNudge },
         { placement: 'below', dx: 0, dy: primaryDistance },
-        { placement: 'left', dx: -lateralDistance, dy: stackNudge },
-        { placement: 'right', dx: lateralDistance, dy: stackNudge },
-        { placement: 'upper-left', dx: -diagonalX, dy: -diagonalY },
-        { placement: 'upper-right', dx: diagonalX, dy: -diagonalY },
-        { placement: 'lower-left', dx: -diagonalX, dy: diagonalY },
-        { placement: 'lower-right', dx: diagonalX, dy: diagonalY },
+        { placement: 'lower-left', dx: -sideStep, dy: primaryDistance + tightStackNudge },
+        { placement: 'lower-right', dx: sideStep, dy: primaryDistance - tightStackNudge },
+        { placement: 'left', dx: -sideStep, dy: tightStackNudge },
+        { placement: 'right', dx: sideStep, dy: tightStackNudge },
+        { placement: 'above', dx: 0, dy: -primaryDistance - rowStep },
+        { placement: 'upper-left', dx: -sideStep, dy: -primaryDistance - rowStep },
+        { placement: 'upper-right', dx: sideStep, dy: -primaryDistance - rowStep },
+        { placement: 'below', dx: 0, dy: primaryDistance + rowStep },
+        { placement: 'lower-left', dx: -sideStep, dy: primaryDistance + rowStep },
+        { placement: 'lower-right', dx: sideStep, dy: primaryDistance + rowStep },
       ];
 
       const ranked = candidates
@@ -693,8 +707,28 @@ const resolveMobileSearchTagPlacements = ({
             (total, placedRect) => total + getMobileTagOverlapArea(rect, placedRect),
             0,
           );
+          const tapOverlap = placedRects.reduce(
+            (total, placedRect) =>
+              total +
+              getMobileTagOverlapArea(
+                inflateMobileTagRect(rect, MOBILE_TAG_TAP_BUFFER_PX),
+                inflateMobileTagRect(placedRect, MOBILE_TAG_TAP_BUFFER_PX),
+              ),
+            0,
+          );
           const safePenalty = getMobileTagSafeAreaPenalty(rect, viewport);
-          return { ...candidate, rect, order, score: overlap * 100 + safePenalty * 20 + order };
+          const localityPenalty = Math.hypot(candidate.dx, candidate.dy + primaryDistance);
+          return {
+            ...candidate,
+            rect,
+            order,
+            score:
+              overlap * 80 +
+              tapOverlap * 32 +
+              safePenalty * 22 +
+              localityPenalty * 1.8 +
+              order,
+          };
         })
         .sort((a, b) => a.score - b.score || a.order - b.order);
 
@@ -710,6 +744,7 @@ const resolveMobileSearchTagPlacements = ({
         placement: best.placement,
         width,
         height,
+        zIndex: visibleIndex,
       });
     });
 
@@ -2211,12 +2246,6 @@ export default function AtlasMap({
                 );
                 const mobileTagDx = mobileTagPlacement?.dx ?? 0;
                 const mobileTagDy = mobileTagPlacement?.dy ?? 0;
-                const mobileTagConnectorLength = Math.max(
-                  0,
-                  Math.hypot(mobileTagDx, mobileTagDy) - 10,
-                );
-                const mobileTagConnectorAngle =
-                  (Math.atan2(mobileTagDy, mobileTagDx) * 180) / Math.PI;
                 return (
                   <div
                     key={id}
@@ -2243,16 +2272,6 @@ export default function AtlasMap({
                         </>
                       ) : (
                         <>
-                          {shouldUseMobileTagPlacement && mobileTagPlacement?.moved ? (
-                            <span
-                              aria-hidden="true"
-                              style={{
-                                ...styles.mobileMarkerLabelConnector,
-                                width: mobileTagConnectorLength,
-                                transform: `rotate(${mobileTagConnectorAngle}deg)`,
-                              }}
-                            />
-                          ) : null}
                           <button
                             type="button"
                             aria-label={
@@ -2368,6 +2387,9 @@ export default function AtlasMap({
                               ...(shouldUseMobileTagPlacement
                                 ? styles.mobileSearchMarkerLabel
                                 : null),
+                              zIndex: shouldUseMobileTagPlacement
+                                ? Z_INDEX.markers + 22 + (mobileTagPlacement?.zIndex ?? 0)
+                                : undefined,
                               opacity: shouldShowMarkerLabel ? 1 : 0,
                               transform: shouldUseMobileTagPlacement
                                 ? `translate(calc(-50% + ${mobileTagDx}px), calc(-50% + ${mobileTagDy}px))`
@@ -3799,18 +3821,6 @@ const styles: Record<string, CSSProperties> = {
     boxShadow:
       'inset 0 0 0 1px rgba(255, 248, 224, 0.08), 0 6px 18px rgba(2, 5, 12, 0.34), 0 0 16px rgba(251, 203, 110, 0.2)',
     touchAction: 'manipulation',
-  },
-  mobileMarkerLabelConnector: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    height: 1,
-    transformOrigin: '0 50%',
-    background:
-      'linear-gradient(90deg, rgba(255, 236, 194, 0.58), rgba(255, 236, 194, 0.08))',
-    boxShadow: '0 0 8px rgba(255, 218, 142, 0.32)',
-    pointerEvents: 'none',
-    zIndex: Z_INDEX.markers + 1,
   },
   searchDock: {
     position: 'absolute',
