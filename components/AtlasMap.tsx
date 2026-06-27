@@ -521,13 +521,15 @@ function EventThumbnail({
   variant,
 }: {
   event: AtlasEvent;
-  variant: 'floating' | 'live';
+  variant: 'floating' | 'live' | 'tag';
 }) {
   const thumbnail = getEventThumbnail(event);
   const wrapStyle =
     variant === 'live'
       ? styles.eventThumbnailLive
-      : styles.eventThumbnailFloating;
+      : variant === 'tag'
+        ? styles.eventThumbnailTag
+        : styles.eventThumbnailFloating;
 
   if (thumbnail.kind === 'image') {
     return (
@@ -565,10 +567,10 @@ type AtlasMarkerLayout = {
 
 const MOBILE_TAG_SAFE_AREA_PERCENT = { left: 5, right: 5, top: 7, bottom: 18 };
 const MOBILE_TAG_GAP_PX = 6;
-const MOBILE_TAG_HEIGHT_PX = 28;
-const MOBILE_TAG_MAX_WIDTH_PX = 180;
-const MOBILE_TAG_MIN_WIDTH_PX = 72;
-const MOBILE_TAG_MEAN_GLYPH_WIDTH_PX = 6.6;
+const MOBILE_TAG_HEIGHT_PX = 34;
+const MOBILE_TAG_MAX_WIDTH_PX = 236;
+const MOBILE_TAG_MIN_WIDTH_PX = 118;
+const MOBILE_TAG_MEAN_GLYPH_WIDTH_PX = 6.2;
 const MOBILE_TAG_MEANINGFUL_MOVE_PX = 12;
 const MOBILE_TAG_TAP_BUFFER_PX = 4;
 
@@ -604,7 +606,7 @@ const estimateMobileTagWidth = (label: string) =>
     MOBILE_TAG_MAX_WIDTH_PX,
     Math.max(
       MOBILE_TAG_MIN_WIDTH_PX,
-      Math.ceil(label.length * MOBILE_TAG_MEAN_GLYPH_WIDTH_PX) + 22,
+      Math.ceil(label.length * MOBILE_TAG_MEAN_GLYPH_WIDTH_PX) + 58,
     ),
   );
 
@@ -2492,6 +2494,9 @@ export default function AtlasMap({
                               zIndex: shouldUseMobileTagPlacement
                                 ? Z_INDEX.markers + 22 + (mobileTagPlacement?.zIndex ?? 0)
                                 : undefined,
+                              width: shouldUseMobileTagPlacement
+                                ? mobileTagPlacement?.width
+                                : undefined,
                               opacity: shouldShowMarkerLabel ? 1 : 0,
                               transform: shouldUseMobileTagPlacement
                                 ? `translate(calc(-50% + ${mobileTagDx}px), calc(-50% + ${mobileTagDy}px))`
@@ -2503,8 +2508,19 @@ export default function AtlasMap({
                                 : 'none',
                             }}
                           >
-                            {markerLabelEvent?.name ??
-                              `${events.length} celebrations`}
+                            {shouldUseMobileTagPlacement && markerLabelEvent ? (
+                              <>
+                                <EventThumbnail event={markerLabelEvent} variant="tag" />
+                                <span style={styles.mobileSearchMarkerLabelText}>
+                                  {markerLabelEvent.name}
+                                </span>
+                                <span aria-hidden="true" style={styles.mobileSearchMarkerLabelChevron}>
+                                  ›
+                                </span>
+                              </>
+                            ) : (
+                              markerLabelEvent?.name ?? `${events.length} celebrations`
+                            )}
                           </button>
                         </>
                       )}
@@ -4145,14 +4161,44 @@ const styles: Record<string, CSSProperties> = {
   mobileSearchMarkerLabel: {
     top: '50%',
     minWidth: MOBILE_TAG_MIN_WIDTH_PX,
-    height: MOBILE_TAG_HEIGHT_PX,
-    padding: '6px 10px 5px',
+    maxWidth: MOBILE_TAG_MAX_WIDTH_PX,
+    minHeight: MOBILE_TAG_HEIGHT_PX,
+    height: 'auto',
+    padding: '4px 7px 4px 5px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    borderRadius: 13,
+    whiteSpace: 'normal',
     background:
-      'linear-gradient(180deg, rgba(25, 33, 48, 0.78), rgba(7, 10, 15, 0.68))',
-    borderColor: 'rgba(255, 231, 184, 0.48)',
+      'linear-gradient(180deg, rgba(30, 34, 44, 0.84), rgba(8, 10, 15, 0.76))',
+    borderColor: 'rgba(232, 181, 92, 0.58)',
     boxShadow:
-      'inset 0 0 0 1px rgba(255, 248, 224, 0.08), 0 6px 18px rgba(2, 5, 12, 0.34), 0 0 16px rgba(251, 203, 110, 0.2)',
+      'inset 0 1px 0 rgba(255, 245, 218, 0.14), inset 0 0 0 1px rgba(255, 198, 98, 0.08), 0 8px 20px rgba(2, 5, 12, 0.38), 0 0 14px rgba(211, 143, 52, 0.18)',
     touchAction: 'manipulation',
+    textAlign: 'left',
+  },
+  mobileSearchMarkerLabelText: {
+    flex: '1 1 auto',
+    minWidth: 0,
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    color: 'rgba(255, 242, 205, 0.94)',
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: 0.12,
+    lineHeight: 1.14,
+  },
+  mobileSearchMarkerLabelChevron: {
+    flex: '0 0 auto',
+    color: 'rgba(245, 200, 124, 0.72)',
+    fontSize: 16,
+    lineHeight: 1,
+    marginLeft: 1,
+    textShadow: '0 1px 4px rgba(0, 0, 0, 0.72)',
   },
   searchDock: {
     position: 'absolute',
@@ -4824,6 +4870,14 @@ const styles: Record<string, CSSProperties> = {
     width: 34,
     height: 34,
     borderRadius: 11,
+  },
+  eventThumbnailTag: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    borderColor: 'rgba(247, 207, 137, 0.36)',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255, 244, 214, 0.08), 0 0 8px rgba(255, 198, 96, 0.12)',
   },
   eventThumbnailLive: {
     width: '100%',
