@@ -2357,9 +2357,38 @@ export default function AtlasMap({
                                         : markerBaseShadows.peak,
                                   animationDuration: `${pulseDuration}s`,
                                   animationDelay: `${pulseDelay}s`,
+                                  '--marker-star-pulse-duration': `${pulseDuration}s`,
                                 } as CSSProperties
                               }
-                            />
+                            >
+                              {!isCluster ? (
+                                <svg
+                                  aria-hidden="true"
+                                  className="atlas-marker-star"
+                                  viewBox="0 0 100 100"
+                                  focusable="false"
+                                >
+                                  <defs>
+                                    <linearGradient
+                                      id={`atlas-marker-star-fill-${id}`}
+                                      x1="28"
+                                      x2="76"
+                                      y1="12"
+                                      y2="88"
+                                      gradientUnits="userSpaceOnUse"
+                                    >
+                                      <stop offset="0" stopColor="#fffdf2" />
+                                      <stop offset="0.42" stopColor="#ffe08f" />
+                                      <stop offset="1" stopColor="#f0a23a" />
+                                    </linearGradient>
+                                  </defs>
+                                  <path
+                                    d="M50 5 61.8 35.2 94 38.2 69.6 59.4 76.9 91 50 74.2 23.1 91 30.4 59.4 6 38.2 38.2 35.2Z"
+                                    fill={`url(#atlas-marker-star-fill-${id})`}
+                                  />
+                                </svg>
+                              ) : null}
+                            </span>
                           </button>
                           <button
                             type="button"
@@ -3071,6 +3100,7 @@ export default function AtlasMap({
               animation-fill-mode: both;
               will-change: transform, box-shadow, filter, outline-offset, opacity;
               transform-origin: center;
+              isolation: isolate;
               --marker-brightness-idle: 1;
               --marker-brightness-peak: 1.07;
               --marker-saturation-idle: 1;
@@ -3078,12 +3108,22 @@ export default function AtlasMap({
               --marker-ring-opacity: 0.1;
               --marker-bloom-opacity: 0.2;
               --marker-bloom-size: 190%;
+              --marker-star-size: 64%;
+              --marker-star-opacity: 0.92;
+              --marker-star-filter-idle: drop-shadow(0 0 6px rgba(255, 231, 164, 0.42));
+              --marker-star-filter-peak: drop-shadow(0 0 9px rgba(255, 240, 196, 0.52));
             }
 
             .marker-pulse--inactive {
-              opacity: 0.9;
-              --marker-ring-opacity: 0.08;
-              --marker-bloom-opacity: 0.16;
+              animation-name: markerIdleGlow;
+              opacity: 0.68;
+              --marker-ring-opacity: 0.035;
+              --marker-bloom-opacity: 0.055;
+              --marker-bloom-size: 145%;
+              --marker-star-size: 42%;
+              --marker-star-opacity: 0.42;
+              --marker-star-filter-idle: drop-shadow(0 0 4px rgba(255, 225, 146, 0.22));
+              --marker-star-filter-peak: drop-shadow(0 0 5px rgba(255, 231, 164, 0.28));
             }
 
             .marker-pulse--broad-highlighted {
@@ -3095,6 +3135,12 @@ export default function AtlasMap({
               --marker-ring-opacity: 0.22;
               --marker-bloom-opacity: 0.36;
               --marker-bloom-size: 230%;
+              --marker-star-size: 78%;
+              --marker-star-opacity: 0.98;
+              --marker-star-filter-idle: drop-shadow(0 0 8px rgba(255, 246, 220, 0.72))
+                drop-shadow(0 0 20px rgba(255, 204, 104, 0.42));
+              --marker-star-filter-peak: drop-shadow(0 0 12px rgba(255, 252, 236, 0.88))
+                drop-shadow(0 0 28px rgba(255, 216, 126, 0.58));
             }
 
             /* Temporary reliable exact-event pulse restored. Global U.S./state marker language should be designed later as a shared marker system, not tuned here as a Romeo-only fix. */
@@ -3114,6 +3160,14 @@ export default function AtlasMap({
               --marker-ring-opacity: 0.72;
               --marker-bloom-opacity: 0.9;
               --marker-bloom-size: 360%;
+              --marker-star-size: 88%;
+              --marker-star-opacity: 1;
+              --marker-star-filter-idle: drop-shadow(0 0 10px rgba(255, 255, 248, 0.96))
+                drop-shadow(0 0 24px rgba(255, 228, 142, 0.82))
+                drop-shadow(0 0 42px rgba(255, 187, 76, 0.42));
+              --marker-star-filter-peak: drop-shadow(0 0 16px rgba(255, 255, 250, 1))
+                drop-shadow(0 0 34px rgba(255, 236, 166, 0.96))
+                drop-shadow(0 0 58px rgba(255, 194, 86, 0.56));
             }
 
             .marker-pulse--selected {
@@ -3127,6 +3181,12 @@ export default function AtlasMap({
               --marker-ring-opacity: 0.38;
               --marker-bloom-opacity: 0.54;
               --marker-bloom-size: 265%;
+              --marker-star-size: 84%;
+              --marker-star-opacity: 1;
+              --marker-star-filter-idle: drop-shadow(0 0 9px rgba(255, 254, 242, 0.84))
+                drop-shadow(0 0 23px rgba(255, 224, 138, 0.66));
+              --marker-star-filter-peak: drop-shadow(0 0 14px rgba(255, 255, 248, 0.96))
+                drop-shadow(0 0 32px rgba(255, 228, 146, 0.78));
             }
 
             .marker-pulse--cluster {
@@ -3195,6 +3255,7 @@ export default function AtlasMap({
               );
               pointer-events: none;
               transform: translate(-50%, -50%);
+              z-index: 0;
             }
 
             .marker-pulse::after {
@@ -3206,6 +3267,27 @@ export default function AtlasMap({
                 rgba(255, 225, 146, calc(var(--marker-bloom-opacity, 0.2) * 0.42)) 36%,
                 rgba(255, 225, 146, 0) 66%
               );
+            }
+
+            .atlas-marker-star {
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              width: var(--marker-star-size, 64%);
+              height: var(--marker-star-size, 64%);
+              filter: var(--marker-star-filter-idle);
+              opacity: var(--marker-star-opacity, 0.92);
+              pointer-events: none;
+              transform: translate(-50%, -50%);
+              transform-origin: center;
+              z-index: 2;
+            }
+
+            .marker-pulse--broad-highlighted .atlas-marker-star,
+            .marker-pulse--selected .atlas-marker-star,
+            .marker-pulse[data-atlas-marker-state='exact-event'] .atlas-marker-star {
+              animation: markerStarPulse var(--marker-star-pulse-duration, inherit)
+                ease-in-out infinite both;
             }
 
 
@@ -3305,6 +3387,34 @@ export default function AtlasMap({
                 box-shadow: var(--marker-shadow-peak);
                 filter: brightness(var(--marker-brightness-peak, 1.07))
                   saturate(var(--marker-saturation-peak, 1.08));
+              }
+            }
+
+            @keyframes markerIdleGlow {
+              0%,
+              100% {
+                transform: translate(-50%, -50%)
+                  scale(var(--marker-scale-base, 1));
+                box-shadow: var(--marker-shadow-idle);
+                filter: brightness(0.96) saturate(0.92);
+              }
+              50% {
+                transform: translate(-50%, -50%)
+                  scale(calc(var(--marker-scale-base, 1) * 1.025));
+                box-shadow: var(--marker-shadow-idle);
+                filter: brightness(1) saturate(0.96);
+              }
+            }
+
+            @keyframes markerStarPulse {
+              0%,
+              100% {
+                filter: var(--marker-star-filter-idle);
+                transform: translate(-50%, -50%) scale(0.98);
+              }
+              50% {
+                filter: var(--marker-star-filter-peak);
+                transform: translate(-50%, -50%) scale(1.12);
               }
             }
           `}</style>
