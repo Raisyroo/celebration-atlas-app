@@ -3222,6 +3222,28 @@ export default function AtlasMap({
               .marker-pulse--broad-highlighted {
                 width: 22px !important;
                 height: 22px !important;
+                --marker-brightness-idle: 1.42;
+                --marker-brightness-peak: 1.62;
+                --marker-saturation-idle: 1.2;
+                --marker-saturation-peak: 1.34;
+                --marker-ring-opacity: 0.34;
+                --marker-bloom-opacity: 0.56;
+                --marker-bloom-size: 310%;
+                --marker-star-size: 210%;
+                --marker-star-opacity: 1;
+                --marker-core-size: 16%;
+                --marker-halo-size: 84%;
+                --marker-flare-length: 160%;
+                --marker-flare-thickness: 7%;
+                --marker-diagonal-opacity: 0.58;
+                --marker-star-filter-idle: brightness(1.22)
+                  drop-shadow(0 0 10px rgba(255, 255, 238, 0.94))
+                  drop-shadow(0 0 24px rgba(255, 216, 122, 0.72))
+                  drop-shadow(0 0 42px rgba(255, 174, 66, 0.32));
+                --marker-star-filter-peak: brightness(1.38)
+                  drop-shadow(0 0 16px rgba(255, 255, 246, 1))
+                  drop-shadow(0 0 34px rgba(255, 226, 142, 0.9))
+                  drop-shadow(0 0 58px rgba(255, 184, 72, 0.44));
               }
 
               .marker-pulse--exact-reveal,
@@ -3231,7 +3253,28 @@ export default function AtlasMap({
                 height: 34px !important;
                 outline-width: 2px;
                 outline-offset: 8px;
-                --marker-bloom-size: 275%;
+                --marker-brightness-idle: 2.12;
+                --marker-brightness-peak: 2.42;
+                --marker-saturation-idle: 1.44;
+                --marker-saturation-peak: 1.62;
+                --marker-ring-opacity: 0.86;
+                --marker-bloom-opacity: 1;
+                --marker-bloom-size: 345%;
+                --marker-star-size: 245%;
+                --marker-core-size: 18%;
+                --marker-halo-size: 96%;
+                --marker-flare-length: 184%;
+                --marker-flare-thickness: 6.5%;
+                --marker-diagonal-opacity: 0.72;
+                --marker-exact-halo-size: 104px;
+                --marker-star-filter-idle: brightness(1.34)
+                  drop-shadow(0 0 14px rgba(255, 255, 252, 1))
+                  drop-shadow(0 0 34px rgba(255, 236, 166, 0.98))
+                  drop-shadow(0 0 68px rgba(255, 194, 86, 0.62));
+                --marker-star-filter-peak: brightness(1.58)
+                  drop-shadow(0 0 22px rgba(255, 255, 255, 1))
+                  drop-shadow(0 0 48px rgba(255, 244, 194, 1))
+                  drop-shadow(0 0 88px rgba(255, 202, 96, 0.76));
               }
 
               .marker-pulse--selected {
@@ -3239,6 +3282,27 @@ export default function AtlasMap({
                 height: 32px !important;
                 outline-width: 1.5px;
                 outline-offset: 5px;
+                --marker-brightness-idle: 1.68;
+                --marker-brightness-peak: 1.92;
+                --marker-saturation-idle: 1.28;
+                --marker-saturation-peak: 1.42;
+                --marker-ring-opacity: 0.54;
+                --marker-bloom-opacity: 0.76;
+                --marker-bloom-size: 315%;
+                --marker-star-size: 225%;
+                --marker-core-size: 17%;
+                --marker-halo-size: 88%;
+                --marker-flare-length: 170%;
+                --marker-flare-thickness: 6.8%;
+                --marker-diagonal-opacity: 0.64;
+                --marker-star-filter-idle: brightness(1.26)
+                  drop-shadow(0 0 12px rgba(255, 255, 248, 0.98))
+                  drop-shadow(0 0 30px rgba(255, 228, 146, 0.84))
+                  drop-shadow(0 0 54px rgba(255, 184, 72, 0.42));
+                --marker-star-filter-peak: brightness(1.46)
+                  drop-shadow(0 0 18px rgba(255, 255, 252, 1))
+                  drop-shadow(0 0 40px rgba(255, 236, 166, 0.96))
+                  drop-shadow(0 0 72px rgba(255, 194, 86, 0.58));
               }
 
               .marker-pulse--cluster {
