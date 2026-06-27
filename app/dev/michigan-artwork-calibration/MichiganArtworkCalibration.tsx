@@ -58,6 +58,43 @@ type ArtworkVariant = {
   initial: CalibrationValues;
 };
 
+type ControlPointCalibrationExport = {
+  format: "celebration-atlas-michigan-artwork-calibration/v1";
+  generatedBy: string;
+  sourceOfTruth: string;
+  productionBehavior: string;
+  audit: {
+    mapAnchors: string;
+    developerRoute: string;
+    recentCorrections: string;
+    temporaryCompatibility: string;
+    retirementPath: string;
+  };
+  reference: {
+    name: string;
+    bounds: typeof MICHIGAN_REFERENCE_SVG.bounds;
+    projection: string;
+  };
+  geographicRegions: Record<string, string>;
+  upperPeninsulaStraitsCorrection: Record<string, unknown>;
+  mobileLatitudeVerticalCorrection: Record<string, unknown>;
+  controlPointInterpolation: {
+    method: string;
+    neighborCount: number;
+    power: number;
+    productionBehavior: string;
+  };
+  controlPoints: Array<{
+    id: string;
+    city: string;
+    latitude: number;
+    longitude: number;
+    rawGeographicReference: ControlPointArtworkPosition;
+    artwork: Record<ArtworkVariantId, ControlPointArtworkPosition | null>;
+    savedCompatibilityArtwork: Record<ArtworkVariantId, ControlPointArtworkPosition>;
+  }>;
+};
+
 const ARTWORK_VARIANTS: ArtworkVariant[] = [
   {
     id: "desktop",
@@ -199,6 +236,19 @@ const mobileVerticalCorrectionSummary = `Northern vertical correction: starts at
 
 const regionalHorizontalCorrectionSummary = `Northern horizontal correction: mobile-only eastward x starts at ${formatCorrectionLatitude(MICHIGAN_UPPER_PENINSULA_STRAITS_CORRECTION.horizontalTransitionStartLatitude)}, builds through the Straits band (${formatCorrectionLatitude(MICHIGAN_UPPER_PENINSULA_STRAITS_CORRECTION.transitionStartLatitude)} to ${formatCorrectionLatitude(MICHIGAN_UPPER_PENINSULA_STRAITS_CORRECTION.upperPeninsulaStartLatitude)}), and tunes northwest Lower Michigan ${formatCorrectionOffset(MICHIGAN_UPPER_PENINSULA_STRAITS_CORRECTION.northernLowerXOffsetPercent)}, Straits ${formatCorrectionOffset(MICHIGAN_UPPER_PENINSULA_STRAITS_CORRECTION.straitsXOffsetPercent)}, U.P. ${formatCorrectionOffset(MICHIGAN_UPPER_PENINSULA_STRAITS_CORRECTION.upperPeninsulaXOffsetPercent)}, plus western U.P. boost ${formatCorrectionOffset(MICHIGAN_UPPER_PENINSULA_STRAITS_CORRECTION.westernUpperPeninsulaXBoostPercent)}.`;
 
+const controlPointAuditSummary = {
+  mapAnchors:
+    "data/mapCalibration.ts keeps the legacy homepage MICHIGAN_MAP_ANCHORS IDW path intact; this route only previews a candidate artwork-specific anchor mesh.",
+  developerRoute:
+    "The dev route is the safe calibration surface: Ray selects one named anchor, clicks the illustrated artwork, then copies JSON without writing to the database.",
+  recentCorrections:
+    "Recent broad mobile northern layers are visible as gold legacy markers and debug text so Charlevoix, Straits, Escanaba, and Marquette can be compared against control-point interpolation.",
+  temporaryCompatibility:
+    "Keep lower-Michigan base calibration plus mobile northern X/Y correction temporarily because production markers still depend on projectLatLngToCalibratedMichiganArtworkPosition.",
+  retirementPath:
+    "After Ray supplies desktop and mobile anchor placements, retire the broad northern correction layers in favor of shared control-point interpolation in a later production PR.",
+} as const;
+
 const validationTargets = [
   { name: "Detroit", latitude: 42.3314, longitude: -83.0458 },
   { name: "Romeo", latitude: 42.8028, longitude: -83.01299 },
@@ -281,11 +331,15 @@ export default function MichiganArtworkCalibration() {
     [activeVariant.id, controlPointDrafts],
   );
 
-  const exportPayload = useMemo(
+  const exportPayload = useMemo<ControlPointCalibrationExport>(
     () => ({
       format: "celebration-atlas-michigan-artwork-calibration/v1",
+      generatedBy: "/dev/michigan-artwork-calibration",
       sourceOfTruth:
         "Event latitude/longitude remains unchanged; these values are display transforms for the illustrated artwork only.",
+      productionBehavior:
+        "Unchanged in this PR: homepage markers continue to use the existing legacy projection and mobile correction layers.",
+      audit: controlPointAuditSummary,
       reference: {
         name: MICHIGAN_REFERENCE_SVG.sourceName,
         bounds: MICHIGAN_REFERENCE_SVG.bounds,
@@ -411,6 +465,14 @@ export default function MichiganArtworkCalibration() {
           {mobileVerticalCorrectionSummary} Real event latitude/longitude
           remains unchanged, and there are no per-event marker overrides.
         </p>
+        <section style={styles.auditPanel} aria-label="Calibration audit summary">
+          <h2 style={styles.auditTitle}>Audit outcome before production changes</h2>
+          <ul style={styles.auditList}>
+            {Object.values(controlPointAuditSummary).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
       </header>
 
       <section style={styles.toolbar} aria-label="Artwork variant selection">
@@ -764,6 +826,21 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: "Arial, sans-serif",
   },
   header: { maxWidth: 1060, margin: "0 auto 20px" },
+  auditPanel: {
+    maxWidth: 920,
+    margin: "12px 0 0",
+    padding: "12px 14px",
+    border: "1px solid rgba(98,199,255,.22)",
+    borderRadius: 14,
+    background: "rgba(98,199,255,.08)",
+  },
+  auditTitle: { margin: "0 0 8px", color: "#9dd9ff", fontSize: 16 },
+  auditList: {
+    margin: 0,
+    paddingLeft: 18,
+    color: "rgba(220,238,255,.78)",
+    lineHeight: 1.5,
+  },
   correctionNote: {
     maxWidth: 920,
     margin: "12px 0 0",
