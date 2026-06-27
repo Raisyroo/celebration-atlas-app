@@ -33,7 +33,7 @@ export type MichiganRegionalCalibrationZone =
   | "upper-peninsula";
 
 export type MichiganUpperPeninsulaStraitsCorrection = {
-  /** Shared/mobile-only switch: production currently applies this only to the tall mobile artwork. */
+  /** Mobile-only debug/calibration setting; production markers do not consume this layer. */
   appliesTo: Extract<MichiganArtworkVariant, "mobile">;
   /** Northern Lower Peninsula latitude where the Straits transition begins blending in. */
   transitionStartLatitude: number;
@@ -357,10 +357,9 @@ export function projectLatLngToCalibratedMichiganArtworkPosition(
   variant: MichiganArtworkVariant,
 ): MichiganArtworkPosition {
   if (variant === "mobile") {
-    // Mobile production now uses Ray's approved control-point mesh instead of
-    // stacking the previous broad latitude, U.P., Straits, and eastward regional
-    // correction layers. Use projectLatLngToLegacyCalibratedMichiganArtworkPosition
-    // from the calibration workbench for reversible debug/fallback comparisons.
+    // Developer-only candidate projection for the calibration workbench.
+    // Production homepage markers must not call this helper; they use
+    // resolveMapPosition/latLngToAtlasPosition from mapCalibration.ts.
     return projectLatLngWithMichiganControlPoints(latitude, longitude, "mobile");
   }
 

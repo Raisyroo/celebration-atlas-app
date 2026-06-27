@@ -228,15 +228,15 @@ const regionalHorizontalCorrectionSummary = `Northern horizontal correction: mob
 
 const controlPointAuditSummary = {
   mapAnchors:
-    "Mobile homepage markers now use the approved artwork-specific control-point mesh; desktop/tablet remains on the legacy calibrated artwork projection.",
+    "Production homepage markers no longer use this workbench projection; marker placement is restored to the stable anchor projection in data/mapCalibration.ts.",
   developerRoute:
     "The dev route is the safe calibration surface: Ray selects one named anchor, clicks the illustrated artwork, then copies JSON without writing to the database.",
   recentCorrections:
-    "Recent broad mobile northern layers are bypassed in production; gold legacy markers remain here only for reversible debug comparison against the approved mesh.",
+    "Broad mobile northern layers remain available here only for isolated debug comparison and are bypassed by production.",
   temporaryCompatibility:
-    "Mobile production no longer stacks latitude, U.P., Straits, eastward, or regional broad corrections on top of the approved mesh.",
+    "Production no longer stacks latitude, U.P., Straits, eastward, regional, or control-point candidate layers on homepage markers.",
   retirementPath:
-    "After Ray supplies desktop anchors, desktop can move from legacy preview to its own approved control-point mesh.",
+    "Future artwork calibration should be verified separately before any production marker path changes.",
 } as const;
 
 const validationTargets = [
@@ -328,7 +328,7 @@ export default function MichiganArtworkCalibration() {
       sourceOfTruth:
         "Event latitude/longitude remains unchanged; these values are display transforms for the illustrated artwork only.",
       productionBehavior:
-        "Mobile production uses Ray's approved control-point mesh; desktop remains on the existing legacy projection until desktop anchors are calibrated.",
+        "Production homepage markers use data/mapCalibration.ts anchors; this control-point mesh is dev-only candidate output.",
       audit: controlPointAuditSummary,
       reference: {
         name: MICHIGAN_REFERENCE_SVG.sourceName,
@@ -353,7 +353,7 @@ export default function MichiganArtworkCalibration() {
       },
       mobileLatitudeVerticalCorrection: {
         behavior:
-          "Bypassed by mobile production after Ray approval; still available through the legacy helper for debug comparison only.",
+          "Bypassed by production; still available through the legacy helper for isolated debug comparison only.",
         startLatitude:
           MICHIGAN_MOBILE_LATITUDE_VERTICAL_CORRECTION.startLatitude,
         endLatitude: MICHIGAN_MOBILE_LATITUDE_VERTICAL_CORRECTION.endLatitude,
@@ -368,7 +368,7 @@ export default function MichiganArtworkCalibration() {
         neighborCount: CONTROL_POINT_NEIGHBOR_COUNT,
         power: CONTROL_POINT_IDW_POWER,
         productionBehavior:
-          "Used by the mobile homepage map with Ray's approved mobile artwork anchors; desktop remains preview-only / legacy.",
+          "Dev-only candidate output; the mobile homepage map does not consume this mesh.",
       },
       controlPoints: MICHIGAN_CONTROL_POINTS.map((point) => ({
         id: point.id,
@@ -534,7 +534,7 @@ export default function MichiganArtworkCalibration() {
                     }}
                   />
                   <span
-                    title={`${event.name} approved mobile production mesh projection`}
+                    title={`${event.name} dev-only mobile control-point candidate projection`}
                     style={{
                       ...styles.candidateMarker,
                       left: `${candidatePosition.x}%`,
@@ -575,7 +575,7 @@ export default function MichiganArtworkCalibration() {
           <p style={styles.legend}>
             <b>Blue dots</b> = raw latitude/longitude on geographic reference.{" "}
             <b>Gold rings</b> = current legacy projection. <b>Green dots</b> =
-            approved mobile production control-point interpolation. Desktop green dots
+            dev-only mobile control-point interpolation. Desktop green dots
             remain preview-only until Ray calibrates desktop anchors. The larger
             selected-anchor markers show raw reference, saved artwork, and newly
             clicked artwork locations.
