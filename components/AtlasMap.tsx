@@ -2152,10 +2152,23 @@ export default function AtlasMap({
             <ConstellationLineLayer points={constellationLinePoints} />
           ) : null}
 
-          {!shouldShowCalibration ? (
-            <div style={styles.markerOverlayLayer}>
-              {(isVerificationMode
-                ? markerLayouts.map((layout) => ({
+          {isVerificationMode ? <VerificationReferenceLayer /> : null}
+
+          <div style={styles.vignette} />
+        </div>
+
+        {!shouldShowCalibration ? (
+          <div
+            style={{
+              ...styles.markerOverlayLayer,
+              touchAction: shouldAllowPhoneLandscapeNativeScroll
+                ? 'pan-y'
+                : 'none',
+              transform: mapLayerTransform,
+            }}
+          >
+            {(isVerificationMode
+              ? markerLayouts.map((layout) => ({
                     id: `verification-${layout.event.id}`,
                     events: [layout.event],
                     eventIndices: [layout.eventIndex],
@@ -2424,13 +2437,8 @@ export default function AtlasMap({
                   </div>
                 );
               })}
-            </div>
-          ) : null}
-
-          {isVerificationMode ? <VerificationReferenceLayer /> : null}
-
-          <div style={styles.vignette} />
-        </div>
+          </div>
+        ) : null}
       </div>
 
       {shouldShowCalibration ? (
@@ -3874,6 +3882,7 @@ const styles: Record<string, CSSProperties> = {
     zIndex: Z_INDEX.markers,
     pointerEvents: 'none',
     transformOrigin: 'center center',
+    transition: 'transform 520ms cubic-bezier(.22,.61,.36,1)',
   },
   verificationReferenceLayer: {
     position: 'absolute',
