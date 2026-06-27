@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, MouseEvent } from 'react';
 import {
   MICHIGAN_ARTWORK_CALIBRATIONS,
@@ -12,6 +12,7 @@ const MARKER_EDGE_INSET_PERCENT = 6;
 const PRODUCTION_MOBILE_BASE_SCALE = 1.03;
 const PRODUCTION_MOBILE_MAP_TRANSLATE_Y = '0px';
 const PRODUCTION_MOBILE_MAP_TRANSFORM = `translate3d(0px, calc(${PRODUCTION_MOBILE_MAP_TRANSLATE_Y} + 0px), 0) scale(${PRODUCTION_MOBILE_BASE_SCALE})`;
+const MICHIGAN_MARKER_FRAME_SCROLL_CLASS = 'dev-michigan-calibration-scroll';
 
 const clampMarkerPercent = (value: number) =>
   Math.min(100 - MARKER_EDGE_INSET_PERCENT, Math.max(MARKER_EDGE_INSET_PERCENT, value));
@@ -83,6 +84,17 @@ export default function MichiganMobileMarkerFrameLab() {
   const mapContentRef = useRef<HTMLDivElement | null>(null);
   const [selectedAnchorKey, setSelectedAnchorKey] = useState<AnchorKey>('escanaba');
   const [manualTargets, setManualTargets] = useState<Partial<Record<AnchorKey, ManualTarget>>>({});
+  const [copyStatus, setCopyStatus] = useState('');
+
+  useEffect(() => {
+    document.documentElement.classList.add(MICHIGAN_MARKER_FRAME_SCROLL_CLASS);
+    document.body.classList.add(MICHIGAN_MARKER_FRAME_SCROLL_CLASS);
+
+    return () => {
+      document.documentElement.classList.remove(MICHIGAN_MARKER_FRAME_SCROLL_CLASS);
+      document.body.classList.remove(MICHIGAN_MARKER_FRAME_SCROLL_CLASS);
+    };
+  }, []);
 
   const selectedAnchor = ANCHORS.find((anchor) => anchor.key === selectedAnchorKey) ?? ANCHORS[0];
   const selectedTarget = manualTargets[selectedAnchor.key];
@@ -167,6 +179,17 @@ export default function MichiganMobileMarkerFrameLab() {
 
   const resetAll = () => setManualTargets({});
 
+  const copyExport = async () => {
+    setCopyStatus('');
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(exportPayload, null, 2));
+      setCopyStatus('Copied typed JSON export.');
+    } catch {
+      setCopyStatus('Copy failed. Select and copy the JSON manually.');
+    }
+  };
+
   return (
     <main style={styles.pageShell}>
       <section style={styles.labHeader}>
@@ -241,6 +264,8 @@ export default function MichiganMobileMarkerFrameLab() {
 
           <div style={styles.exportCard}>
             <h2 style={styles.readoutTitle}>Typed JSON export</h2>
+            <button type="button" onClick={copyExport} style={styles.copyButton}>Copy typed JSON export</button>
+            {copyStatus ? <p style={styles.copyStatus}>{copyStatus}</p> : null}
             <pre style={styles.exportPre}>{JSON.stringify(exportPayload, null, 2)}</pre>
           </div>
         </aside>
@@ -294,6 +319,8 @@ const styles: Record<string, CSSProperties> = {
   targetReadout: { margin: '10px 0', color: '#dffbff', fontWeight: 900 },
   actions: { display: 'flex', gap: 8, flexWrap: 'wrap' },
   secondaryButton: { minHeight: 36, padding: '0 12px', borderRadius: 10, border: '1px solid rgba(103,232,249,.58)', background: 'rgba(103,232,249,.12)', color: '#dffbff', fontWeight: 900, cursor: 'pointer' },
+  copyButton: { minHeight: 40, width: '100%', marginBottom: 8, padding: '0 12px', borderRadius: 12, border: 0, background: '#67e8f9', color: '#031018', fontWeight: 1000, cursor: 'pointer' },
+  copyStatus: { margin: '0 0 8px', color: '#9df0b0', fontSize: 13, fontWeight: 900 },
   exportCard: { padding: 16, borderRadius: 18, border: '1px solid rgba(103,232,249,.24)', background: 'rgba(3,10,18,.82)' },
   exportPre: { maxHeight: 420, overflow: 'auto', margin: 0, padding: 12, borderRadius: 12, background: 'rgba(0,0,0,.34)', color: '#dffbff', fontSize: 11, lineHeight: 1.45 },
 };
