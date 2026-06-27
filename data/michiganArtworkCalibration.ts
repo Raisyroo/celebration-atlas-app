@@ -1,4 +1,8 @@
 import { latLngToMichiganSvgPosition } from "./michiganGeoMap";
+import {
+  MICHIGAN_APPROVED_MOBILE_CONTROL_POINTS,
+  MICHIGAN_MOBILE_CONTROL_POINT_INTERPOLATION,
+} from "./michiganProductionControlPoints";
 
 export type MichiganArtworkVariant = "desktop" | "mobile";
 
@@ -244,7 +248,60 @@ export function getMichiganRegionalCorrectionDebug(
   };
 }
 
-export function projectLatLngToCalibratedMichiganArtworkPosition(
+const CONTROL_POINT_EPSILON = 0.0001;
+
+type ControlPointProjectionVariant = Extract<MichiganArtworkVariant, "mobile">;
+
+export function projectLatLngWithMichiganControlPoints(
+  latitude: number,
+  longitude: number,
+  variant: ControlPointProjectionVariant,
+): MichiganArtworkPosition {
+  const weightedControlPoints = MICHIGAN_APPROVED_MOBILE_CONTROL_POINTS.map(
+    (controlPoint) => {
+      const latitudeDelta = latitude - controlPoint.latitude;
+      const longitudeDelta = longitude - controlPoint.longitude;
+
+      return {
+        controlPoint,
+        distanceSquared:
+          latitudeDelta * latitudeDelta + longitudeDelta * longitudeDelta,
+      };
+    },
+  ).sort((a, b) => a.distanceSquared - b.distanceSquared);
+
+  const exact = weightedControlPoints.find(
+    ({ distanceSquared }) => distanceSquared <= CONTROL_POINT_EPSILON,
+  );
+
+  if (exact) return exact.controlPoint.artwork[variant];
+
+  const totals = weightedControlPoints
+    .slice(0, MICHIGAN_MOBILE_CONTROL_POINT_INTERPOLATION.neighborCount)
+    .reduce(
+      (accumulator, { controlPoint, distanceSquared }) => {
+        const position = controlPoint.artwork[variant];
+        const weight =
+          1 /
+          Math.max(distanceSquared, CONTROL_POINT_EPSILON) **
+            (MICHIGAN_MOBILE_CONTROL_POINT_INTERPOLATION.power / 2);
+
+        return {
+          x: accumulator.x + position.x * weight,
+          y: accumulator.y + position.y * weight,
+          weight: accumulator.weight + weight,
+        };
+      },
+      { x: 0, y: 0, weight: 0 },
+    );
+
+  return {
+    x: clampPercent(totals.x / totals.weight),
+    y: clampPercent(totals.y / totals.weight),
+  };
+}
+
+export function projectLatLngToLegacyCalibratedMichiganArtworkPosition(
   latitude: number,
   longitude: number,
   variant: MichiganArtworkVariant,
@@ -292,4 +349,24 @@ export function projectLatLngToCalibratedMichiganArtworkPosition(
         regionalCorrection.yOffsetPercent,
     ),
   };
+}
+
+export function projectLatLngToCalibratedMichiganArtworkPosition(
+  latitude: number,
+  longitude: number,
+  variant: MichiganArtworkVariant,
+): MichiganArtworkPosition {
+  if (variant === "mobile") {
+    // Mobile production now uses Ray's approved control-point mesh instead of
+    // stacking the previous broad latitude, U.P., Straits, and eastward regional
+    // correction layers. Use projectLatLngToLegacyCalibratedMichiganArtworkPosition
+    // from the calibration workbench for reversible debug/fallback comparisons.
+    return projectLatLngWithMichiganControlPoints(latitude, longitude, "mobile");
+  }
+
+  return projectLatLngToLegacyCalibratedMichiganArtworkPosition(
+    latitude,
+    longitude,
+    variant,
+  );
 }
