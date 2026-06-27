@@ -7,6 +7,10 @@ import {
   MICHIGAN_MOBILE_LATITUDE_VERTICAL_CORRECTION,
   projectLatLngToCalibratedMichiganArtworkPosition,
 } from '../../../data/michiganArtworkCalibration';
+import {
+  MICHIGAN_MOBILE_UPPER_PENINSULA_ANCHORS,
+  resolveExactMichiganMobileUpperPeninsulaAnchorPosition,
+} from '../../../data/michiganMobileUpperPeninsulaAnchors';
 
 const MARKER_EDGE_INSET_PERCENT = 6;
 const PRODUCTION_MOBILE_BASE_SCALE = 1.03;
@@ -19,9 +23,20 @@ const clampMarkerPercent = (value: number) =>
 
 const productionMobilePositionFor = (latitude: number, longitude: number) => {
   const position = projectLatLngToCalibratedMichiganArtworkPosition(latitude, longitude, 'mobile');
-  return {
+  const baseline = {
     x: clampMarkerPercent(position.x),
     y: clampMarkerPercent(position.y),
+  };
+  const activeUpperPeninsulaAnchor = resolveExactMichiganMobileUpperPeninsulaAnchorPosition(
+    latitude,
+    longitude,
+  );
+
+  if (!activeUpperPeninsulaAnchor) return baseline;
+
+  return {
+    x: clampMarkerPercent(activeUpperPeninsulaAnchor.x),
+    y: clampMarkerPercent(activeUpperPeninsulaAnchor.y),
   };
 };
 
@@ -48,27 +63,13 @@ const ANCHORS: AnchorDefinition[] = [
   { key: 'charlevoix', name: 'Charlevoix', latitude: 45.3181, longitude: -85.2584, note: 'Reference-only city label' },
   { key: 'mackinac-straits', name: 'Mackinac / Straits', latitude: 45.7775, longitude: -84.7278, note: 'Reference-only straits label' },
   { key: 'alpena', name: 'Alpena', latitude: 45.0617, longitude: -83.4328, note: 'Baseline northeast anchor' },
-  {
-    key: 'escanaba',
-    name: 'Escanaba',
-    latitude: 45.7453,
-    longitude: -87.0646,
-    note: 'Not yet active',
-  },
-  {
-    key: 'marquette',
-    name: 'Marquette',
-    latitude: 46.5436,
-    longitude: -87.3954,
-    note: 'Not yet active',
-  },
-  {
-    key: 'sault-ste-marie',
-    name: 'Sault Ste. Marie',
-    latitude: 46.4953,
-    longitude: -84.3453,
-    note: 'Not yet active',
-  },
+  ...MICHIGAN_MOBILE_UPPER_PENINSULA_ANCHORS.map((anchor) => ({
+    key: anchor.key,
+    name: anchor.name,
+    latitude: anchor.latitude,
+    longitude: anchor.longitude,
+    note: 'Active in mobile production',
+  })),
   {
     key: 'houghton-future-slot',
     name: 'Houghton future slot',
@@ -219,7 +220,7 @@ export default function MichiganMobileMarkerFrameLab() {
                     return (
                       <div key={anchor.key}>
                         <Marker x={baseline.x} y={baseline.y} label={`${anchor.name}: Current production marker`} tone="baseline" muted={!isSelected} />
-                        {target ? <Marker x={target.x} y={target.y} label={`${anchor.name}: Clicked production-frame target · Not yet active`} tone="target" muted={!isSelected} /> : null}
+                        {target ? <Marker x={target.x} y={target.y} label={`${anchor.name}: Clicked production-frame target`} tone="target" muted={!isSelected} /> : null}
                       </div>
                     );
                   })}

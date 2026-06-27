@@ -16,6 +16,7 @@ import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
 import { resolveExactEventIntent } from '../data/exactEventIntent';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
 import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
+import { resolveExactMichiganMobileUpperPeninsulaAnchorPosition } from '../data/michiganMobileUpperPeninsulaAnchors';
 import type { MichiganMapAnchor } from '../data/mapCalibration';
 import {
   MICHIGAN_ARTWORK_MOBILE_MEDIA_QUERY,
@@ -634,9 +635,24 @@ const projectEventToMichiganArtworkPosition = (
     artworkVariant,
   );
 
-  return {
+  const baselinePosition = {
     x: clampMarkerPercent(artworkPosition.x),
     y: clampMarkerPercent(artworkPosition.y),
+  };
+
+  if (artworkVariant !== 'mobile') return baselinePosition;
+
+  const upperPeninsulaAnchorPosition =
+    resolveExactMichiganMobileUpperPeninsulaAnchorPosition(
+      event.latitude,
+      event.longitude,
+    );
+
+  if (!upperPeninsulaAnchorPosition) return baselinePosition;
+
+  return {
+    x: clampMarkerPercent(upperPeninsulaAnchorPosition.x),
+    y: clampMarkerPercent(upperPeninsulaAnchorPosition.y),
   };
 };
 
