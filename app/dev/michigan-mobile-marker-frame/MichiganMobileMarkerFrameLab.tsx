@@ -24,7 +24,7 @@ const productionMobilePositionFor = (latitude: number, longitude: number) => {
   };
 };
 
-type AnchorKey = 'escanaba' | 'marquette' | 'sault-ste-marie' | 'houghton-future-slot';
+type AnchorKey = 'detroit' | 'port-huron' | 'grand-rapids' | 'traverse-city' | 'charlevoix' | 'mackinac-straits' | 'alpena' | 'escanaba' | 'marquette' | 'sault-ste-marie' | 'houghton-future-slot';
 
 type AnchorDefinition = {
   key: AnchorKey;
@@ -40,6 +40,13 @@ type ManualTarget = {
 };
 
 const ANCHORS: AnchorDefinition[] = [
+  { key: 'detroit', name: 'Detroit', latitude: 42.3314, longitude: -83.0458, note: 'Baseline Lower Peninsula anchor' },
+  { key: 'port-huron', name: 'Port Huron', latitude: 42.9709, longitude: -82.4249, note: 'Baseline Lower Peninsula anchor' },
+  { key: 'grand-rapids', name: 'Grand Rapids', latitude: 42.9634, longitude: -85.6681, note: 'Baseline Lower Peninsula anchor' },
+  { key: 'traverse-city', name: 'Traverse City', latitude: 44.7631, longitude: -85.6206, note: 'Baseline northern Lower Peninsula anchor' },
+  { key: 'charlevoix', name: 'Charlevoix', latitude: 45.3181, longitude: -85.2584, note: 'Reference-only city label' },
+  { key: 'mackinac-straits', name: 'Mackinac / Straits', latitude: 45.7775, longitude: -84.7278, note: 'Reference-only straits label' },
+  { key: 'alpena', name: 'Alpena', latitude: 45.0617, longitude: -83.4328, note: 'Baseline northeast anchor' },
   {
     key: 'escanaba',
     name: 'Escanaba',
@@ -211,9 +218,19 @@ export default function MichiganMobileMarkerFrameLab() {
             ))}
           </div>
 
+          <div style={styles.instructionCard}>Selected: {selectedAnchor.name} — click where {selectedAnchor.name} belongs on the artwork.</div>
+
+          <div style={styles.legendCard}>
+            <strong>Legend</strong>
+            <span><b style={styles.redSwatch}>■</b> Current production marker</span>
+            <span><b style={styles.cyanSwatch}>■</b> Clicked candidate target</span>
+            <span><b style={styles.selectedSwatch}>■</b> Selected anchor label/marker is fully bright</span>
+            <span><b style={styles.previewSwatch}>■</b> Developer-only preview marker labels are shown on this route only</span>
+          </div>
+
           <div style={styles.readoutCard}>
             <h2 style={styles.readoutTitle}>{selectedAnchor.name}</h2>
-            <p style={styles.readoutMeta}>Real lat/lon: {selectedAnchor.latitude}, {selectedAnchor.longitude}</p>
+            <p style={styles.readoutMeta}>Secondary real lat/lon: {selectedAnchor.latitude}, {selectedAnchor.longitude}</p>
             <p style={styles.readoutMeta}>Current production marker: left {roundPercent(baselinePositions[selectedAnchor.key].x)}% · top {roundPercent(baselinePositions[selectedAnchor.key].y)}%</p>
             <p style={styles.targetReadout}>Clicked production-frame target: {selectedTarget ? `left ${roundPercent(selectedTarget.x)}% · top ${roundPercent(selectedTarget.y)}%` : 'not placed yet'}</p>
             <div style={styles.actions}>
@@ -236,7 +253,7 @@ function Marker({ x, y, label, tone, muted }: { x: number; y: number; label: str
   return (
     <div style={{ ...styles.markerWrap, left: `${x}%`, top: `${y}%`, opacity: muted ? 0.42 : 1 }}>
       <span aria-hidden="true" style={{ ...styles.markerDot, ...(tone === 'target' ? styles.targetDot : styles.baselineDot) }} />
-      <span style={{ ...styles.markerLabel, ...(tone === 'target' ? styles.targetLabel : styles.baselineLabel) }}>{label}</span>
+      <span style={{ ...styles.markerLabel, ...(x > 68 ? styles.markerLabelLeft : null), ...(tone === 'target' ? styles.targetLabel : styles.baselineLabel) }}>{label}</span>
     </div>
   );
 }
@@ -263,15 +280,15 @@ const styles: Record<string, CSSProperties> = {
   markerDot: { position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', borderRadius: 999, boxShadow: '0 0 0 2px rgba(2,6,12,.76), 0 0 14px currentColor' },
   baselineDot: { width: 14, height: 14, color: '#ff5d50', border: '2px solid rgba(255,238,226,.98)', background: '#ff3b30' },
   targetDot: { width: 18, height: 18, color: '#67e8f9', border: '2px solid rgba(223,251,255,.98)', background: 'rgba(103,232,249,.34)' },
-  markerLabel: { position: 'absolute', left: 12, top: -9, minWidth: 150, padding: '4px 7px', borderRadius: 8, fontSize: 10, lineHeight: 1.2, fontWeight: 900, textShadow: '0 1px 3px rgba(0,0,0,.9)' },
-  baselineLabel: { border: '1px solid rgba(255,93,80,.58)', background: 'rgba(12,5,5,.78)', color: 'rgba(255,238,226,.98)' },
+  markerLabel: { position: 'absolute', left: 12, top: -9, minWidth: 132, maxWidth: 166, padding: '4px 7px', borderRadius: 8, fontSize: 10, lineHeight: 1.2, fontWeight: 900, textShadow: '0 1px 3px rgba(0,0,0,.9)' },
+  markerLabelLeft: { left: 'auto', right: 12 }, baselineLabel: { border: '1px solid rgba(255,93,80,.58)', background: 'rgba(12,5,5,.78)', color: 'rgba(255,238,226,.98)' },
   targetLabel: { border: '1px solid rgba(103,232,249,.66)', background: 'rgba(3,10,18,.82)', color: '#dffbff' },
   controlPanel: { display: 'grid', gap: 14 },
   panelKicker: { margin: 0, color: '#fef08a', fontSize: 12, fontWeight: 900, letterSpacing: 1.2, textTransform: 'uppercase' },
   anchorList: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 },
   anchorButton: { display: 'grid', gap: 3, padding: '12px', borderRadius: 14, border: '1px solid rgba(255,227,170,.2)', background: 'rgba(255,232,186,.06)', color: '#f5e8c7', textAlign: 'left', cursor: 'pointer', fontWeight: 900 },
   anchorButtonActive: { borderColor: 'rgba(103,232,249,.78)', boxShadow: '0 0 20px rgba(103,232,249,.18)' },
-  readoutCard: { padding: 16, borderRadius: 18, border: '1px solid rgba(255,227,170,.22)', background: 'rgba(7,10,15,.72)' },
+  instructionCard: { padding: 14, borderRadius: 16, border: '1px solid rgba(103,232,249,.58)', background: 'rgba(103,232,249,.14)', color: '#dffbff', fontWeight: 1000, lineHeight: 1.35 }, legendCard: { display: 'grid', gap: 6, padding: 14, borderRadius: 16, border: '1px solid rgba(255,227,170,.22)', background: 'rgba(7,10,15,.72)', color: 'rgba(245,232,199,.84)', fontSize: 13, lineHeight: 1.35 }, redSwatch: { color: '#ff3b30' }, cyanSwatch: { color: '#67e8f9' }, selectedSwatch: { color: '#fef08a' }, previewSwatch: { color: '#dffbff' }, readoutCard: { padding: 16, borderRadius: 18, border: '1px solid rgba(255,227,170,.22)', background: 'rgba(7,10,15,.72)' },
   readoutTitle: { margin: '0 0 8px', fontSize: 18 },
   readoutMeta: { margin: '6px 0', color: 'rgba(245,232,199,.78)', fontSize: 13 },
   targetReadout: { margin: '10px 0', color: '#dffbff', fontWeight: 900 },
