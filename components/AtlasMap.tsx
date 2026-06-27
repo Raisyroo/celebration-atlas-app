@@ -1774,10 +1774,13 @@ export default function AtlasMap({
 
   const isAtlasPanelOpen = Boolean(renderedEvent);
   const isStoryCardOpen = Boolean(renderedEvent);
+  const hasSelectedEventCardOpen = Boolean(renderedEvent);
   const shouldShowMobileChromeControls =
     !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
+  // Keep this selected-card condition separate so a future flyer/card layout can
+  // yield space for the open card without treating active search as card-open.
   const shouldShowMobileAmbientAtlas =
-    shouldShowMobileChromeControls && !hasSubmittedSearchMatches;
+    shouldShowMobileChromeControls && !hasSelectedEventCardOpen;
 
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
