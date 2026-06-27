@@ -129,9 +129,10 @@ export default function MichiganMarkerAudit() {
           <h2>Production path audit</h2>
           <ul>
             <li>Production source is ATLAS_EVENTS; this page does not mutate source data.</li>
-            <li>Production marker layouts feed display spacing, then clustering; this audit intentionally bypasses both.</li>
-            <li>Search and exact-event modes can filter visible production groups; this audit renders every source event.</li>
-            <li>Mobile home ambience limits preview cards to a small subset; this audit disables floating-card behavior and renders all markers.</li>
+            <li><strong>Production clustering: disabled.</strong> Production marker groups are one event per event ID; no aggregate cluster marker replaces multiple events.</li>
+            <li><strong>Production display-spacing: disabled.</strong> Marker positions use the final projected/calibrated map coordinates directly; overlap is intentionally allowed.</li>
+            <li><strong>Production visible-result cap: disabled.</strong> Search result rows and mobile event rails render all matching/source events instead of silently slicing to a smaller count.</li>
+            <li>Search and exact-event modes can still highlight or focus their intended event IDs, but every rendered marker remains an individual event target.</li>
           </ul>
         </section>
         <h2>Every source event</h2>

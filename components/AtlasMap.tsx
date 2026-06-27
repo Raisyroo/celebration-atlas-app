@@ -51,7 +51,6 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
   { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
 ];
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
-const MOBILE_AMBIENT_EVENT_LIMIT = 2;
 const MOBILE_FAVORITE_STORAGE_KEY = 'celebration-atlas:michigan:favorite';
 const MOBILE_MENU_ITEMS = [
   'Explore Michigan',
@@ -327,12 +326,6 @@ const getHighlightedIdsFromQuery = (queryText: string) => {
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
 const MARKER_EDGE_INSET_PERCENT = 6;
-const CLUSTER_RADIUS_PERCENT = 7.2;
-const DISPLAY_SPACING_RADIUS_PERCENT = CLUSTER_RADIUS_PERCENT;
-const DISPLAY_CLUSTER_RADIUS_PERCENT = 0.35;
-const DISPLAY_OFFSET_STEP_PERCENT = 1.12;
-const DISPLAY_OFFSET_MAX_PERCENT = 2.35;
-const SHOW_CLUSTER_LABELS = false;
 const PHONE_LANDSCAPE_QUERY =
   '(orientation: landscape) and (max-height: 520px) and (max-width: 932px)';
 const HOME_DISCOVERY_SCROLL_CLASS = 'home-discovery-scroll';
@@ -569,13 +562,6 @@ type AtlasMarkerLayout = {
   position: MarkerPosition;
 };
 
-type AtlasMarkerCluster = {
-  id: string;
-  events: AtlasEvent[];
-  eventIndices: number[];
-  position: MarkerPosition;
-};
-
 type AtlasMapProps = {
   constellationHighlightedIds?: readonly string[];
   celebrationSearchHighlightedIds?: readonly string[];
@@ -666,158 +652,19 @@ const resolveAtlasMarkerLayouts = (
     position: projectEventToMichiganArtworkPosition(event, artworkVariant),
   }));
 
-const getMarkerDistance = (a: MarkerPosition, b: MarkerPosition) =>
-  Math.hypot(a.x - b.x, a.y - b.y);
-
-const resolveAtlasDisplayMarkerLayouts = (
-  layouts: AtlasMarkerLayout[],
-): AtlasMarkerLayout[] => {
-  const displayLayouts = layouts.map((layout) => ({
-    ...layout,
-    position: { ...layout.position },
-  }));
-  const consumed = new Set<string>();
-  const orderedLayouts = [...displayLayouts].sort(
-    (a, b) =>
-      a.position.x - b.position.x ||
-      a.position.y - b.position.y ||
-      a.event.id.localeCompare(b.event.id),
-  );
-
-  for (const layout of orderedLayouts) {
-    if (consumed.has(layout.event.id)) continue;
-
-    const nearbyLayouts = orderedLayouts.filter(
-      (candidate) =>
-        !consumed.has(candidate.event.id) &&
-        getMarkerDistance(layout.position, candidate.position) <=
-          DISPLAY_SPACING_RADIUS_PERCENT,
-    );
-
-    nearbyLayouts.forEach((candidate) => consumed.add(candidate.event.id));
-
-    if (nearbyLayouts.length <= 1) continue;
-
-    const hasTrueOverlap = nearbyLayouts.some(
-      (candidate) =>
-        nearbyLayouts.some(
-          (comparison) =>
-            comparison.event.id !== candidate.event.id &&
-            getMarkerDistance(candidate.position, comparison.position) <=
-              DISPLAY_CLUSTER_RADIUS_PERCENT,
-        ),
-    );
-
-    if (hasTrueOverlap) continue;
-
-    const centroid = nearbyLayouts.reduce(
-      (accumulator, candidate) => ({
-        x: accumulator.x + candidate.position.x,
-        y: accumulator.y + candidate.position.y,
-      }),
-      { x: 0, y: 0 },
-    );
-    const center = {
-      x: centroid.x / nearbyLayouts.length,
-      y: centroid.y / nearbyLayouts.length,
-    };
-    const ringStep = Math.min(
-      DISPLAY_OFFSET_MAX_PERCENT,
-      DISPLAY_OFFSET_STEP_PERCENT + nearbyLayouts.length * 0.12,
-    );
-    const angleOffset = ((nearbyLayouts[0]?.eventIndex ?? 0) % 6) * 0.38;
-
-    nearbyLayouts
-      .sort((a, b) => a.eventIndex - b.eventIndex)
-      .forEach((candidate, index) => {
-        const angle =
-          angleOffset + (Math.PI * 2 * index) / nearbyLayouts.length;
-        const distance =
-          ringStep * (nearbyLayouts.length <= 3 ? 0.86 : index % 2 ? 1 : 0.72);
-
-        candidate.position = {
-          x: clampMarkerPercent(center.x + Math.cos(angle) * distance),
-          y: clampMarkerPercent(center.y + Math.sin(angle) * distance),
-        };
-      });
-  }
-
-  return displayLayouts.sort((a, b) => a.eventIndex - b.eventIndex);
-};
-
-const resolveAtlasMarkerClusters = (
-  layouts: AtlasMarkerLayout[],
-  clusterRadiusPercent = CLUSTER_RADIUS_PERCENT,
-): AtlasMarkerCluster[] => {
-  const clusters: AtlasMarkerCluster[] = [];
-  const consumed = new Set<string>();
-  const orderedLayouts = [...layouts].sort(
-    (a, b) => a.position.x - b.position.x || a.position.y - b.position.y,
-  );
-
-  for (const layout of orderedLayouts) {
-    if (consumed.has(layout.event.id)) continue;
-
-    const nearbyLayouts = orderedLayouts.filter(
-      (candidate) =>
-        !consumed.has(candidate.event.id) &&
-        getMarkerDistance(layout.position, candidate.position) <=
-          clusterRadiusPercent,
-    );
-
-    nearbyLayouts.forEach((candidate) => consumed.add(candidate.event.id));
-
-    const centroid = nearbyLayouts.reduce(
-      (accumulator, candidate) => ({
-        x: accumulator.x + candidate.position.x,
-        y: accumulator.y + candidate.position.y,
-      }),
-      { x: 0, y: 0 },
-    );
-
-    const count = nearbyLayouts.length;
-    const events = nearbyLayouts.map((candidate) => candidate.event);
-
-    clusters.push({
-      id:
-        count > 1
-          ? `cluster-${events
-              .map((event) => event.id)
-              .sort()
-              .join('-')}`
-          : `event-${layout.event.id}`,
-      events,
-      eventIndices: nearbyLayouts.map((candidate) => candidate.eventIndex),
-      position: {
-        x: clampMarkerPercent(centroid.x / count),
-        y: clampMarkerPercent(centroid.y / count),
-      },
-    });
-  }
-
-  return clusters;
-};
-
 const isFiniteMarkerPosition = (position: MarkerPosition) =>
   Number.isFinite(position.x) && Number.isFinite(position.y);
 
-const getConstellationPointKey = (
-  position: MarkerPosition,
-  cluster?: AtlasMarkerCluster,
-) =>
-  cluster && cluster.events.length > 1
-    ? `cluster:${cluster.id}`
-    : `point:${position.x.toFixed(3)}:${position.y.toFixed(3)}`;
+const getConstellationPointKey = (position: MarkerPosition) =>
+  `point:${position.x.toFixed(3)}:${position.y.toFixed(3)}`;
 
 const resolveConstellationLinePoints = ({
   eventIds,
   markerLayouts,
-  markerClusters,
   isSearchActive,
 }: {
   eventIds: readonly string[];
   markerLayouts: AtlasMarkerLayout[];
-  markerClusters: AtlasMarkerCluster[];
   isSearchActive: boolean;
 }): MarkerPosition[] => {
   if (isSearchActive || eventIds.length === 0) return [];
@@ -825,26 +672,16 @@ const resolveConstellationLinePoints = ({
   const layoutByEventId = new Map(
     markerLayouts.map((layout) => [layout.event.id, layout]),
   );
-  const clusterByEventId = new Map<string, AtlasMarkerCluster>();
-
-  markerClusters.forEach((cluster) => {
-    cluster.events.forEach((event) => {
-      clusterByEventId.set(event.id, cluster);
-    });
-  });
-
   const usedPointKeys = new Set<string>();
   const points: MarkerPosition[] = [];
 
   eventIds.forEach((eventId) => {
-    const cluster = clusterByEventId.get(eventId);
     const layout = layoutByEventId.get(eventId);
-    const position =
-      cluster && cluster.events.length > 1 ? cluster.position : layout?.position;
+    const position = layout?.position;
 
     if (!position || !isFiniteMarkerPosition(position)) return;
 
-    const pointKey = getConstellationPointKey(position, cluster);
+    const pointKey = getConstellationPointKey(position);
     if (usedPointKeys.has(pointKey)) return;
 
     usedPointKeys.add(pointKey);
@@ -1064,9 +901,6 @@ export default function AtlasMap({
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(
-    null,
-  );
   const [isDesktop, setIsDesktop] = useState(false);
   const [artworkVariant, setArtworkVariant] =
     useState<MichiganArtworkVariant>('desktop');
@@ -1167,12 +1001,10 @@ export default function AtlasMap({
     : isCelebrationSearchHighlightActive
       ? celebrationSearchHighlightedIdSet
       : constellationHighlightedIdSet;
-  const discoveryResultLimit = isPhoneLandscape ? 2 : isDesktop ? 4 : 3;
   const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
     if (exactEventIntent || !q || highlightedIds.size === 0) return [];
 
     return ATLAS_EVENTS.filter((event) => highlightedIds.has(event.id))
-      .slice(0, discoveryResultLimit)
       .map((event) => ({
         id: event.id,
         name: event.name,
@@ -1181,23 +1013,12 @@ export default function AtlasMap({
         atmosphereLabel: event.atmosphereLabel,
         blurb: event.blurb,
       }));
-  }, [discoveryResultLimit, exactEventIntent, highlightedIds, q]);
+  }, [exactEventIntent, highlightedIds, q]);
   const markerLayouts = useMemo(
     () => resolveAtlasMarkerLayouts(ATLAS_EVENTS, artworkVariant),
     [artworkVariant],
   );
-  const displayMarkerLayouts = useMemo(
-    () => resolveAtlasDisplayMarkerLayouts(markerLayouts),
-    [markerLayouts],
-  );
-  const markerClusters = useMemo(
-    () =>
-      resolveAtlasMarkerClusters(
-        displayMarkerLayouts,
-        DISPLAY_CLUSTER_RADIUS_PERCENT,
-      ),
-    [displayMarkerLayouts],
-  );
+  const displayMarkerLayouts = markerLayouts;
   const isConstellationLineSearchActive = Boolean(
     q ||
       query.trim() ||
@@ -1209,20 +1030,15 @@ export default function AtlasMap({
       resolveConstellationLinePoints({
         eventIds: constellationHighlightedIds,
         markerLayouts: displayMarkerLayouts,
-        markerClusters,
         isSearchActive: isConstellationLineSearchActive,
       }),
     [
       constellationHighlightedIds,
       isConstellationLineSearchActive,
-      markerClusters,
       displayMarkerLayouts,
     ],
   );
-  const ambientMobileEvents = useMemo(
-    () => ATLAS_EVENTS.slice(0, MOBILE_AMBIENT_EVENT_LIMIT),
-    [],
-  );
+  const ambientMobileEvents = ATLAS_EVENTS;
   const visibleMarkerGroups = exactEventIntent
     ? displayMarkerLayouts
         .filter((layout) => layout.event.id === exactEventIntent.eventId)
@@ -1232,13 +1048,12 @@ export default function AtlasMap({
           eventIndices: [layout.eventIndex],
           position: layout.position,
         }))
-    : markerClusters;
-
-  const selectedCluster =
-    markerClusters.find(
-      (cluster) =>
-        cluster.id === selectedClusterId && cluster.events.length > 1,
-    ) ?? null;
+    : displayMarkerLayouts.map((layout) => ({
+        id: `event-${layout.event.id}`,
+        events: [layout.event],
+        eventIndices: [layout.eventIndex],
+        position: layout.position,
+      }));
 
   const selected = !isVerificationMode
     ? (ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null)
@@ -1580,13 +1395,12 @@ export default function AtlasMap({
   }, []);
 
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
-    if (!selectedId && !selectedClusterId) return;
+    if (!selectedId) return;
 
     const target = event.target as Node;
     if (cardRef.current?.contains(target)) return;
     if (mapFrameRef.current?.contains(target)) {
       setSelectedId(null);
-      setSelectedClusterId(null);
     }
   };
 
@@ -1701,7 +1515,6 @@ export default function AtlasMap({
         exactEventOpenTimerRef.current = null;
       }
       setSelectedId(null);
-      setSelectedClusterId(null);
       setDiscoveryStatusText(null);
       setDisplayedQuery('');
       setQuery('');
@@ -1719,7 +1532,6 @@ export default function AtlasMap({
     }
 
     if (exactMatch) {
-      setSelectedClusterId(null);
       setSelectedId(null);
       setDiscoveryStatusText(null);
       exactEventOpenTimerRef.current = setTimeout(() => {
@@ -1957,7 +1769,7 @@ export default function AtlasMap({
     };
   }, []);
 
-  const isAtlasPanelOpen = Boolean(renderedEvent || selectedCluster);
+  const isAtlasPanelOpen = Boolean(renderedEvent);
   const isStoryCardOpen = Boolean(renderedEvent);
   const shouldShowMobileAmbientAtlas =
     !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
@@ -2127,7 +1939,7 @@ export default function AtlasMap({
                 const isHighlighted = clusterHighlightedCount > 0;
                 const isSelected = selectedId
                   ? events.some((event) => event.id === selectedId)
-                  : selectedClusterId === id;
+                  : false;
                 const isDimmed = highlightedIds.size > 0 && !isHighlighted;
                 const isExactEventMarker = Boolean(exactHighlightedEvent);
                 const isExactRevealMarker = isExactEventMarker;
@@ -2230,18 +2042,10 @@ export default function AtlasMap({
                                 exactEventOpenTimerRef.current = null;
                               }
                               if (exactHighlightedEvent) {
-                                setSelectedClusterId(null);
                                 setSelectedId(exactHighlightedEvent.id);
                                 return;
                               }
 
-                              if (isCluster) {
-                                setSelectedId(null);
-                                setSelectedClusterId(id);
-                                return;
-                              }
-
-                              setSelectedClusterId(null);
                               setSelectedId(primaryEvent.id);
                             }}
                             style={{
@@ -2312,11 +2116,6 @@ export default function AtlasMap({
                                 } as CSSProperties
                               }
                             />
-                            {SHOW_CLUSTER_LABELS && isCluster ? (
-                              <span style={styles.clusterCount}>
-                                {events.length}
-                              </span>
-                            ) : null}
                           </button>
                           <button
                             type="button"
@@ -2332,18 +2131,10 @@ export default function AtlasMap({
                                 exactEventOpenTimerRef.current = null;
                               }
                               if (exactHighlightedEvent) {
-                                setSelectedClusterId(null);
                                 setSelectedId(exactHighlightedEvent.id);
                                 return;
                               }
 
-                              if (isCluster) {
-                                setSelectedId(null);
-                                setSelectedClusterId(id);
-                                return;
-                              }
-
-                              setSelectedClusterId(null);
                               setSelectedId(primaryEvent.id);
                             }}
                             style={{
@@ -2457,52 +2248,6 @@ export default function AtlasMap({
             Select a glowing marker, or open a constellation to choose nearby
             events.
           </p>
-        </aside>
-      ) : null}
-
-      {!shouldShowCalibration && !isVerificationMode && selectedCluster ? (
-        <aside
-          className="atlas-cluster-panel"
-          style={{
-            ...styles.clusterPanel,
-            ...(isDesktop ? styles.clusterPanelDesktop : null),
-          }}
-          aria-label="Nearby celebrations"
-        >
-          <button
-            type="button"
-            aria-label="Close event cluster"
-            onClick={() => setSelectedClusterId(null)}
-            style={styles.closeButton}
-          >
-            ×
-          </button>
-          <p style={styles.clusterPanelKicker}>Atlas constellation</p>
-          <h2 style={styles.clusterPanelTitle}>
-            {selectedCluster.events.length} celebrations nearby
-          </h2>
-          <div style={styles.clusterEventList}>
-            {selectedCluster.events.map((event) => (
-              <button
-                key={event.id}
-                type="button"
-                style={styles.clusterEventButton}
-                onClick={() => {
-                  if (exactEventOpenTimerRef.current) {
-                    clearTimeout(exactEventOpenTimerRef.current);
-                    exactEventOpenTimerRef.current = null;
-                  }
-                  setSelectedClusterId(null);
-                  setSelectedId(event.id);
-                }}
-              >
-                <span style={styles.clusterEventName}>{event.name}</span>
-                <span style={styles.clusterEventMeta}>
-                  {event.location} · {event.category}
-                </span>
-              </button>
-            ))}
-          </div>
         </aside>
       ) : null}
 
