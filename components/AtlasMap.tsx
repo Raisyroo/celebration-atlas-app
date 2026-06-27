@@ -565,17 +565,19 @@ type AtlasMarkerLayout = {
 };
 
 
-const MOBILE_TAG_SAFE_AREA_PERCENT = { left: 5, right: 5, top: 7, bottom: 18 };
-const MOBILE_TAG_GAP_PX = 6;
+const MOBILE_TAG_SAFE_AREA_PERCENT = { left: 3, right: 3, top: 5, bottom: 14 };
 const MOBILE_TAG_HEIGHT_PX = 34;
 const MOBILE_TAG_MAX_WIDTH_PX = 236;
 const MOBILE_TAG_MIN_WIDTH_PX = 118;
 const MOBILE_TAG_MEAN_GLYPH_WIDTH_PX = 6.2;
 const MOBILE_TAG_MEANINGFUL_MOVE_PX = 12;
 const MOBILE_TAG_TAP_BUFFER_PX = 4;
+const MOBILE_TAG_LOCAL_NUDGE_PX = 16;
+const MOBILE_TAG_LOCAL_STAGGER_PX = 8;
 
 type MapViewportSize = { width: number; height: number };
 type MobileTagPlacementName =
+  | 'center'
   | 'above'
   | 'below'
   | 'left'
@@ -642,18 +644,36 @@ const inflateMobileTagRect = (rect: MobileTagRect, buffer: number): MobileTagRec
   bottom: rect.bottom + buffer,
 });
 
-const getMobileTagSafeAreaPenalty = (rect: MobileTagRect, viewport: MapViewportSize) => {
-  const safeLeft = (viewport.width * MOBILE_TAG_SAFE_AREA_PERCENT.left) / 100;
-  const safeRight = viewport.width - (viewport.width * MOBILE_TAG_SAFE_AREA_PERCENT.right) / 100;
-  const safeTop = (viewport.height * MOBILE_TAG_SAFE_AREA_PERCENT.top) / 100;
-  const safeBottom = viewport.height - (viewport.height * MOBILE_TAG_SAFE_AREA_PERCENT.bottom) / 100;
+const getMobileTagSafeAreaBounds = (viewport: MapViewportSize) => ({
+  left: (viewport.width * MOBILE_TAG_SAFE_AREA_PERCENT.left) / 100,
+  right: viewport.width - (viewport.width * MOBILE_TAG_SAFE_AREA_PERCENT.right) / 100,
+  top: (viewport.height * MOBILE_TAG_SAFE_AREA_PERCENT.top) / 100,
+  bottom: viewport.height - (viewport.height * MOBILE_TAG_SAFE_AREA_PERCENT.bottom) / 100,
+});
 
-  return (
-    Math.max(0, safeLeft - rect.left) +
-    Math.max(0, rect.right - safeRight) +
-    Math.max(0, safeTop - rect.top) +
-    Math.max(0, rect.bottom - safeBottom)
-  );
+const clampMobileTagToSafeArea = ({
+  marker,
+  dx,
+  dy,
+  width,
+  height,
+  viewport,
+}: {
+  marker: { x: number; y: number };
+  dx: number;
+  dy: number;
+  width: number;
+  height: number;
+  viewport: MapViewportSize;
+}) => {
+  const safeBounds = getMobileTagSafeAreaBounds(viewport);
+  const centerX = clamp(marker.x + dx, safeBounds.left + width / 2, safeBounds.right - width / 2);
+  const centerY = clamp(marker.y + dy, safeBounds.top + height / 2, safeBounds.bottom - height / 2);
+
+  return {
+    dx: centerX - marker.x,
+    dy: centerY - marker.y,
+  };
 };
 
 const resolveMobileSearchTagPlacements = ({
@@ -681,30 +701,31 @@ const resolveMobileSearchTagPlacements = ({
       const width = estimateMobileTagWidth(layout.event.name);
       const height = MOBILE_TAG_HEIGHT_PX;
       const marker = markerPx(layout.position);
-      const primaryDistance = height + MOBILE_TAG_GAP_PX + 8;
-      const rowStep = height + MOBILE_TAG_GAP_PX;
-      const sideStep = Math.min(52, Math.max(24, width * 0.34));
-      const tightStackNudge = (visibleIndex % 3 - 1) * 8;
+      const stagger = (visibleIndex % 3 - 1) * MOBILE_TAG_LOCAL_STAGGER_PX;
       const candidates: { placement: MobileTagPlacementName; dx: number; dy: number }[] = [
-        { placement: 'above', dx: 0, dy: -primaryDistance },
-        { placement: 'upper-left', dx: -sideStep, dy: -primaryDistance - tightStackNudge },
-        { placement: 'upper-right', dx: sideStep, dy: -primaryDistance + tightStackNudge },
-        { placement: 'below', dx: 0, dy: primaryDistance },
-        { placement: 'lower-left', dx: -sideStep, dy: primaryDistance + tightStackNudge },
-        { placement: 'lower-right', dx: sideStep, dy: primaryDistance - tightStackNudge },
-        { placement: 'left', dx: -sideStep, dy: tightStackNudge },
-        { placement: 'right', dx: sideStep, dy: tightStackNudge },
-        { placement: 'above', dx: 0, dy: -primaryDistance - rowStep },
-        { placement: 'upper-left', dx: -sideStep, dy: -primaryDistance - rowStep },
-        { placement: 'upper-right', dx: sideStep, dy: -primaryDistance - rowStep },
-        { placement: 'below', dx: 0, dy: primaryDistance + rowStep },
-        { placement: 'lower-left', dx: -sideStep, dy: primaryDistance + rowStep },
-        { placement: 'lower-right', dx: sideStep, dy: primaryDistance + rowStep },
+        { placement: 'center', dx: 0, dy: 0 },
+        { placement: 'center', dx: stagger, dy: 0 },
+        { placement: 'center', dx: -stagger, dy: 0 },
+        { placement: 'right', dx: MOBILE_TAG_LOCAL_NUDGE_PX, dy: 0 },
+        { placement: 'left', dx: -MOBILE_TAG_LOCAL_NUDGE_PX, dy: 0 },
+        { placement: 'below', dx: 0, dy: MOBILE_TAG_LOCAL_NUDGE_PX },
+        { placement: 'above', dx: 0, dy: -MOBILE_TAG_LOCAL_NUDGE_PX },
+        { placement: 'lower-right', dx: MOBILE_TAG_LOCAL_NUDGE_PX, dy: MOBILE_TAG_LOCAL_STAGGER_PX },
+        { placement: 'lower-left', dx: -MOBILE_TAG_LOCAL_NUDGE_PX, dy: MOBILE_TAG_LOCAL_STAGGER_PX },
+        { placement: 'upper-right', dx: MOBILE_TAG_LOCAL_NUDGE_PX, dy: -MOBILE_TAG_LOCAL_STAGGER_PX },
+        { placement: 'upper-left', dx: -MOBILE_TAG_LOCAL_NUDGE_PX, dy: -MOBILE_TAG_LOCAL_STAGGER_PX },
       ];
 
       const ranked = candidates
         .map((candidate, order) => {
-          const rect = getMobileTagRect({ marker, ...candidate, width, height });
+          const clampedCandidate = clampMobileTagToSafeArea({
+            marker,
+            ...candidate,
+            width,
+            height,
+            viewport,
+          });
+          const rect = getMobileTagRect({ marker, ...clampedCandidate, width, height });
           const overlap = placedRects.reduce(
             (total, placedRect) => total + getMobileTagOverlapArea(rect, placedRect),
             0,
@@ -718,17 +739,22 @@ const resolveMobileSearchTagPlacements = ({
               ),
             0,
           );
-          const safePenalty = getMobileTagSafeAreaPenalty(rect, viewport);
-          const localityPenalty = Math.hypot(candidate.dx, candidate.dy + primaryDistance);
+          const localityPenalty = Math.hypot(clampedCandidate.dx, clampedCandidate.dy);
+          const clampPenalty = Math.hypot(
+            clampedCandidate.dx - candidate.dx,
+            clampedCandidate.dy - candidate.dy,
+          );
+
           return {
             ...candidate,
+            ...clampedCandidate,
             rect,
             order,
             score:
-              overlap * 80 +
-              tapOverlap * 32 +
-              safePenalty * 22 +
-              localityPenalty * 1.8 +
+              overlap * 12 +
+              tapOverlap * 5 +
+              localityPenalty * 8 +
+              clampPenalty * 2 +
               order,
           };
         })
@@ -742,7 +768,7 @@ const resolveMobileSearchTagPlacements = ({
         eventId: layout.event.id,
         dx: best.dx,
         dy: best.dy,
-        moved: Math.hypot(best.dx, best.dy + primaryDistance) > MOBILE_TAG_MEANINGFUL_MOVE_PX,
+        moved: Math.hypot(best.dx, best.dy) > MOBILE_TAG_MEANINGFUL_MOVE_PX,
         placement: best.placement,
         width,
         height,
