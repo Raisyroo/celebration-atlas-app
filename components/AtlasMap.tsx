@@ -2005,10 +2005,11 @@ export default function AtlasMap({
   const hasSelectedEventCardOpen = Boolean(renderedEvent);
   const shouldShowMobileChromeControls =
     !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
-  // Keep this selected-card condition separate so a future flyer/card layout can
-  // yield space for the open card without treating active search as card-open.
+  // Keep exact-search state separate from selected-card state so the mobile
+  // event rail stays available for active exact searches until a flyer/card is
+  // actually opened.
   const shouldShowMobileAmbientAtlas =
-    shouldShowMobileChromeControls && !hasSelectedEventCardOpen;
+    !isDesktop && !isPhoneLandscape && !isAtlasPanelOpen && !hasSelectedEventCardOpen;
 
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
