@@ -2362,31 +2362,15 @@ export default function AtlasMap({
                               }
                             >
                               {!isCluster ? (
-                                <svg
+                                <span
                                   aria-hidden="true"
                                   className="atlas-marker-star"
-                                  viewBox="0 0 100 100"
-                                  focusable="false"
                                 >
-                                  <defs>
-                                    <linearGradient
-                                      id={`atlas-marker-star-fill-${id}`}
-                                      x1="28"
-                                      x2="76"
-                                      y1="12"
-                                      y2="88"
-                                      gradientUnits="userSpaceOnUse"
-                                    >
-                                      <stop offset="0" stopColor="#fffdf2" />
-                                      <stop offset="0.42" stopColor="#ffe08f" />
-                                      <stop offset="1" stopColor="#f0a23a" />
-                                    </linearGradient>
-                                  </defs>
-                                  <path
-                                    d="M50 5 61.8 35.2 94 38.2 69.6 59.4 76.9 91 50 74.2 23.1 91 30.4 59.4 6 38.2 38.2 35.2Z"
-                                    fill={`url(#atlas-marker-star-fill-${id})`}
-                                  />
-                                </svg>
+                                  <span className="atlas-marker-star__flare atlas-marker-star__flare--cardinal" />
+                                  <span className="atlas-marker-star__flare atlas-marker-star__flare--diagonal" />
+                                  <span className="atlas-marker-star__halo" />
+                                  <span className="atlas-marker-star__core" />
+                                </span>
                               ) : null}
                             </span>
                           </button>
@@ -3108,8 +3092,13 @@ export default function AtlasMap({
               --marker-ring-opacity: 0.1;
               --marker-bloom-opacity: 0.2;
               --marker-bloom-size: 190%;
-              --marker-star-size: 64%;
+              --marker-star-size: 88%;
               --marker-star-opacity: 0.92;
+              --marker-core-size: 18%;
+              --marker-halo-size: 58%;
+              --marker-flare-length: 100%;
+              --marker-flare-thickness: 10%;
+              --marker-diagonal-opacity: 0.34;
               --marker-star-filter-idle: drop-shadow(0 0 6px rgba(255, 231, 164, 0.42));
               --marker-star-filter-peak: drop-shadow(0 0 9px rgba(255, 240, 196, 0.52));
             }
@@ -3120,8 +3109,13 @@ export default function AtlasMap({
               --marker-ring-opacity: 0.035;
               --marker-bloom-opacity: 0.055;
               --marker-bloom-size: 145%;
-              --marker-star-size: 42%;
-              --marker-star-opacity: 0.42;
+              --marker-star-size: 62%;
+              --marker-star-opacity: 0.46;
+              --marker-core-size: 24%;
+              --marker-halo-size: 56%;
+              --marker-flare-length: 70%;
+              --marker-flare-thickness: 7%;
+              --marker-diagonal-opacity: 0.08;
               --marker-star-filter-idle: drop-shadow(0 0 4px rgba(255, 225, 146, 0.22));
               --marker-star-filter-peak: drop-shadow(0 0 5px rgba(255, 231, 164, 0.28));
             }
@@ -3135,8 +3129,13 @@ export default function AtlasMap({
               --marker-ring-opacity: 0.22;
               --marker-bloom-opacity: 0.36;
               --marker-bloom-size: 230%;
-              --marker-star-size: 78%;
+              --marker-star-size: 128%;
               --marker-star-opacity: 0.98;
+              --marker-core-size: 18%;
+              --marker-halo-size: 68%;
+              --marker-flare-length: 118%;
+              --marker-flare-thickness: 9%;
+              --marker-diagonal-opacity: 0.38;
               --marker-star-filter-idle: drop-shadow(0 0 8px rgba(255, 246, 220, 0.72))
                 drop-shadow(0 0 20px rgba(255, 204, 104, 0.42));
               --marker-star-filter-peak: drop-shadow(0 0 12px rgba(255, 252, 236, 0.88))
@@ -3160,8 +3159,13 @@ export default function AtlasMap({
               --marker-ring-opacity: 0.72;
               --marker-bloom-opacity: 0.9;
               --marker-bloom-size: 360%;
-              --marker-star-size: 88%;
+              --marker-star-size: 168%;
               --marker-star-opacity: 1;
+              --marker-core-size: 17%;
+              --marker-halo-size: 76%;
+              --marker-flare-length: 134%;
+              --marker-flare-thickness: 8%;
+              --marker-diagonal-opacity: 0.58;
               --marker-star-filter-idle: drop-shadow(0 0 10px rgba(255, 255, 248, 0.96))
                 drop-shadow(0 0 24px rgba(255, 228, 142, 0.82))
                 drop-shadow(0 0 42px rgba(255, 187, 76, 0.42));
@@ -3181,8 +3185,13 @@ export default function AtlasMap({
               --marker-ring-opacity: 0.38;
               --marker-bloom-opacity: 0.54;
               --marker-bloom-size: 265%;
-              --marker-star-size: 84%;
+              --marker-star-size: 146%;
               --marker-star-opacity: 1;
+              --marker-core-size: 18%;
+              --marker-halo-size: 72%;
+              --marker-flare-length: 124%;
+              --marker-flare-thickness: 8.5%;
+              --marker-diagonal-opacity: 0.46;
               --marker-star-filter-idle: drop-shadow(0 0 9px rgba(255, 254, 242, 0.84))
                 drop-shadow(0 0 23px rgba(255, 224, 138, 0.66));
               --marker-star-filter-peak: drop-shadow(0 0 14px rgba(255, 255, 248, 0.96))
@@ -3283,6 +3292,75 @@ export default function AtlasMap({
               z-index: 2;
             }
 
+            .atlas-marker-star__core,
+            .atlas-marker-star__halo,
+            .atlas-marker-star__flare {
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              pointer-events: none;
+              transform: translate(-50%, -50%);
+            }
+
+            .atlas-marker-star__core {
+              width: var(--marker-core-size, 18%);
+              height: var(--marker-core-size, 18%);
+              border-radius: 999px;
+              background:
+                radial-gradient(circle, #fff 0 24%, #fff9d8 34%, #ffd66e 58%, rgba(255, 184, 67, 0) 74%);
+              box-shadow:
+                0 0 4px rgba(255, 255, 250, 0.95),
+                0 0 12px rgba(255, 232, 150, 0.72),
+                0 0 24px rgba(255, 184, 67, 0.3);
+              z-index: 4;
+            }
+
+            .atlas-marker-star__halo {
+              width: var(--marker-halo-size, 58%);
+              height: var(--marker-halo-size, 58%);
+              border-radius: 999px;
+              background:
+                radial-gradient(circle, rgba(255, 255, 250, 0.62) 0 8%, rgba(255, 242, 190, 0.34) 26%, rgba(255, 203, 93, 0.16) 48%, rgba(255, 203, 93, 0) 72%);
+              mix-blend-mode: screen;
+              z-index: 1;
+            }
+
+            .atlas-marker-star__flare {
+              width: var(--marker-flare-length, 100%);
+              height: var(--marker-flare-length, 100%);
+              opacity: 0.88;
+              mix-blend-mode: screen;
+              z-index: 2;
+            }
+
+            .atlas-marker-star__flare::before,
+            .atlas-marker-star__flare::after {
+              content: '';
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              border-radius: 999px;
+              background:
+                linear-gradient(90deg, rgba(255, 219, 106, 0) 0%, rgba(255, 244, 204, 0.5) 40%, rgba(255, 255, 250, 0.96) 50%, rgba(255, 244, 204, 0.5) 60%, rgba(255, 219, 106, 0) 100%);
+              filter: blur(0.15px);
+              transform: translate(-50%, -50%);
+            }
+
+            .atlas-marker-star__flare::before {
+              width: 100%;
+              height: var(--marker-flare-thickness, 10%);
+            }
+
+            .atlas-marker-star__flare::after {
+              width: var(--marker-flare-thickness, 10%);
+              height: 100%;
+            }
+
+            .atlas-marker-star__flare--diagonal {
+              opacity: var(--marker-diagonal-opacity, 0.34);
+              transform: translate(-50%, -50%) rotate(45deg) scale(0.78);
+            }
+
             .marker-pulse--broad-highlighted .atlas-marker-star,
             .marker-pulse--selected .atlas-marker-star,
             .marker-pulse[data-atlas-marker-state='exact-event'] .atlas-marker-star {
@@ -3351,6 +3429,7 @@ export default function AtlasMap({
 
             @media (prefers-reduced-motion: reduce) {
               .marker-pulse,
+              .atlas-marker-star,
               .atlas-search-input--pulse,
               .atlas-search-query,
               .cinematic-intro-overlay,
