@@ -2197,6 +2197,10 @@ export default function AtlasMap({
                 const isStrongActiveMarker = Boolean(
                   isSelectedMarker || isExactRevealMarker,
                 );
+                const shouldRenderStarburstMarker = Boolean(
+                  !isCluster &&
+                    (isHighlighted || isSelectedMarker || isExactRevealMarker),
+                );
                 const primaryEventProfile = getEventProfileById(
                   primaryEvent.id,
                 );
@@ -2375,16 +2379,85 @@ export default function AtlasMap({
                                 } as CSSProperties
                               }
                             >
-                              {!isCluster ? (
-                                <span
+                              {shouldRenderStarburstMarker ? (
+                                <svg
                                   aria-hidden="true"
-                                  className="atlas-marker-star"
+                                  className="atlas-marker-starburst"
+                                  viewBox="0 0 100 100"
+                                  focusable="false"
                                 >
-                                  <span className="atlas-marker-star__flare atlas-marker-star__flare--cardinal" />
-                                  <span className="atlas-marker-star__flare atlas-marker-star__flare--diagonal" />
-                                  <span className="atlas-marker-star__halo" />
-                                  <span className="atlas-marker-star__core" />
-                                </span>
+                                  <defs>
+                                    <radialGradient
+                                      id={`marker-starburst-core-${id}`}
+                                      cx="50%"
+                                      cy="50%"
+                                      r="50%"
+                                    >
+                                      <stop offset="0%" stopColor="#fff" />
+                                      <stop offset="28%" stopColor="#fffdf0" />
+                                      <stop
+                                        offset="56%"
+                                        stopColor="#ffe28a"
+                                        stopOpacity="0.9"
+                                      />
+                                      <stop
+                                        offset="100%"
+                                        stopColor="#ffb84c"
+                                        stopOpacity="0"
+                                      />
+                                    </radialGradient>
+                                    <radialGradient
+                                      id={`marker-starburst-bloom-${id}`}
+                                      cx="50%"
+                                      cy="50%"
+                                      r="50%"
+                                    >
+                                      <stop
+                                        offset="0%"
+                                        stopColor="#fffdf4"
+                                        stopOpacity="0.72"
+                                      />
+                                      <stop
+                                        offset="44%"
+                                        stopColor="#ffd46f"
+                                        stopOpacity="0.24"
+                                      />
+                                      <stop
+                                        offset="100%"
+                                        stopColor="#ffad3f"
+                                        stopOpacity="0"
+                                      />
+                                    </radialGradient>
+                                  </defs>
+                                  <circle
+                                    className="atlas-marker-starburst__bloom"
+                                    cx="50"
+                                    cy="50"
+                                    r="30"
+                                    fill={`url(#marker-starburst-bloom-${id})`}
+                                  />
+                                  <g className="atlas-marker-starburst__rays atlas-marker-starburst__rays--diagonal">
+                                    <line x1="25" y1="25" x2="75" y2="75" />
+                                    <line x1="75" y1="25" x2="25" y2="75" />
+                                  </g>
+                                  <g className="atlas-marker-starburst__rays atlas-marker-starburst__rays--primary">
+                                    <line x1="50" y1="4" x2="50" y2="96" />
+                                    <line x1="4" y1="50" x2="96" y2="50" />
+                                  </g>
+                                  <circle
+                                    className="atlas-marker-starburst__center"
+                                    cx="50"
+                                    cy="50"
+                                    r="11"
+                                    fill={`url(#marker-starburst-core-${id})`}
+                                  />
+                                  <circle
+                                    className="atlas-marker-starburst__point"
+                                    cx="50"
+                                    cy="50"
+                                    r="3.8"
+                                  />
+                                </svg>
                               ) : null}
                             </span>
                           </button>
@@ -3108,6 +3181,11 @@ export default function AtlasMap({
               --marker-flare-length: 100%;
               --marker-flare-thickness: 10%;
               --marker-diagonal-opacity: 0.34;
+              --marker-starburst-size: 250%;
+              --marker-starburst-opacity: 0.98;
+              --marker-starburst-primary-width: 4.8;
+              --marker-starburst-diagonal-width: 2.4;
+              --marker-starburst-diagonal-opacity: 0.42;
               --marker-star-filter-idle: drop-shadow(0 0 6px rgba(255, 231, 164, 0.42));
               --marker-star-filter-peak: drop-shadow(0 0 9px rgba(255, 240, 196, 0.52));
             }
@@ -3130,7 +3208,8 @@ export default function AtlasMap({
             }
 
             .marker-pulse--broad-highlighted {
-              border-color: rgba(255, 241, 202, 0.26) !important;
+              border-color: transparent !important;
+              background: transparent !important;
               --marker-brightness-idle: 1.13;
               --marker-brightness-peak: 1.25;
               --marker-saturation-idle: 1.1;
@@ -3145,6 +3224,10 @@ export default function AtlasMap({
               --marker-flare-length: 118%;
               --marker-flare-thickness: 9%;
               --marker-diagonal-opacity: 0.38;
+              --marker-starburst-size: 260%;
+              --marker-starburst-primary-width: 4.6;
+              --marker-starburst-diagonal-width: 2.2;
+              --marker-starburst-diagonal-opacity: 0.5;
               --marker-star-filter-idle: drop-shadow(0 0 8px rgba(255, 246, 220, 0.72))
                 drop-shadow(0 0 20px rgba(255, 204, 104, 0.42));
               --marker-star-filter-peak: drop-shadow(0 0 12px rgba(255, 252, 236, 0.88))
@@ -3159,8 +3242,7 @@ export default function AtlasMap({
               outline: 2px solid rgba(255, 239, 190, 0.58);
               outline-offset: 7px;
               opacity: 1 !important;
-              background:
-                radial-gradient(circle at 50% 50%, rgba(255, 255, 248, 1) 0 18%, rgba(255, 245, 205, 0.98) 28%, rgba(255, 219, 126, 0.76) 46%, rgba(255, 190, 78, 0.22) 66%, rgba(255, 190, 78, 0) 88%) !important;
+              background: transparent !important;
               --marker-brightness-idle: 1.72;
               --marker-brightness-peak: 1.95;
               --marker-saturation-idle: 1.32;
@@ -3175,6 +3257,10 @@ export default function AtlasMap({
               --marker-flare-length: 134%;
               --marker-flare-thickness: 8%;
               --marker-diagonal-opacity: 0.58;
+              --marker-starburst-size: 330%;
+              --marker-starburst-primary-width: 5.4;
+              --marker-starburst-diagonal-width: 2.8;
+              --marker-starburst-diagonal-opacity: 0.68;
               --marker-star-filter-idle: drop-shadow(0 0 10px rgba(255, 255, 248, 0.96))
                 drop-shadow(0 0 24px rgba(255, 228, 142, 0.82))
                 drop-shadow(0 0 42px rgba(255, 187, 76, 0.42));
@@ -3184,7 +3270,8 @@ export default function AtlasMap({
             }
 
             .marker-pulse--selected {
-              border-color: rgba(255, 248, 222, 0.48) !important;
+              border-color: transparent !important;
+              background: transparent !important;
               outline: 1px solid rgba(255, 232, 168, 0.38);
               outline-offset: 4px;
               --marker-brightness-idle: 1.25;
@@ -3201,6 +3288,10 @@ export default function AtlasMap({
               --marker-flare-length: 124%;
               --marker-flare-thickness: 8.5%;
               --marker-diagonal-opacity: 0.46;
+              --marker-starburst-size: 292%;
+              --marker-starburst-primary-width: 5;
+              --marker-starburst-diagonal-width: 2.5;
+              --marker-starburst-diagonal-opacity: 0.58;
               --marker-star-filter-idle: drop-shadow(0 0 9px rgba(255, 254, 242, 0.84))
                 drop-shadow(0 0 23px rgba(255, 224, 138, 0.66));
               --marker-star-filter-peak: drop-shadow(0 0 14px rgba(255, 255, 248, 0.96))
@@ -3214,11 +3305,11 @@ export default function AtlasMap({
             }
 
             .marker-pulse--highlighted {
-              border-color: rgba(255, 241, 202, 0.26) !important;
+              border-color: transparent !important;
             }
 
             .marker-pulse--strong-active {
-              border-color: rgba(255, 250, 226, 0.5) !important;
+              border-color: transparent !important;
             }
 
             @media (max-width: 767px) {
@@ -3244,6 +3335,10 @@ export default function AtlasMap({
                 --marker-flare-length: 160%;
                 --marker-flare-thickness: 7%;
                 --marker-diagonal-opacity: 0.58;
+                --marker-starburst-size: 315%;
+                --marker-starburst-primary-width: 5.2;
+                --marker-starburst-diagonal-width: 2.5;
+                --marker-starburst-diagonal-opacity: 0.62;
                 --marker-star-filter-idle: brightness(1.22)
                   drop-shadow(0 0 10px rgba(255, 255, 238, 0.94))
                   drop-shadow(0 0 24px rgba(255, 216, 122, 0.72))
@@ -3275,6 +3370,10 @@ export default function AtlasMap({
                 --marker-flare-thickness: 6.5%;
                 --marker-diagonal-opacity: 0.72;
                 --marker-exact-halo-size: 104px;
+                --marker-starburst-size: 375%;
+                --marker-starburst-primary-width: 6.2;
+                --marker-starburst-diagonal-width: 3.1;
+                --marker-starburst-diagonal-opacity: 0.78;
                 --marker-star-filter-idle: brightness(1.34)
                   drop-shadow(0 0 14px rgba(255, 255, 252, 1))
                   drop-shadow(0 0 34px rgba(255, 236, 166, 0.98))
@@ -3303,6 +3402,10 @@ export default function AtlasMap({
                 --marker-flare-length: 170%;
                 --marker-flare-thickness: 6.8%;
                 --marker-diagonal-opacity: 0.64;
+                --marker-starburst-size: 345%;
+                --marker-starburst-primary-width: 5.8;
+                --marker-starburst-diagonal-width: 2.9;
+                --marker-starburst-diagonal-opacity: 0.7;
                 --marker-star-filter-idle: brightness(1.26)
                   drop-shadow(0 0 12px rgba(255, 255, 248, 0.98))
                   drop-shadow(0 0 30px rgba(255, 228, 146, 0.84))
@@ -3351,92 +3454,61 @@ export default function AtlasMap({
               );
             }
 
-            .atlas-marker-star {
+            .atlas-marker-starburst {
               position: absolute;
               left: 50%;
               top: 50%;
-              width: var(--marker-star-size, 64%);
-              height: var(--marker-star-size, 64%);
+              width: var(--marker-starburst-size, 250%);
+              height: var(--marker-starburst-size, 250%);
               filter: var(--marker-star-filter-idle);
-              opacity: var(--marker-star-opacity, 0.92);
+              opacity: var(--marker-starburst-opacity, 0.98);
+              overflow: visible;
               pointer-events: none;
               transform: translate(-50%, -50%);
               transform-origin: center;
               z-index: 2;
             }
 
-            .atlas-marker-star__core,
-            .atlas-marker-star__halo,
-            .atlas-marker-star__flare {
-              position: absolute;
-              left: 50%;
-              top: 50%;
-              pointer-events: none;
-              transform: translate(-50%, -50%);
-            }
-
-            .atlas-marker-star__core {
-              width: var(--marker-core-size, 18%);
-              height: var(--marker-core-size, 18%);
-              border-radius: 999px;
-              background:
-                radial-gradient(circle, #fff 0 24%, #fff9d8 34%, #ffd66e 58%, rgba(255, 184, 67, 0) 74%);
-              box-shadow:
-                0 0 4px rgba(255, 255, 250, 0.95),
-                0 0 12px rgba(255, 232, 150, 0.72),
-                0 0 24px rgba(255, 184, 67, 0.3);
-              z-index: 4;
-            }
-
-            .atlas-marker-star__halo {
-              width: var(--marker-halo-size, 58%);
-              height: var(--marker-halo-size, 58%);
-              border-radius: 999px;
-              background:
-                radial-gradient(circle, rgba(255, 255, 250, 0.62) 0 8%, rgba(255, 242, 190, 0.34) 26%, rgba(255, 203, 93, 0.16) 48%, rgba(255, 203, 93, 0) 72%);
+            .atlas-marker-starburst__bloom {
+              opacity: 0.92;
               mix-blend-mode: screen;
-              z-index: 1;
             }
 
-            .atlas-marker-star__flare {
-              width: var(--marker-flare-length, 100%);
-              height: var(--marker-flare-length, 100%);
-              opacity: 0.88;
+            .atlas-marker-starburst__rays {
+              stroke-linecap: round;
+              stroke-linejoin: round;
               mix-blend-mode: screen;
-              z-index: 2;
+              vector-effect: non-scaling-stroke;
             }
 
-            .atlas-marker-star__flare::before,
-            .atlas-marker-star__flare::after {
-              content: '';
-              position: absolute;
-              left: 50%;
-              top: 50%;
-              border-radius: 999px;
-              background:
-                linear-gradient(90deg, rgba(255, 219, 106, 0) 0%, rgba(255, 244, 204, 0.5) 40%, rgba(255, 255, 250, 0.96) 50%, rgba(255, 244, 204, 0.5) 60%, rgba(255, 219, 106, 0) 100%);
-              filter: blur(0.15px);
-              transform: translate(-50%, -50%);
+            .atlas-marker-starburst__rays--primary {
+              stroke: rgba(255, 252, 232, 0.96);
+              stroke-width: var(--marker-starburst-primary-width, 4.8);
+              filter: drop-shadow(0 0 3px rgba(255, 255, 248, 0.95))
+                drop-shadow(0 0 9px rgba(255, 219, 112, 0.78));
             }
 
-            .atlas-marker-star__flare::before {
-              width: 100%;
-              height: var(--marker-flare-thickness, 10%);
+            .atlas-marker-starburst__rays--diagonal {
+              opacity: var(--marker-starburst-diagonal-opacity, 0.42);
+              stroke: rgba(255, 232, 154, 0.88);
+              stroke-width: var(--marker-starburst-diagonal-width, 2.4);
+              filter: drop-shadow(0 0 5px rgba(255, 213, 112, 0.5));
             }
 
-            .atlas-marker-star__flare::after {
-              width: var(--marker-flare-thickness, 10%);
-              height: 100%;
+            .atlas-marker-starburst__center {
+              mix-blend-mode: screen;
+              filter: drop-shadow(0 0 4px rgba(255, 255, 252, 1))
+                drop-shadow(0 0 12px rgba(255, 225, 132, 0.78));
             }
 
-            .atlas-marker-star__flare--diagonal {
-              opacity: var(--marker-diagonal-opacity, 0.34);
-              transform: translate(-50%, -50%) rotate(45deg) scale(0.78);
+            .atlas-marker-starburst__point {
+              fill: #fff;
+              filter: drop-shadow(0 0 5px rgba(255, 255, 255, 1));
             }
 
-            .marker-pulse--broad-highlighted .atlas-marker-star,
-            .marker-pulse--selected .atlas-marker-star,
-            .marker-pulse[data-atlas-marker-state='exact-event'] .atlas-marker-star {
+            .marker-pulse--broad-highlighted .atlas-marker-starburst,
+            .marker-pulse--selected .atlas-marker-starburst,
+            .marker-pulse[data-atlas-marker-state='exact-event'] .atlas-marker-starburst {
               animation: markerStarPulse var(--marker-star-pulse-duration, inherit)
                 ease-in-out infinite both;
             }
@@ -3502,7 +3574,7 @@ export default function AtlasMap({
 
             @media (prefers-reduced-motion: reduce) {
               .marker-pulse,
-              .atlas-marker-star,
+              .atlas-marker-starburst,
               .atlas-search-input--pulse,
               .atlas-search-query,
               .cinematic-intro-overlay,
