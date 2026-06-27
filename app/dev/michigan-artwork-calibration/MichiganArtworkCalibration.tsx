@@ -14,8 +14,12 @@ import {
   MICHIGAN_MOBILE_LATITUDE_VERTICAL_CORRECTION,
   MICHIGAN_UPPER_PENINSULA_STRAITS_CORRECTION,
   getMichiganRegionalCorrectionDebug,
-  projectLatLngToCalibratedMichiganArtworkPosition,
+  projectLatLngToLegacyCalibratedMichiganArtworkPosition,
 } from "../../../data/michiganArtworkCalibration";
+import {
+  MICHIGAN_APPROVED_MOBILE_CONTROL_POINTS,
+  MICHIGAN_MOBILE_CONTROL_POINT_INTERPOLATION,
+} from "../../../data/michiganProductionControlPoints";
 import {
   MICHIGAN_GEO_POLYGONS,
   MICHIGAN_REFERENCE_SVG,
@@ -127,39 +131,25 @@ const ARTWORK_VARIANTS: ArtworkVariant[] = [
 
 const MICHIGAN_CALIBRATION_SCROLL_CLASS = "dev-michigan-calibration-scroll";
 
-const MICHIGAN_CONTROL_POINTS: MichiganControlPoint[] = [
-  { city: "Detroit", latitude: 42.3314, longitude: -83.0458 },
-  { city: "Port Huron", latitude: 42.9709, longitude: -82.4249 },
-  { city: "Grand Rapids", latitude: 42.9634, longitude: -85.6681 },
-  { city: "Traverse City", latitude: 44.7631, longitude: -85.6206 },
-  { city: "Charlevoix", latitude: 45.3181, longitude: -85.2584 },
-  { city: "Mackinac / Straits", latitude: 45.8492, longitude: -84.6189 },
-  { city: "Alpena", latitude: 45.0617, longitude: -83.4328 },
-  { city: "Sault Ste. Marie", latitude: 46.4953, longitude: -84.3453 },
-  { city: "Escanaba", latitude: 45.7452, longitude: -87.0646 },
-  { city: "Marquette", latitude: 46.5436, longitude: -87.3954 },
-].map((point) => ({
-  ...point,
-  id: point.city
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, ""),
-  defaultArtwork: {
-    desktop: projectLatLngToCalibratedMichiganArtworkPosition(
-      point.latitude,
-      point.longitude,
-      "desktop",
-    ),
-    mobile: projectLatLngToCalibratedMichiganArtworkPosition(
-      point.latitude,
-      point.longitude,
-      "mobile",
-    ),
-  },
-}));
+const MICHIGAN_CONTROL_POINTS: MichiganControlPoint[] =
+  MICHIGAN_APPROVED_MOBILE_CONTROL_POINTS.map((point) => ({
+    id: point.id,
+    city: point.city,
+    latitude: point.latitude,
+    longitude: point.longitude,
+    defaultArtwork: {
+      desktop: projectLatLngToLegacyCalibratedMichiganArtworkPosition(
+        point.latitude,
+        point.longitude,
+        "desktop",
+      ),
+      mobile: point.artwork.mobile,
+    },
+  }));
 
-const CONTROL_POINT_IDW_POWER = 2;
-const CONTROL_POINT_NEIGHBOR_COUNT = 4;
+const CONTROL_POINT_IDW_POWER = MICHIGAN_MOBILE_CONTROL_POINT_INTERPOLATION.power;
+const CONTROL_POINT_NEIGHBOR_COUNT =
+  MICHIGAN_MOBILE_CONTROL_POINT_INTERPOLATION.neighborCount;
 const CONTROL_POINT_EPSILON = 0.0001;
 
 const getControlPointPosition = (
@@ -238,15 +228,15 @@ const regionalHorizontalCorrectionSummary = `Northern horizontal correction: mob
 
 const controlPointAuditSummary = {
   mapAnchors:
-    "data/mapCalibration.ts keeps the legacy homepage MICHIGAN_MAP_ANCHORS IDW path intact; this route only previews a candidate artwork-specific anchor mesh.",
+    "Mobile homepage markers now use the approved artwork-specific control-point mesh; desktop/tablet remains on the legacy calibrated artwork projection.",
   developerRoute:
     "The dev route is the safe calibration surface: Ray selects one named anchor, clicks the illustrated artwork, then copies JSON without writing to the database.",
   recentCorrections:
-    "Recent broad mobile northern layers are visible as gold legacy markers and debug text so Charlevoix, Straits, Escanaba, and Marquette can be compared against control-point interpolation.",
+    "Recent broad mobile northern layers are bypassed in production; gold legacy markers remain here only for reversible debug comparison against the approved mesh.",
   temporaryCompatibility:
-    "Keep lower-Michigan base calibration plus mobile northern X/Y correction temporarily because production markers still depend on projectLatLngToCalibratedMichiganArtworkPosition.",
+    "Mobile production no longer stacks latitude, U.P., Straits, eastward, or regional broad corrections on top of the approved mesh.",
   retirementPath:
-    "After Ray supplies desktop and mobile anchor placements, retire the broad northern correction layers in favor of shared control-point interpolation in a later production PR.",
+    "After Ray supplies desktop anchors, desktop can move from legacy preview to its own approved control-point mesh.",
 } as const;
 
 const validationTargets = [
@@ -316,7 +306,7 @@ export default function MichiganArtworkCalibration() {
           event.latitude,
           event.longitude,
         ),
-        productionPosition: projectLatLngToCalibratedMichiganArtworkPosition(
+        productionPosition: projectLatLngToLegacyCalibratedMichiganArtworkPosition(
           event.latitude,
           event.longitude,
           activeVariant.id,
@@ -338,7 +328,7 @@ export default function MichiganArtworkCalibration() {
       sourceOfTruth:
         "Event latitude/longitude remains unchanged; these values are display transforms for the illustrated artwork only.",
       productionBehavior:
-        "Unchanged in this PR: homepage markers continue to use the existing legacy projection and mobile correction layers.",
+        "Mobile production uses Ray's approved control-point mesh; desktop remains on the existing legacy projection until desktop anchors are calibrated.",
       audit: controlPointAuditSummary,
       reference: {
         name: MICHIGAN_REFERENCE_SVG.sourceName,
@@ -363,7 +353,7 @@ export default function MichiganArtworkCalibration() {
       },
       mobileLatitudeVerticalCorrection: {
         behavior:
-          "Applied only by projectLatLngToCalibratedMichiganArtworkPosition(..., 'mobile') after the shared artwork calibration; desktop returns before this correction.",
+          "Bypassed by mobile production after Ray approval; still available through the legacy helper for debug comparison only.",
         startLatitude:
           MICHIGAN_MOBILE_LATITUDE_VERTICAL_CORRECTION.startLatitude,
         endLatitude: MICHIGAN_MOBILE_LATITUDE_VERTICAL_CORRECTION.endLatitude,
@@ -378,7 +368,7 @@ export default function MichiganArtworkCalibration() {
         neighborCount: CONTROL_POINT_NEIGHBOR_COUNT,
         power: CONTROL_POINT_IDW_POWER,
         productionBehavior:
-          "Not used by the homepage map in this PR; exported for Ray review and paste-back only.",
+          "Used by the mobile homepage map with Ray's approved mobile artwork anchors; desktop remains preview-only / legacy.",
       },
       controlPoints: MICHIGAN_CONTROL_POINTS.map((point) => ({
         id: point.id,
@@ -544,7 +534,7 @@ export default function MichiganArtworkCalibration() {
                     }}
                   />
                   <span
-                    title={`${event.name} candidate control-point projection`}
+                    title={`${event.name} approved mobile production mesh projection`}
                     style={{
                       ...styles.candidateMarker,
                       left: `${candidatePosition.x}%`,
@@ -585,9 +575,10 @@ export default function MichiganArtworkCalibration() {
           <p style={styles.legend}>
             <b>Blue dots</b> = raw latitude/longitude on geographic reference.{" "}
             <b>Gold rings</b> = current legacy projection. <b>Green dots</b> =
-            candidate control-point interpolation. The larger selected-anchor
-            markers show raw reference, saved artwork, and newly clicked artwork
-            locations.
+            approved mobile production control-point interpolation. Desktop green dots
+            remain preview-only until Ray calibrates desktop anchors. The larger
+            selected-anchor markers show raw reference, saved artwork, and newly
+            clicked artwork locations.
           </p>
         </section>
 
