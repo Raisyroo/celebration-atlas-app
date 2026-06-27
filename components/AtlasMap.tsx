@@ -2354,11 +2354,11 @@ export default function AtlasMap({
                                         ? '0 0 12px rgba(255,244,214,.76), 0 0 34px rgba(255,205,106,.52), 0 0 72px rgba(211,132,43,.26), 0 0 112px rgba(145,81,30,.13)'
                                         : '0 0 9px rgba(255,232,184,.5), 0 0 26px rgba(242,178,77,.34), 0 0 56px rgba(186,111,40,.19), 0 0 86px rgba(128,72,29,.1)'
                                     : isExactRevealMarker
-                                      ? '0 0 0 1px rgba(255,249,225,.34), 0 0 18px rgba(255,255,244,.98), 0 0 44px rgba(255,228,142,.82), 0 0 86px rgba(255,187,76,.44), 0 0 132px rgba(255,172,68,.22)'
+                                      ? '0 0 8px rgba(255,255,244,.54), 0 0 18px rgba(255,226,142,.32), 0 0 30px rgba(255,187,76,.14)'
                                       : isStrongActiveMarker
-                                        ? '0 0 0 2px rgba(255,250,226,.34), 0 0 16px rgba(255,254,242,.96), 0 0 40px rgba(255,224,138,.82), 0 0 82px rgba(223,146,48,.48), 0 0 116px rgba(145,81,30,.22)'
+                                        ? '0 0 7px rgba(255,254,242,.48), 0 0 16px rgba(255,224,138,.3), 0 0 26px rgba(223,146,48,.12)'
                                         : isHighlighted
-                                        ? '0 0 8px rgba(255,249,226,.88), 0 0 22px rgba(255,210,112,.62), 0 0 46px rgba(223,146,48,.28)'
+                                        ? '0 0 6px rgba(255,249,226,.44), 0 0 14px rgba(255,210,112,.24), 0 0 22px rgba(223,146,48,.1)'
                                         : markerBaseShadows.idle,
                                   '--marker-shadow-peak': isCluster
                                     ? isStrongActiveMarker
@@ -2367,11 +2367,11 @@ export default function AtlasMap({
                                         ? '0 0 14px rgba(255,248,224,.84), 0 0 42px rgba(255,214,122,.62), 0 0 86px rgba(217,140,45,.32), 0 0 130px rgba(145,81,30,.15)'
                                         : '0 0 11px rgba(255,238,197,.58), 0 0 32px rgba(248,190,88,.42), 0 0 66px rgba(196,120,42,.23), 0 0 100px rgba(128,72,29,.12)'
                                     : isExactRevealMarker
-                                      ? '0 0 0 1px rgba(255,252,232,.44), 0 0 24px rgba(255,255,248,1), 0 0 62px rgba(255,232,152,.94), 0 0 108px rgba(255,194,86,.52), 0 0 156px rgba(255,176,72,.28)'
+                                      ? '0 0 10px rgba(255,255,248,.68), 0 0 24px rgba(255,232,152,.42), 0 0 38px rgba(255,194,86,.18)'
                                       : isStrongActiveMarker
-                                        ? '0 0 0 3px rgba(255,252,235,.44), 0 0 22px rgba(255,254,242,1), 0 0 56px rgba(255,228,146,.94), 0 0 96px rgba(223,146,48,.56), 0 0 136px rgba(145,81,30,.25)'
+                                        ? '0 0 9px rgba(255,254,242,.6), 0 0 22px rgba(255,228,146,.38), 0 0 34px rgba(223,146,48,.16)'
                                         : isHighlighted
-                                        ? '0 0 10px rgba(255,252,234,.96), 0 0 30px rgba(255,218,130,.78), 0 0 56px rgba(223,146,48,.34)'
+                                        ? '0 0 8px rgba(255,252,234,.52), 0 0 18px rgba(255,218,130,.3), 0 0 28px rgba(223,146,48,.12)'
                                         : markerBaseShadows.peak,
                                   animationDuration: `${pulseDuration}s`,
                                   animationDelay: `${pulseDelay}s`,
@@ -2433,16 +2433,18 @@ export default function AtlasMap({
                                     className="atlas-marker-starburst__bloom"
                                     cx="50"
                                     cy="50"
-                                    r="30"
+                                    r="23"
                                     fill={`url(#marker-starburst-bloom-${id})`}
                                   />
                                   <g className="atlas-marker-starburst__rays atlas-marker-starburst__rays--diagonal">
-                                    <line x1="25" y1="25" x2="75" y2="75" />
-                                    <line x1="75" y1="25" x2="25" y2="75" />
+                                    <path d="M32 30 53 47 68 70 47 53Z" />
+                                    <path d="M68 30 53 47 32 70 47 53Z" />
                                   </g>
                                   <g className="atlas-marker-starburst__rays atlas-marker-starburst__rays--primary">
-                                    <line x1="50" y1="4" x2="50" y2="96" />
-                                    <line x1="4" y1="50" x2="96" y2="50" />
+                                    <path d="M50 3 55.6 43.4 50 50 44.4 43.4Z" />
+                                    <path d="M97 50 56.6 55.6 50 50 56.6 44.4Z" />
+                                    <path d="M50 97 44.4 56.6 50 50 55.6 56.6Z" />
+                                    <path d="M3 50 43.4 44.4 50 50 43.4 55.6Z" />
                                   </g>
                                   <circle
                                     className="atlas-marker-starburst__center"
@@ -3214,9 +3216,9 @@ export default function AtlasMap({
               --marker-brightness-peak: 1.25;
               --marker-saturation-idle: 1.1;
               --marker-saturation-peak: 1.18;
-              --marker-ring-opacity: 0.22;
-              --marker-bloom-opacity: 0.36;
-              --marker-bloom-size: 230%;
+              --marker-ring-opacity: 0.08;
+              --marker-bloom-opacity: 0.16;
+              --marker-bloom-size: 185%;
               --marker-star-size: 128%;
               --marker-star-opacity: 0.98;
               --marker-core-size: 18%;
@@ -3238,18 +3240,18 @@ export default function AtlasMap({
             .marker-pulse--exact-reveal,
             .atlas-marker--exact,
             .marker-pulse[data-atlas-marker-state='exact-event'] {
-              border-color: rgba(255, 252, 232, 0.72) !important;
-              outline: 2px solid rgba(255, 239, 190, 0.58);
-              outline-offset: 7px;
+              border-color: transparent !important;
+              outline: none;
+              outline-offset: 0;
               opacity: 1 !important;
               background: transparent !important;
               --marker-brightness-idle: 1.72;
               --marker-brightness-peak: 1.95;
               --marker-saturation-idle: 1.32;
               --marker-saturation-peak: 1.45;
-              --marker-ring-opacity: 0.72;
-              --marker-bloom-opacity: 0.9;
-              --marker-bloom-size: 360%;
+              --marker-ring-opacity: 0.12;
+              --marker-bloom-opacity: 0.24;
+              --marker-bloom-size: 220%;
               --marker-star-size: 168%;
               --marker-star-opacity: 1;
               --marker-core-size: 17%;
@@ -3272,15 +3274,15 @@ export default function AtlasMap({
             .marker-pulse--selected {
               border-color: transparent !important;
               background: transparent !important;
-              outline: 1px solid rgba(255, 232, 168, 0.38);
-              outline-offset: 4px;
+              outline: none;
+              outline-offset: 0;
               --marker-brightness-idle: 1.25;
               --marker-brightness-peak: 1.4;
               --marker-saturation-idle: 1.14;
               --marker-saturation-peak: 1.22;
-              --marker-ring-opacity: 0.38;
-              --marker-bloom-opacity: 0.54;
-              --marker-bloom-size: 265%;
+              --marker-ring-opacity: 0.1;
+              --marker-bloom-opacity: 0.2;
+              --marker-bloom-size: 205%;
               --marker-star-size: 146%;
               --marker-star-opacity: 1;
               --marker-core-size: 18%;
@@ -3325,9 +3327,9 @@ export default function AtlasMap({
                 --marker-brightness-peak: 1.62;
                 --marker-saturation-idle: 1.2;
                 --marker-saturation-peak: 1.34;
-                --marker-ring-opacity: 0.34;
-                --marker-bloom-opacity: 0.56;
-                --marker-bloom-size: 310%;
+                --marker-ring-opacity: 0.1;
+                --marker-bloom-opacity: 0.2;
+                --marker-bloom-size: 210%;
                 --marker-star-size: 210%;
                 --marker-star-opacity: 1;
                 --marker-core-size: 16%;
@@ -3354,15 +3356,15 @@ export default function AtlasMap({
               .marker-pulse[data-atlas-marker-state='exact-event'] {
                 width: 34px !important;
                 height: 34px !important;
-                outline-width: 2px;
-                outline-offset: 8px;
+                outline-width: 0;
+                outline-offset: 0;
                 --marker-brightness-idle: 2.12;
                 --marker-brightness-peak: 2.42;
                 --marker-saturation-idle: 1.44;
                 --marker-saturation-peak: 1.62;
-                --marker-ring-opacity: 0.86;
-                --marker-bloom-opacity: 1;
-                --marker-bloom-size: 345%;
+                --marker-ring-opacity: 0.14;
+                --marker-bloom-opacity: 0.26;
+                --marker-bloom-size: 235%;
                 --marker-star-size: 245%;
                 --marker-core-size: 18%;
                 --marker-halo-size: 96%;
@@ -3387,15 +3389,15 @@ export default function AtlasMap({
               .marker-pulse--selected {
                 width: 32px !important;
                 height: 32px !important;
-                outline-width: 1.5px;
-                outline-offset: 5px;
+                outline-width: 0;
+                outline-offset: 0;
                 --marker-brightness-idle: 1.68;
                 --marker-brightness-peak: 1.92;
                 --marker-saturation-idle: 1.28;
                 --marker-saturation-peak: 1.42;
-                --marker-ring-opacity: 0.54;
-                --marker-bloom-opacity: 0.76;
-                --marker-bloom-size: 315%;
+                --marker-ring-opacity: 0.12;
+                --marker-bloom-opacity: 0.23;
+                --marker-bloom-size: 225%;
                 --marker-star-size: 225%;
                 --marker-core-size: 17%;
                 --marker-halo-size: 88%;
@@ -3470,28 +3472,23 @@ export default function AtlasMap({
             }
 
             .atlas-marker-starburst__bloom {
-              opacity: 0.92;
+              opacity: 0.48;
               mix-blend-mode: screen;
             }
 
             .atlas-marker-starburst__rays {
-              stroke-linecap: round;
-              stroke-linejoin: round;
+              fill: rgba(255, 252, 232, 0.96);
               mix-blend-mode: screen;
-              vector-effect: non-scaling-stroke;
             }
 
             .atlas-marker-starburst__rays--primary {
-              stroke: rgba(255, 252, 232, 0.96);
-              stroke-width: var(--marker-starburst-primary-width, 4.8);
               filter: drop-shadow(0 0 3px rgba(255, 255, 248, 0.95))
                 drop-shadow(0 0 9px rgba(255, 219, 112, 0.78));
             }
 
             .atlas-marker-starburst__rays--diagonal {
               opacity: var(--marker-starburst-diagonal-opacity, 0.42);
-              stroke: rgba(255, 232, 154, 0.88);
-              stroke-width: var(--marker-starburst-diagonal-width, 2.4);
+              fill: rgba(255, 232, 154, 0.88);
               filter: drop-shadow(0 0 5px rgba(255, 213, 112, 0.5));
             }
 
@@ -3520,24 +3517,24 @@ export default function AtlasMap({
               height: var(--marker-exact-halo-size, 88px);
               background: radial-gradient(
                 circle,
-                rgba(255, 255, 248, 0.78) 0 10%,
-                rgba(255, 238, 178, 0.64) 22%,
-                rgba(255, 202, 96, 0.36) 46%,
-                rgba(255, 178, 72, 0.16) 66%,
+                rgba(255, 255, 248, 0.16) 0 8%,
+                rgba(255, 238, 178, 0.14) 20%,
+                rgba(255, 202, 96, 0.08) 42%,
+                rgba(255, 178, 72, 0.04) 62%,
                 rgba(255, 178, 72, 0) 82%
               );
-              animation: exactMarkerHaloPulse 2.2s ease-in-out infinite;
+              animation: none;
             }
 
             .atlas-marker--exact::after,
             .marker-pulse[data-atlas-marker-state='exact-event']::after {
-              width: 54px;
-              height: 54px;
+              width: 38px;
+              height: 38px;
               background: radial-gradient(
                 circle,
-                rgba(255, 255, 250, 0.86) 0 16%,
-                rgba(255, 240, 184, 0.58) 34%,
-                rgba(255, 214, 116, 0.22) 58%,
+                rgba(255, 255, 250, 0.18) 0 14%,
+                rgba(255, 240, 184, 0.14) 32%,
+                rgba(255, 214, 116, 0.06) 56%,
                 rgba(255, 214, 116, 0) 76%
               );
             }
