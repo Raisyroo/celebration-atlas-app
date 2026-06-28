@@ -5,6 +5,7 @@ export type MichiganMobilePlacementZoneId =
   | 'north-water' | 'central-left' | 'central-right'
   | 'lower-left' | 'lower-right' | 'southeast-cluster';
 export type MapLabelStyle = 'text' | 'icon-text' | 'thumbnail-text';
+export type MapLabelAlignment = 'left' | 'right' | 'center';
 export type MapCalloutConnector = 'none' | 'short-elbow';
 export type MapAnchorVisibility = 'ambient-light' | 'subtle-dot' | 'emphasized';
 export type MapCalloutPriority = 'primary' | 'secondary';
@@ -25,6 +26,7 @@ export type MapPresentationCallout = {
   labelXPercent?: number;
   labelYPercent?: number;
   labelStyle: MapLabelStyle;
+  labelAlignment?: MapLabelAlignment;
   connector: MapCalloutConnector;
   anchorVisibility: MapAnchorVisibility;
   priority: MapCalloutPriority;
