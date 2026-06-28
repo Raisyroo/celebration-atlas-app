@@ -53,6 +53,8 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
 ];
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
 const MOBILE_FAVORITE_STORAGE_KEY = 'celebration-atlas:michigan:favorite';
+const MOBILE_LANDING_TITLE_SESSION_KEY = 'celebration-atlas:michigan-title-dismissed';
+const MICHIGAN_TITLE_ARTWORK_SRC = '/branding/celebration-atlas-michigan-title-gold.svg';
 const MOBILE_MENU_ITEMS = [
   'Explore Michigan',
   'Saved Celebrations',
@@ -1352,6 +1354,8 @@ export default function AtlasMap({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useState(false);
+  const [isMobileLandingTitleDismissed, setIsMobileLandingTitleDismissed] = useState(false);
+  const [shouldRenderMobileLandingTitle, setShouldRenderMobileLandingTitle] = useState(true);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
@@ -2029,9 +2033,43 @@ export default function AtlasMap({
     }, mediaDelayMs);
   }, [hasCardMediaSource, isCardVisible, mediaDelayMs]);
 
+  useEffect(() => {
+    const landingTitleLoadTimer = window.setTimeout(() => {
+      try {
+        const wasDismissed =
+          window.sessionStorage.getItem(MOBILE_LANDING_TITLE_SESSION_KEY) === 'true';
+        setIsMobileLandingTitleDismissed(wasDismissed);
+        setShouldRenderMobileLandingTitle(!wasDismissed);
+      } catch {
+        setIsMobileLandingTitleDismissed(false);
+        setShouldRenderMobileLandingTitle(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(landingTitleLoadTimer);
+  }, []);
+
+  const dismissMobileLandingTitle = useCallback(() => {
+    setIsMobileLandingTitleDismissed((wasDismissed) => {
+      if (wasDismissed) return wasDismissed;
+      try {
+        window.sessionStorage.setItem(MOBILE_LANDING_TITLE_SESSION_KEY, 'true');
+      } catch {
+        // The title still dismisses for this mounted visit if session storage is unavailable.
+      }
+      return true;
+    });
+
+    if (prefersReducedMotion) {
+      setShouldRenderMobileLandingTitle(false);
+    }
+  }, [prefersReducedMotion]);
+
   const runDiscoverySearch = useCallback((searchText: string) => {
     const trimmedQuery = searchText.trim();
     if (!trimmedQuery) return;
+
+    dismissMobileLandingTitle();
 
     if (queryFadeTimerRef.current) {
       clearTimeout(queryFadeTimerRef.current);
@@ -2092,7 +2130,7 @@ export default function AtlasMap({
       setIsSubmittedQueryFading(false);
       queryFadeTimerRef.current = null;
     }, 680);
-  }, [onSearchActivate]);
+  }, [dismissMobileLandingTitle, onSearchActivate]);
 
   useEffect(() => {
     let isCurrentConstellationState = true;
@@ -2322,10 +2360,15 @@ export default function AtlasMap({
       isCelebrationSearchHighlightActive,
   );
   const shouldShowMobileLandingTitle =
-    !isDesktop && !isPhoneLandscape && !hasSelectedEventCardOpen;
-  const mobileLandingTitleState = isMobileLandingTitleSearchActive
-    ? 'compact'
-    : 'idle';
+    !isDesktop &&
+    !isPhoneLandscape &&
+    !hasSelectedEventCardOpen &&
+    shouldRenderMobileLandingTitle;
+  const mobileLandingTitleState = isMobileLandingTitleDismissed
+    ? 'dismissed'
+    : isMobileLandingTitleSearchActive
+      ? 'dismissed'
+      : 'idle';
 
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
@@ -2656,6 +2699,7 @@ export default function AtlasMap({
                             }
                             onClick={() => {
                               if (shouldSuppressMarkerTap()) return;
+                              dismissMobileLandingTitle();
                               if (exactEventOpenTimerRef.current) {
                                 clearTimeout(exactEventOpenTimerRef.current);
                                 exactEventOpenTimerRef.current = null;
@@ -2829,6 +2873,7 @@ export default function AtlasMap({
                             }
                             onClick={() => {
                               if (shouldSuppressMarkerTap()) return;
+                              dismissMobileLandingTitle();
                               if (exactEventOpenTimerRef.current) {
                                 clearTimeout(exactEventOpenTimerRef.current);
                                 exactEventOpenTimerRef.current = null;
@@ -2912,7 +2957,7 @@ export default function AtlasMap({
             </button>
           </div>
           <div style={styles.mobileSideControls} aria-label="Mobile map tools">
-            <button type="button" aria-label="Open atlas filters" aria-expanded={isMobileFilterOpen} className="mobile-tool-button" style={styles.mobileToolButton} onClick={() => setIsMobileFilterOpen(true)}>
+            <button type="button" aria-label="Open atlas filters" aria-expanded={isMobileFilterOpen} className="mobile-tool-button" style={styles.mobileToolButton} onClick={() => { dismissMobileLandingTitle(); setIsMobileFilterOpen(true); }}>
               <span aria-hidden="true">☷</span>
               <span style={styles.mobileToolLabel}>Filters</span>
             </button>
@@ -2925,13 +2970,20 @@ export default function AtlasMap({
           className={`mobile-atlas-identity mobile-atlas-identity--${mobileLandingTitleState}`}
           style={styles.mobileAtlasIdentity}
           aria-label="Celebration Atlas Michigan"
+          onTransitionEnd={(event) => {
+            if (event.currentTarget !== event.target) return;
+            if (!isMobileLandingTitleDismissed) return;
+            setShouldRenderMobileLandingTitle(false);
+          }}
         >
-          <div className="mobile-atlas-emblem" style={styles.mobileAtlasEmblem} aria-hidden="true">
-            <span style={styles.mobileAtlasEmblemNeedle}>✦</span>
-          </div>
-          <p className="mobile-atlas-brand" style={styles.mobileBrand}>Celebration Atlas</p>
-          <h1 className="mobile-atlas-title" style={styles.mobileStateTitle}>Michigan</h1>
-          <p className="mobile-atlas-subtitle" style={styles.mobileStateSubtitle}>Explore. Celebrate. Connect.</p>
+          {/* eslint-disable-next-line @next/next/no-img-element -- Title artwork must render as the approved transparent brand asset without layout-driven image optimization wrappers. */}
+          <img
+            className="mobile-atlas-title-artwork"
+            src={MICHIGAN_TITLE_ARTWORK_SRC}
+            alt="Celebration Atlas Michigan"
+            draggable={false}
+            style={styles.mobileAtlasTitleArtwork}
+          />
         </header>
       ) : null}
 
@@ -3213,6 +3265,7 @@ export default function AtlasMap({
                 }
                 onChange={(event) => {
                   const nextQuery = event.target.value;
+                  dismissMobileLandingTitle();
                   setQuery(nextQuery);
 
                   if (nextQuery.trim().length === 0) {
@@ -3233,7 +3286,7 @@ export default function AtlasMap({
                 onAnimationEnd={() => {
                   setSearchPulseTick(0);
                 }}
-                onFocus={() => setIsSearchFocused(true)}
+                onFocus={() => { dismissMobileLandingTitle(); setIsSearchFocused(true); }}
                 onBlur={() => setIsSearchFocused(false)}
                 onKeyDown={(event) => {
                   if (event.nativeEvent.isComposing) return;
@@ -3287,7 +3340,7 @@ export default function AtlasMap({
                         key={event.id}
                         type="button"
                         aria-label={`Open ${event.name}`}
-                        onClick={() => setSelectedId(event.id)}
+                        onClick={() => { dismissMobileLandingTitle(); setSelectedId(event.id); }}
                         className="mobile-live-card"
                         style={styles.mobileLiveCard}
                       >
@@ -3511,7 +3564,7 @@ export default function AtlasMap({
                 letter-spacing: 0.09em !important;
               }
 
-              .mobile-atlas-identity--compact .mobile-atlas-title {
+              .mobile-atlas-identity--dismissed .mobile-atlas-title {
                 font-size: 18px !important;
                 letter-spacing: 0.18em !important;
               }
@@ -3530,20 +3583,20 @@ export default function AtlasMap({
             }
 
 
-            .mobile-atlas-identity--compact {
-              opacity: 0.88 !important;
-              transform: translate3d(0, -13px, 0) scale(0.82) !important;
+            .mobile-atlas-identity--dismissed {
+              opacity: 0 !important;
+              transform: translate3d(0, -16px, 0) scale(0.94) !important;
             }
 
-            .mobile-atlas-identity--compact .mobile-atlas-title {
+            .mobile-atlas-identity--dismissed .mobile-atlas-title {
               font-size: 18px !important;
               letter-spacing: 0.18em !important;
               line-height: 1 !important;
             }
 
-            .mobile-atlas-identity--compact .mobile-atlas-emblem,
-            .mobile-atlas-identity--compact .mobile-atlas-brand,
-            .mobile-atlas-identity--compact .mobile-atlas-subtitle {
+            .mobile-atlas-identity--dismissed .mobile-atlas-emblem,
+            .mobile-atlas-identity--dismissed .mobile-atlas-brand,
+            .mobile-atlas-identity--dismissed .mobile-atlas-subtitle {
               opacity: 0 !important;
               transform: translate3d(0, -4px, 0) scale(0.94) !important;
               max-height: 0 !important;
@@ -5175,6 +5228,15 @@ const styles: Record<string, CSSProperties> = {
     transformOrigin: 'top center',
     transition: 'opacity 360ms ease, transform 360ms ease',
     textShadow: '0 2px 14px rgba(2, 4, 8, 0.92), 0 0 26px rgba(255, 207, 116, 0.22)',
+  },
+  mobileAtlasTitleArtwork: {
+    display: 'block',
+    width: 'min(92vw, 620px)',
+    height: 'auto',
+    maxHeight: 'clamp(150px, 30vh, 250px)',
+    objectFit: 'contain',
+    filter: 'drop-shadow(0 9px 18px rgba(25, 8, 0, 0.46)) drop-shadow(0 0 18px rgba(255, 198, 90, 0.28))',
+    userSelect: 'none',
   },
   mobileAtlasEmblem: {
     width: 30,

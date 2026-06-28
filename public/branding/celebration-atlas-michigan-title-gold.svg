@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">Celebration Atlas Michigan gold title artwork</title>
+  <desc id="desc">Ceremonial gold Celebration Atlas Michigan title artwork with transparent background.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff7ca"/>
+      <stop offset="0.25" stop-color="#f7cc66"/>
+      <stop offset="0.52" stop-color="#b96d20"/>
+      <stop offset="0.76" stop-color="#ffe49b"/>
+      <stop offset="1" stop-color="#8f4b18"/>
+    </linearGradient>
+    <linearGradient id="brightGold" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#f2a84b"/>
+      <stop offset="0.2" stop-color="#fff8d3"/>
+      <stop offset="0.48" stop-color="#d9902e"/>
+      <stop offset="0.7" stop-color="#fff0aa"/>
+      <stop offset="1" stop-color="#bd6b22"/>
+    </linearGradient>
+    <filter id="ceremonyShadow" x="-12%" y="-24%" width="124%" height="148%">
+      <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#1b0b02" flood-opacity="0.58"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#ffc861" flood-opacity="0.28"/>
+    </filter>
+    <filter id="softGlow" x="-30%" y="-45%" width="160%" height="190%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <style>
+      .brand{font-family: Georgia, 'Times New Roman', serif;font-size:112px;font-weight:700;letter-spacing:.055em;}
+      .state{font-family: Georgia, 'Times New Roman', serif;font-size:206px;font-weight:700;letter-spacing:.045em;}
+      .small{font-family: ui-serif, Georgia, serif;font-size:28px;font-weight:700;letter-spacing:.34em;}
+    </style>
+  </defs>
+  <g opacity=".34" filter="url(#softGlow)">
+    <ellipse cx="600" cy="288" rx="460" ry="156" fill="#f5b84f"/>
+  </g>
+  <g filter="url(#ceremonyShadow)">
+    <path d="M168 137 C316 54 875 54 1032 139" fill="none" stroke="#7c3b13" stroke-width="12" stroke-linecap="round" opacity=".72"/>
+    <path d="M188 139 C330 78 862 77 1012 141" fill="none" stroke="url(#brightGold)" stroke-width="7" stroke-linecap="round"/>
+    <text x="600" y="184" text-anchor="middle" class="brand" fill="#4a1d09" stroke="#4a1d09" stroke-width="18" paint-order="stroke">CELEBRATION ATLAS</text>
+    <text x="600" y="184" text-anchor="middle" class="brand" fill="url(#gold)" stroke="#fff1b7" stroke-width="2" paint-order="stroke">CELEBRATION ATLAS</text>
+    <text x="600" y="390" text-anchor="middle" class="state" fill="#451908" stroke="#451908" stroke-width="24" paint-order="stroke">MICHIGAN</text>
+    <text x="600" y="390" text-anchor="middle" class="state" fill="url(#brightGold)" stroke="#fff2ba" stroke-width="2.5" paint-order="stroke">MICHIGAN</text>
+    <path d="M170 427 C322 486 878 486 1030 426" fill="none" stroke="#743614" stroke-width="10" stroke-linecap="round" opacity=".7"/>
+    <path d="M198 424 C345 461 858 461 1002 424" fill="none" stroke="url(#gold)" stroke-width="6" stroke-linecap="round"/>
+    <text x="600" y="472" text-anchor="middle" class="small" fill="#fff0ad" opacity=".92">EXPLORE • CELEBRATE • CONNECT</text>
+    <g fill="#ffec9e" opacity=".95">
+      <path d="M98 280l18 8 8 18 8-18 18-8-18-8-8-18-8 18z"/>
+      <path d="M1070 276l18 8 8 18 8-18 18-8-18-8-8-18-8 18z"/>
+      <path d="M600 26l13 6 6 13 6-13 13-6-13-6-6-13-6 13z"/>
+    </g>
+  </g>
+</svg>
