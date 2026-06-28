@@ -15,6 +15,7 @@ import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
 import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
 import { resolveExactEventIntent } from '../data/exactEventIntent';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
+import type { MapPresentationPlan } from '../data/mapPresentationPlan';
 import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
 import { resolveExactMichiganMobileUpperPeninsulaAnchorPosition } from '../data/michiganMobileUpperPeninsulaAnchors';
 import type { MichiganMapAnchor } from '../data/mapCalibration';
@@ -621,7 +622,7 @@ type MobileTagRect = {
   bottom: number;
 };
 
-type MapPresentationMode = 'idle' | 'results' | 'single' | 'selected';
+type MapPresentationMode = MapPresentationPlan['mode'];
 type MapCalloutClusterIndicator = {
   id: string;
   hiddenCount: number;
@@ -953,6 +954,7 @@ type AtlasMapProps = {
   celebrationSearchHighlightedIds?: readonly string[];
   activeConstellationTitle?: string | null;
   onSearchActivate?: () => void;
+  presentationPlan?: MapPresentationPlan;
 };
 
 const clamp = (value: number, min: number, max: number) =>
@@ -1280,6 +1282,7 @@ export default function AtlasMap({
   celebrationSearchHighlightedIds = [],
   activeConstellationTitle = null,
   onSearchActivate,
+  presentationPlan,
 }: AtlasMapProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -1411,22 +1414,41 @@ export default function AtlasMap({
     [artworkVariant],
   );
   const displayMarkerLayouts = markerLayouts;
-  const mapPresentationMode = getMapPresentationMode({
+  const fallbackMapPresentationMode = getMapPresentationMode({
     selectedId,
     exactEventIntent,
     hasSubmittedSearchMatches,
   });
-  const mapCalloutPlan = useMemo(
-    () =>
-      resolveMapCalloutPlan({
-        mode: mapPresentationMode,
-        markerLayouts: displayMarkerLayouts,
-        highlightedIds,
-        selectedId,
-        exactEventId: exactEventIntent?.eventId ?? null,
-      }),
-    [displayMarkerLayouts, exactEventIntent, highlightedIds, mapPresentationMode, selectedId],
-  );
+  const mapPresentationMode = presentationPlan?.mode ?? fallbackMapPresentationMode;
+  const mapCalloutPlan = useMemo(() => {
+    if (presentationPlan) {
+      return {
+        eventIds: new Set(presentationPlan.callouts?.map((callout) => callout.eventId) ?? []),
+        clusterIndicators:
+          presentationPlan.clusters?.map((cluster) => ({
+            id: cluster.id,
+            hiddenCount: cluster.eventIds.length,
+            position: { x: cluster.xPercent, y: cluster.yPercent },
+            eventIds: [...cluster.eventIds],
+          })) ?? [],
+      };
+    }
+
+    return resolveMapCalloutPlan({
+      mode: mapPresentationMode,
+      markerLayouts: displayMarkerLayouts,
+      highlightedIds,
+      selectedId,
+      exactEventId: exactEventIntent?.eventId ?? null,
+    });
+  }, [
+    displayMarkerLayouts,
+    exactEventIntent,
+    highlightedIds,
+    mapPresentationMode,
+    presentationPlan,
+    selectedId,
+  ]);
   const isConstellationLineSearchActive = Boolean(
     q ||
       query.trim() ||
@@ -1447,31 +1469,66 @@ export default function AtlasMap({
     ],
   );
   const ambientMobileEvents = ATLAS_EVENTS;
-  const mobileSearchTagPlacements = useMemo(
-    () =>
-      !isDesktop && mapPresentationMode !== 'idle'
-        ? resolveMobileSearchTagPlacements({
-            markerLayouts: displayMarkerLayouts,
-            calloutEventIds: mapCalloutPlan.eventIds,
-            viewport: mapViewportSize,
-          })
-        : new Map<string, MobileTagPlacement>(),
-    [
-      displayMarkerLayouts,
-      isDesktop,
-      mapCalloutPlan,
-      mapPresentationMode,
-      mapViewportSize,
-    ],
-  );
+  const mobileSearchTagPlacements = useMemo(() => {
+    if (isDesktop || mapPresentationMode === 'idle') return new Map<string, MobileTagPlacement>();
+
+    const calloutsNeedingRemoteLabels = new Set(
+      presentationPlan?.callouts
+        ?.filter((callout) => callout.labelPlacement !== 'near-anchor')
+        .map((callout) => callout.eventId) ?? [],
+    );
+    const placements = resolveMobileSearchTagPlacements({
+      markerLayouts: displayMarkerLayouts,
+      calloutEventIds: calloutsNeedingRemoteLabels,
+      viewport: mapViewportSize,
+    });
+
+    if (!presentationPlan || !mapViewportSize) return placements;
+
+    const layoutByEventId = new Map(displayMarkerLayouts.map((layout) => [layout.event.id, layout]));
+    presentationPlan.callouts?.forEach((callout, index) => {
+      if (callout.labelXPercent === undefined || callout.labelYPercent === undefined) return;
+      const layout = layoutByEventId.get(callout.eventId);
+      if (!layout) return;
+
+      const width = estimateMobileTagWidth(layout.event.name);
+      const anchorX = (layout.position.x / 100) * mapViewportSize.width;
+      const anchorY = (layout.position.y / 100) * mapViewportSize.height;
+      placements.set(callout.eventId, {
+        eventId: callout.eventId,
+        dx: (callout.labelXPercent / 100) * mapViewportSize.width - anchorX,
+        dy: (callout.labelYPercent / 100) * mapViewportSize.height - anchorY,
+        moved: callout.labelPlacement !== 'near-anchor',
+        placement: callout.labelPlacement === 'east-water' ? 'east-water' : callout.labelPlacement === 'west-water' ? 'west-water' : 'north-water',
+        width,
+        height: MOBILE_TAG_HEIGHT_PX,
+        zIndex: index,
+      });
+    });
+
+    return placements;
+  }, [
+    displayMarkerLayouts,
+    isDesktop,
+    mapPresentationMode,
+    mapViewportSize,
+    presentationPlan,
+  ]);
   const mobileSearchConnectors = useMemo(() => {
-    if (isDesktop || !mapViewportSize) return [];
+    if (isDesktop || !mapViewportSize || !presentationPlan) return [];
 
     const layoutByEventId = new Map(
       displayMarkerLayouts.map((layout) => [layout.event.id, layout]),
     );
 
+    const connectorEventIds = new Set(
+      presentationPlan.callouts
+        ?.filter((callout) => callout.connector === 'short-elbow')
+        .map((callout) => callout.eventId) ?? [],
+    );
+
     return Array.from(mobileSearchTagPlacements.values()).flatMap((placement) => {
+      if (!connectorEventIds.has(placement.eventId)) return [];
       const layout = layoutByEventId.get(placement.eventId);
       if (!layout) return [];
 
@@ -1497,10 +1554,11 @@ export default function AtlasMap({
         zIndex: placement.zIndex,
       }];
     });
-  }, [displayMarkerLayouts, isDesktop, mapViewportSize, mobileSearchTagPlacements]);
+  }, [displayMarkerLayouts, isDesktop, mapViewportSize, mobileSearchTagPlacements, presentationPlan]);
   const visibleMarkerGroups = displayMarkerLayouts
     .filter((layout) => {
       if (mapPresentationMode === 'single' && exactEventIntent) return layout.event.id === exactEventIntent.eventId;
+      if (presentationPlan) return presentationPlan.visibleEventIds.includes(layout.event.id);
       if (mapPresentationMode === 'results') return highlightedIds.has(layout.event.id);
 
       return true;
