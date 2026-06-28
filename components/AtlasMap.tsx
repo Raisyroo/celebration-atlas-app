@@ -2476,7 +2476,7 @@ export default function AtlasMap({
             }}
           />
 
-          {!shouldShowCalibration && !isVerificationMode ? (
+          {!shouldShowCalibration && !isVerificationMode && isDesktop ? (
             <>
               <AtmosphereLayer
                 events={ATLAS_EVENTS}
@@ -2507,7 +2507,7 @@ export default function AtlasMap({
             />
           ) : null}
 
-          {!shouldShowCalibration && !isVerificationMode ? (
+          {!shouldShowCalibration && !isVerificationMode && isDesktop ? (
             <ConstellationLineLayer points={constellationLinePoints} />
           ) : null}
 
@@ -2526,22 +2526,13 @@ export default function AtlasMap({
               transform: mapLayerTransform,
             }}
           >
-            {mobileSearchConnectors.length > 0 && mapViewportSize ? (
+            {isDesktop && mobileSearchConnectors.length > 0 && mapViewportSize ? (
               <svg
                 aria-hidden="true"
                 style={styles.mobileCalloutConnectorLayer}
                 viewBox={`0 0 ${mapViewportSize.width} ${mapViewportSize.height}`}
                 preserveAspectRatio="none"
               >
-                <defs>
-                  <filter id="mobile-callout-connector-glow" x="-40%" y="-40%" width="180%" height="180%">
-                    <feGaussianBlur stdDeviation="1.15" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
                 {mobileSearchConnectors.map((connector) => (
                   <g key={connector.eventId} style={{ opacity: 0.72 }}>
                     <path
@@ -2551,7 +2542,6 @@ export default function AtlasMap({
                       strokeWidth="3.2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      filter="url(#mobile-callout-connector-glow)"
                     />
                     <path
                       d={connector.path}
@@ -2561,8 +2551,6 @@ export default function AtlasMap({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
-                    <circle cx={connector.anchorX} cy={connector.anchorY} r="2.4" fill="rgba(255, 201, 105, 0.9)" />
-                    <circle cx={connector.anchorX} cy={connector.anchorY} r="4.8" fill="rgba(255, 194, 92, 0.12)" />
                   </g>
                 ))}
               </svg>
@@ -2598,7 +2586,8 @@ export default function AtlasMap({
                   isSelectedMarker || isExactRevealMarker,
                 );
                 const shouldRenderStarburstMarker = Boolean(
-                  !isCluster &&
+                  isDesktop &&
+                    !isCluster &&
                     (isHighlighted || isSelectedMarker || isExactRevealMarker),
                 );
                 const primaryEventProfile = getEventProfileById(
@@ -3791,9 +3780,26 @@ export default function AtlasMap({
             }
 
             @media (max-width: 767px) {
+              .marker-pulse {
+                width: 1px !important;
+                height: 1px !important;
+                opacity: 0 !important;
+                background: transparent !important;
+                border-color: transparent !important;
+                box-shadow: none !important;
+                filter: none !important;
+                animation: none !important;
+              }
+
+              .marker-pulse::before,
+              .marker-pulse::after,
+              .atlas-marker-starburst {
+                display: none !important;
+              }
+
               .marker-pulse--inactive {
-                width: 18px !important;
-                height: 18px !important;
+                width: 1px !important;
+                height: 1px !important;
               }
 
               .marker-pulse--broad-highlighted {
