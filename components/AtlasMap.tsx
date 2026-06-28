@@ -2314,6 +2314,18 @@ export default function AtlasMap({
   // actually opened.
   const shouldShowMobileAmbientAtlas =
     !isDesktop && !isPhoneLandscape && !isAtlasPanelOpen && !hasSelectedEventCardOpen;
+  const isMobileLandingTitleSearchActive = Boolean(
+    isSearchFocused ||
+      query.trim() ||
+      displayedQuery.trim() ||
+      submittedQuery.trim() ||
+      isCelebrationSearchHighlightActive,
+  );
+  const shouldShowMobileLandingTitle =
+    !isDesktop && !isPhoneLandscape && !hasSelectedEventCardOpen;
+  const mobileLandingTitleState = isMobileLandingTitleSearchActive
+    ? 'compact'
+    : 'idle';
 
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
@@ -2905,10 +2917,22 @@ export default function AtlasMap({
               <span style={styles.mobileToolLabel}>Filters</span>
             </button>
           </div>
-          <header className="mobile-atlas-identity" style={styles.mobileAtlasIdentity} aria-label="Celebration Atlas Michigan">
-            <h1 className="mobile-atlas-title" style={styles.mobileStateTitle}>Michigan</h1>
-          </header>
         </>
+      ) : null}
+
+      {shouldShowMobileLandingTitle ? (
+        <header
+          className={`mobile-atlas-identity mobile-atlas-identity--${mobileLandingTitleState}`}
+          style={styles.mobileAtlasIdentity}
+          aria-label="Celebration Atlas Michigan"
+        >
+          <div className="mobile-atlas-emblem" style={styles.mobileAtlasEmblem} aria-hidden="true">
+            <span style={styles.mobileAtlasEmblemNeedle}>✦</span>
+          </div>
+          <p className="mobile-atlas-brand" style={styles.mobileBrand}>Celebration Atlas</p>
+          <h1 className="mobile-atlas-title" style={styles.mobileStateTitle}>Michigan</h1>
+          <p className="mobile-atlas-subtitle" style={styles.mobileStateSubtitle}>Explore. Celebrate. Connect.</p>
+        </header>
       ) : null}
 
       {shouldShowMobileChromeControls && isMobileMenuOpen ? (
@@ -3479,37 +3503,17 @@ export default function AtlasMap({
 
             @media (max-width: 480px) {
               .mobile-atlas-identity {
-                top: calc(env(safe-area-inset-top) + 28px) !important;
-                gap: 7px !important;
-              }
-
-              .mobile-atlas-brand {
-                font-size: 20px !important;
-                letter-spacing: 0.08em !important;
-                line-height: 1.08 !important;
-                margin: 0 !important;
-                white-space: normal !important;
+                top: calc(env(safe-area-inset-top) + 34px) !important;
               }
 
               .mobile-atlas-title {
-                font-size: 52px !important;
-                letter-spacing: 0.08em !important;
-                line-height: 0.92 !important;
-                margin: 0 !important;
-                min-width: 0 !important;
-                width: auto !important;
-                max-width: 100% !important;
-                white-space: normal !important;
-                transform: none !important;
+                font-size: clamp(38px, 13vw, 56px) !important;
+                letter-spacing: 0.09em !important;
               }
 
-              .mobile-atlas-subtitle {
-                display: block !important;
-                font-size: 19px !important;
-                letter-spacing: 0.03em !important;
-                line-height: 1.12 !important;
-                margin: 0 !important;
-                white-space: normal !important;
+              .mobile-atlas-identity--compact .mobile-atlas-title {
+                font-size: 18px !important;
+                letter-spacing: 0.18em !important;
               }
             }
 
@@ -3522,6 +3526,45 @@ export default function AtlasMap({
                 font-size: 48px !important;
                 line-height: 0.95 !important;
                 letter-spacing: 0.04em !important;
+              }
+            }
+
+
+            .mobile-atlas-identity--compact {
+              opacity: 0.88 !important;
+              transform: translate3d(0, -13px, 0) scale(0.82) !important;
+            }
+
+            .mobile-atlas-identity--compact .mobile-atlas-title {
+              font-size: 18px !important;
+              letter-spacing: 0.18em !important;
+              line-height: 1 !important;
+            }
+
+            .mobile-atlas-identity--compact .mobile-atlas-emblem,
+            .mobile-atlas-identity--compact .mobile-atlas-brand,
+            .mobile-atlas-identity--compact .mobile-atlas-subtitle {
+              opacity: 0 !important;
+              transform: translate3d(0, -4px, 0) scale(0.94) !important;
+              max-height: 0 !important;
+              margin: 0 !important;
+              overflow: hidden !important;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+              .mobile-atlas-identity,
+              .mobile-atlas-identity *,
+              .atlas-search-input--pulse,
+              .atlas-search-query,
+              .atlas-search-query--fade,
+              .atlas-search-suggestion,
+              .atlas-search-suggestion--fade,
+              .atlas-search-submit,
+              .marker-pulse,
+              .marker-pulse--selected,
+              .atlas-marker-starburst {
+                animation-duration: 1ms !important;
+                transition-duration: 1ms !important;
               }
             }
 
@@ -5118,16 +5161,36 @@ const styles: Record<string, CSSProperties> = {
 
   mobileAtlasIdentity: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    top: 'calc(25px + env(safe-area-inset-top))',
+    left: 'max(58px, calc(18px + env(safe-area-inset-left)))',
+    right: 'max(58px, calc(18px + env(safe-area-inset-right)))',
+    top: 'calc(38px + env(safe-area-inset-top))',
     zIndex: Z_INDEX.searchDock - 1,
     display: 'grid',
     justifyItems: 'center',
-    gap: 0,
+    gap: 3,
     pointerEvents: 'none',
     textAlign: 'center',
+    opacity: 1,
+    transform: 'translate3d(0, 0, 0) scale(1)',
+    transformOrigin: 'top center',
+    transition: 'opacity 360ms ease, transform 360ms ease',
     textShadow: '0 2px 14px rgba(2, 4, 8, 0.92), 0 0 26px rgba(255, 207, 116, 0.22)',
+  },
+  mobileAtlasEmblem: {
+    width: 30,
+    height: 30,
+    borderRadius: '50%',
+    border: '1px solid rgba(255, 218, 142, 0.72)',
+    display: 'grid',
+    placeItems: 'center',
+    color: 'rgba(255, 231, 180, 0.96)',
+    background: 'radial-gradient(circle, rgba(255, 210, 120, 0.16), rgba(18, 24, 34, 0.06) 68%, transparent)',
+    boxShadow: '0 0 22px rgba(255, 193, 88, 0.22), inset 0 0 10px rgba(255, 233, 184, 0.08)',
+    transition: 'opacity 300ms ease, transform 300ms ease, max-height 300ms ease',
+  },
+  mobileAtlasEmblemNeedle: {
+    fontSize: 14,
+    lineHeight: 1,
   },
   mobileBrand: {
     margin: 0,
@@ -5137,6 +5200,7 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: 1.9,
     textTransform: 'uppercase',
     lineHeight: 1.05,
+    transition: 'opacity 300ms ease, transform 300ms ease, max-height 300ms ease, margin 300ms ease',
   },
   mobileStateTitle: {
     margin: 0,
@@ -5147,6 +5211,7 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 0.84,
     letterSpacing: '0.13em',
     textTransform: 'uppercase',
+    transition: 'font-size 300ms ease, letter-spacing 300ms ease, line-height 300ms ease',
   },
   mobileStateSubtitle: {
     margin: 0,
@@ -5154,6 +5219,7 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 11.5,
     letterSpacing: 0.18,
     lineHeight: 1.05,
+    transition: 'opacity 300ms ease, transform 300ms ease, max-height 300ms ease, margin 300ms ease',
   },
   mobileFloatingCards: {
     position: 'absolute',
