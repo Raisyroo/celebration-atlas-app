@@ -2976,6 +2976,11 @@ export default function AtlasMap({
             setShouldRenderMobileLandingTitle(false);
           }}
         >
+          <span
+            className="mobile-atlas-identity-scrim"
+            aria-hidden="true"
+            style={styles.mobileAtlasIdentityScrim}
+          />
           {/* eslint-disable-next-line @next/next/no-img-element -- Title artwork must render as the approved transparent brand asset without layout-driven image optimization wrappers. */}
           <img
             className="mobile-atlas-title-artwork"
@@ -3583,20 +3588,9 @@ export default function AtlasMap({
             }
 
 
-            .mobile-atlas-identity::before {
-              content: '';
-              position: absolute;
-              left: 50%;
-              top: 50%;
-              width: min(108vw, 640px);
-              height: min(48vw, 280px);
-              border-radius: 999px;
-              background:
-                radial-gradient(ellipse at 50% 46%, rgba(2, 7, 16, 0.58) 0%, rgba(6, 12, 24, 0.42) 34%, rgba(6, 12, 24, 0.16) 60%, rgba(6, 12, 24, 0) 82%),
-                linear-gradient(180deg, rgba(1, 4, 10, 0.28) 0%, rgba(4, 9, 18, 0.26) 48%, rgba(4, 9, 18, 0) 100%);
-              pointer-events: none;
-              transform: translate3d(-50%, -50%, 0);
-              z-index: -1;
+            .mobile-atlas-identity--dismissed .mobile-atlas-identity-scrim {
+              opacity: 0 !important;
+              transform: translate3d(-50%, -54%, 0) scale(0.94) !important;
             }
 
             .mobile-atlas-identity--dismissed {
@@ -5245,7 +5239,23 @@ const styles: Record<string, CSSProperties> = {
     transition: 'opacity 360ms ease, transform 360ms ease',
     textShadow: '0 2px 14px rgba(2, 4, 8, 0.92), 0 0 26px rgba(255, 207, 116, 0.22)',
   },
+  mobileAtlasIdentityScrim: {
+    position: 'absolute',
+    left: '50%',
+    top: '52%',
+    width: 'min(112vw, 660px)',
+    height: 'min(54vw, 310px)',
+    borderRadius: '50%',
+    background:
+      'radial-gradient(ellipse at center, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.28) 38%, rgba(0,0,0,0.12) 62%, rgba(0,0,0,0) 100%), linear-gradient(to bottom, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.18) 45%, rgba(0,0,0,0.00) 100%)',
+    filter: 'blur(7px)',
+    transform: 'translate3d(-50%, -50%, 0)',
+    pointerEvents: 'none',
+    zIndex: -1,
+  },
   mobileAtlasTitleArtwork: {
+    position: 'relative',
+    zIndex: 1,
     display: 'block',
     width: 'clamp(264px, 72vw, 440px)',
     height: 'auto',
