@@ -2703,9 +2703,10 @@ export default function AtlasMap({
                             style={{
                               ...styles.markerTapTarget,
                               ...(isCluster ? styles.clusterTapTarget : null),
-                              opacity: isDimmed ? (exactEventIntent ? 0.08 : 0.28) : 1,
+                              opacity: isDimmed && isDesktop ? (exactEventIntent ? 0.08 : 0.28) : 1,
                             }}
                           >
+                            {isDesktop ? (
                             <span
                               aria-hidden="true"
                               className={`marker-pulse atlas-marker ${markerStateClass}${
@@ -2852,6 +2853,7 @@ export default function AtlasMap({
                                 </svg>
                               ) : null}
                             </span>
+                            ) : null}
                           </button>
                           <button
                             type="button"
@@ -2907,7 +2909,7 @@ export default function AtlasMap({
                   </div>
                 );
               })}
-            {mapCalloutPlan.clusterIndicators.map((cluster) => (
+            {isDesktop ? mapCalloutPlan.clusterIndicators.map((cluster) => (
               <button
                 key={cluster.id}
                 type="button"
@@ -2921,7 +2923,7 @@ export default function AtlasMap({
               >
                 +{cluster.hiddenCount}
               </button>
-            ))}
+            )) : null}
           </div>
         ) : null}
       </div>
