@@ -93,6 +93,34 @@ body.dev-michigan-calibration-scroll::-webkit-scrollbar {
   display: block;
 }
 
+html.dev-michigan-composition-sandbox-scroll,
+body.dev-michigan-composition-sandbox-scroll {
+  height: auto;
+  min-height: 100dvh;
+  background: #050812;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  touch-action: auto;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: auto;
+  scrollbar-width: auto;
+}
+
+body.dev-michigan-composition-sandbox-scroll::-webkit-scrollbar {
+  display: block;
+}
+
+.michigan-composition-sandbox {
+  overflow-x: clip;
+}
+
+@media (max-width: 760px) {
+  .michigan-composition-sandbox__layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 html.event-detail-scroll,
 body.event-detail-scroll {
   height: auto;

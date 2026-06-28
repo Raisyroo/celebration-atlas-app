@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { type PointerEvent as ReactPointerEvent, useMemo, useRef, useState } from 'react';
+import { type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { ATLAS_EVENTS } from '@/data/events';
 import {
   MICHIGAN_COMPOSITION_SAMPLE_PLANS,
@@ -29,6 +29,7 @@ const labelStyles: MapLabelStyle[] = ['text', 'icon-text', 'thumbnail-text'];
 const connectors: MapCalloutConnector[] = ['none', 'short-elbow'];
 const priorities: MapCalloutPriority[] = ['primary', 'secondary'];
 const anchorVisibilities: MapAnchorVisibility[] = ['ambient-light', 'subtle-dot', 'emphasized'];
+const MICHIGAN_COMPOSITION_SANDBOX_SCROLL_CLASS = 'dev-michigan-composition-sandbox-scroll';
 
 export default function MichiganCompositionSandbox() {
   const [scenario, setScenario] = useState<Scenario>('music');
@@ -40,6 +41,16 @@ export default function MichiganCompositionSandbox() {
   const validation = useMemo(() => validateMapPresentationPlan(plan), [plan]);
   const selectedCallout = plan.callouts?.find((callout) => callout.eventId === selectedEventId) ?? null;
   const overflowEventIds = new Set(plan.overflowGroups?.flatMap((group) => [...group.eventIds]) ?? []);
+
+  useEffect(() => {
+    document.documentElement.classList.add(MICHIGAN_COMPOSITION_SANDBOX_SCROLL_CLASS);
+    document.body.classList.add(MICHIGAN_COMPOSITION_SANDBOX_SCROLL_CLASS);
+
+    return () => {
+      document.documentElement.classList.remove(MICHIGAN_COMPOSITION_SANDBOX_SCROLL_CLASS);
+      document.body.classList.remove(MICHIGAN_COMPOSITION_SANDBOX_SCROLL_CLASS);
+    };
+  }, []);
 
   const updatePlan = (updater: (draft: MapPresentationPlan) => void) => {
     setEditedPlans((current) => {
@@ -101,13 +112,13 @@ export default function MichiganCompositionSandbox() {
   };
 
   return (
-    <main style={{ minHeight: '100vh', background: '#100d09', color: '#fff7df', padding: 20 }}>
+    <main className="michigan-composition-sandbox" style={{ minHeight: '100vh', background: '#100d09', color: '#fff7df', padding: 20 }}>
       <header style={{ maxWidth: 1180, margin: '0 auto 18px' }}>
         <p style={{ color: '#f7c86a', letterSpacing: '.16em', textTransform: 'uppercase' }}>Developer-only sandbox</p>
         <h1 style={{ margin: 0, fontSize: 'clamp(2rem, 5vw, 4rem)' }}>Michigan composition sandbox</h1>
         <p style={{ maxWidth: 900, color: 'rgba(255,247,223,.76)', lineHeight: 1.55 }}>Sample plans are preview-only. Edits are local to this developer route, do not change production, and do not activate any plan in normal map behavior.</p>
       </header>
-      <section style={{ maxWidth: 1180, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(320px, 430px) 1fr', gap: 18 }}>
+      <section className="michigan-composition-sandbox__layout" style={{ maxWidth: 1180, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(320px, 430px) 1fr', gap: 18 }}>
         <div>
           <label style={{ display: 'block', marginBottom: 8, color: '#f7c86a' }}>Sample query scenario</label>
           <select value={scenario} onChange={(event) => { setScenario(event.target.value as Scenario); setSelectedEventId(null); }} style={{ width: '100%', padding: 12, borderRadius: 12, background: '#21170f', color: '#fff7df', border: '1px solid rgba(247,200,106,.45)' }}>
