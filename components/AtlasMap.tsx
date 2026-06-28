@@ -3556,7 +3556,7 @@ export default function AtlasMap({
 
             @media (max-width: 480px) {
               .mobile-atlas-identity {
-                top: calc(env(safe-area-inset-top) + 24px) !important;
+                top: calc(env(safe-area-inset-top) - 16px) !important;
               }
 
               .mobile-atlas-title {
@@ -5232,7 +5232,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     left: 'max(0px, env(safe-area-inset-left))',
     right: 'max(0px, env(safe-area-inset-right))',
-    top: 'calc(24px + env(safe-area-inset-top))',
+    top: 'calc(env(safe-area-inset-top) - 16px)',
     zIndex: Z_INDEX.searchDock - 1,
     display: 'grid',
     justifyItems: 'center',
@@ -5247,7 +5247,7 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileAtlasTitleArtwork: {
     display: 'block',
-    width: 'clamp(300px, 82vw, 500px)',
+    width: 'clamp(264px, 72vw, 440px)',
     height: 'auto',
     aspectRatio: '2400 / 1400',
     objectFit: 'contain',
