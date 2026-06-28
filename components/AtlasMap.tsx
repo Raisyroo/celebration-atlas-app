@@ -15,7 +15,6 @@ import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
 import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
 import { resolveExactEventIntent } from '../data/exactEventIntent';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
-import { resolveMobileBroadSearchPresentationPlan } from '../data/mapPresentationPlan';
 import type { MapPresentationPlan } from '../data/mapPresentationPlan';
 import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
 import { resolveExactMichiganMobileUpperPeninsulaAnchorPosition } from '../data/michiganMobileUpperPeninsulaAnchors';
@@ -1415,15 +1414,7 @@ export default function AtlasMap({
     [artworkVariant],
   );
   const displayMarkerLayouts = markerLayouts;
-  const searchPresentationPlan = useMemo(() => {
-    if (isDesktop || exactEventIntent) return null;
-
-    return resolveMobileBroadSearchPresentationPlan({
-      query: q,
-      matchingEventIds: highlightedIds,
-    });
-  }, [exactEventIntent, highlightedIds, isDesktop, q]);
-  const activePresentationPlan = presentationPlan ?? searchPresentationPlan;
+  const activePresentationPlan = presentationPlan ?? null;
   const fallbackMapPresentationMode = getMapPresentationMode({
     selectedId,
     exactEventIntent,
@@ -1435,10 +1426,10 @@ export default function AtlasMap({
       return {
         eventIds: new Set(activePresentationPlan.callouts?.map((callout) => callout.eventId) ?? []),
         clusterIndicators:
-          activePresentationPlan.clusters?.map((cluster) => ({
+          activePresentationPlan.overflowGroups?.map((cluster) => ({
             id: cluster.id,
             hiddenCount: cluster.eventIds.length,
-            position: { x: cluster.xPercent, y: cluster.yPercent },
+            position: { x: cluster.labelXPercent ?? 50, y: cluster.labelYPercent ?? 50 },
             eventIds: [...cluster.eventIds],
           })) ?? [],
       };
@@ -1483,9 +1474,7 @@ export default function AtlasMap({
     if (isDesktop || mapPresentationMode === 'idle') return new Map<string, MobileTagPlacement>();
 
     const calloutsNeedingRemoteLabels = new Set(
-      activePresentationPlan?.callouts
-        ?.filter((callout) => callout.labelPlacement !== 'near-anchor')
-        .map((callout) => callout.eventId) ?? [],
+      activePresentationPlan?.callouts?.map((callout) => callout.eventId) ?? [],
     );
     const placements = resolveMobileSearchTagPlacements({
       markerLayouts: displayMarkerLayouts,
@@ -1508,8 +1497,8 @@ export default function AtlasMap({
         eventId: callout.eventId,
         dx: (callout.labelXPercent / 100) * mapViewportSize.width - anchorX,
         dy: (callout.labelYPercent / 100) * mapViewportSize.height - anchorY,
-        moved: callout.labelPlacement !== 'near-anchor',
-        placement: callout.labelPlacement === 'east-water' ? 'east-water' : callout.labelPlacement === 'west-water' ? 'west-water' : 'north-water',
+        moved: true,
+        placement: callout.placementZone.startsWith('east') ? 'east-water' : callout.placementZone.startsWith('west') ? 'west-water' : 'north-water',
         width,
         height: MOBILE_TAG_HEIGHT_PX,
         zIndex: index,
