@@ -590,6 +590,8 @@ const MOBILE_TAG_MIN_WIDTH_PX = 118;
 const MOBILE_TAG_MEAN_GLYPH_WIDTH_PX = 6.2;
 const MOBILE_TAG_MEANINGFUL_MOVE_PX = 12;
 const MOBILE_TAG_TAP_BUFFER_PX = 4;
+const MOBILE_TAG_SHORT_CONNECTOR_MAX_DX_PX = 96;
+const MOBILE_TAG_SHORT_CONNECTOR_MAX_DY_PX = 58;
 
 type MapViewportSize = { width: number; height: number };
 type MobileTagPlacementName =
@@ -717,39 +719,44 @@ const getMobileWaterFriendlyCandidates = ({
   const safeWidth = safeBounds.right - safeBounds.left;
   const safeHeight = safeBounds.bottom - safeBounds.top;
   const lane = visibleIndex % 4;
-  const staggerY = (lane - 1.5) * 22;
-  const columnStaggerY = (visibleIndex % 5) * 30;
-  const rowStaggerX = ((visibleIndex % 3) - 1) * 24;
-  const westX = safeBounds.left + safeWidth * 0.18;
-  const eastX = safeBounds.left + safeWidth * 0.82;
-  const northY = safeBounds.top + safeHeight * 0.16;
-  const midY = safeBounds.top + safeHeight * 0.45 + staggerY;
-  const southeastY = safeBounds.top + safeHeight * 0.3 + columnStaggerY;
+  const staggerY = (lane - 1.5) * 14;
+  const rowStaggerX = ((visibleIndex % 3) - 1) * 18;
+  const westWaterEdge = safeBounds.left + safeWidth * 0.18;
+  const eastWaterEdge = safeBounds.left + safeWidth * 0.82;
+  const northWaterY = safeBounds.top + safeHeight * 0.16;
+  const quietMidY = safeBounds.top + safeHeight * 0.44 + staggerY;
   const candidates: { placement: MobileTagPlacementName; x: number; y: number; priority: number }[] = [];
+  const shortWaterX = (targetX: number) =>
+    marker.x + clamp(targetX - marker.x, -MOBILE_TAG_SHORT_CONNECTOR_MAX_DX_PX, MOBILE_TAG_SHORT_CONNECTOR_MAX_DX_PX);
+  const shortWaterY = (targetY: number) =>
+    marker.y + clamp(targetY - marker.y, -MOBILE_TAG_SHORT_CONNECTOR_MAX_DY_PX, MOBILE_TAG_SHORT_CONNECTOR_MAX_DY_PX);
 
   if (marker.x < viewport.width * 0.42) {
     candidates.push(
-      { placement: 'west-water', x: westX, y: midY, priority: 0 },
-      { placement: 'northwest-margin', x: westX, y: northY + lane * 20, priority: 1 },
-      { placement: 'local-left', x: marker.x - 54, y: marker.y + staggerY, priority: 5 },
+      { placement: 'west-water', x: shortWaterX(westWaterEdge), y: shortWaterY(quietMidY), priority: 0 },
+      { placement: 'local-left', x: marker.x - 68, y: marker.y + staggerY, priority: 0.8 },
+      { placement: 'northwest-margin', x: shortWaterX(westWaterEdge), y: shortWaterY(northWaterY + lane * 14), priority: 1.4 },
     );
   } else if (marker.x > viewport.width * 0.62) {
     candidates.push(
-      { placement: 'east-water', x: eastX, y: midY, priority: 0 },
-      { placement: 'southeast-column', x: eastX, y: southeastY, priority: marker.y > viewport.height * 0.46 ? 0.5 : 2 },
-      { placement: 'northeast-margin', x: eastX, y: northY + lane * 20, priority: 1 },
-      { placement: 'local-right', x: marker.x + 54, y: marker.y + staggerY, priority: 5 },
+      { placement: 'east-water', x: shortWaterX(eastWaterEdge), y: shortWaterY(quietMidY), priority: 0 },
+      { placement: 'local-right', x: marker.x + 68, y: marker.y + staggerY, priority: 0.8 },
+      { placement: 'northeast-margin', x: shortWaterX(eastWaterEdge), y: shortWaterY(northWaterY + lane * 14), priority: 1.4 },
+      { placement: 'southeast-column', x: shortWaterX(eastWaterEdge), y: shortWaterY(safeBounds.bottom - 52 - lane * 12), priority: 2.2 },
     );
   } else if (marker.y < viewport.height * 0.36) {
+    const sideX = marker.x < viewport.width / 2 ? westWaterEdge : eastWaterEdge;
     candidates.push(
-      { placement: 'north-water', x: marker.x + rowStaggerX, y: northY + lane * 18, priority: 0 },
-      { placement: marker.x < viewport.width / 2 ? 'west-water' : 'east-water', x: marker.x < viewport.width / 2 ? westX : eastX, y: midY, priority: 1 },
+      { placement: 'north-water', x: marker.x + rowStaggerX, y: shortWaterY(northWaterY + lane * 12), priority: 0 },
+      { placement: marker.x < viewport.width / 2 ? 'west-water' : 'east-water', x: shortWaterX(sideX), y: marker.y + staggerY, priority: 0.9 },
     );
   } else {
+    const primarySideX = visibleIndex % 2 ? eastWaterEdge : westWaterEdge;
+    const secondarySideX = visibleIndex % 2 ? westWaterEdge : eastWaterEdge;
     candidates.push(
-      { placement: visibleIndex % 2 ? 'east-water' : 'west-water', x: visibleIndex % 2 ? eastX : westX, y: midY, priority: 0 },
-      { placement: visibleIndex % 2 ? 'west-water' : 'east-water', x: visibleIndex % 2 ? westX : eastX, y: midY + 28, priority: 1 },
-      { placement: 'southwest-margin', x: westX, y: safeBounds.bottom - 34 - lane * 18, priority: 3 },
+      { placement: visibleIndex % 2 ? 'east-water' : 'west-water', x: shortWaterX(primarySideX), y: marker.y + staggerY, priority: 0 },
+      { placement: visibleIndex % 2 ? 'west-water' : 'east-water', x: shortWaterX(secondarySideX), y: marker.y - staggerY, priority: 1 },
+      { placement: 'southwest-margin', x: shortWaterX(westWaterEdge), y: shortWaterY(safeBounds.bottom - 44 - lane * 12), priority: 2.4 },
     );
   }
 
@@ -826,8 +833,8 @@ const resolveMobileSearchTagPlacements = ({
               overlap * 14 +
               tapOverlap * 6 +
               clampPenalty * 7 +
-              relocation * 0.45 +
-              candidate.priority * 160 +
+              relocation * 1.15 +
+              candidate.priority * 95 +
               order,
           };
         })
@@ -1472,14 +1479,15 @@ export default function AtlasMap({
       const anchorY = (layout.position.y / 100) * mapViewportSize.height;
       const labelX = anchorX + placement.dx;
       const labelY = anchorY + placement.dy;
-      const horizontalFirst = Math.abs(placement.dx) > Math.abs(placement.dy);
-      const bendX = horizontalFirst ? labelX : anchorX;
-      const bendY = horizontalFirst ? anchorY : labelY;
-      const secondBendX = horizontalFirst ? labelX : anchorX;
-      const secondBendY = horizontalFirst ? labelY : anchorY;
-      const path = Math.hypot(placement.dx, placement.dy) > 96
-        ? `M ${anchorX.toFixed(1)} ${anchorY.toFixed(1)} L ${bendX.toFixed(1)} ${bendY.toFixed(1)} L ${labelX.toFixed(1)} ${labelY.toFixed(1)}`
-        : `M ${anchorX.toFixed(1)} ${anchorY.toFixed(1)} L ${secondBendX.toFixed(1)} ${secondBendY.toFixed(1)} L ${labelX.toFixed(1)} ${labelY.toFixed(1)}`;
+      const side = placement.dx >= 0 ? 1 : -1;
+      const attachX = labelX - side * (placement.width / 2 - 5);
+      const attachY = labelY;
+      const horizontalRun = clamp(Math.abs(attachX - anchorX) * 0.55, 16, 38) * side;
+      const bendX = anchorX + horizontalRun;
+      const bendY = Math.abs(attachY - anchorY) < 8 ? anchorY : attachY;
+      const path = Math.abs(attachY - anchorY) < 8
+        ? `M ${anchorX.toFixed(1)} ${anchorY.toFixed(1)} L ${attachX.toFixed(1)} ${anchorY.toFixed(1)}`
+        : `M ${anchorX.toFixed(1)} ${anchorY.toFixed(1)} L ${bendX.toFixed(1)} ${anchorY.toFixed(1)} L ${attachX.toFixed(1)} ${bendY.toFixed(1)}`;
 
       return [{
         eventId: placement.eventId,
@@ -2415,7 +2423,7 @@ export default function AtlasMap({
               >
                 <defs>
                   <filter id="mobile-callout-connector-glow" x="-40%" y="-40%" width="180%" height="180%">
-                    <feGaussianBlur stdDeviation="2.2" result="blur" />
+                    <feGaussianBlur stdDeviation="1.15" result="blur" />
                     <feMerge>
                       <feMergeNode in="blur" />
                       <feMergeNode in="SourceGraphic" />
@@ -2423,12 +2431,12 @@ export default function AtlasMap({
                   </filter>
                 </defs>
                 {mobileSearchConnectors.map((connector) => (
-                  <g key={connector.eventId} style={{ opacity: 0.86 }}>
+                  <g key={connector.eventId} style={{ opacity: 0.72 }}>
                     <path
                       d={connector.path}
                       fill="none"
-                      stroke="rgba(255, 212, 126, 0.22)"
-                      strokeWidth="5"
+                      stroke="rgba(255, 213, 128, 0.12)"
+                      strokeWidth="3.2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       filter="url(#mobile-callout-connector-glow)"
@@ -2436,13 +2444,13 @@ export default function AtlasMap({
                     <path
                       d={connector.path}
                       fill="none"
-                      stroke="rgba(255, 226, 166, 0.78)"
-                      strokeWidth="1.15"
+                      stroke="rgba(255, 235, 190, 0.58)"
+                      strokeWidth="0.85"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
-                    <circle cx={connector.anchorX} cy={connector.anchorY} r="3.1" fill="rgba(255, 239, 198, 0.96)" />
-                    <circle cx={connector.anchorX} cy={connector.anchorY} r="6.4" fill="rgba(255, 196, 89, 0.16)" />
+                    <circle cx={connector.anchorX} cy={connector.anchorY} r="2.4" fill="rgba(255, 201, 105, 0.9)" />
+                    <circle cx={connector.anchorX} cy={connector.anchorY} r="4.8" fill="rgba(255, 194, 92, 0.12)" />
                   </g>
                 ))}
               </svg>
