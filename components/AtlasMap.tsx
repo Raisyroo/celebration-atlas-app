@@ -564,10 +564,6 @@ function MapEventCallout({
 
   return (
     <>
-      <span style={styles.mapCalloutConnector} aria-hidden="true" />
-      <span style={styles.mapCalloutMedallion} aria-hidden="true">
-        <EventThumbnail event={event} variant="tag" />
-      </span>
       <span style={styles.mapCalloutCopy}>
         <span style={styles.mapCalloutName}>{event.name}</span>
         <span style={styles.mapCalloutCity}>{city}, MI</span>
@@ -587,27 +583,25 @@ type AtlasMarkerLayout = {
 };
 
 
-const MOBILE_TAG_SAFE_AREA_PERCENT = { left: 3, right: 3, top: 5, bottom: 14 };
+const MOBILE_TAG_SAFE_AREA_PERCENT = { left: 5, right: 5, top: 13, bottom: 32 };
 const MOBILE_TAG_HEIGHT_PX = 34;
 const MOBILE_TAG_MAX_WIDTH_PX = 236;
 const MOBILE_TAG_MIN_WIDTH_PX = 118;
 const MOBILE_TAG_MEAN_GLYPH_WIDTH_PX = 6.2;
 const MOBILE_TAG_MEANINGFUL_MOVE_PX = 12;
 const MOBILE_TAG_TAP_BUFFER_PX = 4;
-const MOBILE_TAG_LOCAL_NUDGE_PX = 16;
-const MOBILE_TAG_LOCAL_STAGGER_PX = 8;
 
 type MapViewportSize = { width: number; height: number };
 type MobileTagPlacementName =
-  | 'center'
-  | 'above'
-  | 'below'
-  | 'left'
-  | 'right'
-  | 'upper-left'
-  | 'upper-right'
-  | 'lower-left'
-  | 'lower-right';
+  | 'west-water'
+  | 'east-water'
+  | 'north-water'
+  | 'southwest-margin'
+  | 'southeast-column'
+  | 'northwest-margin'
+  | 'northeast-margin'
+  | 'local-left'
+  | 'local-right';
 type MobileTagPlacement = {
   eventId: string;
   dx: number;
@@ -710,13 +704,70 @@ const clampMobileTagToSafeArea = ({
   };
 };
 
+const getMobileWaterFriendlyCandidates = ({
+  marker,
+  viewport,
+  visibleIndex,
+}: {
+  marker: { x: number; y: number };
+  viewport: MapViewportSize;
+  visibleIndex: number;
+}): { placement: MobileTagPlacementName; dx: number; dy: number; priority: number }[] => {
+  const safeBounds = getMobileTagSafeAreaBounds(viewport);
+  const safeWidth = safeBounds.right - safeBounds.left;
+  const safeHeight = safeBounds.bottom - safeBounds.top;
+  const lane = visibleIndex % 4;
+  const staggerY = (lane - 1.5) * 22;
+  const columnStaggerY = (visibleIndex % 5) * 30;
+  const rowStaggerX = ((visibleIndex % 3) - 1) * 24;
+  const westX = safeBounds.left + safeWidth * 0.18;
+  const eastX = safeBounds.left + safeWidth * 0.82;
+  const northY = safeBounds.top + safeHeight * 0.16;
+  const midY = safeBounds.top + safeHeight * 0.45 + staggerY;
+  const southeastY = safeBounds.top + safeHeight * 0.3 + columnStaggerY;
+  const candidates: { placement: MobileTagPlacementName; x: number; y: number; priority: number }[] = [];
+
+  if (marker.x < viewport.width * 0.42) {
+    candidates.push(
+      { placement: 'west-water', x: westX, y: midY, priority: 0 },
+      { placement: 'northwest-margin', x: westX, y: northY + lane * 20, priority: 1 },
+      { placement: 'local-left', x: marker.x - 54, y: marker.y + staggerY, priority: 5 },
+    );
+  } else if (marker.x > viewport.width * 0.62) {
+    candidates.push(
+      { placement: 'east-water', x: eastX, y: midY, priority: 0 },
+      { placement: 'southeast-column', x: eastX, y: southeastY, priority: marker.y > viewport.height * 0.46 ? 0.5 : 2 },
+      { placement: 'northeast-margin', x: eastX, y: northY + lane * 20, priority: 1 },
+      { placement: 'local-right', x: marker.x + 54, y: marker.y + staggerY, priority: 5 },
+    );
+  } else if (marker.y < viewport.height * 0.36) {
+    candidates.push(
+      { placement: 'north-water', x: marker.x + rowStaggerX, y: northY + lane * 18, priority: 0 },
+      { placement: marker.x < viewport.width / 2 ? 'west-water' : 'east-water', x: marker.x < viewport.width / 2 ? westX : eastX, y: midY, priority: 1 },
+    );
+  } else {
+    candidates.push(
+      { placement: visibleIndex % 2 ? 'east-water' : 'west-water', x: visibleIndex % 2 ? eastX : westX, y: midY, priority: 0 },
+      { placement: visibleIndex % 2 ? 'west-water' : 'east-water', x: visibleIndex % 2 ? westX : eastX, y: midY + 28, priority: 1 },
+      { placement: 'southwest-margin', x: westX, y: safeBounds.bottom - 34 - lane * 18, priority: 3 },
+    );
+  }
+
+  return candidates.map((candidate) => ({
+    placement: candidate.placement,
+    dx: candidate.x - marker.x,
+    dy: candidate.y - marker.y,
+    priority: candidate.priority,
+  }));
+};
+
 const resolveMobileSearchTagPlacements = ({
   markerLayouts,
-  highlightedIds,
+  calloutEventIds,
   viewport,
 }: {
   markerLayouts: AtlasMarkerLayout[];
-  highlightedIds: ReadonlySet<string>;
+  calloutEventIds: ReadonlySet<string>;
   viewport: MapViewportSize | null;
 }): Map<string, MobileTagPlacement> => {
   const placements = new Map<string, MobileTagPlacement>();
@@ -729,26 +780,13 @@ const resolveMobileSearchTagPlacements = ({
   });
 
   markerLayouts
-    .filter((layout) => highlightedIds.has(layout.event.id))
+    .filter((layout) => calloutEventIds.has(layout.event.id))
     .sort((a, b) => a.eventIndex - b.eventIndex)
     .forEach((layout, visibleIndex) => {
       const width = estimateMobileTagWidth(layout.event.name);
       const height = MOBILE_TAG_HEIGHT_PX;
       const marker = markerPx(layout.position);
-      const stagger = (visibleIndex % 3 - 1) * MOBILE_TAG_LOCAL_STAGGER_PX;
-      const candidates: { placement: MobileTagPlacementName; dx: number; dy: number }[] = [
-        { placement: 'center', dx: 0, dy: 0 },
-        { placement: 'center', dx: stagger, dy: 0 },
-        { placement: 'center', dx: -stagger, dy: 0 },
-        { placement: 'right', dx: MOBILE_TAG_LOCAL_NUDGE_PX, dy: 0 },
-        { placement: 'left', dx: -MOBILE_TAG_LOCAL_NUDGE_PX, dy: 0 },
-        { placement: 'below', dx: 0, dy: MOBILE_TAG_LOCAL_NUDGE_PX },
-        { placement: 'above', dx: 0, dy: -MOBILE_TAG_LOCAL_NUDGE_PX },
-        { placement: 'lower-right', dx: MOBILE_TAG_LOCAL_NUDGE_PX, dy: MOBILE_TAG_LOCAL_STAGGER_PX },
-        { placement: 'lower-left', dx: -MOBILE_TAG_LOCAL_NUDGE_PX, dy: MOBILE_TAG_LOCAL_STAGGER_PX },
-        { placement: 'upper-right', dx: MOBILE_TAG_LOCAL_NUDGE_PX, dy: -MOBILE_TAG_LOCAL_STAGGER_PX },
-        { placement: 'upper-left', dx: -MOBILE_TAG_LOCAL_NUDGE_PX, dy: -MOBILE_TAG_LOCAL_STAGGER_PX },
-      ];
+      const candidates = getMobileWaterFriendlyCandidates({ marker, viewport, visibleIndex });
 
       const ranked = candidates
         .map((candidate, order) => {
@@ -773,7 +811,7 @@ const resolveMobileSearchTagPlacements = ({
               ),
             0,
           );
-          const localityPenalty = Math.hypot(clampedCandidate.dx, clampedCandidate.dy);
+          const relocation = Math.hypot(clampedCandidate.dx, clampedCandidate.dy);
           const clampPenalty = Math.hypot(
             clampedCandidate.dx - candidate.dx,
             clampedCandidate.dy - candidate.dy,
@@ -785,10 +823,11 @@ const resolveMobileSearchTagPlacements = ({
             rect,
             order,
             score:
-              overlap * 12 +
-              tapOverlap * 5 +
-              localityPenalty * 8 +
-              clampPenalty * 2 +
+              overlap * 14 +
+              tapOverlap * 6 +
+              clampPenalty * 7 +
+              relocation * 0.45 +
+              candidate.priority * 160 +
               order,
           };
         })
@@ -1403,21 +1442,54 @@ export default function AtlasMap({
   const ambientMobileEvents = ATLAS_EVENTS;
   const mobileSearchTagPlacements = useMemo(
     () =>
-      !isDesktop && hasSubmittedSearchMatches
+      !isDesktop && mapPresentationMode !== 'idle'
         ? resolveMobileSearchTagPlacements({
             markerLayouts: displayMarkerLayouts,
-            highlightedIds,
+            calloutEventIds: mapCalloutPlan.eventIds,
             viewport: mapViewportSize,
           })
         : new Map<string, MobileTagPlacement>(),
     [
       displayMarkerLayouts,
-      hasSubmittedSearchMatches,
-      highlightedIds,
       isDesktop,
+      mapCalloutPlan,
+      mapPresentationMode,
       mapViewportSize,
     ],
   );
+  const mobileSearchConnectors = useMemo(() => {
+    if (isDesktop || !mapViewportSize) return [];
+
+    const layoutByEventId = new Map(
+      displayMarkerLayouts.map((layout) => [layout.event.id, layout]),
+    );
+
+    return Array.from(mobileSearchTagPlacements.values()).flatMap((placement) => {
+      const layout = layoutByEventId.get(placement.eventId);
+      if (!layout) return [];
+
+      const anchorX = (layout.position.x / 100) * mapViewportSize.width;
+      const anchorY = (layout.position.y / 100) * mapViewportSize.height;
+      const labelX = anchorX + placement.dx;
+      const labelY = anchorY + placement.dy;
+      const horizontalFirst = Math.abs(placement.dx) > Math.abs(placement.dy);
+      const bendX = horizontalFirst ? labelX : anchorX;
+      const bendY = horizontalFirst ? anchorY : labelY;
+      const secondBendX = horizontalFirst ? labelX : anchorX;
+      const secondBendY = horizontalFirst ? labelY : anchorY;
+      const path = Math.hypot(placement.dx, placement.dy) > 96
+        ? `M ${anchorX.toFixed(1)} ${anchorY.toFixed(1)} L ${bendX.toFixed(1)} ${bendY.toFixed(1)} L ${labelX.toFixed(1)} ${labelY.toFixed(1)}`
+        : `M ${anchorX.toFixed(1)} ${anchorY.toFixed(1)} L ${secondBendX.toFixed(1)} ${secondBendY.toFixed(1)} L ${labelX.toFixed(1)} ${labelY.toFixed(1)}`;
+
+      return [{
+        eventId: placement.eventId,
+        anchorX,
+        anchorY,
+        path,
+        zIndex: placement.zIndex,
+      }];
+    });
+  }, [displayMarkerLayouts, isDesktop, mapViewportSize, mobileSearchTagPlacements]);
   const visibleMarkerGroups = displayMarkerLayouts
     .filter((layout) => {
       if (mapPresentationMode === 'single' && exactEventIntent) return layout.event.id === exactEventIntent.eventId;
@@ -2334,6 +2406,47 @@ export default function AtlasMap({
               transform: mapLayerTransform,
             }}
           >
+            {mobileSearchConnectors.length > 0 && mapViewportSize ? (
+              <svg
+                aria-hidden="true"
+                style={styles.mobileCalloutConnectorLayer}
+                viewBox={`0 0 ${mapViewportSize.width} ${mapViewportSize.height}`}
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  <filter id="mobile-callout-connector-glow" x="-40%" y="-40%" width="180%" height="180%">
+                    <feGaussianBlur stdDeviation="2.2" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+                {mobileSearchConnectors.map((connector) => (
+                  <g key={connector.eventId} style={{ opacity: 0.86 }}>
+                    <path
+                      d={connector.path}
+                      fill="none"
+                      stroke="rgba(255, 212, 126, 0.22)"
+                      strokeWidth="5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      filter="url(#mobile-callout-connector-glow)"
+                    />
+                    <path
+                      d={connector.path}
+                      fill="none"
+                      stroke="rgba(255, 226, 166, 0.78)"
+                      strokeWidth="1.15"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx={connector.anchorX} cy={connector.anchorY} r="3.1" fill="rgba(255, 239, 198, 0.96)" />
+                    <circle cx={connector.anchorX} cy={connector.anchorY} r="6.4" fill="rgba(255, 196, 89, 0.16)" />
+                  </g>
+                ))}
+              </svg>
+            ) : null}
             {(isVerificationMode
               ? markerLayouts.map((layout) => ({
                     id: `verification-${layout.event.id}`,
@@ -4288,6 +4401,15 @@ const styles: Record<string, CSSProperties> = {
     zIndex: Z_INDEX.markers + 2,
     pointerEvents: 'none',
   },
+  mobileCalloutConnectorLayer: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: Z_INDEX.markers + 18,
+    overflow: 'visible',
+    pointerEvents: 'none',
+  },
   markerLabel: {
     position: 'absolute',
     left: '50%',
@@ -4322,33 +4444,13 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'center',
   },
 
-  mapCalloutConnector: {
-    position: 'absolute',
-    left: '50%',
-    bottom: -14,
-    width: 1,
-    height: 16,
-    transform: 'translateX(-50%) rotate(14deg)',
-    transformOrigin: 'bottom center',
-    background: 'linear-gradient(180deg, rgba(255,231,177,.72), rgba(255,231,177,0))',
-    boxShadow: '0 0 8px rgba(255,205,112,.25)',
-    pointerEvents: 'none',
-  },
-  mapCalloutMedallion: {
-    position: 'absolute',
-    left: '50%',
-    bottom: -25,
-    transform: 'translateX(-50%)',
-    filter: 'drop-shadow(0 4px 9px rgba(0,0,0,.45))',
-    pointerEvents: 'none',
-  },
   mapCalloutCopy: {
     display: 'grid',
     gap: 2,
     justifyItems: 'center',
     padding: '2px 5px',
-    background: 'linear-gradient(180deg, rgba(7,10,15,.18), rgba(7,10,15,.06))',
-    borderRadius: 8,
+    background: 'transparent',
+    borderRadius: 0,
   },
   mapCalloutName: {
     maxWidth: 164,
