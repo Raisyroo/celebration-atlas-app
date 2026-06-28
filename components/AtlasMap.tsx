@@ -3556,7 +3556,7 @@ export default function AtlasMap({
 
             @media (max-width: 480px) {
               .mobile-atlas-identity {
-                top: calc(env(safe-area-inset-top) + 34px) !important;
+                top: calc(env(safe-area-inset-top) + 24px) !important;
               }
 
               .mobile-atlas-title {
@@ -3572,7 +3572,7 @@ export default function AtlasMap({
 
             @media (max-width: 767px) {
               .mobile-atlas-identity {
-                padding-top: 18px !important;
+                padding-top: 10px !important;
               }
 
               .mobile-atlas-title {
@@ -3582,6 +3582,22 @@ export default function AtlasMap({
               }
             }
 
+
+            .mobile-atlas-identity::before {
+              content: '';
+              position: absolute;
+              left: 50%;
+              top: 46%;
+              width: min(104vw, 620px);
+              height: min(44vw, 260px);
+              border-radius: 999px;
+              background:
+                radial-gradient(ellipse at 50% 38%, rgba(2, 7, 16, 0.72) 0%, rgba(6, 12, 24, 0.48) 34%, rgba(6, 12, 24, 0.18) 58%, rgba(6, 12, 24, 0) 78%),
+                linear-gradient(180deg, rgba(1, 4, 10, 0.5) 0%, rgba(4, 9, 18, 0.32) 44%, rgba(4, 9, 18, 0) 100%);
+              pointer-events: none;
+              transform: translate3d(-50%, -50%, 0);
+              z-index: -1;
+            }
 
             .mobile-atlas-identity--dismissed {
               opacity: 0 !important;
@@ -5214,9 +5230,9 @@ const styles: Record<string, CSSProperties> = {
 
   mobileAtlasIdentity: {
     position: 'absolute',
-    left: 'max(58px, calc(18px + env(safe-area-inset-left)))',
-    right: 'max(58px, calc(18px + env(safe-area-inset-right)))',
-    top: 'calc(38px + env(safe-area-inset-top))',
+    left: 'max(0px, env(safe-area-inset-left))',
+    right: 'max(0px, env(safe-area-inset-right))',
+    top: 'calc(24px + env(safe-area-inset-top))',
     zIndex: Z_INDEX.searchDock - 1,
     display: 'grid',
     justifyItems: 'center',
@@ -5231,7 +5247,7 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileAtlasTitleArtwork: {
     display: 'block',
-    width: 'min(82vw, 430px)',
+    width: 'clamp(300px, 82vw, 500px)',
     height: 'auto',
     aspectRatio: '2400 / 1400',
     objectFit: 'contain',
