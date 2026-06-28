@@ -15,6 +15,7 @@ import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
 import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
 import { resolveExactEventIntent } from '../data/exactEventIntent';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
+import { resolveMobileBroadSearchPresentationPlan } from '../data/mapPresentationPlan';
 import type { MapPresentationPlan } from '../data/mapPresentationPlan';
 import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
 import { resolveExactMichiganMobileUpperPeninsulaAnchorPosition } from '../data/michiganMobileUpperPeninsulaAnchors';
@@ -1414,18 +1415,27 @@ export default function AtlasMap({
     [artworkVariant],
   );
   const displayMarkerLayouts = markerLayouts;
+  const searchPresentationPlan = useMemo(() => {
+    if (isDesktop || exactEventIntent) return null;
+
+    return resolveMobileBroadSearchPresentationPlan({
+      query: q,
+      matchingEventIds: highlightedIds,
+    });
+  }, [exactEventIntent, highlightedIds, isDesktop, q]);
+  const activePresentationPlan = presentationPlan ?? searchPresentationPlan;
   const fallbackMapPresentationMode = getMapPresentationMode({
     selectedId,
     exactEventIntent,
     hasSubmittedSearchMatches,
   });
-  const mapPresentationMode = presentationPlan?.mode ?? fallbackMapPresentationMode;
+  const mapPresentationMode = activePresentationPlan?.mode ?? fallbackMapPresentationMode;
   const mapCalloutPlan = useMemo(() => {
-    if (presentationPlan) {
+    if (activePresentationPlan) {
       return {
-        eventIds: new Set(presentationPlan.callouts?.map((callout) => callout.eventId) ?? []),
+        eventIds: new Set(activePresentationPlan.callouts?.map((callout) => callout.eventId) ?? []),
         clusterIndicators:
-          presentationPlan.clusters?.map((cluster) => ({
+          activePresentationPlan.clusters?.map((cluster) => ({
             id: cluster.id,
             hiddenCount: cluster.eventIds.length,
             position: { x: cluster.xPercent, y: cluster.yPercent },
@@ -1446,7 +1456,7 @@ export default function AtlasMap({
     exactEventIntent,
     highlightedIds,
     mapPresentationMode,
-    presentationPlan,
+    activePresentationPlan,
     selectedId,
   ]);
   const isConstellationLineSearchActive = Boolean(
@@ -1473,7 +1483,7 @@ export default function AtlasMap({
     if (isDesktop || mapPresentationMode === 'idle') return new Map<string, MobileTagPlacement>();
 
     const calloutsNeedingRemoteLabels = new Set(
-      presentationPlan?.callouts
+      activePresentationPlan?.callouts
         ?.filter((callout) => callout.labelPlacement !== 'near-anchor')
         .map((callout) => callout.eventId) ?? [],
     );
@@ -1483,10 +1493,10 @@ export default function AtlasMap({
       viewport: mapViewportSize,
     });
 
-    if (!presentationPlan || !mapViewportSize) return placements;
+    if (!activePresentationPlan || !mapViewportSize) return placements;
 
     const layoutByEventId = new Map(displayMarkerLayouts.map((layout) => [layout.event.id, layout]));
-    presentationPlan.callouts?.forEach((callout, index) => {
+    activePresentationPlan.callouts?.forEach((callout, index) => {
       if (callout.labelXPercent === undefined || callout.labelYPercent === undefined) return;
       const layout = layoutByEventId.get(callout.eventId);
       if (!layout) return;
@@ -1512,17 +1522,17 @@ export default function AtlasMap({
     isDesktop,
     mapPresentationMode,
     mapViewportSize,
-    presentationPlan,
+    activePresentationPlan,
   ]);
   const mobileSearchConnectors = useMemo(() => {
-    if (isDesktop || !mapViewportSize || !presentationPlan) return [];
+    if (isDesktop || !mapViewportSize || !activePresentationPlan) return [];
 
     const layoutByEventId = new Map(
       displayMarkerLayouts.map((layout) => [layout.event.id, layout]),
     );
 
     const connectorEventIds = new Set(
-      presentationPlan.callouts
+      activePresentationPlan.callouts
         ?.filter((callout) => callout.connector === 'short-elbow')
         .map((callout) => callout.eventId) ?? [],
     );
@@ -1554,11 +1564,11 @@ export default function AtlasMap({
         zIndex: placement.zIndex,
       }];
     });
-  }, [displayMarkerLayouts, isDesktop, mapViewportSize, mobileSearchTagPlacements, presentationPlan]);
+  }, [displayMarkerLayouts, isDesktop, mapViewportSize, mobileSearchTagPlacements, activePresentationPlan]);
   const visibleMarkerGroups = displayMarkerLayouts
     .filter((layout) => {
       if (mapPresentationMode === 'single' && exactEventIntent) return layout.event.id === exactEventIntent.eventId;
-      if (presentationPlan) return presentationPlan.visibleEventIds.includes(layout.event.id);
+      if (activePresentationPlan) return activePresentationPlan.visibleEventIds.includes(layout.event.id);
       if (mapPresentationMode === 'results') return highlightedIds.has(layout.event.id);
 
       return true;
