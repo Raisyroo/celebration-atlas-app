@@ -54,7 +54,7 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
 const MOBILE_FAVORITE_STORAGE_KEY = 'celebration-atlas:michigan:favorite';
 const MOBILE_LANDING_TITLE_SESSION_KEY = 'celebration-atlas:michigan-title-dismissed';
-const MICHIGAN_TITLE_ARTWORK_SRC = '/branding/celebration-atlas-michigan-title-gold.svg';
+const MICHIGAN_TITLE_ARTWORK_SRC = '/brand/michigan-landing-lockup.png';
 const MOBILE_MENU_ITEMS = [
   'Explore Michigan',
   'Saved Celebrations',
@@ -5231,9 +5231,9 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileAtlasTitleArtwork: {
     display: 'block',
-    width: 'min(92vw, 620px)',
+    width: 'min(82vw, 430px)',
     height: 'auto',
-    maxHeight: 'clamp(150px, 30vh, 250px)',
+    aspectRatio: '2400 / 1400',
     objectFit: 'contain',
     filter: 'drop-shadow(0 9px 18px rgba(25, 8, 0, 0.46)) drop-shadow(0 0 18px rgba(255, 198, 90, 0.28))',
     userSelect: 'none',
