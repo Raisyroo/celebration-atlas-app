@@ -554,6 +554,28 @@ function EventThumbnail({
     </span>
   );
 }
+
+function MapEventCallout({
+  event,
+}: {
+  event: AtlasEvent;
+}) {
+  const city = event.location.split(',')[0]?.trim() || event.location;
+
+  return (
+    <>
+      <span style={styles.mapCalloutConnector} aria-hidden="true" />
+      <span style={styles.mapCalloutMedallion} aria-hidden="true">
+        <EventThumbnail event={event} variant="tag" />
+      </span>
+      <span style={styles.mapCalloutCopy}>
+        <span style={styles.mapCalloutName}>{event.name}</span>
+        <span style={styles.mapCalloutCity}>{city}, MI</span>
+      </span>
+    </>
+  );
+}
+
 type MarkerPosition = { x: number; y: number };
 type MapTransform = { scale: number; translateX: number; translateY: number };
 type ActiveMapPointer = { pointerId: number; clientX: number; clientY: number };
@@ -601,6 +623,18 @@ type MobileTagRect = {
   right: number;
   top: number;
   bottom: number;
+};
+
+type MapPresentationMode = 'idle' | 'results' | 'single' | 'selected';
+type MapCalloutClusterIndicator = {
+  id: string;
+  hiddenCount: number;
+  position: MarkerPosition;
+  eventIds: string[];
+};
+type MapCalloutPlan = {
+  eventIds: Set<string>;
+  clusterIndicators: MapCalloutClusterIndicator[];
 };
 
 const estimateMobileTagWidth = (label: string) =>
@@ -778,6 +812,95 @@ const resolveMobileSearchTagPlacements = ({
 
   return placements;
 };
+
+const MAX_RESULTS_CALLOUTS = 8;
+const MAX_DENSE_AREA_CALLOUTS = 3;
+const DENSE_AREA_RADIUS_PERCENT = 8.5;
+
+const getMapPresentationMode = ({
+  selectedId,
+  exactEventIntent,
+  hasSubmittedSearchMatches,
+}: {
+  selectedId: string | null;
+  exactEventIntent: { eventId: string } | null;
+  hasSubmittedSearchMatches: boolean;
+}): MapPresentationMode => {
+  if (selectedId) return 'selected';
+  if (exactEventIntent && hasSubmittedSearchMatches) return 'single';
+  if (hasSubmittedSearchMatches) return 'results';
+  return 'idle';
+};
+
+const distanceBetweenMarkerPositions = (a: MarkerPosition, b: MarkerPosition) =>
+  Math.hypot(a.x - b.x, a.y - b.y);
+
+const resolveMapCalloutPlan = ({
+  mode,
+  markerLayouts,
+  highlightedIds,
+  selectedId,
+  exactEventId,
+}: {
+  mode: MapPresentationMode;
+  markerLayouts: AtlasMarkerLayout[];
+  highlightedIds: ReadonlySet<string>;
+  selectedId: string | null;
+  exactEventId: string | null;
+}): MapCalloutPlan => {
+  if (mode === 'idle') return { eventIds: new Set(), clusterIndicators: [] };
+
+  if (mode === 'selected' && selectedId) {
+    return { eventIds: new Set([selectedId]), clusterIndicators: [] };
+  }
+
+  if (mode === 'single' && exactEventId) {
+    return { eventIds: new Set([exactEventId]), clusterIndicators: [] };
+  }
+
+  const candidates = markerLayouts
+    .filter((layout) => highlightedIds.has(layout.event.id))
+    .sort((a, b) => a.eventIndex - b.eventIndex)
+    .slice(0, MAX_RESULTS_CALLOUTS);
+  const shownIds = new Set<string>();
+  const clusterIndicators: MapCalloutClusterIndicator[] = [];
+  const consumedIds = new Set<string>();
+
+  candidates.forEach((candidate) => {
+    if (consumedIds.has(candidate.event.id)) return;
+
+    const denseGroup = candidates.filter(
+      (layout) =>
+        !consumedIds.has(layout.event.id) &&
+        distanceBetweenMarkerPositions(layout.position, candidate.position) <= DENSE_AREA_RADIUS_PERCENT,
+    );
+    const visibleGroup = denseGroup.slice(0, MAX_DENSE_AREA_CALLOUTS);
+    const hiddenGroup = denseGroup.slice(MAX_DENSE_AREA_CALLOUTS);
+
+    visibleGroup.forEach((layout) => {
+      shownIds.add(layout.event.id);
+      consumedIds.add(layout.event.id);
+    });
+
+    hiddenGroup.forEach((layout) => consumedIds.add(layout.event.id));
+
+    if (hiddenGroup.length > 0) {
+      const anchor = visibleGroup[visibleGroup.length - 1] ?? candidate;
+      clusterIndicators.push({
+        id: `callout-cluster-${candidate.event.id}`,
+        hiddenCount: hiddenGroup.length,
+        position: {
+          x: clampMarkerPercent(anchor.position.x + 2.4),
+          y: clampMarkerPercent(anchor.position.y + 1.8),
+        },
+        eventIds: hiddenGroup.map((layout) => layout.event.id),
+      });
+    }
+  });
+
+  return { eventIds: shownIds, clusterIndicators };
+};
+
 
 type AtlasMapProps = {
   constellationHighlightedIds?: readonly string[];
@@ -1242,6 +1365,22 @@ export default function AtlasMap({
     [artworkVariant],
   );
   const displayMarkerLayouts = markerLayouts;
+  const mapPresentationMode = getMapPresentationMode({
+    selectedId,
+    exactEventIntent,
+    hasSubmittedSearchMatches,
+  });
+  const mapCalloutPlan = useMemo(
+    () =>
+      resolveMapCalloutPlan({
+        mode: mapPresentationMode,
+        markerLayouts: displayMarkerLayouts,
+        highlightedIds,
+        selectedId,
+        exactEventId: exactEventIntent?.eventId ?? null,
+      }),
+    [displayMarkerLayouts, exactEventIntent, highlightedIds, mapPresentationMode, selectedId],
+  );
   const isConstellationLineSearchActive = Boolean(
     q ||
       query.trim() ||
@@ -1281,13 +1420,13 @@ export default function AtlasMap({
   );
   const visibleMarkerGroups = displayMarkerLayouts
     .filter((layout) => {
-      if (exactEventIntent) return layout.event.id === exactEventIntent.eventId;
-      if (hasSubmittedSearchMatches) return highlightedIds.has(layout.event.id);
+      if (mapPresentationMode === 'single' && exactEventIntent) return layout.event.id === exactEventIntent.eventId;
+      if (mapPresentationMode === 'results') return highlightedIds.has(layout.event.id);
 
       return true;
     })
     .map((layout) => ({
-      id: exactEventIntent ? `exact-${layout.event.id}` : `event-${layout.event.id}`,
+      id: mapPresentationMode === 'single' ? `exact-${layout.event.id}` : `event-${layout.event.id}`,
       events: [layout.event],
       eventIndices: [layout.eventIndex],
       position: layout.position,
@@ -2281,9 +2420,9 @@ export default function AtlasMap({
                       : 1;
                 const markerLabelEvent = exactHighlightedEvent ??
                   (!isCluster ? primaryEvent : null);
-                const shouldShowMarkerLabel = exactEventIntent
-                  ? Boolean(exactHighlightedEvent)
-                  : !isCluster && isHighlighted;
+                const shouldShowMarkerLabel = !isCluster && markerLabelEvent
+                  ? mapCalloutPlan.eventIds.has(markerLabelEvent.id)
+                  : false;
                 const mobileTagPlacement = markerLabelEvent
                   ? mobileSearchTagPlacements.get(markerLabelEvent.id)
                   : null;
@@ -2514,12 +2653,10 @@ export default function AtlasMap({
                             style={{
                               ...styles.markerLabel,
                               ...(isCluster ? styles.clusterLabel : null),
-                              ...(shouldUseMobileTagPlacement
-                                ? styles.mobileSearchMarkerLabel
-                                : null),
                               zIndex: shouldUseMobileTagPlacement
                                 ? Z_INDEX.markers + 22 + (mobileTagPlacement?.zIndex ?? 0)
                                 : undefined,
+                              top: shouldUseMobileTagPlacement ? '50%' : undefined,
                               width: shouldUseMobileTagPlacement
                                 ? mobileTagPlacement?.width
                                 : undefined,
@@ -2534,18 +2671,10 @@ export default function AtlasMap({
                                 : 'none',
                             }}
                           >
-                            {shouldUseMobileTagPlacement && markerLabelEvent ? (
-                              <>
-                                <EventThumbnail event={markerLabelEvent} variant="tag" />
-                                <span style={styles.mobileSearchMarkerLabelText}>
-                                  {markerLabelEvent.name}
-                                </span>
-                                <span aria-hidden="true" style={styles.mobileSearchMarkerLabelChevron}>
-                                  ›
-                                </span>
-                              </>
+                            {markerLabelEvent ? (
+                              <MapEventCallout event={markerLabelEvent} />
                             ) : (
-                              markerLabelEvent?.name ?? `${events.length} celebrations`
+                              `${events.length} celebrations`
                             )}
                           </button>
                         </>
@@ -2554,6 +2683,21 @@ export default function AtlasMap({
                   </div>
                 );
               })}
+            {mapCalloutPlan.clusterIndicators.map((cluster) => (
+              <button
+                key={cluster.id}
+                type="button"
+                aria-label={`Show ${cluster.hiddenCount} more nearby celebrations`}
+                style={{
+                  ...styles.calloutClusterIndicator,
+                  left: `${cluster.position.x}%`,
+                  top: `${cluster.position.y}%`,
+                }}
+                data-cluster-event-ids={cluster.eventIds.join(',')}
+              >
+                +{cluster.hiddenCount}
+              </button>
+            ))}
           </div>
         ) : null}
       </div>
@@ -4149,25 +4293,24 @@ const styles: Record<string, CSSProperties> = {
     left: '50%',
     top: '-18px',
     transform: 'translate(-50%, -116%)',
-    padding: '5px 10px',
-    borderRadius: 999,
-    maxWidth: 180,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    padding: 0,
+    borderRadius: 0,
+    minWidth: 126,
+    maxWidth: 172,
+    whiteSpace: 'normal',
+    overflow: 'visible',
+    textOverflow: 'clip',
     fontSize: 11,
-    letterSpacing: 0.28,
-    lineHeight: 1,
+    letterSpacing: 0.18,
+    lineHeight: 1.05,
     color: 'rgba(255, 241, 209, 0.86)',
-    border: '1px solid rgba(255, 227, 170, 0.22)',
-    background:
-      'linear-gradient(180deg, rgba(18, 25, 37, 0.32), rgba(7, 10, 15, 0.22))',
+    border: '0',
+    background: 'transparent',
     textShadow:
       '0 0 8px rgba(255, 224, 153, 0.2), 0 1px 3px rgba(2, 3, 7, 0.74)',
-    boxShadow:
-      'inset 0 0 0 1px rgba(255, 239, 205, 0.05), 0 0 16px rgba(251, 203, 110, 0.2)',
-    backdropFilter: 'blur(2px)',
-    WebkitBackdropFilter: 'blur(2px)',
+    boxShadow: 'none',
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
     transition:
       'opacity 380ms ease, transform 420ms cubic-bezier(.22,.61,.36,1)',
     willChange: 'opacity, transform',
@@ -4177,6 +4320,49 @@ const styles: Record<string, CSSProperties> = {
     WebkitAppearance: 'none',
     outline: 'none',
     textAlign: 'center',
+  },
+
+  mapCalloutConnector: {
+    position: 'absolute',
+    left: '50%',
+    bottom: -14,
+    width: 1,
+    height: 16,
+    transform: 'translateX(-50%) rotate(14deg)',
+    transformOrigin: 'bottom center',
+    background: 'linear-gradient(180deg, rgba(255,231,177,.72), rgba(255,231,177,0))',
+    boxShadow: '0 0 8px rgba(255,205,112,.25)',
+    pointerEvents: 'none',
+  },
+  mapCalloutMedallion: {
+    position: 'absolute',
+    left: '50%',
+    bottom: -25,
+    transform: 'translateX(-50%)',
+    filter: 'drop-shadow(0 4px 9px rgba(0,0,0,.45))',
+    pointerEvents: 'none',
+  },
+  mapCalloutCopy: {
+    display: 'grid',
+    gap: 2,
+    justifyItems: 'center',
+    padding: '2px 5px',
+    background: 'linear-gradient(180deg, rgba(7,10,15,.18), rgba(7,10,15,.06))',
+    borderRadius: 8,
+  },
+  mapCalloutName: {
+    maxWidth: 164,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    color: 'rgba(255, 244, 216, 0.96)',
+    fontWeight: 850,
+  },
+  mapCalloutCity: {
+    color: 'rgba(238, 206, 150, 0.78)',
+    fontSize: 9,
+    fontWeight: 700,
+    letterSpacing: 0.24,
   },
   clusterLabel: {
     color: 'rgba(255, 245, 219, 0.94)',
@@ -4225,6 +4411,24 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1,
     marginLeft: 1,
     textShadow: '0 1px 4px rgba(0, 0, 0, 0.72)',
+  },
+
+  calloutClusterIndicator: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    zIndex: Z_INDEX.markers + 58,
+    width: 31,
+    height: 24,
+    borderRadius: 999,
+    border: '1px solid rgba(255, 222, 154, 0.48)',
+    background: 'rgba(9, 12, 18, 0.58)',
+    color: 'rgba(255, 239, 204, 0.94)',
+    fontSize: 11,
+    fontWeight: 900,
+    boxShadow: '0 0 14px rgba(223, 153, 58, 0.24), inset 0 1px 0 rgba(255,255,255,.12)',
+    backdropFilter: 'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)',
+    cursor: 'pointer',
   },
   searchDock: {
     position: 'absolute',
