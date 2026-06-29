@@ -953,26 +953,21 @@ const resolveMapCalloutPlan = ({
 
 
 
-type EventDetailPlaceholderCard = {
-  eyebrow: string;
+type EventDetailToolCard = {
+  id: string;
   title: string;
-  description: string;
-  placeholders: readonly string[];
+  subtitle: string;
+  icon: string;
+  featured?: boolean;
 };
 
-const ROMEO_EVENT_DETAIL_PLACEHOLDER_CARDS: readonly EventDetailPlaceholderCard[] = [
-  {
-    eyebrow: 'Collectible tool',
-    title: 'Event Card',
-    description: 'Romeo Peach Festival schedule / itinerary placeholder.',
-    placeholders: ['Schedule timeline coming soon', 'Itinerary highlights not yet published', 'Saveable festival plan placeholder'],
-  },
-  {
-    eyebrow: 'Official details',
-    title: 'Tickets & Info',
-    description: 'Official details, hours, parking, and ticket placeholder.',
-    placeholders: ['Official hours placeholder', 'Parking guidance placeholder', 'Ticket details placeholder'],
-  },
+const ROMEO_EVENT_DETAIL_TOOL_CARDS: readonly EventDetailToolCard[] = [
+  { id: 'event-card', title: 'Event Card', subtitle: 'Collect & Save', icon: '✦', featured: true },
+  { id: 'festival-schedule', title: 'Festival Schedule', subtitle: 'Full schedule', icon: '▣' },
+  { id: 'music-schedule', title: 'Music Schedule', subtitle: 'Lineup & times', icon: '♪' },
+  { id: 'watch-live', title: 'Watch Live', subtitle: 'Live moments', icon: '▶' },
+  { id: 'participate', title: 'Participate', subtitle: 'Contests & more', icon: '♕' },
+  { id: 'tickets-info', title: 'Tickets & Info', subtitle: 'Hours & parking', icon: '◈' },
 ];
 
 type FlyerMediaDebugSnapshot = {
@@ -1326,6 +1321,7 @@ export default function AtlasMap({
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [pressedEventDetailToolId, setPressedEventDetailToolId] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const [artworkVariant, setArtworkVariant] =
     useState<MichiganArtworkVariant>('desktop');
@@ -3241,23 +3237,40 @@ export default function AtlasMap({
                   <div>attempted src: {flyerMediaDebugSnapshot.attemptedSrc ?? 'none'}</div>
                 </div>
               ) : null}
-              <div style={styles.eventDetailCardStack} aria-label={`${safeEventCard.name} event detail tools`}>
-                {ROMEO_EVENT_DETAIL_PLACEHOLDER_CARDS.map((detailCard) => (
-                  <section key={detailCard.title} style={styles.eventDetailCollectibleCard}>
-                    <div style={styles.eventDetailCollectibleGlow} aria-hidden="true" />
-                    <p style={styles.eventDetailCollectibleEyebrow}>{detailCard.eyebrow}</p>
-                    <h3 style={styles.eventDetailCollectibleTitle}>{detailCard.title}</h3>
-                    <p style={styles.eventDetailCollectibleDescription}>{detailCard.description}</p>
-                    <ul style={styles.eventDetailPlaceholderList}>
-                      {detailCard.placeholders.map((placeholder) => (
-                        <li key={placeholder} style={styles.eventDetailPlaceholderItem}>
-                          <span style={styles.eventDetailPlaceholderDot} aria-hidden="true" />
-                          {placeholder}
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ))}
+              <div style={styles.eventDetailToolDock} aria-label={`${safeEventCard.name} event tools`}>
+                {ROMEO_EVENT_DETAIL_TOOL_CARDS.map((toolCard) => {
+                  const isToolPressed = pressedEventDetailToolId === toolCard.id;
+
+                  return (
+                    <button
+                      key={toolCard.id}
+                      type="button"
+                      aria-label={`${toolCard.title}: ${toolCard.subtitle}`}
+                      onPointerDown={() => setPressedEventDetailToolId(toolCard.id)}
+                      onPointerUp={() => setPressedEventDetailToolId(null)}
+                      onPointerCancel={() => setPressedEventDetailToolId(null)}
+                      onPointerLeave={() => setPressedEventDetailToolId(null)}
+                      onBlur={() => setPressedEventDetailToolId(null)}
+                      style={{
+                        ...styles.eventDetailToolTile,
+                        ...(toolCard.featured ? styles.eventDetailToolTileFeatured : null),
+                        ...(isToolPressed ? styles.eventDetailToolTilePressed : null),
+                      }}
+                    >
+                      <span
+                        style={{
+                          ...styles.eventDetailToolIcon,
+                          ...(toolCard.featured ? styles.eventDetailToolIconFeatured : null),
+                        }}
+                        aria-hidden="true"
+                      >
+                        {toolCard.icon}
+                      </span>
+                      <span style={styles.eventDetailToolTitle}>{toolCard.title}</span>
+                      <span style={styles.eventDetailToolSubtitle}>{toolCard.subtitle}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : hasCardMedia && hasCardMediaSource ? (
@@ -5106,81 +5119,92 @@ const styles: Record<string, CSSProperties> = {
     objectPosition: 'center center',
     transition: 'opacity 1300ms ease',
   },
-  eventDetailCardStack: {
+  eventDetailToolDock: {
     display: 'grid',
-    gap: 14,
-    padding: '16px 4px 2px',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: 8,
+    padding: '12px 2px 2px',
   },
-  eventDetailCollectibleCard: {
+  eventDetailToolTile: {
+    appearance: 'none',
+    WebkitAppearance: 'none',
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: 24,
-    border: '1px solid rgba(255,225,160,.24)',
-    padding: '18px 16px 16px',
-    background:
-      'linear-gradient(145deg, rgba(255,235,185,.12), rgba(92,61,150,.13) 42%, rgba(11,16,30,.72))',
-    boxShadow:
-      'inset 0 0 0 1px rgba(255,255,255,.06), 0 16px 34px rgba(0,0,0,.25)',
-    color: '#ffefc6',
-    isolation: 'isolate',
-  },
-  eventDetailCollectibleGlow: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    right: -34,
-    top: -46,
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(255,197,97,.34), transparent 66%)',
-    zIndex: -1,
-  },
-  eventDetailCollectibleEyebrow: {
-    margin: '0 0 8px',
-    color: 'rgba(255,224,166,.72)',
-    fontSize: 11,
-    fontWeight: 800,
-    letterSpacing: '.16em',
-    textTransform: 'uppercase',
-  },
-  eventDetailCollectibleTitle: {
-    margin: 0,
-    fontSize: 22,
-    lineHeight: 1.05,
-    letterSpacing: '-.03em',
-  },
-  eventDetailCollectibleDescription: {
-    margin: '8px 0 14px',
-    color: 'rgba(255,243,214,.82)',
-    fontSize: 14,
-    lineHeight: 1.45,
-  },
-  eventDetailPlaceholderList: {
-    display: 'grid',
-    gap: 9,
-    margin: 0,
-    padding: 0,
-    listStyle: 'none',
-  },
-  eventDetailPlaceholderItem: {
     display: 'flex',
+    minWidth: 0,
+    minHeight: 86,
     alignItems: 'center',
-    gap: 9,
-    minHeight: 34,
-    padding: '8px 10px',
-    borderRadius: 14,
-    border: '1px solid rgba(255,225,160,.14)',
-    background: 'rgba(4,8,17,.32)',
-    color: 'rgba(255,244,219,.78)',
-    fontSize: 13,
-    lineHeight: 1.25,
+    justifyContent: 'center',
+    flexDirection: 'column',
+    gap: 4,
+    borderRadius: 18,
+    border: '1px solid rgba(255,225,160,.18)',
+    padding: '10px 5px 9px',
+    background:
+      'radial-gradient(circle at 50% 0%, rgba(255,226,170,.14), transparent 50%), linear-gradient(150deg, rgba(24,31,58,.68), rgba(10,13,27,.78))',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255,255,255,.045), 0 10px 24px rgba(0,0,0,.24)',
+    color: '#fff1ce',
+    cursor: 'pointer',
+    font: 'inherit',
+    textAlign: 'center',
+    touchAction: 'manipulation',
+    transform: 'translateY(0) scale(1)',
+    transition: 'transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease',
   },
-  eventDetailPlaceholderDot: {
-    width: 7,
-    height: 7,
-    flex: '0 0 auto',
-    borderRadius: '50%',
-    background: '#ffd37a',
-    boxShadow: '0 0 14px rgba(255,211,122,.62)',
+  eventDetailToolTileFeatured: {
+    borderColor: 'rgba(255,211,122,.5)',
+    background:
+      'radial-gradient(circle at 50% 0%, rgba(255,212,116,.34), transparent 54%), linear-gradient(150deg, rgba(72,45,18,.74), rgba(16,15,32,.78))',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255,246,211,.12), 0 0 20px rgba(255,199,89,.24), 0 10px 24px rgba(0,0,0,.24)',
+  },
+  eventDetailToolTilePressed: {
+    transform: 'translateY(1px) scale(.965)',
+    borderColor: 'rgba(255,238,190,.58)',
+    boxShadow:
+      'inset 0 0 18px rgba(255,214,128,.12), 0 6px 16px rgba(0,0,0,.26)',
+  },
+  eventDetailToolIcon: {
+    display: 'grid',
+    width: 26,
+    height: 26,
+    placeItems: 'center',
+    borderRadius: 10,
+    background: 'rgba(255,231,179,.12)',
+    color: '#ffd98a',
+    fontSize: 15,
+    lineHeight: 1,
+    boxShadow: 'inset 0 0 0 1px rgba(255,226,166,.15)',
+  },
+  eventDetailToolIconFeatured: {
+    background: 'rgba(255,211,122,.22)',
+    color: '#fff2bd',
+    boxShadow: 'inset 0 0 0 1px rgba(255,236,183,.28), 0 0 16px rgba(255,202,91,.32)',
+  },
+  eventDetailToolTitle: {
+    display: 'block',
+    maxWidth: '100%',
+    overflow: 'hidden',
+    color: '#fff4d8',
+    fontSize: 11,
+    fontWeight: 850,
+    letterSpacing: '-.02em',
+    lineHeight: 1.08,
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  eventDetailToolSubtitle: {
+    display: 'block',
+    maxWidth: '100%',
+    overflow: 'hidden',
+    color: 'rgba(255,235,196,.66)',
+    fontSize: 9,
+    fontWeight: 700,
+    letterSpacing: '.01em',
+    lineHeight: 1.1,
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   cardMediaWrap: {
     position: 'absolute',
