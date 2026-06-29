@@ -1,3 +1,5 @@
+import { resolveEventFlyerMedia } from './eventMedia.ts';
+
 export type EventFlyerAssetMode = 'local' | 'hosted';
 
 export type EventFlyerRecord = {
@@ -40,7 +42,7 @@ export function getEventFlyer(eventId: string): EventFlyerRecord | undefined {
 }
 
 export function resolveEventFlyerSrc(event: { id: string; flyerSrc?: AtlasEventFlyerSrc }): AtlasEventFlyerSrc | undefined {
-  return getEventFlyer(event.id)?.src ?? event.flyerSrc;
+  return resolveEventFlyerMedia(event, getEventFlyer(event.id))?.src as AtlasEventFlyerSrc | undefined;
 }
 
 type AtlasEventFlyerSrc = `/event-media/${string}` | `https://${string}`;
