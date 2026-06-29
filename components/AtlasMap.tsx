@@ -1454,6 +1454,9 @@ export default function AtlasMap({
     activePresentationPlan,
     selectedId,
   ]);
+  const isActiveMapResultCalloutVisible =
+    (mapPresentationMode === 'results' || mapPresentationMode === 'single') &&
+    mapCalloutPlan.eventIds.size > 0;
   const isConstellationLineSearchActive = Boolean(
     q ||
       query.trim() ||
@@ -2065,11 +2068,15 @@ export default function AtlasMap({
     }
   }, [prefersReducedMotion]);
 
+  useEffect(() => {
+    if (!isActiveMapResultCalloutVisible) return;
+    const dismissalTimer = window.setTimeout(dismissMobileLandingTitle, 0);
+    return () => window.clearTimeout(dismissalTimer);
+  }, [dismissMobileLandingTitle, isActiveMapResultCalloutVisible]);
+
   const runDiscoverySearch = useCallback((searchText: string) => {
     const trimmedQuery = searchText.trim();
     if (!trimmedQuery) return;
-
-    dismissMobileLandingTitle();
 
     if (queryFadeTimerRef.current) {
       clearTimeout(queryFadeTimerRef.current);
@@ -2130,7 +2137,7 @@ export default function AtlasMap({
       setIsSubmittedQueryFading(false);
       queryFadeTimerRef.current = null;
     }, 680);
-  }, [dismissMobileLandingTitle, onSearchActivate]);
+  }, [onSearchActivate]);
 
   useEffect(() => {
     let isCurrentConstellationState = true;
@@ -2352,23 +2359,11 @@ export default function AtlasMap({
   // actually opened.
   const shouldShowMobileAmbientAtlas =
     !isDesktop && !isPhoneLandscape && !isAtlasPanelOpen && !hasSelectedEventCardOpen;
-  const isMobileLandingTitleSearchActive = Boolean(
-    isSearchFocused ||
-      query.trim() ||
-      displayedQuery.trim() ||
-      submittedQuery.trim() ||
-      isCelebrationSearchHighlightActive,
-  );
   const shouldShowMobileLandingTitle =
     !isDesktop &&
     !isPhoneLandscape &&
-    !hasSelectedEventCardOpen &&
     shouldRenderMobileLandingTitle;
-  const mobileLandingTitleState = isMobileLandingTitleDismissed
-    ? 'dismissed'
-    : isMobileLandingTitleSearchActive
-      ? 'dismissed'
-      : 'idle';
+  const mobileLandingTitleState = isMobileLandingTitleDismissed ? 'dismissed' : 'idle';
 
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
@@ -2688,7 +2683,6 @@ export default function AtlasMap({
                             }
                             onClick={() => {
                               if (shouldSuppressMarkerTap()) return;
-                              dismissMobileLandingTitle();
                               if (exactEventOpenTimerRef.current) {
                                 clearTimeout(exactEventOpenTimerRef.current);
                                 exactEventOpenTimerRef.current = null;
@@ -2864,7 +2858,6 @@ export default function AtlasMap({
                             }
                             onClick={() => {
                               if (shouldSuppressMarkerTap()) return;
-                              dismissMobileLandingTitle();
                               if (exactEventOpenTimerRef.current) {
                                 clearTimeout(exactEventOpenTimerRef.current);
                                 exactEventOpenTimerRef.current = null;
@@ -2948,7 +2941,7 @@ export default function AtlasMap({
             </button>
           </div>
           <div style={styles.mobileSideControls} aria-label="Mobile map tools">
-            <button type="button" aria-label="Open atlas filters" aria-expanded={isMobileFilterOpen} className="mobile-tool-button" style={styles.mobileToolButton} onClick={() => { dismissMobileLandingTitle(); setIsMobileFilterOpen(true); }}>
+            <button type="button" aria-label="Open atlas filters" aria-expanded={isMobileFilterOpen} className="mobile-tool-button" style={styles.mobileToolButton} onClick={() => setIsMobileFilterOpen(true)}>
               <span aria-hidden="true">☷</span>
               <span style={styles.mobileToolLabel}>Filters</span>
             </button>
@@ -3261,7 +3254,6 @@ export default function AtlasMap({
                 }
                 onChange={(event) => {
                   const nextQuery = event.target.value;
-                  dismissMobileLandingTitle();
                   setQuery(nextQuery);
 
                   if (nextQuery.trim().length === 0) {
@@ -3282,7 +3274,7 @@ export default function AtlasMap({
                 onAnimationEnd={() => {
                   setSearchPulseTick(0);
                 }}
-                onFocus={() => { dismissMobileLandingTitle(); setIsSearchFocused(true); }}
+                onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 onKeyDown={(event) => {
                   if (event.nativeEvent.isComposing) return;
@@ -3336,7 +3328,7 @@ export default function AtlasMap({
                         key={event.id}
                         type="button"
                         aria-label={`Open ${event.name}`}
-                        onClick={() => { dismissMobileLandingTitle(); setSelectedId(event.id); }}
+                        onClick={() => setSelectedId(event.id)}
                         className="mobile-live-card"
                         style={styles.mobileLiveCard}
                       >
