@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
+import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes';
 import {
   getEventProfileById,
   searchEventProfiles,
@@ -957,6 +958,7 @@ type AtlasMapProps = {
   activeConstellationTitle?: string | null;
   onSearchActivate?: () => void;
   presentationPlan?: MapPresentationPlan;
+  flyerResolutions?: EventFlyerResolutionMap;
 };
 
 const clamp = (value: number, min: number, max: number) =>
@@ -1285,6 +1287,7 @@ export default function AtlasMap({
   activeConstellationTitle = null,
   onSearchActivate,
   presentationPlan,
+  flyerResolutions = {},
 }: AtlasMapProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -1586,7 +1589,7 @@ export default function AtlasMap({
     [router],
   );
   const safeEventCard = renderedEvent
-    ? deriveSafeAtlasEventCard(renderedEvent)
+    ? deriveSafeAtlasEventCard(renderedEvent, flyerResolutions)
     : null;
   const selectedMedia = safeEventCard?.media;
   const largeCardThumbnail = renderedEvent

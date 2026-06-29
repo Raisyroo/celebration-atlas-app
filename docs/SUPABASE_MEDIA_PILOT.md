@@ -36,3 +36,18 @@ create table event_media (
 ```
 
 For the controlled Brown Trout pilot, approve only one Supabase flyer record with a public HTTPS `url` before expecting it to override the local flyer fallback.
+
+## Server-side approved flyer lookup
+
+The visual app can resolve approved Supabase flyer media before falling back to the local flyer catalog. The lookup runs only on the server and uses these server-side-only environment variables:
+
+```text
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Do not prefix the service-role key with `NEXT_PUBLIC_`, and do not place real values in GitHub, examples, screenshots, logs, browser bundles, or docs. Browser components receive only the final approved public flyer URL/path.
+
+For each event, the server resolver maps the app event id to its canonical slug, queries `event_media` for `source = supabase`, `status = approved`, and `media_role = flyer` joined to the matching `events.slug`, then returns an approved `public_url` or constructs a public Storage URL from `storage_bucket` and `storage_path`. If configuration is missing, malformed, unavailable, or no approved row exists, the existing local flyer catalog remains the fallback.
+
+Developer-only Romeo diagnostics are available in local development at `/dev/romeo-media-diagnostics`. The page reports the canonical slug, whether Supabase or local fallback was used, and the final public media URL/path without printing secrets.

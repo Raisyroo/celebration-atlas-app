@@ -1,11 +1,16 @@
 'use client';
 
 import AtlasMap from './AtlasMap';
+import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes';
 
-export default function HomeAtlasExperience() {
+type HomeAtlasExperienceProps = {
+  flyerResolutions?: EventFlyerResolutionMap;
+};
+
+export default function HomeAtlasExperience({ flyerResolutions = {} }: HomeAtlasExperienceProps) {
   return (
     <>
-      <AtlasMap />
+      <AtlasMap flyerResolutions={flyerResolutions} />
       {/*
         The below-map Celebration Search shell is preserved as a component for
         development routes and future use, but the visible Michigan homepage now
