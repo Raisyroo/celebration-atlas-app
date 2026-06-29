@@ -1,8 +1,7 @@
 import type { CSSProperties } from 'react';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
 import './romeo-card-gallery.css';
-import { getEventFlyer } from '../../../data/eventFlyers';
+import { getEventFlyer } from '../../data/eventFlyers';
 
 const romeoFlyer = getEventFlyer('romeo-peach');
 
@@ -57,14 +56,12 @@ const cardSamples: RomeoCardSample[] = [
 ];
 
 export default function RomeoCardGalleryPage() {
-  if (process.env.NODE_ENV === 'production') notFound();
-
   return (
     <main style={styles.shell}>
       <div style={styles.atmosphere} aria-hidden="true" />
       <section style={styles.content} aria-label="Romeo Peach Festival card explorations">
         <header style={styles.header}>
-          <p style={styles.kicker}>Private development gallery</p>
+          <p style={styles.kicker}>Unlinked live gallery</p>
           <h1 style={styles.title}>Romeo Peach Festival tools</h1>
         </header>
 
@@ -82,8 +79,8 @@ export default function RomeoCardGalleryPage() {
             <div style={styles.flyerFallback}>Romeo flyer reference</div>
           )}
           <div style={styles.flyerCopy}>
-            <span style={styles.flyerEyebrow}>dev preview</span>
-            <strong style={styles.flyerTitle}>Compact mobile dock</strong>
+            <span style={styles.flyerEyebrow}>Romeo reference</span>
+            <strong style={styles.flyerTitle}>Six-card tool dock</strong>
           </div>
         </aside>
 
