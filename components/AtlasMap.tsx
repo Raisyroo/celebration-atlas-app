@@ -1521,6 +1521,12 @@ export default function AtlasMap({
     ],
   );
   const ambientMobileEvents = ATLAS_EVENTS;
+  const isMobileAmbientRailLayoutReady = Boolean(
+    mapViewportSize &&
+      mapViewportSize.width > 0 &&
+      mapViewportSize.height > 0 &&
+      ambientMobileEvents.length > 0,
+  );
   const mobileSearchTagPlacements = useMemo(() => {
     if (isDesktop || mapPresentationMode === 'idle') return new Map<string, MobileTagPlacement>();
 
@@ -3502,9 +3508,16 @@ export default function AtlasMap({
             </form>
             {shouldShowMobileAmbientAtlas ? (
               <section
-                className="mobile-live-sheet"
-                style={styles.mobileLiveStrip}
+                className={`mobile-live-sheet${isMobileAmbientRailLayoutReady ? ' mobile-live-sheet--ready' : ''}`}
+                style={{
+                  ...styles.mobileLiveStrip,
+                  ...(isMobileAmbientRailLayoutReady
+                    ? styles.mobileLiveStripReady
+                    : styles.mobileLiveStripHidden),
+                }}
                 aria-label="Michigan event rail"
+                aria-hidden={isMobileAmbientRailLayoutReady ? undefined : true}
+                data-layout-ready={isMobileAmbientRailLayoutReady ? 'true' : 'false'}
               >
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
                   {ambientMobileEvents.map((event) => {
@@ -5794,19 +5807,32 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveStrip: {
     marginTop: 6,
+    minHeight: 91,
     overflow: 'visible',
+    transition: 'opacity 120ms ease',
+  },
+  mobileLiveStripHidden: {
+    opacity: 0,
+    pointerEvents: 'none',
+    visibility: 'hidden',
+  },
+  mobileLiveStripReady: {
+    opacity: 1,
+    visibility: 'visible',
   },
   mobileLiveStripScroller: {
     display: 'flex',
     gap: 6,
     overflowX: 'auto',
     overflowY: 'visible',
+    minHeight: 91,
     padding: '1px 0 8px',
     WebkitOverflowScrolling: 'touch',
     scrollbarWidth: 'none',
     scrollSnapType: 'x proximity',
   },
   mobileLiveCard: {
+    flex: '0 0 clamp(88px, 24vw, 98px)',
     display: 'grid',
     gridTemplateRows: '1fr',
     alignItems: 'stretch',
