@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { notFound } from 'next/navigation';
 import { ATLAS_EVENTS } from '../../../data/events';
 import { getCanonicalEventSlug } from '../../../data/eventCanonicalSlugs';
-import { getEventFlyerDiagnostics } from '../../../data/eventMediaServer';
+import { resolveEventFlyerMediaServer } from '../../../data/eventMediaServer';
 import { deriveSafeAtlasEventCard } from '../../../data/safeEventCard';
 
 export default async function RomeoMediaDiagnosticsPage() {
@@ -15,8 +15,7 @@ export default async function RomeoMediaDiagnosticsPage() {
   }
 
   const canonicalSlug = getCanonicalEventSlug(event);
-  const diagnostics = await getEventFlyerDiagnostics(event);
-  const flyer = diagnostics.resolved;
+  const flyer = await resolveEventFlyerMediaServer(event);
   const safeCard = deriveSafeAtlasEventCard(
     event,
     flyer ? { [event.id]: flyer } : {},
@@ -48,31 +47,7 @@ export default async function RomeoMediaDiagnosticsPage() {
         </div>
         <div style={styles.item}>
           <dt>Exact fallback src</dt>
-          <dd><code>{diagnostics.fallbackSrc ?? 'No fallback catalog entry'}</code></dd>
-        </div>
-        <div style={styles.item}>
-          <dt>Fallback source kind</dt>
-          <dd>
-            {diagnostics.fallbackSource === 'local'
-              ? 'local public asset'
-              : diagnostics.fallbackSource === 'hosted'
-                ? 'hosted URL'
-                : 'none'}
-          </dd>
-        </div>
-        <div style={styles.item}>
-          <dt>Fallback file exists in app build</dt>
-          <dd>{diagnostics.fallbackExists ? 'yes' : 'no'}</dd>
-        </div>
-        <div style={styles.item}>
-          <dt>Fallback public build path</dt>
-          <dd>
-            <code>
-              {diagnostics.fallbackPublicPath
-                ? diagnostics.fallbackPublicPath.replace(process.cwd(), '')
-                : 'not local'}
-            </code>
-          </dd>
+          <dd><code>{flyer?.fallback?.src ?? 'No fallback catalog entry'}</code></dd>
         </div>
         <div style={styles.item}>
           <dt>Fallback used</dt>
@@ -81,8 +56,7 @@ export default async function RomeoMediaDiagnosticsPage() {
       </dl>
       <p style={styles.note}>
         This page intentionally prints only the canonical slug, rendered source,
-        fallback source, and local file availability. It never displays Supabase
-        credentials.
+        and fallback source. It never displays Supabase credentials.
       </p>
     </main>
   );
