@@ -952,6 +952,29 @@ const resolveMapCalloutPlan = ({
 };
 
 
+
+type EventDetailPlaceholderCard = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  placeholders: readonly string[];
+};
+
+const ROMEO_EVENT_DETAIL_PLACEHOLDER_CARDS: readonly EventDetailPlaceholderCard[] = [
+  {
+    eyebrow: 'Collectible tool',
+    title: 'Event Card',
+    description: 'Romeo Peach Festival schedule / itinerary placeholder.',
+    placeholders: ['Schedule timeline coming soon', 'Itinerary highlights not yet published', 'Saveable festival plan placeholder'],
+  },
+  {
+    eyebrow: 'Official details',
+    title: 'Tickets & Info',
+    description: 'Official details, hours, parking, and ticket placeholder.',
+    placeholders: ['Official hours placeholder', 'Parking guidance placeholder', 'Ticket details placeholder'],
+  },
+];
+
 type FlyerMediaDebugSnapshot = {
   intendedSrc?: string;
   attemptedSrc?: string;
@@ -3155,8 +3178,10 @@ export default function AtlasMap({
             ...styles.card,
             ...(isFlyerCard ? styles.flyerCard : null),
             borderColor: cardTheme.edge,
-            boxShadow: `inset 0 0 0 1px rgba(255,241,203,.08), 0 0 18px ${cardTheme.glow}, 0 16px 36px rgba(0,0,0,.32)`,
-            background: isFlyerCard ? 'rgba(7,10,15,.88)' : 'rgba(7,10,15,.24)',
+            boxShadow: isFlyerCard
+              ? '0 22px 54px rgba(0,0,0,.44)'
+              : `inset 0 0 0 1px rgba(255,241,203,.08), 0 0 18px ${cardTheme.glow}, 0 16px 36px rgba(0,0,0,.32)`,
+            background: isFlyerCard ? 'rgba(7,10,15,.34)' : 'rgba(7,10,15,.24)',
             opacity: isCardVisible ? 1 : 0,
             transform: isCardVisible
               ? 'translateY(var(--atlas-card-open-y, 0px))'
@@ -3175,59 +3200,88 @@ export default function AtlasMap({
           >
             ×
           </button>
-          {hasCardMedia && hasCardMediaSource ? (
+          {isFlyerCard ? (
+            <div style={styles.eventDetailSheet}>
+              {hasCardMedia && hasCardMediaSource ? (
+                <figure style={styles.eventDetailFlyerHero}>
+                  <img
+                    ref={largeCardImageRef}
+                    src={displayedLargeCardImageSrc}
+                    alt={`${safeEventCard.name} flyer`}
+                    onLoad={handleLargeCardImageLoad}
+                    onError={handleLargeCardImageError}
+                    style={{
+                      ...styles.eventDetailFlyerImage,
+                      opacity: isCardMediaVisible ? 1 : 0,
+                      transitionDuration: `${mediaFadeDurationMs}ms`,
+                    }}
+                  />
+                </figure>
+              ) : (
+                <div style={styles.flyerUnavailableState} role="status">
+                  <strong>{safeEventCard.name} flyer unavailable</strong>
+                  <span>The flyer image could not be loaded right now.</span>
+                </div>
+              )}
+              {isRomeoFlyerMediaDebug ? (
+                <div style={styles.flyerMediaDebugPanel} aria-label="Romeo flyer media debug">
+                  <div>intended flyer src: {selectedFlyerSrc ?? 'none'}</div>
+                  <div>actual currentSrc: {flyerMediaDebugSnapshot.currentSrc ?? 'not rendered yet'}</div>
+                  <div>load fired: {flyerMediaDebugSnapshot.loaded ? 'yes' : 'no'}</div>
+                  <div>error fired: {flyerMediaDebugSnapshot.errored ? 'yes' : 'no'}</div>
+                  <div>fallback src: {selectedFlyerFallbackSrc ?? 'none'}</div>
+                  <div>displayed source kind: {displayedFlyerSourceKind}</div>
+                  <div>attempted src: {flyerMediaDebugSnapshot.attemptedSrc ?? 'none'}</div>
+                </div>
+              ) : null}
+              <div style={styles.eventDetailCardStack} aria-label={`${safeEventCard.name} event detail tools`}>
+                {ROMEO_EVENT_DETAIL_PLACEHOLDER_CARDS.map((detailCard) => (
+                  <section key={detailCard.title} style={styles.eventDetailCollectibleCard}>
+                    <div style={styles.eventDetailCollectibleGlow} aria-hidden="true" />
+                    <p style={styles.eventDetailCollectibleEyebrow}>{detailCard.eyebrow}</p>
+                    <h3 style={styles.eventDetailCollectibleTitle}>{detailCard.title}</h3>
+                    <p style={styles.eventDetailCollectibleDescription}>{detailCard.description}</p>
+                    <ul style={styles.eventDetailPlaceholderList}>
+                      {detailCard.placeholders.map((placeholder) => (
+                        <li key={placeholder} style={styles.eventDetailPlaceholderItem}>
+                          <span style={styles.eventDetailPlaceholderDot} aria-hidden="true" />
+                          {placeholder}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            </div>
+          ) : hasCardMedia && hasCardMediaSource ? (
             <div
               className="atlas-card-media"
               style={{
                 ...styles.cardMediaWrap,
-                ...(isFlyerCard ? styles.flyerCardMediaWrap : null),
                 backgroundImage: `url(${displayedLargeCardImageSrc})`,
-                backgroundPosition: isFlyerCard
-                  ? 'center'
-                  : selectedMedia?.mediaPosition ??
+                backgroundPosition: selectedMedia?.mediaPosition ??
                     styles.cardMediaLayer.objectPosition,
                 backgroundRepeat: 'no-repeat',
-                backgroundSize: isFlyerCard ? 'contain' : 'cover',
+                backgroundSize: 'cover',
                 opacity: isCardMediaVisible ? 1 : 0,
                 transitionDuration: `${mediaFadeDurationMs}ms`,
               }}
-              aria-hidden={isFlyerCard ? undefined : true}
+              aria-hidden="true"
             >
               <img
                 ref={largeCardImageRef}
                 src={displayedLargeCardImageSrc}
-                alt={isFlyerCard ? `${safeEventCard.name} flyer` : ''}
+                alt=""
                 onLoad={handleLargeCardImageLoad}
                 onError={handleLargeCardImageError}
                 style={{
                   ...styles.cardMediaLayer,
-                  ...(isFlyerCard ? styles.flyerCardMediaLayer : null),
-                  objectPosition: isFlyerCard
-                    ? 'center center'
-                    : selectedMedia?.mediaPosition ??
+                  objectPosition: selectedMedia?.mediaPosition ??
                       styles.cardMediaLayer.objectPosition,
-                  transform: isFlyerCard
-                    ? 'none'
-                    : `scale(${selectedMedia?.mediaScale ?? 1})`,
+                  transform: `scale(${selectedMedia?.mediaScale ?? 1})`,
                 }}
               />
-              {isFlyerCard ? null : <span style={styles.cardMediaOverlay} aria-hidden="true" />}
-            </div>
-          ) : isFlyerCard ? (
-            <div style={styles.flyerUnavailableState} role="status">
-              <strong>{safeEventCard.name} flyer unavailable</strong>
-              <span>The flyer image could not be loaded right now.</span>
-            </div>
-          ) : null}
-          {isRomeoFlyerMediaDebug ? (
-            <div style={styles.flyerMediaDebugPanel} aria-label="Romeo flyer media debug">
-              <div>intended flyer src: {selectedFlyerSrc ?? 'none'}</div>
-              <div>actual currentSrc: {flyerMediaDebugSnapshot.currentSrc ?? 'not rendered yet'}</div>
-              <div>load fired: {flyerMediaDebugSnapshot.loaded ? 'yes' : 'no'}</div>
-              <div>error fired: {flyerMediaDebugSnapshot.errored ? 'yes' : 'no'}</div>
-              <div>fallback src: {selectedFlyerFallbackSrc ?? 'none'}</div>
-              <div>displayed source kind: {displayedFlyerSourceKind}</div>
-              <div>attempted src: {flyerMediaDebugSnapshot.attemptedSrc ?? 'none'}</div>
+              <span style={styles.cardMediaOverlay} aria-hidden="true" />
             </div>
           ) : null}
           {isFlyerCard ? null : (
@@ -4987,11 +5041,123 @@ const styles: Record<string, CSSProperties> = {
     bottom: '18vh',
   },
   flyerCard: {
-    left: 12,
-    right: 'auto',
-    width: 'min(calc(100vw - 24px), 430px)',
-    height: 'min(72vh, 645px)',
-    background: 'rgba(7,10,15,.88)',
+    left: 'max(8px, env(safe-area-inset-left))',
+    right: 'max(8px, env(safe-area-inset-right))',
+    bottom: 'max(18px, env(safe-area-inset-bottom))',
+    width: 'auto',
+    height: 'min(88vh, 760px)',
+    borderRadius: 28,
+    border: '1px solid rgba(255,225,160,.24)',
+    background:
+      'linear-gradient(180deg, rgba(12,16,28,.48), rgba(8,10,18,.82) 42%, rgba(8,10,18,.9))',
+    backdropFilter: 'blur(18px) saturate(1.12)',
+    WebkitBackdropFilter: 'blur(18px) saturate(1.12)',
+  },
+  eventDetailSheet: {
+    position: 'relative',
+    height: '100%',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+    overscrollBehaviorX: 'none',
+    overscrollBehaviorY: 'contain',
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',
+    scrollbarWidth: 'none',
+    padding: '8px 8px 18px',
+  },
+  eventDetailFlyerHero: {
+    position: 'relative',
+    margin: 0,
+    overflow: 'hidden',
+    borderRadius: 22,
+    background:
+      'radial-gradient(circle at 50% 0%, rgba(255,221,146,.18), transparent 45%), rgba(9,12,22,.42)',
+    boxShadow: '0 18px 42px rgba(0,0,0,.28)',
+  },
+  eventDetailFlyerImage: {
+    display: 'block',
+    width: '100%',
+    height: 'auto',
+    objectFit: 'contain',
+    objectPosition: 'center center',
+    transition: 'opacity 1300ms ease',
+  },
+  eventDetailCardStack: {
+    display: 'grid',
+    gap: 14,
+    padding: '16px 4px 2px',
+  },
+  eventDetailCollectibleCard: {
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 24,
+    border: '1px solid rgba(255,225,160,.24)',
+    padding: '18px 16px 16px',
+    background:
+      'linear-gradient(145deg, rgba(255,235,185,.12), rgba(92,61,150,.13) 42%, rgba(11,16,30,.72))',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255,255,255,.06), 0 16px 34px rgba(0,0,0,.25)',
+    color: '#ffefc6',
+    isolation: 'isolate',
+  },
+  eventDetailCollectibleGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    right: -34,
+    top: -46,
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(255,197,97,.34), transparent 66%)',
+    zIndex: -1,
+  },
+  eventDetailCollectibleEyebrow: {
+    margin: '0 0 8px',
+    color: 'rgba(255,224,166,.72)',
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: '.16em',
+    textTransform: 'uppercase',
+  },
+  eventDetailCollectibleTitle: {
+    margin: 0,
+    fontSize: 22,
+    lineHeight: 1.05,
+    letterSpacing: '-.03em',
+  },
+  eventDetailCollectibleDescription: {
+    margin: '8px 0 14px',
+    color: 'rgba(255,243,214,.82)',
+    fontSize: 14,
+    lineHeight: 1.45,
+  },
+  eventDetailPlaceholderList: {
+    display: 'grid',
+    gap: 9,
+    margin: 0,
+    padding: 0,
+    listStyle: 'none',
+  },
+  eventDetailPlaceholderItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 9,
+    minHeight: 34,
+    padding: '8px 10px',
+    borderRadius: 14,
+    border: '1px solid rgba(255,225,160,.14)',
+    background: 'rgba(4,8,17,.32)',
+    color: 'rgba(255,244,219,.78)',
+    fontSize: 13,
+    lineHeight: 1.25,
+  },
+  eventDetailPlaceholderDot: {
+    width: 7,
+    height: 7,
+    flex: '0 0 auto',
+    borderRadius: '50%',
+    background: '#ffd37a',
+    boxShadow: '0 0 14px rgba(255,211,122,.62)',
   },
   cardMediaWrap: {
     position: 'absolute',
