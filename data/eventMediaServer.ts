@@ -1,11 +1,17 @@
 import 'server-only';
 
-import { getEventFlyer } from './eventFlyers';
+import { stat } from 'node:fs/promises';
+import path from 'node:path';
+
+import { getEventFlyer, type EventFlyerRecord } from './eventFlyers';
 import { resolveEventFlyerMedia, type ResolvedEventMedia } from './eventMedia';
 import { getCanonicalEventSlug } from './eventCanonicalSlugs';
 import type { EventFlyerResolution, EventFlyerResolutionMap } from './eventMediaResolutionTypes';
 
 const APPROVED_FLYER_SELECT = 'public_url,storage_bucket,storage_path,title,alt_text';
+
+const LOCAL_FLYER_RUNTIME_PREFIX = '/event-media/flyers/';
+const LOCAL_FLYER_PUBLIC_ROOT = path.join(process.cwd(), 'public', 'event-media', 'flyers');
 
 type SupabaseEventMediaRow = {
   public_url?: unknown;
@@ -54,6 +60,67 @@ function buildPublicStorageUrl(supabaseUrl: URL, bucket: string, path: string): 
   );
 
   return publicUrl.toString();
+}
+
+function getLocalFlyerPublicPath(src: string): string | undefined {
+  if (!src.startsWith(LOCAL_FLYER_RUNTIME_PREFIX)) return undefined;
+
+  const relativeName = src.slice(LOCAL_FLYER_RUNTIME_PREFIX.length);
+  const normalizedRelativeName = path.posix.normalize(relativeName);
+
+  if (
+    !relativeName ||
+    path.isAbsolute(relativeName) ||
+    path.win32.isAbsolute(relativeName) ||
+    relativeName.includes('\\') ||
+    normalizedRelativeName === '.' ||
+    normalizedRelativeName.startsWith('../') ||
+    normalizedRelativeName.includes('/../')
+  ) {
+    return undefined;
+  }
+
+  return path.join(LOCAL_FLYER_PUBLIC_ROOT, normalizedRelativeName);
+}
+
+async function localFlyerExists(fallback?: EventFlyerRecord): Promise<boolean> {
+  if (!fallback || fallback.assetMode !== 'local') return false;
+  const publicPath = getLocalFlyerPublicPath(fallback.src);
+  if (!publicPath) return false;
+
+  try {
+    const fileStat = await stat(publicPath);
+    return fileStat.isFile();
+  } catch {
+    return false;
+  }
+}
+
+async function getValidLocalFlyerFallback(
+  eventId: string,
+): Promise<EventFlyerRecord | undefined> {
+  const fallback = getEventFlyer(eventId);
+  return (await localFlyerExists(fallback)) ? fallback : undefined;
+}
+
+export async function getEventFlyerDiagnostics(event: {
+  id: string;
+  flyerSrc?: string;
+}) {
+  const catalogFallback = getEventFlyer(event.id);
+  const fallbackExists = await localFlyerExists(catalogFallback);
+  const resolved = await resolveEventFlyerMediaServer(event);
+
+  return {
+    resolved,
+    fallbackSrc: catalogFallback?.src,
+    fallbackSource: catalogFallback?.assetMode,
+    fallbackExists,
+    fallbackPublicPath:
+      catalogFallback?.assetMode === 'local'
+        ? getLocalFlyerPublicPath(catalogFallback.src)
+        : undefined,
+  };
 }
 
 async function lookupApprovedSupabaseFlyer(
@@ -120,18 +187,19 @@ export async function resolveEventFlyerMediaServer(
 ): Promise<EventFlyerResolution | undefined> {
   const canonicalSlug = getCanonicalEventSlug(event);
   const supabaseFlyer = await lookupApprovedSupabaseFlyer(canonicalSlug);
+  const validLocalFallback = await getValidLocalFlyerFallback(event.id);
 
   if (supabaseFlyer) {
     return {
       ...supabaseFlyer,
       eventId: event.id,
       fallbackUsed: false,
-      fallback: getEventFlyer(event.id),
+      fallback: validLocalFallback,
       canonicalSlug,
     };
   }
 
-  const localFallback = resolveEventFlyerMedia(event, getEventFlyer(event.id));
+  const localFallback = resolveEventFlyerMedia(event, validLocalFallback);
   return localFallback ? { ...localFallback, canonicalSlug } : undefined;
 }
 

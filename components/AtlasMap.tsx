@@ -1332,6 +1332,9 @@ export default function AtlasMap({
   const [calibrationCopyStatus, setCalibrationCopyStatus] = useState<
     string | null
   >(null);
+  const [failedDisplayedFlyerSrcs, setFailedDisplayedFlyerSrcs] = useState<
+    Set<string>
+  >(new Set());
 
   const searchParams = useSearchParams();
   const isVerificationMode = searchParams.get('verify') === '1';
@@ -1614,8 +1617,13 @@ export default function AtlasMap({
     shouldUseFlyerFallback && selectedMedia?.flyerFallbackSrc
       ? selectedMedia.flyerFallbackSrc
       : resolvedLargeCardImageSrc;
-  const hasCardMedia = Boolean(selectedMedia || largeCardBackgroundImageSrc);
-  const hasCardMediaSource = Boolean(largeCardBackgroundImageSrc);
+  const displayedLargeCardImageSrc =
+    largeCardBackgroundImageSrc &&
+    !failedDisplayedFlyerSrcs.has(largeCardBackgroundImageSrc)
+      ? largeCardBackgroundImageSrc
+      : undefined;
+  const hasCardMedia = Boolean(selectedMedia || displayedLargeCardImageSrc);
+  const hasCardMediaSource = Boolean(displayedLargeCardImageSrc);
   const isFlyerCard = Boolean(selectedMedia?.flyerSrc);
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
   const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
@@ -1631,6 +1639,14 @@ export default function AtlasMap({
       selectedFlyerFallbackSrc === selectedFlyerSrc ||
       largeCardBackgroundImageSrc !== selectedFlyerSrc
     ) {
+      if (largeCardBackgroundImageSrc) {
+        setFailedDisplayedFlyerSrcs((current) => {
+          if (current.has(largeCardBackgroundImageSrc)) return current;
+          const next = new Set(current);
+          next.add(largeCardBackgroundImageSrc);
+          return next;
+        });
+      }
       return;
     }
 
@@ -3103,7 +3119,7 @@ export default function AtlasMap({
               style={{
                 ...styles.cardMediaWrap,
                 ...(isFlyerCard ? styles.flyerCardMediaWrap : null),
-                backgroundImage: `url(${largeCardBackgroundImageSrc})`,
+                backgroundImage: `url(${displayedLargeCardImageSrc})`,
                 backgroundPosition: isFlyerCard
                   ? 'center'
                   : selectedMedia?.mediaPosition ??
@@ -3116,7 +3132,7 @@ export default function AtlasMap({
               aria-hidden={isFlyerCard ? undefined : true}
             >
               <img
-                src={largeCardBackgroundImageSrc}
+                src={displayedLargeCardImageSrc}
                 alt={isFlyerCard ? `${safeEventCard.name} flyer` : ''}
                 onError={handleLargeCardImageError}
                 style={{
@@ -3132,6 +3148,11 @@ export default function AtlasMap({
                 }}
               />
               {isFlyerCard ? null : <span style={styles.cardMediaOverlay} aria-hidden="true" />}
+            </div>
+          ) : isFlyerCard ? (
+            <div style={styles.flyerUnavailableState} role="status">
+              <strong>{safeEventCard.name} flyer unavailable</strong>
+              <span>The flyer image could not be loaded right now.</span>
             </div>
           ) : null}
           {isFlyerCard ? null : (
@@ -4926,6 +4947,19 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     objectFit: 'contain',
     objectPosition: 'center center',
+  },
+  flyerUnavailableState: {
+    position: 'absolute',
+    inset: 16,
+    display: 'grid',
+    placeContent: 'center',
+    gap: 8,
+    border: '1px solid rgba(255,225,160,.28)',
+    borderRadius: 18,
+    color: '#ffebb9',
+    textAlign: 'center',
+    background: 'rgba(13,18,27,.72)',
+    zIndex: 0,
   },
   cardMediaOverlay: {
     position: 'absolute',
