@@ -1,0 +1,24 @@
+.romeo-gallery-card:active {
+  transform: translateY(2px) scale(0.975);
+  filter: brightness(1.12) saturate(1.08);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 230, 170, 0.18) !important;
+}
+
+.romeo-gallery-card:focus-visible {
+  outline: 2px solid #ffd977;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .romeo-gallery-card:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+  }
+}
+
+@media (max-width: 360px) {
+  .romeo-gallery-card {
+    min-height: 166px !important;
+    padding: 12px !important;
+  }
+}
