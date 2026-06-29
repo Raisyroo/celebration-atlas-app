@@ -1,6 +1,7 @@
 import type { AtlasEvent } from './events';
 import { resolveExplicitEventThumbnail } from './eventThumbnail';
 import { resolveEventFlyerSrc } from './eventFlyers';
+import type { EventFlyerResolutionMap } from './eventMediaResolutionTypes';
 
 export type SafeAtlasEventCard = {
   id: AtlasEvent['id'];
@@ -30,9 +31,13 @@ export type SafeAtlasEventCard = {
   trustStatusCopy: 'Details not yet source-verified';
 };
 
-export function deriveSafeAtlasEventCard(event: AtlasEvent): SafeAtlasEventCard {
+export function deriveSafeAtlasEventCard(
+  event: AtlasEvent,
+  flyerResolutions: EventFlyerResolutionMap = {},
+): SafeAtlasEventCard {
   const explicitThumbnail = resolveExplicitEventThumbnail(event);
-  const flyerSrc = resolveEventFlyerSrc(event);
+  const flyerSrc = (flyerResolutions[event.id]?.src
+    ?? resolveEventFlyerSrc(event)) as AtlasEvent['flyerSrc'];
   const media = flyerSrc
     ? {
         mediaType: 'image' as const,
