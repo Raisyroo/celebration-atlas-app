@@ -15,6 +15,7 @@ export type SafeAtlasEventCard = {
   media?: {
     mediaType?: NonNullable<AtlasEvent['cardMedia']>['mediaType'];
     flyerSrc?: NonNullable<AtlasEvent['flyerSrc']>;
+    flyerFallbackSrc?: NonNullable<AtlasEvent['flyerSrc']>;
     mediaSrc?: NonNullable<AtlasEvent['cardMedia']>['mediaSrc'];
     posterSrc?: NonNullable<AtlasEvent['cardMedia']>['posterSrc'];
     atmosphereTitle?: NonNullable<AtlasEvent['cardMedia']>['atmosphereTitle'];
@@ -38,10 +39,12 @@ export function deriveSafeAtlasEventCard(
   const explicitThumbnail = resolveExplicitEventThumbnail(event);
   const flyerSrc = (flyerResolutions[event.id]?.src
     ?? resolveEventFlyerSrc(event)) as AtlasEvent['flyerSrc'];
+  const flyerFallbackSrc = flyerResolutions[event.id]?.fallback?.src as AtlasEvent['flyerSrc'] | undefined;
   const media = flyerSrc
     ? {
         mediaType: 'image' as const,
         flyerSrc,
+        flyerFallbackSrc,
         mediaSrc: flyerSrc,
         mediaPosition: event.cardMedia?.mediaPosition,
         mediaScale: event.cardMedia?.mediaScale,
