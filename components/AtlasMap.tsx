@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import type { CSSProperties, PointerEvent, RefObject } from 'react';
+import type { CSSProperties, PointerEvent, RefObject, SyntheticEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
 import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes';
@@ -952,6 +952,14 @@ const resolveMapCalloutPlan = ({
 };
 
 
+type FlyerMediaDebugSnapshot = {
+  intendedSrc?: string;
+  attemptedSrc?: string;
+  currentSrc?: string;
+  loaded: boolean;
+  errored: boolean;
+};
+
 type AtlasMapProps = {
   constellationHighlightedIds?: readonly string[];
   celebrationSearchHighlightedIds?: readonly string[];
@@ -1332,9 +1340,16 @@ export default function AtlasMap({
   const [calibrationCopyStatus, setCalibrationCopyStatus] = useState<
     string | null
   >(null);
+  const [failedDisplayedFlyerSrcs, setFailedDisplayedFlyerSrcs] = useState<
+    Set<string>
+  >(new Set());
+  const [flyerMediaDebugSnapshot, setFlyerMediaDebugSnapshot] =
+    useState<FlyerMediaDebugSnapshot>({ loaded: false, errored: false });
+  const largeCardImageRef = useRef<HTMLImageElement | null>(null);
 
   const searchParams = useSearchParams();
   const isVerificationMode = searchParams.get('verify') === '1';
+  const isMediaDebugMode = searchParams.get('mediaDebug') === '1';
   const shouldShowCalibration = showAtlasCalibration && !isVerificationMode;
   const initialEventParamHandledRef = useRef(false);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
@@ -1614,8 +1629,13 @@ export default function AtlasMap({
     shouldUseFlyerFallback && selectedMedia?.flyerFallbackSrc
       ? selectedMedia.flyerFallbackSrc
       : resolvedLargeCardImageSrc;
-  const hasCardMedia = Boolean(selectedMedia || largeCardBackgroundImageSrc);
-  const hasCardMediaSource = Boolean(largeCardBackgroundImageSrc);
+  const displayedLargeCardImageSrc =
+    largeCardBackgroundImageSrc &&
+    !failedDisplayedFlyerSrcs.has(largeCardBackgroundImageSrc)
+      ? largeCardBackgroundImageSrc
+      : undefined;
+  const hasCardMedia = Boolean(selectedMedia || displayedLargeCardImageSrc);
+  const hasCardMediaSource = Boolean(displayedLargeCardImageSrc);
   const isFlyerCard = Boolean(selectedMedia?.flyerSrc);
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
   const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
@@ -1624,13 +1644,45 @@ export default function AtlasMap({
   const mediaDelayMs = selectedMedia?.mediaDelayMs ?? 0;
   const selectedFlyerSrc = selectedMedia?.flyerSrc;
   const selectedFlyerFallbackSrc = selectedMedia?.flyerFallbackSrc;
-  const handleLargeCardImageError = useCallback(() => {
+  const displayedFlyerSourceKind = displayedLargeCardImageSrc?.startsWith('https://')
+    ? 'Supabase'
+    : displayedLargeCardImageSrc?.startsWith('/')
+      ? 'local'
+      : 'none';
+  const isRomeoFlyerMediaDebug = Boolean(
+    isMediaDebugMode && safeEventCard?.id === 'romeo-peach' && isFlyerCard,
+  );
+  const handleLargeCardImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
+    setFlyerMediaDebugSnapshot({
+      intendedSrc: selectedFlyerSrc,
+      attemptedSrc: largeCardBackgroundImageSrc,
+      currentSrc: event.currentTarget.currentSrc,
+      loaded: true,
+      errored: false,
+    });
+  };
+  const handleLargeCardImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    setFlyerMediaDebugSnapshot({
+      intendedSrc: selectedFlyerSrc,
+      attemptedSrc: largeCardBackgroundImageSrc,
+      currentSrc: event.currentTarget.currentSrc,
+      loaded: false,
+      errored: true,
+    });
     if (
       !selectedFlyerSrc ||
       !selectedFlyerFallbackSrc ||
       selectedFlyerFallbackSrc === selectedFlyerSrc ||
       largeCardBackgroundImageSrc !== selectedFlyerSrc
     ) {
+      if (largeCardBackgroundImageSrc) {
+        setFailedDisplayedFlyerSrcs((current) => {
+          if (current.has(largeCardBackgroundImageSrc)) return current;
+          const next = new Set(current);
+          next.add(largeCardBackgroundImageSrc);
+          return next;
+        });
+      }
       return;
     }
 
@@ -1640,7 +1692,33 @@ export default function AtlasMap({
       next.add(selectedFlyerSrc as string);
       return next;
     });
-  }, [largeCardBackgroundImageSrc, selectedFlyerFallbackSrc, selectedFlyerSrc]);
+  };
+
+  useEffect(() => {
+    if (!isRomeoFlyerMediaDebug) return;
+
+    setFlyerMediaDebugSnapshot({
+      intendedSrc: selectedFlyerSrc,
+      attemptedSrc: largeCardBackgroundImageSrc,
+      currentSrc: largeCardImageRef.current?.currentSrc,
+      loaded: false,
+      errored: false,
+    });
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      setFlyerMediaDebugSnapshot((current) => ({
+        ...current,
+        currentSrc: largeCardImageRef.current?.currentSrc ?? current.currentSrc,
+      }));
+    });
+
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [
+    isRomeoFlyerMediaDebug,
+    largeCardBackgroundImageSrc,
+    selectedFlyerSrc,
+  ]);
+
   const cardBaseTheme = safeEventCard
     ? CARD_THEME_BY_CATEGORY[safeEventCard.category]
     : CARD_THEME_BY_CATEGORY.Festivals;
@@ -3103,7 +3181,7 @@ export default function AtlasMap({
               style={{
                 ...styles.cardMediaWrap,
                 ...(isFlyerCard ? styles.flyerCardMediaWrap : null),
-                backgroundImage: `url(${largeCardBackgroundImageSrc})`,
+                backgroundImage: `url(${displayedLargeCardImageSrc})`,
                 backgroundPosition: isFlyerCard
                   ? 'center'
                   : selectedMedia?.mediaPosition ??
@@ -3116,8 +3194,10 @@ export default function AtlasMap({
               aria-hidden={isFlyerCard ? undefined : true}
             >
               <img
-                src={largeCardBackgroundImageSrc}
+                ref={largeCardImageRef}
+                src={displayedLargeCardImageSrc}
                 alt={isFlyerCard ? `${safeEventCard.name} flyer` : ''}
+                onLoad={handleLargeCardImageLoad}
                 onError={handleLargeCardImageError}
                 style={{
                   ...styles.cardMediaLayer,
@@ -3132,6 +3212,22 @@ export default function AtlasMap({
                 }}
               />
               {isFlyerCard ? null : <span style={styles.cardMediaOverlay} aria-hidden="true" />}
+            </div>
+          ) : isFlyerCard ? (
+            <div style={styles.flyerUnavailableState} role="status">
+              <strong>{safeEventCard.name} flyer unavailable</strong>
+              <span>The flyer image could not be loaded right now.</span>
+            </div>
+          ) : null}
+          {isRomeoFlyerMediaDebug ? (
+            <div style={styles.flyerMediaDebugPanel} aria-label="Romeo flyer media debug">
+              <div>intended flyer src: {selectedFlyerSrc ?? 'none'}</div>
+              <div>actual currentSrc: {flyerMediaDebugSnapshot.currentSrc ?? 'not rendered yet'}</div>
+              <div>load fired: {flyerMediaDebugSnapshot.loaded ? 'yes' : 'no'}</div>
+              <div>error fired: {flyerMediaDebugSnapshot.errored ? 'yes' : 'no'}</div>
+              <div>fallback src: {selectedFlyerFallbackSrc ?? 'none'}</div>
+              <div>displayed source kind: {displayedFlyerSourceKind}</div>
+              <div>attempted src: {flyerMediaDebugSnapshot.attemptedSrc ?? 'none'}</div>
             </div>
           ) : null}
           {isFlyerCard ? null : (
@@ -4926,6 +5022,36 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     objectFit: 'contain',
     objectPosition: 'center center',
+  },
+  flyerMediaDebugPanel: {
+    position: 'absolute',
+    left: 10,
+    right: 10,
+    bottom: 10,
+    zIndex: 2,
+    padding: 8,
+    border: '1px solid rgba(255,255,255,.28)',
+    borderRadius: 8,
+    background: 'rgba(0,0,0,.78)',
+    color: '#ffffff',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+    fontSize: 10,
+    lineHeight: 1.35,
+    overflowWrap: 'anywhere',
+    textAlign: 'left',
+  },
+  flyerUnavailableState: {
+    position: 'absolute',
+    inset: 16,
+    display: 'grid',
+    placeContent: 'center',
+    gap: 8,
+    border: '1px solid rgba(255,225,160,.28)',
+    borderRadius: 18,
+    color: '#ffebb9',
+    textAlign: 'center',
+    background: 'rgba(13,18,27,.72)',
+    zIndex: 0,
   },
   cardMediaOverlay: {
     position: 'absolute',

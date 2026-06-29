@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ATLAS_EVENTS } from '../../../data/events';
 import { getCanonicalEventSlug } from '../../../data/eventCanonicalSlugs';
 import { resolveEventFlyerMediaServer } from '../../../data/eventMediaServer';
+import { deriveSafeAtlasEventCard } from '../../../data/safeEventCard';
 
 export default async function RomeoMediaDiagnosticsPage() {
   if (process.env.NODE_ENV === 'production') notFound();
@@ -15,6 +16,11 @@ export default async function RomeoMediaDiagnosticsPage() {
 
   const canonicalSlug = getCanonicalEventSlug(event);
   const flyer = await resolveEventFlyerMediaServer(event);
+  const safeCard = deriveSafeAtlasEventCard(
+    event,
+    flyer ? { [event.id]: flyer } : {},
+  );
+  const renderedFlyerSrc = safeCard.media?.flyerSrc;
 
   return (
     <main style={styles.main}>
@@ -26,12 +32,22 @@ export default async function RomeoMediaDiagnosticsPage() {
           <dd><code>{canonicalSlug}</code></dd>
         </div>
         <div style={styles.item}>
-          <dt>Resolved flyer source</dt>
-          <dd>{flyer?.source ?? 'none'}</dd>
+          <dt>Exact rendered flyer src</dt>
+          <dd><code>{renderedFlyerSrc ?? 'No flyer rendered'}</code></dd>
         </div>
         <div style={styles.item}>
-          <dt>Final URL/path</dt>
-          <dd><code>{flyer?.src ?? 'No flyer resolved'}</code></dd>
+          <dt>Rendered source kind</dt>
+          <dd>
+            {flyer?.source === 'supabase'
+              ? 'Supabase public URL'
+              : flyer?.source === 'local'
+                ? 'local public asset'
+                : 'none'}
+          </dd>
+        </div>
+        <div style={styles.item}>
+          <dt>Exact fallback src</dt>
+          <dd><code>{flyer?.fallback?.src ?? 'No fallback catalog entry'}</code></dd>
         </div>
         <div style={styles.item}>
           <dt>Fallback used</dt>
@@ -39,7 +55,8 @@ export default async function RomeoMediaDiagnosticsPage() {
         </div>
       </dl>
       <p style={styles.note}>
-        This page intentionally prints only the canonical slug, resolved source, and public media URL/path. It never displays Supabase credentials.
+        This page intentionally prints only the canonical slug, rendered source,
+        and fallback source. It never displays Supabase credentials.
       </p>
     </main>
   );
