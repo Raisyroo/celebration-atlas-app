@@ -3179,9 +3179,9 @@ export default function AtlasMap({
             ...(isFlyerCard ? styles.flyerCard : null),
             borderColor: cardTheme.edge,
             boxShadow: isFlyerCard
-              ? '0 22px 54px rgba(0,0,0,.44)'
+              ? 'none'
               : `inset 0 0 0 1px rgba(255,241,203,.08), 0 0 18px ${cardTheme.glow}, 0 16px 36px rgba(0,0,0,.32)`,
-            background: isFlyerCard ? 'rgba(7,10,15,.34)' : 'rgba(7,10,15,.24)',
+            background: isFlyerCard ? 'transparent' : 'rgba(7,10,15,.24)',
             opacity: isCardVisible ? 1 : 0,
             transform: isCardVisible
               ? 'translateY(var(--atlas-card-open-y, 0px))'
@@ -3190,6 +3190,7 @@ export default function AtlasMap({
             transition: isCardVisible
               ? 'opacity 360ms ease, transform 360ms ease'
               : 'opacity 260ms ease, transform 260ms ease',
+            ...(isFlyerCard ? styles.flyerCardChromeReset : null),
           }}
         >
           <button
@@ -5046,12 +5047,13 @@ const styles: Record<string, CSSProperties> = {
     bottom: 'max(18px, env(safe-area-inset-bottom))',
     width: 'auto',
     height: 'min(88vh, 760px)',
-    borderRadius: 28,
-    border: '1px solid rgba(255,225,160,.24)',
-    background:
-      'linear-gradient(180deg, rgba(12,16,28,.48), rgba(8,10,18,.82) 42%, rgba(8,10,18,.9))',
-    backdropFilter: 'blur(18px) saturate(1.12)',
-    WebkitBackdropFilter: 'blur(18px) saturate(1.12)',
+  },
+  flyerCardChromeReset: {
+    border: '0 solid transparent',
+    borderRadius: 0,
+    boxShadow: 'none',
+    background: 'transparent',
+    overflow: 'visible',
   },
   eventDetailSheet: {
     position: 'relative',
@@ -5064,7 +5066,15 @@ const styles: Record<string, CSSProperties> = {
     WebkitOverflowScrolling: 'touch',
     touchAction: 'pan-y',
     scrollbarWidth: 'none',
-    padding: '8px 8px 18px',
+    padding: '42px 8px 46px',
+    maskImage:
+      'linear-gradient(to bottom, transparent 0, black 58px, black calc(100% - 74px), transparent 100%)',
+    WebkitMaskImage:
+      'linear-gradient(to bottom, transparent 0, black 58px, black calc(100% - 74px), transparent 100%)',
+    maskSize: '100% 100%',
+    WebkitMaskSize: '100% 100%',
+    maskRepeat: 'no-repeat',
+    WebkitMaskRepeat: 'no-repeat',
   },
   eventDetailFlyerHero: {
     position: 'relative',
