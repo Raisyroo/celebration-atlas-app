@@ -1365,6 +1365,9 @@ export default function AtlasMap({
     null,
   );
   const [isCardMediaVisible, setIsCardMediaVisible] = useState(false);
+  const [failedRemoteFlyerSrcs, setFailedRemoteFlyerSrcs] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const hasLoadedMobileFavoriteRef = useRef(false);
   const cardMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -1595,11 +1598,22 @@ export default function AtlasMap({
   const largeCardThumbnail = renderedEvent
     ? getEventThumbnail(renderedEvent)
     : null;
-  const largeCardBackgroundImageSrc =
+  const resolvedLargeCardImageSrc =
     selectedMedia?.flyerSrc ??
     selectedMedia?.posterSrc ??
     selectedMedia?.mediaSrc ??
     (largeCardThumbnail?.kind === 'image' ? largeCardThumbnail.src : undefined);
+  const shouldUseFlyerFallback =
+    Boolean(
+      selectedMedia?.flyerSrc &&
+        selectedMedia.flyerFallbackSrc &&
+        selectedMedia.flyerFallbackSrc !== selectedMedia.flyerSrc &&
+        failedRemoteFlyerSrcs.has(selectedMedia.flyerSrc),
+    );
+  const largeCardBackgroundImageSrc =
+    shouldUseFlyerFallback && selectedMedia?.flyerFallbackSrc
+      ? selectedMedia.flyerFallbackSrc
+      : resolvedLargeCardImageSrc;
   const hasCardMedia = Boolean(selectedMedia || largeCardBackgroundImageSrc);
   const hasCardMediaSource = Boolean(largeCardBackgroundImageSrc);
   const isFlyerCard = Boolean(selectedMedia?.flyerSrc);
@@ -1608,6 +1622,25 @@ export default function AtlasMap({
   const fullCardBriefing = renderedEvent?.fullCardBriefing;
   const mediaFadeDurationMs = selectedMedia?.mediaFadeDurationMs ?? 1300;
   const mediaDelayMs = selectedMedia?.mediaDelayMs ?? 0;
+  const selectedFlyerSrc = selectedMedia?.flyerSrc;
+  const selectedFlyerFallbackSrc = selectedMedia?.flyerFallbackSrc;
+  const handleLargeCardImageError = useCallback(() => {
+    if (
+      !selectedFlyerSrc ||
+      !selectedFlyerFallbackSrc ||
+      selectedFlyerFallbackSrc === selectedFlyerSrc ||
+      largeCardBackgroundImageSrc !== selectedFlyerSrc
+    ) {
+      return;
+    }
+
+    setFailedRemoteFlyerSrcs((current) => {
+      if (current.has(selectedFlyerSrc as string)) return current;
+      const next = new Set(current);
+      next.add(selectedFlyerSrc as string);
+      return next;
+    });
+  }, [largeCardBackgroundImageSrc, selectedFlyerFallbackSrc, selectedFlyerSrc]);
   const cardBaseTheme = safeEventCard
     ? CARD_THEME_BY_CATEGORY[safeEventCard.category]
     : CARD_THEME_BY_CATEGORY.Festivals;
@@ -3085,6 +3118,7 @@ export default function AtlasMap({
               <img
                 src={largeCardBackgroundImageSrc}
                 alt={isFlyerCard ? `${safeEventCard.name} flyer` : ''}
+                onError={handleLargeCardImageError}
                 style={{
                   ...styles.cardMediaLayer,
                   ...(isFlyerCard ? styles.flyerCardMediaLayer : null),
