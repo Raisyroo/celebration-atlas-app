@@ -3478,24 +3478,32 @@ export default function AtlasMap({
             >
               <span aria-hidden="true" style={styles.searchCompassMedallion}>
                 <svg viewBox="0 0 48 48" focusable="false" style={styles.searchCompassSvg}>
-                  <circle cx="24" cy="24" r="18.5" fill="none" stroke="currentColor" strokeOpacity="0.34" strokeWidth="1.1" />
-                  <circle cx="24" cy="24" r="12.5" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="0.8" />
-                  <path d="M24 7.6 27.6 20.4 40.4 24 27.6 27.6 24 40.4 20.4 27.6 7.6 24 20.4 20.4Z" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="1.15" strokeLinejoin="round" />
-                  <path d="M24 13.8 26 22 34.2 24 26 26 24 34.2 22 26 13.8 24 22 22Z" fill="rgba(255, 241, 204, 0.72)" />
-                  <path d="M24 7.6v5.1M24 35.3v5.1M7.6 24h5.1M35.3 24h5.1" stroke="currentColor" strokeOpacity="0.58" strokeWidth="1" strokeLinecap="round" />
-                  <circle cx="24" cy="24" r="2.2" fill="rgba(255, 236, 188, 0.94)" />
-                  <circle cx="16" cy="14.5" r="1" fill="rgba(255, 237, 195, 0.68)" />
-                  <circle cx="33" cy="34.5" r="0.85" fill="rgba(255, 237, 195, 0.56)" />
+                  <defs>
+                    <radialGradient id="atlasCompassFace" cx="38%" cy="30%" r="72%">
+                      <stop offset="0%" stopColor="rgba(255, 241, 204, 0.18)" />
+                      <stop offset="48%" stopColor="rgba(13, 20, 31, 0.94)" />
+                      <stop offset="100%" stopColor="rgba(4, 7, 13, 0.98)" />
+                    </radialGradient>
+                  </defs>
+                  <circle cx="24" cy="24" r="21" fill="url(#atlasCompassFace)" stroke="rgba(237, 190, 112, 0.86)" strokeWidth="1.25" />
+                  <circle cx="24" cy="24" r="16.5" fill="none" stroke="rgba(255, 230, 177, 0.24)" strokeWidth="0.8" />
+                  <path d="M24 6.8 27.2 20.8 41.2 24 27.2 27.2 24 41.2 20.8 27.2 6.8 24 20.8 20.8Z" fill="rgba(238, 184, 93, 0.18)" stroke="rgba(244, 201, 130, 0.76)" strokeWidth="1" strokeLinejoin="round" />
+                  <path d="M24 13.2 26.1 21.9 34.8 24 26.1 26.1 24 34.8 21.9 26.1 13.2 24 21.9 21.9Z" fill="rgba(255, 238, 196, 0.82)" />
+                  <path d="M13.8 13.8 21.4 21.4M26.6 26.6 34.2 34.2M34.2 13.8 26.6 21.4M21.4 26.6 13.8 34.2" stroke="rgba(225, 168, 82, 0.34)" strokeWidth="0.85" strokeLinecap="round" />
+                  <path d="M24 9.2v4.2M24 34.6v4.2M9.2 24h4.2M34.6 24h4.2" stroke="rgba(255, 226, 168, 0.66)" strokeWidth="0.9" strokeLinecap="round" />
+                  <circle cx="24" cy="24" r="2.35" fill="rgba(255, 240, 204, 0.96)" />
                 </svg>
               </span>
-              <span style={styles.searchPrefix}>Ask Celebration Atlas</span>
-              <span className="atlas-search-helper" style={styles.searchHelperText}>Find events, places, and celebrations...</span>
-              <span
-                aria-hidden="true"
-                className={`atlas-search-query ${isSubmittedQueryFading ? 'atlas-search-query--fade' : ''}`}
-                style={styles.searchQueryText}
-              >
-                {query || displayedQuery}
+              <span style={styles.searchTextBlock}>
+                <span style={styles.searchPrefix}>Ask Celebration Atlas</span>
+                <span className="atlas-search-helper" style={styles.searchHelperText}>Find events, places, and celebrations...</span>
+                <span
+                  aria-hidden="true"
+                  className={`atlas-search-query ${isSubmittedQueryFading ? 'atlas-search-query--fade' : ''}`}
+                  style={styles.searchQueryText}
+                >
+                  {query || displayedQuery}
+                </span>
               </span>
               <input
                 ref={searchInputRef}
@@ -4987,25 +4995,26 @@ const styles: Record<string, CSSProperties> = {
   },
   searchInputWrap: {
     position: 'relative',
-    display: 'flex',
+    display: 'grid',
+    gridTemplateColumns: '44px minmax(0, 1fr) 44px',
     alignItems: 'center',
-    minHeight: 68,
+    columnGap: 12,
+    minHeight: 70,
     width: '100%',
-    borderRadius: 26,
+    borderRadius: 22,
     border: '1.5px solid rgba(255, 220, 151, 0.7)',
     background:
-      'linear-gradient(145deg, rgba(25, 31, 45, 0.88), rgba(7, 10, 17, 0.82) 58%, rgba(18, 12, 9, 0.74))',
+      'linear-gradient(145deg, rgba(22, 29, 43, 0.9), rgba(6, 10, 17, 0.84) 58%, rgba(17, 12, 10, 0.76))',
     boxShadow:
-      'inset 0 0 0 1px rgba(255, 248, 224, 0.13), inset 0 12px 28px rgba(255, 223, 158, 0.04), inset 0 -18px 28px rgba(1, 3, 8, 0.34), 0 20px 48px rgba(2, 5, 12, 0.48), 0 0 30px rgba(228, 170, 79, 0.3)',
-    padding: '14px 66px 12px 76px',
+      'inset 0 0 0 1px rgba(255, 248, 224, 0.13), inset 0 12px 28px rgba(255, 223, 158, 0.04), inset 0 -18px 28px rgba(1, 3, 8, 0.34), 0 20px 48px rgba(2, 5, 12, 0.48), 0 0 30px rgba(228, 170, 79, 0.28)',
+    padding: '12px 12px 12px 14px',
   },
   searchCompassMedallion: {
-    position: 'absolute',
-    left: 17,
-    top: '50%',
-    zIndex: 1,
+    position: 'relative',
+    zIndex: 2,
     width: 44,
     height: 44,
+    flexShrink: 0,
     display: 'grid',
     placeItems: 'center',
     borderRadius: 999,
@@ -5016,18 +5025,24 @@ const styles: Record<string, CSSProperties> = {
     boxShadow:
       'inset 0 0 0 1px rgba(255, 246, 218, 0.08), inset 0 -8px 14px rgba(1, 3, 8, 0.34), 0 0 18px rgba(224, 164, 77, 0.22)',
     pointerEvents: 'none',
-    transform: 'translateY(-50%)',
   },
   searchCompassSvg: {
     width: 34,
     height: 34,
     filter: 'drop-shadow(0 0 7px rgba(229, 174, 86, 0.3))',
   },
+  searchTextBlock: {
+    position: 'relative',
+    zIndex: 2,
+    minWidth: 0,
+    display: 'grid',
+    alignContent: 'center',
+    gap: 2,
+    pointerEvents: 'none',
+  },
   searchPrefix: {
-    flexShrink: 0,
-    position: 'absolute',
-    top: 13,
-    left: 76,
+    display: 'block',
+    minWidth: 0,
     color: 'rgba(255, 243, 215, 0.96)',
     opacity: 0.98,
     textShadow: '0 1px 3px rgba(2, 3, 6, 0.9), 0 0 18px rgba(226, 171, 88, 0.18)',
@@ -5038,10 +5053,7 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'none',
   },
   searchHelperText: {
-    position: 'absolute',
-    top: 39,
-    left: 77,
-    right: 66,
+    minWidth: 0,
     color: 'rgba(244, 215, 166, 0.7)',
     fontSize: 12,
     fontWeight: 500,
@@ -5054,8 +5066,8 @@ const styles: Record<string, CSSProperties> = {
     textOverflow: 'ellipsis',
   },
   searchQueryText: {
-    marginLeft: 0,
-    paddingTop: 17,
+    minWidth: 0,
+    marginTop: 1,
     color: 'rgba(255, 239, 206, 0.98)',
     fontSize: 16,
     textShadow: 'none',
@@ -5068,7 +5080,7 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    maxWidth: 'calc(100% - 8px)',
+    maxWidth: '100%',
     pointerEvents: 'none',
     userSelect: 'none',
     WebkitUserSelect: 'none',
@@ -5078,7 +5090,8 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     inset: 0,
     width: '100%',
-    padding: '36px 66px 10px 76px',
+    padding: '35px 66px 10px 70px',
+    zIndex: 1,
     borderRadius: 26,
     border: 'none',
     background: 'transparent',
@@ -5093,10 +5106,8 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: 'none',
   },
   searchSubmitButton: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    zIndex: 2,
+    position: 'relative',
+    zIndex: 3,
     display: 'grid',
     placeItems: 'center',
     width: 44,
@@ -5115,7 +5126,6 @@ const styles: Record<string, CSSProperties> = {
     touchAction: 'manipulation',
     appearance: 'none',
     WebkitAppearance: 'none',
-    transform: 'translateY(-50%)',
   },
   searchSubmitIcon: {
     width: 21,
