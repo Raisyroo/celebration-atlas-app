@@ -3561,6 +3561,10 @@ export default function AtlasMap({
                 isSearchFocused || query.trim() || displayedQuery
                   ? 'atlas-search-form--active'
                   : ''
+              } ${
+                isSearchFocused && !query.trim() && !displayedQuery
+                  ? 'atlas-search-form--empty-focused'
+                  : ''
               }`}
               style={styles.searchInputWrap}
               onSubmit={(event) => {
@@ -3591,10 +3595,15 @@ export default function AtlasMap({
                 style={{
                   ...styles.searchTextBlock,
                   visibility:
-                    query.trim() || displayedQuery || isSearchFocused
+                    query.trim() || displayedQuery
                       ? 'hidden'
                       : 'visible',
                 }}
+                aria-hidden={
+                  query.trim() || displayedQuery || isSearchFocused
+                    ? true
+                    : undefined
+                }
               >
                 <span style={styles.searchPrefix}>Ask Celebration Atlas</span>
                 <span className="atlas-search-helper" style={styles.searchHelperText}>Find events, places, and celebrations...</span>
@@ -3810,7 +3819,7 @@ export default function AtlasMap({
               color: rgba(255, 239, 206, 0.46);
             }
 
-            .atlas-search-form--active .atlas-search-helper-copy {
+            .atlas-search-form--empty-focused .atlas-search-helper-copy {
               opacity: 0;
               transform: translate3d(0, -2px, 0);
             }
