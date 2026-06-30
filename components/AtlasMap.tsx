@@ -1391,6 +1391,7 @@ export default function AtlasMap({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useMobileFavorite();
+  const [flyerFavoriteConfirmation, setFlyerFavoriteConfirmation] = useState<string | null>(null);
   const [isMobileLandingTitleDismissed, setIsMobileLandingTitleDismissed] = useState(false);
   const [shouldRenderMobileLandingTitle, setShouldRenderMobileLandingTitle] = useState(true);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -1673,9 +1674,19 @@ export default function AtlasMap({
     : displayedLargeCardImageSrc?.startsWith('/')
       ? 'local'
       : 'none';
+  const isRomeoFlyerCard = Boolean(safeEventCard?.id === 'romeo-peach' && isFlyerCard);
   const isRomeoFlyerMediaDebug = Boolean(
-    isMediaDebugMode && safeEventCard?.id === 'romeo-peach' && isFlyerCard,
+    isMediaDebugMode && isRomeoFlyerCard,
   );
+  const handleFlyerFavoriteToggle = () => {
+    setIsMobileFavoriteSaved((isSaved) => {
+      const nextIsSaved = !isSaved;
+      setFlyerFavoriteConfirmation(
+        nextIsSaved ? 'Saved to My Events' : 'Removed from My Events',
+      );
+      return nextIsSaved;
+    });
+  };
   const handleLargeCardImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
     setFlyerMediaDebugSnapshot({
       intendedSrc: selectedFlyerSrc,
@@ -1717,6 +1728,16 @@ export default function AtlasMap({
       return next;
     });
   };
+
+  useEffect(() => {
+    if (!flyerFavoriteConfirmation) return;
+
+    const confirmationTimer = window.setTimeout(() => {
+      setFlyerFavoriteConfirmation(null);
+    }, 1800);
+
+    return () => window.clearTimeout(confirmationTimer);
+  }, [flyerFavoriteConfirmation]);
 
   useEffect(() => {
     if (!isRomeoFlyerMediaDebug) return;
@@ -3174,6 +3195,40 @@ export default function AtlasMap({
           >
             ×
           </button>
+          {isRomeoFlyerCard ? (
+            <>
+              <button
+                type="button"
+                aria-label={
+                  isMobileFavoriteSaved
+                    ? `Remove ${safeEventCard.name} from My Events`
+                    : `Save ${safeEventCard.name} to My Events`
+                }
+                aria-pressed={isMobileFavoriteSaved}
+                onClick={handleFlyerFavoriteToggle}
+                style={{
+                  ...styles.flyerFavoriteButton,
+                  ...(isMobileFavoriteSaved ? styles.flyerFavoriteButtonActive : null),
+                }}
+              >
+                <span aria-hidden="true" style={styles.flyerFavoriteHeart}>
+                  {isMobileFavoriteSaved ? '♥' : '♡'}
+                </span>
+              </button>
+              <div
+                style={{
+                  ...styles.flyerFavoriteConfirmation,
+                  ...(flyerFavoriteConfirmation
+                    ? styles.flyerFavoriteConfirmationVisible
+                    : null),
+                }}
+                role="status"
+                aria-live="polite"
+              >
+                {flyerFavoriteConfirmation}
+              </div>
+            </>
+          ) : null}
           {isFlyerCard ? (
             <div style={styles.eventDetailSheet}>
               {hasCardMedia && hasCardMediaSource ? (
@@ -5261,6 +5316,69 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 4,
     backdropFilter: 'blur(10px) saturate(1.12)',
     WebkitBackdropFilter: 'blur(10px) saturate(1.12)',
+  },
+  flyerFavoriteButton: {
+    position: 'absolute',
+    left: 'max(10px, env(safe-area-inset-left))',
+    top: 'max(10px, env(safe-area-inset-top))',
+    zIndex: 5,
+    width: 36,
+    height: 36,
+    borderRadius: '50%',
+    border: '1px solid rgba(255,211,122,.72)',
+    background: 'rgba(13,18,27,.82)',
+    color: '#ffd98a',
+    fontSize: 21,
+    lineHeight: 1,
+    display: 'grid',
+    placeItems: 'center',
+    padding: 0,
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+    boxShadow:
+      '0 0 16px rgba(255,199,89,.24), inset 0 0 0 1px rgba(255,246,211,.08), inset 0 1px 0 rgba(255,238,184,.16)',
+    textShadow: '0 0 10px rgba(255, 213, 112, .36)',
+    backdropFilter: 'blur(10px) saturate(1.12)',
+    WebkitBackdropFilter: 'blur(10px) saturate(1.12)',
+    WebkitTapHighlightColor: 'transparent',
+  },
+  flyerFavoriteButtonActive: {
+    color: '#fff2bd',
+    background:
+      'radial-gradient(circle at 50% 42%, rgba(255,213,112,.34), rgba(13,18,27,.86) 68%)',
+    borderColor: 'rgba(255, 213, 112, .92)',
+    boxShadow:
+      '0 0 22px rgba(255, 213, 112, .42), inset 0 0 16px rgba(255, 213, 112, .18), inset 0 1px 0 rgba(255, 238, 184, .2)',
+    textShadow: '0 0 14px rgba(255, 213, 112, .68)',
+  },
+  flyerFavoriteHeart: {
+    transform: 'translateY(-1px)',
+  },
+  flyerFavoriteConfirmation: {
+    position: 'absolute',
+    left: 'max(54px, calc(env(safe-area-inset-left) + 54px))',
+    top: 'max(13px, calc(env(safe-area-inset-top) + 13px))',
+    zIndex: 5,
+    padding: '7px 10px',
+    border: '1px solid rgba(255,211,122,.5)',
+    borderRadius: 999,
+    background: 'rgba(13,18,27,.82)',
+    color: '#fff2bd',
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: '.08em',
+    textTransform: 'uppercase',
+    opacity: 0,
+    pointerEvents: 'none',
+    transform: 'translate3d(-6px, 0, 0)',
+    transition: 'opacity 180ms ease, transform 180ms ease',
+    boxShadow: '0 0 16px rgba(255,199,89,.22)',
+    backdropFilter: 'blur(10px) saturate(1.12)',
+    WebkitBackdropFilter: 'blur(10px) saturate(1.12)',
+  },
+  flyerFavoriteConfirmationVisible: {
+    opacity: 1,
+    transform: 'translate3d(0, 0, 0)',
   },
   cardContent: {
     position: 'relative',
