@@ -1033,6 +1033,7 @@ type AtlasMapProps = {
   onSearchActivate?: () => void;
   presentationPlan?: MapPresentationPlan;
   flyerResolutions?: EventFlyerResolutionMap;
+  enableAtlasDebug?: boolean;
 };
 
 const clamp = (value: number, min: number, max: number) =>
@@ -1362,6 +1363,7 @@ export default function AtlasMap({
   onSearchActivate,
   presentationPlan,
   flyerResolutions = {},
+  enableAtlasDebug = false,
 }: AtlasMapProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -1425,6 +1427,7 @@ export default function AtlasMap({
   const searchParams = useSearchParams();
   const isVerificationMode = searchParams.get('verify') === '1';
   const isMediaDebugMode = searchParams.get('mediaDebug') === '1';
+  const isAtlasDebugMode = enableAtlasDebug && searchParams.get('atlasDebug') === '1';
   const shouldShowCalibration = showAtlasCalibration && !isVerificationMode;
   const initialEventParamHandledRef = useRef(false);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
@@ -1449,6 +1452,7 @@ export default function AtlasMap({
   const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useMobileFavorite();
   const [flyerFavoriteConfirmation, setFlyerFavoriteConfirmation] = useState<string | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileExploring, setIsMobileExploring] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
     null,
@@ -1465,6 +1469,7 @@ export default function AtlasMap({
   const flyerImageRevealFrameRef = useRef<number | null>(null);
   const flyerImageRevealSecondFrameRef = useRef<number | null>(null);
   const [flyerOpenCycleKey, setFlyerOpenCycleKey] = useState(0);
+  const activeFlyerOpenCycleRef = useRef(0);
   const calibrationLayerRef = useRef<HTMLDivElement | null>(null);
   const calibrationCopyStatusTimerRef = useRef<ReturnType<
     typeof setTimeout
@@ -1747,6 +1752,13 @@ export default function AtlasMap({
   const isRomeoFlyerMediaDebug = Boolean(
     isMediaDebugMode && isRomeoFlyerCard,
   );
+  const beginMobileExploration = useCallback(() => {
+    setIsMobileExploring(true);
+  }, []);
+  const selectAtlasEvent = useCallback((eventId: string | null) => {
+    if (eventId) beginMobileExploration();
+    setSelectedId(eventId);
+  }, [beginMobileExploration]);
   const handleFlyerFavoriteToggle = () => {
     setIsMobileFavoriteSaved((isSaved) => {
       const nextIsSaved = !isSaved;
@@ -1756,10 +1768,11 @@ export default function AtlasMap({
       return nextIsSaved;
     });
   };
-  const revealLoadedFlyerImage = useCallback((loadedSrc: string) => {
+  const revealLoadedFlyerImage = useCallback((loadedSrc: string, loadedCycle = activeFlyerOpenCycleRef.current) => {
     setLoadedLargeCardImageSrc(loadedSrc);
 
     if (!isFlyerCard) return;
+    if (loadedCycle !== activeFlyerOpenCycleRef.current) return;
     setIsFlyerImageRevealVisible(false);
 
     if (flyerImageRevealFrameRef.current) {
@@ -1780,7 +1793,9 @@ export default function AtlasMap({
       setIsFlyerImageRevealVisible(false);
       flyerImageRevealFrameRef.current = null;
       flyerImageRevealSecondFrameRef.current = requestAnimationFrame(() => {
-        setIsFlyerImageRevealVisible(true);
+        if (loadedCycle === activeFlyerOpenCycleRef.current) {
+          setIsFlyerImageRevealVisible(true);
+        }
         flyerImageRevealSecondFrameRef.current = null;
       });
     });
@@ -1788,7 +1803,7 @@ export default function AtlasMap({
 
   const handleLargeCardImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
     if (displayedLargeCardImageSrc) {
-      revealLoadedFlyerImage(displayedLargeCardImageSrc);
+      revealLoadedFlyerImage(displayedLargeCardImageSrc, flyerOpenCycleKey);
     }
 
     setFlyerMediaDebugSnapshot({
@@ -2214,7 +2229,7 @@ export default function AtlasMap({
     const target = event.target as Node;
     if (cardRef.current?.contains(target)) return;
     if (mapFrameRef.current?.contains(target)) {
-      setSelectedId(null);
+      selectAtlasEvent(null);
     }
   };
 
@@ -2241,7 +2256,11 @@ export default function AtlasMap({
         if (!isCurrentSelection) return;
         setLoadedLargeCardImageSrc(null);
         setIsFlyerImageRevealVisible(false);
-        setFlyerOpenCycleKey((cycle) => cycle + 1);
+        setFlyerOpenCycleKey((cycle) => {
+          const nextCycle = cycle + 1;
+          activeFlyerOpenCycleRef.current = nextCycle;
+          return nextCycle;
+        });
         if (flyerImageRevealFrameRef.current) {
           cancelAnimationFrame(flyerImageRevealFrameRef.current);
           flyerImageRevealFrameRef.current = null;
@@ -2286,12 +2305,13 @@ export default function AtlasMap({
     if (!isFlyerCard || !displayedLargeCardImageSrc || !image) return;
     if (!image.complete || image.naturalWidth <= 0) return;
 
+    const cachedCycle = flyerOpenCycleKey;
     const cachedImageFrame = window.requestAnimationFrame(() => {
-      revealLoadedFlyerImage(displayedLargeCardImageSrc);
+      revealLoadedFlyerImage(displayedLargeCardImageSrc, cachedCycle);
     });
 
     return () => window.cancelAnimationFrame(cachedImageFrame);
-  }, [displayedLargeCardImageSrc, isFlyerCard, revealLoadedFlyerImage]);
+  }, [displayedLargeCardImageSrc, flyerOpenCycleKey, isFlyerCard, revealLoadedFlyerImage]);
 
   useEffect(() => {
     let isCurrentMedia = true;
@@ -2346,6 +2366,8 @@ export default function AtlasMap({
 
     const isResetCommand = isResetSearchCommand(trimmedQuery);
 
+    beginMobileExploration();
+
     setSubmittedQuery(isResetCommand ? '' : trimmedQuery);
 
     if (isResetCommand) {
@@ -2353,7 +2375,7 @@ export default function AtlasMap({
         clearTimeout(exactEventOpenTimerRef.current);
         exactEventOpenTimerRef.current = null;
       }
-      setSelectedId(null);
+      selectAtlasEvent(null);
       setDiscoveryStatusText(null);
       setDisplayedQuery('');
       setQuery('');
@@ -2371,10 +2393,10 @@ export default function AtlasMap({
     }
 
     if (exactMatch) {
-      setSelectedId(null);
+      selectAtlasEvent(null);
       setDiscoveryStatusText(null);
       exactEventOpenTimerRef.current = setTimeout(() => {
-        setSelectedId(exactMatch.eventId);
+        selectAtlasEvent(exactMatch.eventId);
         exactEventOpenTimerRef.current = null;
       }, EXACT_EVENT_CARD_OPEN_DELAY_MS);
     } else {
@@ -2396,7 +2418,7 @@ export default function AtlasMap({
       setIsSubmittedQueryFading(false);
       queryFadeTimerRef.current = null;
     }, 680);
-  }, [onSearchActivate]);
+  }, [beginMobileExploration, onSearchActivate, selectAtlasEvent]);
 
   useEffect(() => {
     let isCurrentConstellationState = true;
@@ -2473,9 +2495,9 @@ export default function AtlasMap({
     if (!matchingEvent) return;
 
     queueMicrotask(() => {
-      setSelectedId(matchingEvent.id);
+      selectAtlasEvent(matchingEvent.id);
     });
-  }, [searchParams]);
+  }, [searchParams, selectAtlasEvent]);
 
   useEffect(() => {
     const rotateId = setInterval(() => {
@@ -2663,7 +2685,7 @@ export default function AtlasMap({
     Math.abs(mapTransform.translateX) > 0.5 ||
     Math.abs(mapTransform.translateY) > 0.5;
   const hasVisibleMapCallout = mapCalloutPlan.eventIds.size > 0;
-  const isMobileExploring = Boolean(
+  const hasMobileExplorationActivity = Boolean(
     selectedId ||
       renderedEvent ||
       isCardVisible ||
@@ -2675,6 +2697,16 @@ export default function AtlasMap({
       hasVisibleMapCallout ||
       hasActiveMapInteraction,
   );
+
+  useEffect(() => {
+    if (hasMobileExplorationActivity) return undefined;
+
+    const idleClearTimer = window.setTimeout(() => {
+      setIsMobileExploring(false);
+    }, 0);
+
+    return () => window.clearTimeout(idleClearTimer);
+  }, [hasMobileExplorationActivity]);
   const isMobileLandingIdle = Boolean(
     shouldShowPolishedHomepageUi &&
       !isDesktop &&
@@ -3034,11 +3066,11 @@ export default function AtlasMap({
                                 exactEventOpenTimerRef.current = null;
                               }
                               if (exactHighlightedEvent) {
-                                setSelectedId(exactHighlightedEvent.id);
+                                selectAtlasEvent(exactHighlightedEvent.id);
                                 return;
                               }
 
-                              setSelectedId(primaryEvent.id);
+                              selectAtlasEvent(primaryEvent.id);
                             }}
                             style={{
                               ...styles.markerTapTarget,
@@ -3210,11 +3242,11 @@ export default function AtlasMap({
                                 exactEventOpenTimerRef.current = null;
                               }
                               if (exactHighlightedEvent) {
-                                setSelectedId(exactHighlightedEvent.id);
+                                selectAtlasEvent(exactHighlightedEvent.id);
                                 return;
                               }
 
-                              setSelectedId(primaryEvent.id);
+                              selectAtlasEvent(primaryEvent.id);
                             }}
                             style={{
                               ...styles.markerLabel,
@@ -3280,7 +3312,7 @@ export default function AtlasMap({
       {shouldShowMobileChromeControls ? (
         <>
           <div style={styles.mobileChromeControls} aria-label="Mobile atlas controls">
-            <button type="button" aria-label="Open Michigan atlas menu" aria-expanded={isMobileMenuOpen} className="mobile-chrome-button" style={styles.mobileChromeButton} onClick={() => setIsMobileMenuOpen(true)}>
+            <button type="button" aria-label="Open Michigan atlas menu" aria-expanded={isMobileMenuOpen} className="mobile-chrome-button" style={styles.mobileChromeButton} onClick={() => { beginMobileExploration(); setIsMobileMenuOpen(true); }}>
               <span aria-hidden="true" style={styles.mobileHamburgerIcon}>☰</span>
             </button>
             <button type="button" aria-label={isMobileFavoriteSaved ? 'Remove Michigan from favorites' : 'Save Michigan to favorites'} aria-pressed={isMobileFavoriteSaved} className="mobile-chrome-button" style={{ ...styles.mobileChromeButton, ...styles.mobileFavoriteButton, ...(isMobileFavoriteSaved ? styles.mobileFavoriteButtonActive : null) }} onClick={() => setIsMobileFavoriteSaved((isSaved) => !isSaved)}>
@@ -3288,7 +3320,7 @@ export default function AtlasMap({
             </button>
           </div>
           <div style={styles.mobileSideControls} aria-label="Mobile map tools">
-            <button type="button" aria-label="Open atlas filters" aria-expanded={isMobileFilterOpen} className="mobile-tool-button" style={styles.mobileToolButton} onClick={() => setIsMobileFilterOpen(true)}>
+            <button type="button" aria-label="Open atlas filters" aria-expanded={isMobileFilterOpen} className="mobile-tool-button" style={styles.mobileToolButton} onClick={() => { beginMobileExploration(); setIsMobileFilterOpen(true); }}>
               <span aria-hidden="true">☷</span>
               <span style={styles.mobileToolLabel}>Filters</span>
             </button>
@@ -3330,6 +3362,21 @@ export default function AtlasMap({
           data-mobile-exploring={isMobileExploring ? 'true' : 'false'}
         >
           MICHIGAN
+        </div>
+      ) : null}
+
+
+
+      {isAtlasDebugMode ? (
+        <div style={styles.atlasDebugOverlay} aria-label="Atlas exploration debug">
+          <div>exploring: {isMobileExploring ? 'true' : 'false'}</div>
+          <div>selected: {selectedId ?? 'none'}</div>
+          <div>ask focused: {isSearchFocused ? 'true' : 'false'}</div>
+          <div>ask value: {query.trim() ? 'non-empty' : 'empty'}</div>
+          <div>filter open: {isMobileFilterOpen ? 'true' : 'false'}</div>
+          <div>menu open: {isMobileMenuOpen ? 'true' : 'false'}</div>
+          <div>card open: {renderedEvent ? 'true' : 'false'}</div>
+          <div>search/result: {hasActiveSearchResult ? 'true' : 'false'}</div>
         </div>
       ) : null}
 
@@ -3416,7 +3463,7 @@ export default function AtlasMap({
           <button
             type="button"
             aria-label="Close event card"
-            onClick={() => setSelectedId(null)}
+            onClick={() => selectAtlasEvent(null)}
             style={styles.closeButton}
           >
             ×
@@ -3789,6 +3836,7 @@ export default function AtlasMap({
                 onChange={(event) => {
                   const nextQuery = event.target.value;
                   setQuery(nextQuery);
+                  if (nextQuery.trim().length > 0) beginMobileExploration();
 
                   if (nextQuery.trim().length === 0) {
                     if (queryFadeTimerRef.current) {
@@ -3808,7 +3856,7 @@ export default function AtlasMap({
                 onAnimationEnd={() => {
                   setSearchPulseTick(0);
                 }}
-                onFocus={() => setIsSearchFocused(true)}
+                onFocus={() => { beginMobileExploration(); setIsSearchFocused(true); }}
                 onBlur={() => setIsSearchFocused(false)}
                 onKeyDown={(event) => {
                   if (event.nativeEvent.isComposing) return;
@@ -3872,7 +3920,7 @@ export default function AtlasMap({
                         type="button"
                         aria-label={`Open ${event.name}`}
                         aria-current={isActiveRailEvent ? 'true' : undefined}
-                        onClick={() => setSelectedId(event.id)}
+                        onClick={() => selectAtlasEvent(event.id)}
                         className="mobile-live-card"
                         data-active={isActiveRailEvent ? 'true' : 'false'}
                         style={{
@@ -6197,6 +6245,23 @@ const styles: Record<string, CSSProperties> = {
     opacity: 0,
     transform: 'translate3d(0, -7px, 0)',
     transition: 'opacity 280ms ease, transform 280ms ease',
+  },
+
+  atlasDebugOverlay: {
+    position: 'fixed',
+    left: 'calc(env(safe-area-inset-left) + 8px)',
+    bottom: 'calc(env(safe-area-inset-bottom) + 8px)',
+    zIndex: Z_INDEX.card + 80,
+    maxWidth: 220,
+    padding: '6px 8px',
+    borderRadius: 6,
+    background: 'rgba(0, 0, 0, 0.72)',
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    fontSize: 10,
+    lineHeight: 1.35,
+    pointerEvents: 'none',
+    textAlign: 'left',
   },
   mobileAtlasEmblem: {
     width: 30,

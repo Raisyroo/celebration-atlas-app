@@ -10,7 +10,7 @@ type HomeAtlasExperienceProps = {
 export default function HomeAtlasExperience({ flyerResolutions = {} }: HomeAtlasExperienceProps) {
   return (
     <>
-      <AtlasMap flyerResolutions={flyerResolutions} />
+      <AtlasMap flyerResolutions={flyerResolutions} enableAtlasDebug />
       {/*
         The below-map Celebration Search shell is preserved as a component for
         development routes and future use, but the visible Michigan homepage now
