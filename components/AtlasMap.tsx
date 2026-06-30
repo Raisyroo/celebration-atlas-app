@@ -54,6 +54,7 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
   { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
 ];
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
+const HOME_CONTROLS_RETURN_DURATION_MS = 280;
 const MICHIGAN_TITLE_ARTWORK_SRC = '/brand/michigan-landing-lockup.png';
 const MICHIGAN_DESKTOP_ARTWORK_SRC = '/maps/michigan-atlas-base.webp';
 const MICHIGAN_MOBILE_ARTWORK_SRC = '/maps/michigan-atlas-base-tall.webp';
@@ -1441,6 +1442,10 @@ export default function AtlasMap({
   const exactEventOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const homeControlsReturnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const hadExactSearchReturnStateRef = useRef(false);
   const enterFrameRef = useRef<number | null>(null);
   const enterFrameInnerRef = useRef<number | null>(null);
   const [renderedEvent, setRenderedEvent] = useState<
@@ -1456,6 +1461,7 @@ export default function AtlasMap({
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileExploring, setIsMobileExploring] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
+  const [isHomeControlsReturning, setIsHomeControlsReturning] = useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
     null,
   );
@@ -2650,6 +2656,8 @@ export default function AtlasMap({
         cancelAnimationFrame(flyerImageRevealSecondFrameRef.current);
       if (exactEventOpenTimerRef.current)
         clearTimeout(exactEventOpenTimerRef.current);
+      if (homeControlsReturnTimerRef.current)
+        clearTimeout(homeControlsReturnTimerRef.current);
       if (calibrationCopyStatusTimerRef.current)
         clearTimeout(calibrationCopyStatusTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
@@ -2728,6 +2736,53 @@ export default function AtlasMap({
     shouldShowPolishedHomepageUi && !isDesktop && !isPhoneLandscape;
   const mobileLandingTitleState = isMobileLandingIdle ? 'idle' : 'exploring';
   const shouldShowMobileMichiganBreadcrumb = shouldShowMobileLandingTitle;
+  const isExactSearchReturnStateActive = Boolean(exactEventIntent || renderedEvent);
+
+  useEffect(() => {
+    if (isDesktop || isPhoneLandscape || !shouldShowPolishedHomepageUi) {
+      hadExactSearchReturnStateRef.current = isExactSearchReturnStateActive;
+      return undefined;
+    }
+
+    if (!hadExactSearchReturnStateRef.current) {
+      hadExactSearchReturnStateRef.current = isExactSearchReturnStateActive;
+      return undefined;
+    }
+
+    if (isExactSearchReturnStateActive) {
+      if (homeControlsReturnTimerRef.current) {
+        clearTimeout(homeControlsReturnTimerRef.current);
+        homeControlsReturnTimerRef.current = null;
+      }
+      queueMicrotask(() => setIsHomeControlsReturning(false));
+      hadExactSearchReturnStateRef.current = true;
+      return undefined;
+    }
+
+    hadExactSearchReturnStateRef.current = false;
+    if (prefersReducedMotion) return undefined;
+
+    homeControlsReturnTimerRef.current = setTimeout(() => {
+      setIsHomeControlsReturning(true);
+      homeControlsReturnTimerRef.current = setTimeout(() => {
+        setIsHomeControlsReturning(false);
+        homeControlsReturnTimerRef.current = null;
+      }, HOME_CONTROLS_RETURN_DURATION_MS + 80);
+    }, 0);
+
+    return () => {
+      if (homeControlsReturnTimerRef.current) {
+        clearTimeout(homeControlsReturnTimerRef.current);
+        homeControlsReturnTimerRef.current = null;
+      }
+    };
+  }, [
+    isDesktop,
+    isExactSearchReturnStateActive,
+    isPhoneLandscape,
+    prefersReducedMotion,
+    shouldShowPolishedHomepageUi,
+  ]);
 
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
@@ -3790,7 +3845,7 @@ export default function AtlasMap({
       shouldShowPolishedHomepageUi ? (
         <>
           <div
-            className="atlas-search-dock"
+            className={`atlas-search-dock${isHomeControlsReturning ? ' atlas-search-dock--returning' : ''}`}
             style={{
               ...styles.searchDock,
               ...(isDesktop ? styles.searchDockDesktop : null),
@@ -3943,18 +3998,18 @@ export default function AtlasMap({
                 </svg>
               </button>
             </form>
-            {shouldShowMobileAmbientAtlas ? (
+            {!isDesktop ? (
               <section
-                className={`mobile-live-sheet${isMobileAmbientRailLayoutReady ? ' mobile-live-sheet--ready' : ''}`}
+                className={`mobile-live-sheet${shouldShowMobileAmbientAtlas && isMobileAmbientRailLayoutReady ? ' mobile-live-sheet--ready' : ''}${isHomeControlsReturning ? ' mobile-live-sheet--returning' : ''}`}
                 style={{
                   ...styles.mobileLiveStrip,
-                  ...(isMobileAmbientRailLayoutReady
+                  ...(shouldShowMobileAmbientAtlas && isMobileAmbientRailLayoutReady
                     ? styles.mobileLiveStripReady
                     : styles.mobileLiveStripHidden),
                 }}
                 aria-label="Michigan event rail"
-                aria-hidden={isMobileAmbientRailLayoutReady ? undefined : true}
-                data-layout-ready={isMobileAmbientRailLayoutReady ? 'true' : 'false'}
+                aria-hidden={shouldShowMobileAmbientAtlas && isMobileAmbientRailLayoutReady ? undefined : true}
+                data-layout-ready={shouldShowMobileAmbientAtlas && isMobileAmbientRailLayoutReady ? 'true' : 'false'}
               >
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
                   {ambientMobileEvents.map((event) => {
@@ -4100,6 +4155,26 @@ export default function AtlasMap({
             }
 
 
+
+            .atlas-search-dock--returning {
+              animation: atlasHomeControlReturn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+            }
+
+            .mobile-live-sheet--returning {
+              animation: atlasHomeControlReturn 280ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
+            }
+
+            @keyframes atlasHomeControlReturn {
+              from {
+                opacity: 0;
+                transform: translate3d(0, 18px, 0);
+              }
+
+              to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+              }
+            }
 
             .mobile-live-card[data-active='false'] {
               opacity: 0.92;
@@ -4294,6 +4369,8 @@ export default function AtlasMap({
               .atlas-search-suggestion,
               .atlas-search-suggestion--fade,
               .atlas-search-submit,
+              .atlas-search-dock--returning,
+              .mobile-live-sheet--returning,
               .marker-pulse,
               .marker-pulse--selected,
               .atlas-marker-starburst {
