@@ -2198,6 +2198,7 @@ export default function AtlasMap({
     if (selected) {
       queueMicrotask(() => {
         if (!isCurrentSelection) return;
+        setLoadedLargeCardImageSrc(null);
         setRenderedEvent(selected);
         setCardEnterOffset(48);
         setIsCardVisible(false);
@@ -3490,7 +3491,6 @@ export default function AtlasMap({
               {shouldShowArtifactTrail ? (
                 <div style={styles.eventDetailArtifactTrail} aria-hidden="true">
                   <span style={styles.eventDetailArtifactTrailStars}>✦ · ✧ · ✦</span>
-                  <span style={styles.eventDetailArtifactTrailCopy}>More festival details appear as they are confirmed</span>
                 </div>
               ) : null}
             </div>
@@ -5614,14 +5614,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     letterSpacing: '.35em',
     textShadow: '0 0 14px rgba(255,199,89,.24)',
-  },
-  eventDetailArtifactTrailCopy: {
-    maxWidth: 240,
-    color: 'rgba(255,235,196,.48)',
-    fontSize: 10,
-    fontWeight: 700,
-    lineHeight: 1.25,
-    textAlign: 'center',
   },
   cardMediaWrap: {
     position: 'absolute',
