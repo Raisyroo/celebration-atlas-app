@@ -3211,7 +3211,13 @@ export default function AtlasMap({
                   ...(isMobileFavoriteSaved ? styles.flyerFavoriteButtonActive : null),
                 }}
               >
-                <span aria-hidden="true" style={styles.flyerFavoriteHeart}>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    ...styles.flyerFavoriteHeart,
+                    ...(isMobileFavoriteSaved ? styles.flyerFavoriteHeartActive : null),
+                  }}
+                >
                   {isMobileFavoriteSaved ? '♥' : '♡'}
                 </span>
               </button>
@@ -5319,40 +5325,44 @@ const styles: Record<string, CSSProperties> = {
   },
   flyerFavoriteButton: {
     position: 'absolute',
-    left: 'max(10px, env(safe-area-inset-left))',
-    top: 'max(10px, env(safe-area-inset-top))',
+    left: 'max(6px, calc(env(safe-area-inset-left) + 6px))',
+    top: 'max(6px, calc(env(safe-area-inset-top) + 6px))',
     zIndex: 5,
-    width: 36,
-    height: 36,
-    borderRadius: '50%',
-    border: '1px solid rgba(255,211,122,.72)',
-    background: 'rgba(13,18,27,.82)',
-    color: '#ffd98a',
-    fontSize: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 0,
+    border: '0 solid transparent',
+    background: 'transparent',
+    color: 'inherit',
+    fontSize: 24,
     lineHeight: 1,
     display: 'grid',
     placeItems: 'center',
     padding: 0,
     cursor: 'pointer',
     touchAction: 'manipulation',
-    boxShadow:
-      '0 0 16px rgba(255,199,89,.24), inset 0 0 0 1px rgba(255,246,211,.08), inset 0 1px 0 rgba(255,238,184,.16)',
-    textShadow: '0 0 10px rgba(255, 213, 112, .36)',
-    backdropFilter: 'blur(10px) saturate(1.12)',
-    WebkitBackdropFilter: 'blur(10px) saturate(1.12)',
+    boxShadow: 'none',
+    textShadow: 'none',
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
     WebkitTapHighlightColor: 'transparent',
   },
   flyerFavoriteButtonActive: {
-    color: '#fff2bd',
-    background:
-      'radial-gradient(circle at 50% 42%, rgba(255,213,112,.34), rgba(13,18,27,.86) 68%)',
-    borderColor: 'rgba(255, 213, 112, .92)',
-    boxShadow:
-      '0 0 22px rgba(255, 213, 112, .42), inset 0 0 16px rgba(255, 213, 112, .18), inset 0 1px 0 rgba(255, 238, 184, .2)',
-    textShadow: '0 0 14px rgba(255, 213, 112, .68)',
+    border: '0 solid transparent',
+    background: 'transparent',
+    boxShadow: 'none',
+    textShadow: 'none',
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
   },
   flyerFavoriteHeart: {
+    color: '#ffd98a',
     transform: 'translateY(-1px)',
+    textShadow: '0 0 10px rgba(255, 213, 112, .34)',
+  },
+  flyerFavoriteHeartActive: {
+    color: '#fff2bd',
+    textShadow: '0 0 12px rgba(255, 213, 112, .58)',
   },
   flyerFavoriteConfirmation: {
     position: 'absolute',
