@@ -15,6 +15,7 @@ import ArtifactTrail, {
 } from "./artifacts/ArtifactTrail";
 import { type ArtifactType } from "./artifacts/ArtifactSymbol";
 import RomeoDormantSchedule from "./RomeoDormantSchedule";
+import { useMobileFavorite } from "./mobileFavorite";
 
 type RomeoContentMode = "highlights" | "schedule" | "maps" | "gallery" | "plan";
 type RomeoAtlasMode = RomeoContentMode | "ask";
@@ -956,6 +957,8 @@ export default function RomeoAtlasWindowPage({
   introVideoSrc,
 }: RomeoAtlasWindowPageProps) {
   const [activeMode, setActiveMode] = useState<RomeoAtlasMode>("highlights");
+  const [isFavoriteSaved, setIsFavoriteSaved] = useMobileFavorite();
+  const [favoriteConfirmation, setFavoriteConfirmation] = useState<string | null>(null);
   const [askQuestion, setAskQuestion] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [introPlaybackEventId, setIntroPlaybackEventId] = useState<
@@ -972,6 +975,16 @@ export default function RomeoAtlasWindowPage({
   const isHighlightsIntroActive =
     activeMode === "highlights" &&
     (!hasPlayedIntroVideo || highlightsIntroStatus !== "complete");
+
+  const handleFavoriteToggle = () => {
+    setIsFavoriteSaved((isSaved) => {
+      const nextIsSaved = !isSaved;
+      setFavoriteConfirmation(
+        nextIsSaved ? "Saved to My Events" : "Removed from My Events",
+      );
+      return nextIsSaved;
+    });
+  };
 
   const handleIntroVideoPlayback = useCallback(() => {
     setIntroPlaybackEventId(eventId);
@@ -999,6 +1012,16 @@ export default function RomeoAtlasWindowPage({
         : nextBottomInset,
     );
   }, []);
+
+  useEffect(() => {
+    if (!favoriteConfirmation) return;
+
+    const confirmationTimer = window.setTimeout(() => {
+      setFavoriteConfirmation(null);
+    }, 1800);
+
+    return () => window.clearTimeout(confirmationTimer);
+  }, [favoriteConfirmation]);
 
   useEffect(() => {
     updateAtlasWindowBottomInset();
@@ -1122,6 +1145,30 @@ export default function RomeoAtlasWindowPage({
             position: relative;
             z-index: 1;
           }
+
+            .romeo-atlas-favorite-button {
+              transition:
+                color 180ms ease,
+                border-color 180ms ease,
+                box-shadow 180ms ease,
+                text-shadow 180ms ease,
+                transform 180ms ease,
+                background 180ms ease;
+            }
+            .romeo-atlas-favorite-button:hover,
+            .romeo-atlas-favorite-button:focus-visible {
+              color: rgba(255, 229, 181, 0.98);
+              border-color: rgba(244, 194, 112, 0.68);
+              box-shadow:
+                0 0 13px rgba(226, 150, 72, 0.22),
+                inset 0 0 13px rgba(226, 172, 92, 0.08),
+                inset 0 1px 0 rgba(255, 235, 195, 0.12);
+              outline: none;
+              transform: scale(1.035);
+            }
+            .romeo-atlas-favorite-button:active {
+              transform: scale(0.985);
+            }
           .romeo-atlas-back-link {
             transition:
               color 180ms ease,
@@ -1272,6 +1319,13 @@ export default function RomeoAtlasWindowPage({
               width: 100vw !important;
               max-width: none !important;
             }
+            .romeo-atlas-favorite-button {
+              width: 1.78rem !important;
+              height: 1.78rem !important;
+              left: max(0.42rem, env(safe-area-inset-left, 0px)) !important;
+              top: max(0.34rem, env(safe-area-inset-top, 0px)) !important;
+              font-size: 0.9rem !important;
+            }
             .romeo-atlas-back-link {
               min-height: 1.78rem !important;
               padding: 0.18rem 0.48rem !important;
@@ -1376,6 +1430,36 @@ export default function RomeoAtlasWindowPage({
         aria-label={`${eventName} Atlas floating memory`}
       >
         <div style={styles.stars} aria-hidden="true" />
+
+        <button
+          type="button"
+          className="romeo-atlas-favorite-button"
+          style={{
+            ...styles.favoriteButton,
+            ...(isFavoriteSaved ? styles.favoriteButtonActive : null),
+          }}
+          aria-label={
+            isFavoriteSaved
+              ? `Remove ${eventName} from My Events`
+              : `Save ${eventName} to My Events`
+          }
+          aria-pressed={isFavoriteSaved}
+          onClick={handleFavoriteToggle}
+        >
+          <span aria-hidden="true" style={styles.favoriteHeart}>
+            {isFavoriteSaved ? "♥" : "♡"}
+          </span>
+        </button>
+        <div
+          style={{
+            ...styles.favoriteConfirmation,
+            ...(favoriteConfirmation ? styles.favoriteConfirmationVisible : null),
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          {favoriteConfirmation}
+        </div>
         <Link
           href={backHref}
           className="romeo-atlas-back-link"
@@ -1606,6 +1690,67 @@ const styles: Record<string, CSSProperties> = {
     textShadow: "0 0 7px rgba(226,172,92,0.16)",
     transformOrigin: "center",
     willChange: "transform",
+  },
+  favoriteButton: {
+    position: "absolute",
+    left: "max(0.72rem, env(safe-area-inset-left, 0px))",
+    top: "max(0.62rem, env(safe-area-inset-top, 0px))",
+    zIndex: 5,
+    width: "2.35rem",
+    height: "2.35rem",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "rgba(238,196,126,0.88)",
+    fontSize: "1.2rem",
+    lineHeight: 1,
+    border: "1px solid rgba(232,178,96,0.46)",
+    borderRadius: "999px",
+    padding: 0,
+    background: "rgba(3, 6, 13, 0.16)",
+    boxShadow:
+      "0 0 10px rgba(226,150,72,0.12), inset 0 0 11px rgba(226,172,92,0.045), inset 0 1px 0 rgba(255,235,195,0.06)",
+    textShadow: "0 0 7px rgba(226,172,92,0.16)",
+    cursor: "pointer",
+    transformOrigin: "center",
+    willChange: "transform",
+    WebkitTapHighlightColor: "transparent",
+  },
+  favoriteButtonActive: {
+    color: "rgba(255, 213, 112, 0.98)",
+    background:
+      "radial-gradient(circle at 50% 42%, rgba(255,213,112,0.2), rgba(3,6,13,0.2) 66%)",
+    borderColor: "rgba(255, 213, 112, 0.72)",
+    boxShadow:
+      "0 0 18px rgba(255, 213, 112, 0.32), inset 0 0 14px rgba(255, 213, 112, 0.12), inset 0 1px 0 rgba(255, 238, 184, 0.14)",
+    textShadow: "0 0 12px rgba(255, 213, 112, 0.58)",
+  },
+  favoriteHeart: {
+    transform: "translateY(-0.02rem)",
+  },
+  favoriteConfirmation: {
+    position: "absolute",
+    left: "max(3.42rem, calc(env(safe-area-inset-left, 0px) + 3.42rem))",
+    top: "max(0.92rem, calc(env(safe-area-inset-top, 0px) + 0.92rem))",
+    zIndex: 5,
+    padding: "0.36rem 0.66rem",
+    border: "1px solid rgba(232,178,96,0.38)",
+    borderRadius: "999px",
+    color: "rgba(255, 229, 181, 0.94)",
+    background: "rgba(3, 6, 13, 0.28)",
+    boxShadow: "0 0 14px rgba(226,150,72,0.14)",
+    fontSize: "0.62rem",
+    fontWeight: 600,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    opacity: 0,
+    transform: "translate3d(-0.35rem, 0, 0)",
+    pointerEvents: "none",
+    transition: "opacity 180ms ease, transform 180ms ease",
+  },
+  favoriteConfirmationVisible: {
+    opacity: 1,
+    transform: "translate3d(0, 0, 0)",
   },
   festivalMemory: {
     position: "absolute",
