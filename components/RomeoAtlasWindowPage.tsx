@@ -1146,23 +1146,35 @@ export default function RomeoAtlasWindowPage({
             z-index: 1;
           }
 
-            .romeo-atlas-favorite-button {
+            .romeo-atlas-favorite-button,
+            .romeo-atlas-favorite-button:hover,
+            .romeo-atlas-favorite-button:focus,
+            .romeo-atlas-favorite-button:focus-visible,
+            .romeo-atlas-favorite-button:active {
+              appearance: none;
+              -webkit-appearance: none;
+              background: transparent;
+              border: 0;
+              border-radius: 0;
+              box-shadow: none;
+              outline: none;
+            }
+            .romeo-atlas-favorite-heart {
               transition:
                 color 180ms ease,
                 filter 180ms ease,
                 text-shadow 180ms ease,
                 transform 180ms ease;
             }
-            .romeo-atlas-favorite-button:hover,
-            .romeo-atlas-favorite-button:focus-visible {
+            .romeo-atlas-favorite-button:hover .romeo-atlas-favorite-heart,
+            .romeo-atlas-favorite-button:focus-visible .romeo-atlas-favorite-heart {
               color: rgba(255, 229, 181, 0.98);
               filter: drop-shadow(0 0 10px rgba(226, 150, 72, 0.28));
-              outline: none;
               text-shadow: 0 0 12px rgba(255, 213, 112, 0.46);
-              transform: scale(1.035);
+              transform: translateY(-0.02rem) scale(1.035);
             }
-            .romeo-atlas-favorite-button:active {
-              transform: scale(0.985);
+            .romeo-atlas-favorite-button:active .romeo-atlas-favorite-heart {
+              transform: translateY(-0.02rem) scale(0.985);
             }
           .romeo-atlas-back-link {
             transition:
@@ -1315,11 +1327,18 @@ export default function RomeoAtlasWindowPage({
               max-width: none !important;
             }
             .romeo-atlas-favorite-button {
-              width: 2.35rem !important;
-              height: 2.35rem !important;
+              width: 44px !important;
+              height: 44px !important;
+              min-width: 44px !important;
+              min-height: 44px !important;
               left: max(0.14rem, env(safe-area-inset-left, 0px)) !important;
               top: max(0.05rem, env(safe-area-inset-top, 0px)) !important;
               font-size: 1.08rem !important;
+              background: transparent !important;
+              border: 0 !important;
+              border-radius: 0 !important;
+              box-shadow: none !important;
+              outline: none !important;
             }
             .romeo-atlas-back-link {
               min-height: 1.78rem !important;
@@ -1429,10 +1448,7 @@ export default function RomeoAtlasWindowPage({
         <button
           type="button"
           className="romeo-atlas-favorite-button"
-          style={{
-            ...styles.favoriteButton,
-            ...(isFavoriteSaved ? styles.favoriteButtonActive : null),
-          }}
+          style={styles.favoriteButton}
           aria-label={
             isFavoriteSaved
               ? `Remove ${eventName} from My Events`
@@ -1441,7 +1457,14 @@ export default function RomeoAtlasWindowPage({
           aria-pressed={isFavoriteSaved}
           onClick={handleFavoriteToggle}
         >
-          <span aria-hidden="true" style={styles.favoriteHeart}>
+          <span
+            aria-hidden="true"
+            className="romeo-atlas-favorite-heart"
+            style={{
+              ...styles.favoriteHeart,
+              ...(isFavoriteSaved ? styles.favoriteHeartActive : null),
+            }}
+          >
             {isFavoriteSaved ? "♥" : "♡"}
           </span>
         </button>
@@ -1691,35 +1714,38 @@ const styles: Record<string, CSSProperties> = {
     left: "max(0.52rem, env(safe-area-inset-left, 0px))",
     top: "max(0.42rem, env(safe-area-inset-top, 0px))",
     zIndex: 5,
-    width: "2.75rem",
-    height: "2.75rem",
+    width: "44px",
+    height: "44px",
+    minWidth: "44px",
+    minHeight: "44px",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "rgba(238,196,126,0.88)",
+    color: "inherit",
     fontSize: "1.46rem",
     lineHeight: 1,
+    appearance: "none",
     border: 0,
-    borderRadius: "999px",
+    borderRadius: 0,
     padding: 0,
     background: "transparent",
     boxShadow: "none",
-    textShadow: "0 0 8px rgba(226,172,92,0.22)",
     cursor: "pointer",
     transformOrigin: "center",
     willChange: "transform",
     WebkitTapHighlightColor: "transparent",
   },
-  favoriteButtonActive: {
-    color: "rgba(255, 213, 112, 0.98)",
-    background: "transparent",
-    borderColor: "transparent",
-    boxShadow: "none",
-    filter: "drop-shadow(0 0 9px rgba(255, 213, 112, 0.38))",
-    textShadow: "0 0 13px rgba(255, 213, 112, 0.62)",
-  },
   favoriteHeart: {
+    color: "rgba(238,196,126,0.9)",
+    display: "inline-block",
+    filter: "none",
+    textShadow: "0 0 8px rgba(226,172,92,0.18)",
     transform: "translateY(-0.02rem)",
+  },
+  favoriteHeartActive: {
+    color: "rgba(255, 213, 112, 0.98)",
+    filter: "drop-shadow(0 0 8px rgba(255, 213, 112, 0.34))",
+    textShadow: "0 0 12px rgba(255, 213, 112, 0.48)",
   },
   favoriteConfirmation: {
     position: "absolute",
