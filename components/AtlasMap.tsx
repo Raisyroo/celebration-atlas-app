@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useMobileFavorite } from './mobileFavorite';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, RefObject, SyntheticEvent } from 'react';
 import { ATLAS_EVENTS } from '../data/events';
@@ -53,7 +54,6 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
   { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
 ];
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
-const MOBILE_FAVORITE_STORAGE_KEY = 'celebration-atlas:michigan:favorite';
 const MOBILE_LANDING_TITLE_SESSION_KEY = 'celebration-atlas:michigan-title-dismissed';
 const MICHIGAN_TITLE_ARTWORK_SRC = '/brand/michigan-landing-lockup.png';
 const MOBILE_MENU_ITEMS = [
@@ -1390,7 +1390,7 @@ export default function AtlasMap({
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useState(false);
+  const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useMobileFavorite();
   const [isMobileLandingTitleDismissed, setIsMobileLandingTitleDismissed] = useState(false);
   const [shouldRenderMobileLandingTitle, setShouldRenderMobileLandingTitle] = useState(true);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -1402,7 +1402,6 @@ export default function AtlasMap({
   const [failedRemoteFlyerSrcs, setFailedRemoteFlyerSrcs] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
-  const hasLoadedMobileFavoriteRef = useRef(false);
   const cardMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -2414,34 +2413,6 @@ export default function AtlasMap({
       document.body.classList.remove(HOME_DISCOVERY_SCROLL_CLASS);
     };
   }, []);
-
-  useEffect(() => {
-    const favoriteLoadTimer = window.setTimeout(() => {
-      try {
-        setIsMobileFavoriteSaved(
-          window.localStorage.getItem(MOBILE_FAVORITE_STORAGE_KEY) === 'true',
-        );
-      } catch {
-        setIsMobileFavoriteSaved(false);
-      } finally {
-        hasLoadedMobileFavoriteRef.current = true;
-      }
-    }, 0);
-
-    return () => window.clearTimeout(favoriteLoadTimer);
-  }, []);
-
-  useEffect(() => {
-    if (!hasLoadedMobileFavoriteRef.current) return;
-    try {
-      window.localStorage.setItem(
-        MOBILE_FAVORITE_STORAGE_KEY,
-        isMobileFavoriteSaved ? 'true' : 'false',
-      );
-    } catch {
-      // Favorites still provide a polished visual toggle if storage is unavailable.
-    }
-  }, [isMobileFavoriteSaved]);
 
   useEffect(() => {
     document.documentElement.classList.toggle(
