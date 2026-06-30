@@ -3476,8 +3476,20 @@ export default function AtlasMap({
                 submitSearch();
               }}
             >
+              <span aria-hidden="true" style={styles.searchCompassMedallion}>
+                <svg viewBox="0 0 48 48" focusable="false" style={styles.searchCompassSvg}>
+                  <circle cx="24" cy="24" r="18.5" fill="none" stroke="currentColor" strokeOpacity="0.34" strokeWidth="1.1" />
+                  <circle cx="24" cy="24" r="12.5" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="0.8" />
+                  <path d="M24 7.6 27.6 20.4 40.4 24 27.6 27.6 24 40.4 20.4 27.6 7.6 24 20.4 20.4Z" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="1.15" strokeLinejoin="round" />
+                  <path d="M24 13.8 26 22 34.2 24 26 26 24 34.2 22 26 13.8 24 22 22Z" fill="rgba(255, 241, 204, 0.72)" />
+                  <path d="M24 7.6v5.1M24 35.3v5.1M7.6 24h5.1M35.3 24h5.1" stroke="currentColor" strokeOpacity="0.58" strokeWidth="1" strokeLinecap="round" />
+                  <circle cx="24" cy="24" r="2.2" fill="rgba(255, 236, 188, 0.94)" />
+                  <circle cx="16" cy="14.5" r="1" fill="rgba(255, 237, 195, 0.68)" />
+                  <circle cx="33" cy="34.5" r="0.85" fill="rgba(255, 237, 195, 0.56)" />
+                </svg>
+              </span>
               <span style={styles.searchPrefix}>Ask Celebration Atlas</span>
-              <span className="atlas-search-helper" style={styles.searchHelperText}>Tell me what to find in Michigan</span>
+              <span className="atlas-search-helper" style={styles.searchHelperText}>Find events, places, and celebrations...</span>
               <span
                 aria-hidden="true"
                 className={`atlas-search-query ${isSubmittedQueryFading ? 'atlas-search-query--fade' : ''}`}
@@ -4977,40 +4989,65 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    minHeight: 58,
+    minHeight: 68,
     width: '100%',
-    borderRadius: 24,
-    border: '1px solid rgba(255, 231, 184, 0.58)',
+    borderRadius: 26,
+    border: '1.5px solid rgba(255, 220, 151, 0.7)',
     background:
-      'linear-gradient(180deg, rgba(22, 28, 40, 0.84), rgba(7, 10, 16, 0.72))',
+      'linear-gradient(145deg, rgba(25, 31, 45, 0.88), rgba(7, 10, 17, 0.82) 58%, rgba(18, 12, 9, 0.74))',
     boxShadow:
-      'inset 0 0 0 1px rgba(255, 248, 224, 0.11), 0 20px 48px rgba(2, 5, 12, 0.42), 0 0 26px rgba(252, 201, 102, 0.28)',
-    padding: '18px 17px 10px',
+      'inset 0 0 0 1px rgba(255, 248, 224, 0.13), inset 0 12px 28px rgba(255, 223, 158, 0.04), inset 0 -18px 28px rgba(1, 3, 8, 0.34), 0 20px 48px rgba(2, 5, 12, 0.48), 0 0 30px rgba(228, 170, 79, 0.3)',
+    padding: '14px 66px 12px 76px',
+  },
+  searchCompassMedallion: {
+    position: 'absolute',
+    left: 17,
+    top: '50%',
+    zIndex: 1,
+    width: 44,
+    height: 44,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: 999,
+    border: '1px solid rgba(242, 198, 124, 0.54)',
+    color: 'rgba(244, 196, 116, 0.9)',
+    background:
+      'radial-gradient(circle at 38% 28%, rgba(255, 235, 189, 0.14), rgba(16, 22, 33, 0.88) 48%, rgba(5, 8, 14, 0.92) 100%)',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255, 246, 218, 0.08), inset 0 -8px 14px rgba(1, 3, 8, 0.34), 0 0 18px rgba(224, 164, 77, 0.22)',
+    pointerEvents: 'none',
+    transform: 'translateY(-50%)',
+  },
+  searchCompassSvg: {
+    width: 34,
+    height: 34,
+    filter: 'drop-shadow(0 0 7px rgba(229, 174, 86, 0.3))',
   },
   searchPrefix: {
     flexShrink: 0,
     position: 'absolute',
-    top: 8,
-    left: 17,
-    color: 'rgba(255, 247, 222, 0.9)',
+    top: 13,
+    left: 76,
+    color: 'rgba(255, 243, 215, 0.96)',
     opacity: 0.98,
-    textShadow: '0 1px 3px rgba(2, 3, 6, 0.85)',
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: 0.16,
-    textTransform: 'uppercase',
+    textShadow: '0 1px 3px rgba(2, 3, 6, 0.9), 0 0 18px rgba(226, 171, 88, 0.18)',
+    fontFamily: 'Georgia, Times New Roman, serif',
+    fontSize: 'clamp(17px, 4.6vw, 22px)',
+    fontWeight: 500,
+    letterSpacing: 0.18,
+    textTransform: 'none',
   },
   searchHelperText: {
     position: 'absolute',
-    top: 23,
-    left: 17,
+    top: 39,
+    left: 77,
     right: 66,
-    color: 'rgba(255, 230, 181, 0.68)',
-    fontSize: 10.5,
+    color: 'rgba(244, 215, 166, 0.7)',
+    fontSize: 12,
     fontWeight: 500,
     letterSpacing: 0.08,
-    lineHeight: 1.1,
-    display: 'none',
+    lineHeight: 1.15,
+    display: 'block',
     pointerEvents: 'none',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -5018,7 +5055,7 @@ const styles: Record<string, CSSProperties> = {
   },
   searchQueryText: {
     marginLeft: 0,
-    paddingTop: 12,
+    paddingTop: 17,
     color: 'rgba(255, 239, 206, 0.98)',
     fontSize: 16,
     textShadow: 'none',
@@ -5031,7 +5068,7 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    maxWidth: 'calc(100% - 58px)',
+    maxWidth: 'calc(100% - 8px)',
     pointerEvents: 'none',
     userSelect: 'none',
     WebkitUserSelect: 'none',
@@ -5041,8 +5078,8 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute',
     inset: 0,
     width: '100%',
-    padding: '26px 66px 9px 17px',
-    borderRadius: 24,
+    padding: '36px 66px 10px 76px',
+    borderRadius: 26,
     border: 'none',
     background: 'transparent',
     color: 'transparent',
@@ -5057,23 +5094,23 @@ const styles: Record<string, CSSProperties> = {
   },
   searchSubmitButton: {
     position: 'absolute',
-    right: 9,
+    right: 12,
     top: '50%',
     zIndex: 2,
     display: 'grid',
     placeItems: 'center',
-    width: 42,
-    height: 42,
-    minWidth: 42,
-    minHeight: 42,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
     padding: 0,
     borderRadius: 999,
-    border: '1px solid rgba(255, 226, 170, 0.44)',
+    border: '1px solid rgba(255, 220, 151, 0.62)',
     background:
-      'radial-gradient(circle at 32% 24%, rgba(255, 247, 218, 0.24), rgba(255, 205, 112, 0.12) 38%, rgba(11, 15, 22, 0.56) 100%)',
+      'radial-gradient(circle at 32% 24%, rgba(255, 247, 218, 0.28), rgba(203, 143, 58, 0.18) 42%, rgba(8, 12, 19, 0.74) 100%)',
     color: 'rgba(255, 235, 190, 0.9)',
     boxShadow:
-      'inset 0 0 0 1px rgba(255, 250, 226, 0.08), 0 0 14px rgba(255, 207, 116, 0.22), 0 6px 16px rgba(2, 5, 12, 0.22)',
+      'inset 0 0 0 1px rgba(255, 250, 226, 0.1), inset 0 -9px 15px rgba(1, 3, 8, 0.34), 0 0 18px rgba(255, 207, 116, 0.26), 0 8px 18px rgba(2, 5, 12, 0.28)',
     cursor: 'pointer',
     touchAction: 'manipulation',
     appearance: 'none',
