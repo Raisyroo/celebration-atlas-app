@@ -1149,21 +1149,16 @@ export default function RomeoAtlasWindowPage({
             .romeo-atlas-favorite-button {
               transition:
                 color 180ms ease,
-                border-color 180ms ease,
-                box-shadow 180ms ease,
+                filter 180ms ease,
                 text-shadow 180ms ease,
-                transform 180ms ease,
-                background 180ms ease;
+                transform 180ms ease;
             }
             .romeo-atlas-favorite-button:hover,
             .romeo-atlas-favorite-button:focus-visible {
               color: rgba(255, 229, 181, 0.98);
-              border-color: rgba(244, 194, 112, 0.68);
-              box-shadow:
-                0 0 13px rgba(226, 150, 72, 0.22),
-                inset 0 0 13px rgba(226, 172, 92, 0.08),
-                inset 0 1px 0 rgba(255, 235, 195, 0.12);
+              filter: drop-shadow(0 0 10px rgba(226, 150, 72, 0.28));
               outline: none;
+              text-shadow: 0 0 12px rgba(255, 213, 112, 0.46);
               transform: scale(1.035);
             }
             .romeo-atlas-favorite-button:active {
@@ -1320,11 +1315,11 @@ export default function RomeoAtlasWindowPage({
               max-width: none !important;
             }
             .romeo-atlas-favorite-button {
-              width: 1.78rem !important;
-              height: 1.78rem !important;
-              left: max(0.42rem, env(safe-area-inset-left, 0px)) !important;
-              top: max(0.34rem, env(safe-area-inset-top, 0px)) !important;
-              font-size: 0.9rem !important;
+              width: 2.35rem !important;
+              height: 2.35rem !important;
+              left: max(0.14rem, env(safe-area-inset-left, 0px)) !important;
+              top: max(0.05rem, env(safe-area-inset-top, 0px)) !important;
+              font-size: 1.08rem !important;
             }
             .romeo-atlas-back-link {
               min-height: 1.78rem !important;
@@ -1693,24 +1688,23 @@ const styles: Record<string, CSSProperties> = {
   },
   favoriteButton: {
     position: "absolute",
-    left: "max(0.72rem, env(safe-area-inset-left, 0px))",
-    top: "max(0.62rem, env(safe-area-inset-top, 0px))",
+    left: "max(0.52rem, env(safe-area-inset-left, 0px))",
+    top: "max(0.42rem, env(safe-area-inset-top, 0px))",
     zIndex: 5,
-    width: "2.35rem",
-    height: "2.35rem",
+    width: "2.75rem",
+    height: "2.75rem",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     color: "rgba(238,196,126,0.88)",
-    fontSize: "1.2rem",
+    fontSize: "1.46rem",
     lineHeight: 1,
-    border: "1px solid rgba(232,178,96,0.46)",
+    border: 0,
     borderRadius: "999px",
     padding: 0,
-    background: "rgba(3, 6, 13, 0.16)",
-    boxShadow:
-      "0 0 10px rgba(226,150,72,0.12), inset 0 0 11px rgba(226,172,92,0.045), inset 0 1px 0 rgba(255,235,195,0.06)",
-    textShadow: "0 0 7px rgba(226,172,92,0.16)",
+    background: "transparent",
+    boxShadow: "none",
+    textShadow: "0 0 8px rgba(226,172,92,0.22)",
     cursor: "pointer",
     transformOrigin: "center",
     willChange: "transform",
@@ -1718,12 +1712,11 @@ const styles: Record<string, CSSProperties> = {
   },
   favoriteButtonActive: {
     color: "rgba(255, 213, 112, 0.98)",
-    background:
-      "radial-gradient(circle at 50% 42%, rgba(255,213,112,0.2), rgba(3,6,13,0.2) 66%)",
-    borderColor: "rgba(255, 213, 112, 0.72)",
-    boxShadow:
-      "0 0 18px rgba(255, 213, 112, 0.32), inset 0 0 14px rgba(255, 213, 112, 0.12), inset 0 1px 0 rgba(255, 238, 184, 0.14)",
-    textShadow: "0 0 12px rgba(255, 213, 112, 0.58)",
+    background: "transparent",
+    borderColor: "transparent",
+    boxShadow: "none",
+    filter: "drop-shadow(0 0 9px rgba(255, 213, 112, 0.38))",
+    textShadow: "0 0 13px rgba(255, 213, 112, 0.62)",
   },
   favoriteHeart: {
     transform: "translateY(-0.02rem)",
