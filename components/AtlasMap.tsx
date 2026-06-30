@@ -3601,14 +3601,21 @@ export default function AtlasMap({
                     const statusBadge = getEventStatusBadge(event);
                     const eventDate = formatMobileEventDate(event);
 
+                    const isActiveRailEvent = event.id === selectedId || event.id === exactEventIntent?.eventId;
+
                     return (
                       <button
                         key={event.id}
                         type="button"
                         aria-label={`Open ${event.name}`}
+                        aria-current={isActiveRailEvent ? 'true' : undefined}
                         onClick={() => setSelectedId(event.id)}
                         className="mobile-live-card"
-                        style={styles.mobileLiveCard}
+                        data-active={isActiveRailEvent ? 'true' : 'false'}
+                        style={{
+                          ...styles.mobileLiveCard,
+                          ...(isActiveRailEvent ? styles.mobileLiveCardActive : null),
+                        }}
                       >
                         <span style={styles.mobileLiveCardMedia}>
                           <EventThumbnail event={event} variant="live" />
@@ -3701,6 +3708,20 @@ export default function AtlasMap({
             }
 
 
+
+            .mobile-live-card[data-active='false'] {
+              opacity: 0.92;
+            }
+
+            .mobile-live-card:focus-visible {
+              outline: 2px solid rgba(255, 231, 179, 0.72);
+              outline-offset: 2px;
+            }
+
+            .mobile-live-card:active {
+              transform: translateY(0) scale(0.99) !important;
+            }
+
             .mobile-live-sheet-toggle {
               width: 100%;
               border: 0;
@@ -3769,15 +3790,15 @@ export default function AtlasMap({
               }
 
               .mobile-live-sheet {
-                margin-top: 6px !important;
+                margin-top: 4px !important;
                 padding: 0 !important;
                 border-radius: 0 !important;
               }
 
               .mobile-live-card {
-                flex: 0 0 clamp(88px, 24vw, 98px) !important;
-                min-height: 82px !important;
-                max-height: 82px !important;
+                flex: 0 0 clamp(82px, 22.5vw, 92px) !important;
+                min-height: 78px !important;
+                max-height: 78px !important;
                 scroll-snap-align: start;
               }
             }
@@ -3811,7 +3832,7 @@ export default function AtlasMap({
               }
 
               .mobile-live-sheet-scroller {
-                max-height: 94px;
+                max-height: 88px;
               }
             }
 
@@ -3821,7 +3842,7 @@ export default function AtlasMap({
               }
 
               .mobile-live-sheet-scroller {
-                max-height: 94px;
+                max-height: 88px;
               }
             }
 
@@ -6009,8 +6030,8 @@ const styles: Record<string, CSSProperties> = {
     filter: 'drop-shadow(0 1px 4px rgba(2, 3, 7, 0.8))',
   },
   mobileLiveStrip: {
-    marginTop: 6,
-    minHeight: 91,
+    marginTop: 4,
+    minHeight: 86,
     overflow: 'visible',
     transition: 'opacity 120ms ease',
   },
@@ -6025,34 +6046,41 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileLiveStripScroller: {
     display: 'flex',
-    gap: 6,
+    gap: 5,
     overflowX: 'auto',
     overflowY: 'visible',
-    minHeight: 91,
-    padding: '1px 0 8px',
+    minHeight: 86,
+    padding: '1px 0 7px',
     WebkitOverflowScrolling: 'touch',
     scrollbarWidth: 'none',
     scrollSnapType: 'x proximity',
   },
   mobileLiveCard: {
-    flex: '0 0 clamp(88px, 24vw, 98px)',
+    flex: '0 0 clamp(82px, 22.5vw, 92px)',
     display: 'grid',
     gridTemplateRows: '1fr',
     alignItems: 'stretch',
     gap: 0,
-    minHeight: 82,
-    maxHeight: 82,
+    minHeight: 78,
+    maxHeight: 78,
     padding: 0,
     overflow: 'hidden',
-    borderRadius: 12,
-    border: '1px solid rgba(255, 220, 150, 0.2)',
-    background: 'rgba(5, 8, 13, 0.48)',
+    borderRadius: 11,
+    border: '1px solid rgba(238, 190, 112, 0.14)',
+    background: 'linear-gradient(180deg, rgba(11, 14, 21, 0.38), rgba(5, 8, 13, 0.52))',
     color: '#f7e9c8',
     textAlign: 'left',
     cursor: 'pointer',
     touchAction: 'manipulation',
     scrollSnapAlign: 'start',
-    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.03), 0 6px 15px rgba(0, 0, 0, 0.26)',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 244, 214, 0.025), 0 5px 13px rgba(0, 0, 0, 0.24)',
+    transform: 'translateY(0) scale(1)',
+    transition: 'transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease',
+  },
+  mobileLiveCardActive: {
+    borderColor: 'rgba(255, 219, 151, 0.48)',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 246, 214, 0.09), 0 0 0 1px rgba(255, 202, 103, 0.12), 0 7px 18px rgba(0, 0, 0, 0.3), 0 0 20px rgba(231, 172, 80, 0.18)',
+    transform: 'translateY(-1px) scale(1.012)',
   },
   mobileLiveCardMedia: {
     position: 'relative',
@@ -6066,17 +6094,17 @@ const styles: Record<string, CSSProperties> = {
     inset: 0,
     zIndex: 1,
     background:
-      'linear-gradient(180deg, rgba(4, 6, 10, 0.3) 0%, rgba(4, 6, 10, 0.08) 36%, rgba(4, 6, 10, 0.54) 66%, rgba(3, 4, 8, 0.88) 100%), radial-gradient(circle at 18% 8%, rgba(255, 222, 155, 0.18), rgba(255, 222, 155, 0) 34%)',
+      'linear-gradient(180deg, rgba(4, 6, 10, 0.24) 0%, rgba(4, 6, 10, 0.05) 34%, rgba(4, 6, 10, 0.5) 64%, rgba(3, 4, 8, 0.9) 100%), radial-gradient(circle at 18% 8%, rgba(255, 222, 155, 0.14), rgba(255, 222, 155, 0) 34%)',
     pointerEvents: 'none',
   },
   mobileLiveStatusBadge: {
     position: 'absolute',
-    top: 6,
-    left: 6,
+    top: 5,
+    left: 5,
     zIndex: 2,
-    padding: '2px 5px',
+    padding: '2px 4.5px',
     borderRadius: 999,
-    fontSize: 6.6,
+    fontSize: 6.2,
     fontWeight: 900,
     letterSpacing: 0.65,
     lineHeight: 1,
@@ -6091,9 +6119,9 @@ const styles: Record<string, CSSProperties> = {
     color: 'rgba(255, 246, 232, 0.96)',
   },
   mobileLiveStatusBadgeUpcoming: {
-    border: '1px solid rgba(129, 181, 214, 0.5)',
-    background: 'linear-gradient(180deg, rgba(62, 102, 132, 0.9), rgba(26, 48, 71, 0.82))',
-    color: 'rgba(232, 244, 255, 0.94)',
+    border: '1px solid rgba(232, 190, 118, 0.32)',
+    background: 'linear-gradient(180deg, rgba(22, 28, 39, 0.82), rgba(9, 13, 21, 0.74))',
+    color: 'rgba(255, 232, 177, 0.9)',
   },
   mobileLiveCardCopy: {
     display: 'grid',
@@ -6105,7 +6133,7 @@ const styles: Record<string, CSSProperties> = {
     alignContent: 'end',
     gap: 2,
     minWidth: 0,
-    padding: '25px 6px 7px',
+    padding: '23px 6px 6px',
     pointerEvents: 'none',
   },
   mobileLiveCardTitle: {
@@ -6114,7 +6142,7 @@ const styles: Record<string, CSSProperties> = {
     WebkitBoxOrient: 'vertical',
     WebkitLineClamp: 2,
     color: 'rgba(255, 246, 226, 0.98)',
-    fontSize: 8.8,
+    fontSize: 8.5,
     fontWeight: 800,
     lineHeight: 1.08,
     marginBottom: 1,
@@ -6123,7 +6151,7 @@ const styles: Record<string, CSSProperties> = {
   mobileLiveCardMeta: {
     overflow: 'hidden',
     color: 'rgba(255, 239, 205, 0.82)',
-    fontSize: 7.4,
+    fontSize: 7.1,
     lineHeight: 1.08,
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -6132,7 +6160,7 @@ const styles: Record<string, CSSProperties> = {
   mobileLiveCardDate: {
     alignSelf: 'end',
     color: 'rgba(255, 218, 145, 0.94)',
-    fontSize: 6.8,
+    fontSize: 6.5,
     fontWeight: 900,
     letterSpacing: 0.75,
     textTransform: 'uppercase',
