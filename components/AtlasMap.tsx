@@ -1411,6 +1411,7 @@ export default function AtlasMap({
     null,
   );
   const [isCardMediaVisible, setIsCardMediaVisible] = useState(false);
+  const [loadedLargeCardImageSrc, setLoadedLargeCardImageSrc] = useState<string | null>(null);
   const [failedRemoteFlyerSrcs, setFailedRemoteFlyerSrcs] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -1672,6 +1673,9 @@ export default function AtlasMap({
       : undefined;
   const hasCardMedia = Boolean(selectedMedia || displayedLargeCardImageSrc);
   const hasCardMediaSource = Boolean(displayedLargeCardImageSrc);
+  const isLargeCardImageReady = Boolean(
+    displayedLargeCardImageSrc && loadedLargeCardImageSrc === displayedLargeCardImageSrc,
+  );
   const isFlyerCard = Boolean(selectedMedia?.flyerSrc);
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
   const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
@@ -1699,6 +1703,10 @@ export default function AtlasMap({
     });
   };
   const handleLargeCardImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
+    if (displayedLargeCardImageSrc) {
+      setLoadedLargeCardImageSrc(displayedLargeCardImageSrc);
+    }
+
     setFlyerMediaDebugSnapshot({
       intendedSrc: selectedFlyerSrc,
       attemptedSrc: largeCardBackgroundImageSrc,
@@ -1708,6 +1716,7 @@ export default function AtlasMap({
     });
   };
   const handleLargeCardImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    setLoadedLargeCardImageSrc(null);
     setFlyerMediaDebugSnapshot({
       intendedSrc: selectedFlyerSrc,
       attemptedSrc: largeCardBackgroundImageSrc,
@@ -2169,6 +2178,18 @@ export default function AtlasMap({
   }, [selected]);
 
   useEffect(() => {
+    const image = largeCardImageRef.current;
+    if (!isFlyerCard || !displayedLargeCardImageSrc || !image) return;
+    if (!image.complete || image.naturalWidth <= 0) return;
+
+    const cachedImageFrame = window.requestAnimationFrame(() => {
+      setLoadedLargeCardImageSrc(displayedLargeCardImageSrc);
+    });
+
+    return () => window.cancelAnimationFrame(cachedImageFrame);
+  }, [displayedLargeCardImageSrc, isFlyerCard]);
+
+  useEffect(() => {
     let isCurrentMedia = true;
 
     if (cardMediaFadeTimerRef.current) {
@@ -2199,12 +2220,12 @@ export default function AtlasMap({
   }, [selectedId]);
 
   useEffect(() => {
-    if (!hasCardMediaSource || !isCardVisible) return;
+    if (!hasCardMediaSource || !isCardVisible || isFlyerCard) return;
     cardMediaFadeTimerRef.current = setTimeout(() => {
       setIsCardMediaVisible(true);
       cardMediaFadeTimerRef.current = null;
     }, mediaDelayMs);
-  }, [hasCardMediaSource, isCardVisible, mediaDelayMs]);
+  }, [hasCardMediaSource, isCardVisible, isFlyerCard, mediaDelayMs]);
 
   useEffect(() => {
     const landingTitleLoadTimer = window.setTimeout(() => {
@@ -3339,10 +3360,15 @@ export default function AtlasMap({
                     onError={handleLargeCardImageError}
                     style={{
                       ...styles.eventDetailFlyerImage,
-                      opacity: isCardMediaVisible ? 1 : 0,
-                      transitionDuration: `${mediaFadeDurationMs}ms`,
+                      opacity: isLargeCardImageReady ? 1 : 0,
+                      transitionDuration: '180ms',
                     }}
                   />
+                  {!isLargeCardImageReady ? (
+                    <div style={styles.flyerLoadingState} role="status" aria-live="polite">
+                      Loading flyer…
+                    </div>
+                  ) : null}
                 </figure>
               ) : (
                 <div style={styles.flyerUnavailableState} role="status">
@@ -5390,6 +5416,21 @@ const styles: Record<string, CSSProperties> = {
     objectFit: 'contain',
     objectPosition: 'center center',
     transition: 'opacity 1300ms ease',
+  },
+  flyerLoadingState: {
+    position: 'absolute',
+    inset: 0,
+    display: 'grid',
+    placeItems: 'center',
+    padding: 20,
+    color: '#ffeec2',
+    fontSize: 13,
+    fontWeight: 800,
+    letterSpacing: '.03em',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    background:
+      'radial-gradient(circle at 50% 22%, rgba(255,221,146,.22), transparent 42%), rgba(9,12,22,.46)',
   },
   eventDetailToolDock: {
     display: 'grid',

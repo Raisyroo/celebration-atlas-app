@@ -117,8 +117,6 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       thumbnailSourceType: 'generated',
       thumbnailGenerationStatus: 'generated',
       thumbnailAlt: 'Atmospheric Romeo Peach Festival memory artwork',
-      mediaDelayMs: 900,
-      mediaFadeDurationMs: 1300,
     },
     detailPage: {
       atmosphereLine: 'Golden-hour orchards, brass-band echoes, and warm peach sugar in the air.',
