@@ -3361,7 +3361,7 @@ export default function AtlasMap({
                     style={{
                       ...styles.eventDetailFlyerImage,
                       opacity: isLargeCardImageReady ? 1 : 0,
-                      transitionDuration: '180ms',
+                      transition: 'opacity 180ms ease',
                     }}
                   />
                   {!isLargeCardImageReady ? (
@@ -3825,10 +3825,9 @@ export default function AtlasMap({
             }
 
             .atlas-search-form .atlas-search-input {
-              opacity: 0;
+              opacity: 1;
               color: transparent;
               caret-color: transparent;
-              transition: opacity 180ms ease;
             }
 
             .atlas-search-form .atlas-search-input::placeholder {
@@ -3836,7 +3835,6 @@ export default function AtlasMap({
             }
 
             .atlas-search-form--active .atlas-search-input {
-              opacity: 1;
               color: rgba(255, 239, 206, 0.98);
               caret-color: rgba(255, 239, 206, 0.98);
             }
@@ -5296,6 +5294,7 @@ const styles: Record<string, CSSProperties> = {
     gridRow: 1,
     minWidth: 0,
     width: '100%',
+    minHeight: 34,
     height: 34,
     padding: 0,
     borderRadius: 18,
