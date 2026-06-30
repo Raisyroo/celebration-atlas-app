@@ -30,10 +30,6 @@ import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
 
-const ATMOSPHERIC_SUGGESTIONS = [
-  'Ask for festivals, fireworks, fairs, or Romeo Peach Festival',
-];
-const MOBILE_ATLAS_COMMAND_PLACEHOLDER = 'Ask about Michigan celebrations';
 const DISCOVERY_SHORTCUTS = [
   'Fairs',
   'Fireworks',
@@ -1319,7 +1315,6 @@ export default function AtlasMap({
   const [query, setQuery] = useState('');
   const [displayedQuery, setDisplayedQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
-  const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pressedEventDetailToolId, setPressedEventDetailToolId] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -2376,14 +2371,6 @@ export default function AtlasMap({
       setSelectedId(matchingEvent.id);
     });
   }, [searchParams]);
-
-  useEffect(() => {
-    const rotateId = setInterval(() => {
-      if (isSearchFocused || query.trim()) return;
-      setSuggestionIndex((prev) => (prev + 1) % ATMOSPHERIC_SUGGESTIONS.length);
-    }, 5400);
-    return () => clearInterval(rotateId);
-  }, [isSearchFocused, query]);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia('(min-width: 1024px)');
@@ -3517,10 +3504,8 @@ export default function AtlasMap({
                 value={query}
                 aria-label="Ask Celebration Atlas"
                 placeholder={
-                  !query.trim() && !displayedQuery && !isSearchFocused
-                    ? isDesktop
-                      ? ATMOSPHERIC_SUGGESTIONS[suggestionIndex]
-                      : MOBILE_ATLAS_COMMAND_PLACEHOLDER
+                  !query.trim() && !displayedQuery && isSearchFocused
+                    ? 'Ask Celebration Atlas'
                     : ''
                 }
                 onChange={(event) => {
@@ -3694,11 +3679,12 @@ export default function AtlasMap({
             }
 
             .atlas-search-form .atlas-search-input {
-              opacity: 0;
+              opacity: 1;
               transition: opacity 180ms ease;
             }
 
-            .atlas-search-form--active .atlas-search-input {
+            .atlas-search-form .atlas-search-input::placeholder {
+              color: rgba(255, 239, 206, 0.72);
               opacity: 1;
             }
 
