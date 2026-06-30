@@ -54,7 +54,6 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
   { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
 ];
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
-const MOBILE_LANDING_TITLE_SESSION_KEY = 'celebration-atlas:michigan-title-dismissed';
 const MICHIGAN_TITLE_ARTWORK_SRC = '/brand/michigan-landing-lockup.png';
 const MICHIGAN_DESKTOP_ARTWORK_SRC = '/maps/michigan-atlas-base.webp';
 const MICHIGAN_MOBILE_ARTWORK_SRC = '/maps/michigan-atlas-base-tall.webp';
@@ -1449,8 +1448,6 @@ export default function AtlasMap({
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useMobileFavorite();
   const [flyerFavoriteConfirmation, setFlyerFavoriteConfirmation] = useState<string | null>(null);
-  const [isMobileLandingTitleDismissed, setIsMobileLandingTitleDismissed] = useState(false);
-  const [shouldRenderMobileLandingTitle, setShouldRenderMobileLandingTitle] = useState(true);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
@@ -1552,9 +1549,6 @@ export default function AtlasMap({
     activePresentationPlan,
     selectedId,
   ]);
-  const isActiveMapResultCalloutVisible =
-    (mapPresentationMode === 'results' || mapPresentationMode === 'single') &&
-    mapCalloutPlan.eventIds.size > 0;
   const isConstellationLineSearchActive = Boolean(
     q ||
       query.trim() ||
@@ -2280,43 +2274,7 @@ export default function AtlasMap({
     }, mediaDelayMs);
   }, [hasCardMediaSource, isCardVisible, isFlyerCard, mediaDelayMs]);
 
-  useEffect(() => {
-    const landingTitleLoadTimer = window.setTimeout(() => {
-      try {
-        const wasDismissed =
-          window.sessionStorage.getItem(MOBILE_LANDING_TITLE_SESSION_KEY) === 'true';
-        setIsMobileLandingTitleDismissed(wasDismissed);
-        setShouldRenderMobileLandingTitle(!wasDismissed);
-      } catch {
-        setIsMobileLandingTitleDismissed(false);
-        setShouldRenderMobileLandingTitle(true);
-      }
-    }, 0);
 
-    return () => window.clearTimeout(landingTitleLoadTimer);
-  }, []);
-
-  const dismissMobileLandingTitle = useCallback(() => {
-    setIsMobileLandingTitleDismissed((wasDismissed) => {
-      if (wasDismissed) return wasDismissed;
-      try {
-        window.sessionStorage.setItem(MOBILE_LANDING_TITLE_SESSION_KEY, 'true');
-      } catch {
-        // The title still dismisses for this mounted visit if session storage is unavailable.
-      }
-      return true;
-    });
-
-    if (prefersReducedMotion) {
-      setShouldRenderMobileLandingTitle(false);
-    }
-  }, [prefersReducedMotion]);
-
-  useEffect(() => {
-    if (!isActiveMapResultCalloutVisible) return;
-    const dismissalTimer = window.setTimeout(dismissMobileLandingTitle, 0);
-    return () => window.clearTimeout(dismissalTimer);
-  }, [dismissMobileLandingTitle, isActiveMapResultCalloutVisible]);
 
   const runDiscoverySearch = useCallback((searchText: string) => {
     const trimmedQuery = searchText.trim();
@@ -2629,12 +2587,37 @@ export default function AtlasMap({
   const shouldShowMobileAmbientAtlas =
     shouldShowPolishedHomepageUi &&
     !isDesktop && !isPhoneLandscape && !isAtlasPanelOpen && !hasSelectedEventCardOpen;
-  const shouldShowMobileLandingTitle =
+  const hasActiveAskQuery = Boolean(query.trim() || submittedQuery.trim() || displayedQuery.trim());
+  const hasActiveSearchResult = Boolean(
+    exactEventIntent ||
+      hasSubmittedSearchMatches ||
+      hasSubmittedSearchNoResults ||
+      isCelebrationSearchHighlightActive ||
+      constellationHighlightedIds.length > 0 ||
+      activePresentationPlan ||
+      discoveryStatusText,
+  );
+  const hasActiveMapInteraction =
+    mapTransform.scale > MAP_ZOOM_MIN_SCALE ||
+    Math.abs(mapTransform.translateX) > 0.5 ||
+    Math.abs(mapTransform.translateY) > 0.5;
+  const isMobileLandingIdle = Boolean(
     shouldShowPolishedHomepageUi &&
-    !isDesktop &&
-    !isPhoneLandscape &&
-    shouldRenderMobileLandingTitle;
-  const mobileLandingTitleState = isMobileLandingTitleDismissed ? 'dismissed' : 'idle';
+      !isDesktop &&
+      !isPhoneLandscape &&
+      !isAtlasPanelOpen &&
+      !hasSelectedEventCardOpen &&
+      !isSearchFocused &&
+      !hasActiveAskQuery &&
+      !hasActiveSearchResult &&
+      !isMobileFilterOpen &&
+      !isMobileMenuOpen &&
+      !hasActiveMapInteraction,
+  );
+  const shouldShowMobileLandingTitle =
+    shouldShowPolishedHomepageUi && !isDesktop && !isPhoneLandscape;
+  const mobileLandingTitleState = isMobileLandingIdle ? 'idle' : 'dismissed';
+  const shouldShowMobileMichiganBreadcrumb = shouldShowMobileLandingTitle;
 
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
@@ -3251,11 +3234,7 @@ export default function AtlasMap({
           className={`mobile-atlas-identity mobile-atlas-identity--${mobileLandingTitleState}`}
           style={styles.mobileAtlasIdentity}
           aria-label="Celebration Atlas Michigan"
-          onTransitionEnd={(event) => {
-            if (event.currentTarget !== event.target) return;
-            if (!isMobileLandingTitleDismissed) return;
-            setShouldRenderMobileLandingTitle(false);
-          }}
+          aria-hidden={isMobileLandingIdle ? undefined : true}
         >
           <span
             className="mobile-atlas-identity-scrim"
@@ -3271,6 +3250,16 @@ export default function AtlasMap({
             style={styles.mobileAtlasTitleArtwork}
           />
         </header>
+      ) : null}
+
+      {shouldShowMobileMichiganBreadcrumb ? (
+        <div
+          className={`mobile-michigan-breadcrumb ${isMobileLandingIdle ? 'mobile-michigan-breadcrumb--hidden' : 'mobile-michigan-breadcrumb--visible'}`}
+          style={styles.mobileMichiganBreadcrumb}
+          aria-hidden="true"
+        >
+          MICHIGAN
+        </div>
       ) : null}
 
       {shouldShowMobileChromeControls && isMobileMenuOpen ? (
@@ -4116,28 +4105,28 @@ export default function AtlasMap({
 
             .mobile-atlas-identity--dismissed {
               opacity: 0 !important;
-              transform: translate3d(0, -16px, 0) scale(0.94) !important;
+              transform: translate3d(0, -14px, 0) scale(0.96) !important;
             }
 
-            .mobile-atlas-identity--dismissed .mobile-atlas-title {
-              font-size: 18px !important;
-              letter-spacing: 0.18em !important;
-              line-height: 1 !important;
-            }
-
-            .mobile-atlas-identity--dismissed .mobile-atlas-emblem,
-            .mobile-atlas-identity--dismissed .mobile-atlas-brand,
-            .mobile-atlas-identity--dismissed .mobile-atlas-subtitle {
+            .mobile-atlas-identity--dismissed .mobile-atlas-title-artwork {
               opacity: 0 !important;
-              transform: translate3d(0, -4px, 0) scale(0.94) !important;
-              max-height: 0 !important;
-              margin: 0 !important;
-              overflow: hidden !important;
+              transform: translate3d(0, -6px, 0) scale(0.97) !important;
+            }
+
+            .mobile-michigan-breadcrumb--visible {
+              opacity: 1 !important;
+              transform: translate3d(0, 0, 0) !important;
+            }
+
+            .mobile-michigan-breadcrumb--hidden {
+              opacity: 0 !important;
+              transform: translate3d(0, -7px, 0) !important;
             }
 
             @media (prefers-reduced-motion: reduce) {
               .mobile-atlas-identity,
               .mobile-atlas-identity *,
+              .mobile-michigan-breadcrumb,
               .atlas-search-input--pulse,
               .atlas-search-query,
               .atlas-search-query--fade,
@@ -6114,7 +6103,28 @@ const styles: Record<string, CSSProperties> = {
     aspectRatio: '2400 / 1400',
     objectFit: 'contain',
     filter: 'drop-shadow(0 9px 18px rgba(25, 8, 0, 0.46)) drop-shadow(0 0 18px rgba(255, 198, 90, 0.28))',
+    transition: 'opacity 300ms ease, transform 300ms ease',
     userSelect: 'none',
+  },
+  mobileMichiganBreadcrumb: {
+    position: 'absolute',
+    top: 'calc(15px + env(safe-area-inset-top))',
+    left: 'calc(env(safe-area-inset-left) + 72px)',
+    right: 'calc(env(safe-area-inset-right) + 72px)',
+    zIndex: Z_INDEX.searchDock + 1,
+    pointerEvents: 'none',
+    textAlign: 'center',
+    color: 'rgba(255, 226, 168, 0.58)',
+    fontFamily: 'Georgia, Times New Roman, serif',
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: '0.22em',
+    lineHeight: '44px',
+    textTransform: 'uppercase',
+    textShadow: '0 1px 8px rgba(0, 0, 0, 0.72), 0 0 14px rgba(255, 202, 102, 0.12)',
+    opacity: 0,
+    transform: 'translate3d(0, -7px, 0)',
+    transition: 'opacity 280ms ease, transform 280ms ease',
   },
   mobileAtlasEmblem: {
     width: 30,
