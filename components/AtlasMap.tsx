@@ -2777,6 +2777,9 @@ export default function AtlasMap({
                 const shouldUseMobileTagPlacement = Boolean(
                   shouldShowMarkerLabel && mobileTagPlacement && !isDesktop,
                 );
+                const shouldEnableMarkerTapTarget = Boolean(
+                  isDesktop || shouldShowMarkerLabel,
+                );
                 const mobileTagDx = mobileTagPlacement?.dx ?? 0;
                 const mobileTagDy = mobileTagPlacement?.dy ?? 0;
                 return (
@@ -2812,7 +2815,10 @@ export default function AtlasMap({
                                 ? `Open ${events.length} events near ${primaryEvent.location}`
                                 : primaryEvent.name
                             }
+                            aria-hidden={shouldEnableMarkerTapTarget ? undefined : true}
+                            tabIndex={shouldEnableMarkerTapTarget ? undefined : -1}
                             onClick={() => {
+                              if (!shouldEnableMarkerTapTarget) return;
                               if (shouldSuppressMarkerTap()) return;
                               if (exactEventOpenTimerRef.current) {
                                 clearTimeout(exactEventOpenTimerRef.current);
@@ -2829,6 +2835,7 @@ export default function AtlasMap({
                               ...styles.markerTapTarget,
                               ...(isCluster ? styles.clusterTapTarget : null),
                               opacity: isDimmed && isDesktop ? (exactEventIntent ? 0.08 : 0.28) : 1,
+                              pointerEvents: shouldEnableMarkerTapTarget ? 'auto' : 'none',
                             }}
                           >
                             {isDesktop ? (
