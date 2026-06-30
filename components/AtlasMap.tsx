@@ -956,22 +956,68 @@ const resolveMapCalloutPlan = ({
 
 
 
+type EventDetailToolId =
+  | 'event_card'
+  | 'festival_schedule'
+  | 'music_schedule'
+  | 'tickets_info'
+  | 'watch_live'
+  | 'participate'
+  | 'event_map'
+  | 'gallery';
+
 type EventDetailToolCard = {
-  id: string;
+  id: EventDetailToolId;
   title: string;
   subtitle: string;
   icon: string;
+  status: 'approved_available';
+  href: `/events/${string}` | `https://${string}`;
   featured?: boolean;
 };
 
-const ROMEO_EVENT_DETAIL_TOOL_CARDS: readonly EventDetailToolCard[] = [
-  { id: 'event-card', title: 'Event Card', subtitle: 'Collect & Save', icon: '✦', featured: true },
-  { id: 'festival-schedule', title: 'Festival Schedule', subtitle: 'Full schedule', icon: '▣' },
-  { id: 'music-schedule', title: 'Music Schedule', subtitle: 'Lineup & times', icon: '♪' },
-  { id: 'watch-live', title: 'Watch Live', subtitle: 'Live moments', icon: '▶' },
-  { id: 'participate', title: 'Participate', subtitle: 'Contests & more', icon: '♕' },
-  { id: 'tickets-info', title: 'Tickets & Info', subtitle: 'Hours & parking', icon: '◈' },
+const EVENT_DETAIL_TOOL_ORDER: readonly EventDetailToolId[] = [
+  'event_card',
+  'festival_schedule',
+  'music_schedule',
+  'tickets_info',
+  'watch_live',
+  'participate',
+  'event_map',
+  'gallery',
 ];
+
+function getAvailableEventDetailTools(event: typeof ATLAS_EVENTS[number]): EventDetailToolCard[] {
+  const tools: EventDetailToolCard[] = [];
+
+  if (event.detailPage) {
+    tools.push({
+      id: 'event_card',
+      title: 'Event Card',
+      subtitle: 'Open details',
+      icon: '✦',
+      status: 'approved_available',
+      href: `/events/${event.id}`,
+      featured: true,
+    });
+  }
+
+  const officialSite = event.fullCardBriefing?.officialSite;
+  if (officialSite?.startsWith('https://')) {
+    tools.push({
+      id: 'tickets_info',
+      title: 'Tickets & Info',
+      subtitle: 'Official site',
+      icon: '◈',
+      status: 'approved_available',
+      href: officialSite as `https://${string}`,
+    });
+  }
+
+  return tools.sort(
+    (a, b) => EVENT_DETAIL_TOOL_ORDER.indexOf(a.id) - EVENT_DETAIL_TOOL_ORDER.indexOf(b.id),
+  );
+}
 
 type FlyerMediaDebugSnapshot = {
   intendedSrc?: string;
@@ -1689,6 +1735,12 @@ export default function AtlasMap({
     : displayedLargeCardImageSrc?.startsWith('/')
       ? 'local'
       : 'none';
+  const eventDetailTools = renderedEvent ? getAvailableEventDetailTools(renderedEvent) : [];
+  const shouldShowArtifactTrail = Boolean(
+    isFlyerCard &&
+      eventDetailTools.length > 0 &&
+      eventDetailTools.length < EVENT_DETAIL_TOOL_ORDER.length,
+  );
   const isRomeoFlyerCard = Boolean(safeEventCard?.id === 'romeo-peach' && isFlyerCard);
   const isRomeoFlyerMediaDebug = Boolean(
     isMediaDebugMode && isRomeoFlyerCard,
@@ -3387,41 +3439,60 @@ export default function AtlasMap({
                   <div>attempted src: {flyerMediaDebugSnapshot.attemptedSrc ?? 'none'}</div>
                 </div>
               ) : null}
-              <div style={styles.eventDetailToolDock} aria-label={`${safeEventCard.name} event tools`}>
-                {ROMEO_EVENT_DETAIL_TOOL_CARDS.map((toolCard) => {
-                  const isToolPressed = pressedEventDetailToolId === toolCard.id;
+              {eventDetailTools.length > 0 ? (
+                <div
+                  style={{
+                    ...styles.eventDetailToolDock,
+                    ...(eventDetailTools.length === 1 ? styles.eventDetailToolDockSingle : null),
+                    ...(eventDetailTools.length === 2 ? styles.eventDetailToolDockPair : null),
+                    ...(eventDetailTools.length === 3 ? styles.eventDetailToolDockTrio : null),
+                  }}
+                  aria-label={`${safeEventCard.name} event tools`}
+                >
+                  {eventDetailTools.map((toolCard) => {
+                    const isToolPressed = pressedEventDetailToolId === toolCard.id;
+                    const isExternalTool = toolCard.href.startsWith('https://');
 
-                  return (
-                    <button
-                      key={toolCard.id}
-                      type="button"
-                      aria-label={`${toolCard.title}: ${toolCard.subtitle}`}
-                      onPointerDown={() => setPressedEventDetailToolId(toolCard.id)}
-                      onPointerUp={() => setPressedEventDetailToolId(null)}
-                      onPointerCancel={() => setPressedEventDetailToolId(null)}
-                      onPointerLeave={() => setPressedEventDetailToolId(null)}
-                      onBlur={() => setPressedEventDetailToolId(null)}
-                      style={{
-                        ...styles.eventDetailToolTile,
-                        ...(toolCard.featured ? styles.eventDetailToolTileFeatured : null),
-                        ...(isToolPressed ? styles.eventDetailToolTilePressed : null),
-                      }}
-                    >
-                      <span
+                    return (
+                      <Link
+                        key={toolCard.id}
+                        href={toolCard.href}
+                        target={isExternalTool ? '_blank' : undefined}
+                        rel={isExternalTool ? 'noreferrer' : undefined}
+                        aria-label={`${toolCard.title}: ${toolCard.subtitle}`}
+                        onPointerDown={() => setPressedEventDetailToolId(toolCard.id)}
+                        onPointerUp={() => setPressedEventDetailToolId(null)}
+                        onPointerCancel={() => setPressedEventDetailToolId(null)}
+                        onPointerLeave={() => setPressedEventDetailToolId(null)}
+                        onBlur={() => setPressedEventDetailToolId(null)}
                         style={{
-                          ...styles.eventDetailToolIcon,
-                          ...(toolCard.featured ? styles.eventDetailToolIconFeatured : null),
+                          ...styles.eventDetailToolTile,
+                          ...(toolCard.featured ? styles.eventDetailToolTileFeatured : null),
+                          ...(isToolPressed ? styles.eventDetailToolTilePressed : null),
                         }}
-                        aria-hidden="true"
                       >
-                        {toolCard.icon}
-                      </span>
-                      <span style={styles.eventDetailToolTitle}>{toolCard.title}</span>
-                      <span style={styles.eventDetailToolSubtitle}>{toolCard.subtitle}</span>
-                    </button>
-                  );
-                })}
-              </div>
+                        <span
+                          style={{
+                            ...styles.eventDetailToolIcon,
+                            ...(toolCard.featured ? styles.eventDetailToolIconFeatured : null),
+                          }}
+                          aria-hidden="true"
+                        >
+                          {toolCard.icon}
+                        </span>
+                        <span style={styles.eventDetailToolTitle}>{toolCard.title}</span>
+                        <span style={styles.eventDetailToolSubtitle}>{toolCard.subtitle}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : null}
+              {shouldShowArtifactTrail ? (
+                <div style={styles.eventDetailArtifactTrail} aria-hidden="true">
+                  <span style={styles.eventDetailArtifactTrailStars}>✦ · ✧ · ✦</span>
+                  <span style={styles.eventDetailArtifactTrailCopy}>More festival details appear as they are confirmed</span>
+                </div>
+              ) : null}
             </div>
           ) : hasCardMedia && hasCardMediaSource ? (
             <div
@@ -5437,6 +5508,17 @@ const styles: Record<string, CSSProperties> = {
     gap: 8,
     padding: '12px 2px 2px',
   },
+  eventDetailToolDockSingle: {
+    gridTemplateColumns: 'minmax(112px, 148px)',
+    justifyContent: 'center',
+  },
+  eventDetailToolDockPair: {
+    gridTemplateColumns: 'repeat(2, minmax(112px, 148px))',
+    justifyContent: 'center',
+  },
+  eventDetailToolDockTrio: {
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  },
   eventDetailToolTile: {
     appearance: 'none',
     WebkitAppearance: 'none',
@@ -5459,6 +5541,7 @@ const styles: Record<string, CSSProperties> = {
     color: '#fff1ce',
     cursor: 'pointer',
     font: 'inherit',
+    textDecoration: 'none',
     textAlign: 'center',
     touchAction: 'manipulation',
     transform: 'translateY(0) scale(1)',
@@ -5517,6 +5600,28 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.1,
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+  },
+  eventDetailArtifactTrail: {
+    display: 'grid',
+    justifyItems: 'center',
+    gap: 5,
+    padding: '10px 8px 0',
+    color: 'rgba(255,221,151,.48)',
+    pointerEvents: 'none',
+    userSelect: 'none',
+  },
+  eventDetailArtifactTrailStars: {
+    fontSize: 12,
+    letterSpacing: '.35em',
+    textShadow: '0 0 14px rgba(255,199,89,.24)',
+  },
+  eventDetailArtifactTrailCopy: {
+    maxWidth: 240,
+    color: 'rgba(255,235,196,.48)',
+    fontSize: 10,
+    fontWeight: 700,
+    lineHeight: 1.25,
+    textAlign: 'center',
   },
   cardMediaWrap: {
     position: 'absolute',
