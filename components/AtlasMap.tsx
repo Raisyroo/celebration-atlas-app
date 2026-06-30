@@ -3470,6 +3470,11 @@ export default function AtlasMap({
               showShortcutGroups={false}
             />
             <form
+              className={`atlas-search-form ${
+                isSearchFocused || query.trim() || displayedQuery
+                  ? 'atlas-search-form--active'
+                  : ''
+              }`}
               style={styles.searchInputWrap}
               onSubmit={(event) => {
                 event.preventDefault();
@@ -3494,7 +3499,7 @@ export default function AtlasMap({
                   <circle cx="24" cy="24" r="2.35" fill="rgba(255, 240, 204, 0.96)" />
                 </svg>
               </span>
-              <span style={styles.searchTextBlock}>
+              <span className="atlas-search-helper-copy" style={styles.searchTextBlock}>
                 <span style={styles.searchPrefix}>Ask Celebration Atlas</span>
                 <span className="atlas-search-helper" style={styles.searchHelperText}>Find events, places, and celebrations...</span>
                 <span
@@ -3502,7 +3507,7 @@ export default function AtlasMap({
                   className={`atlas-search-query ${isSubmittedQueryFading ? 'atlas-search-query--fade' : ''}`}
                   style={styles.searchQueryText}
                 >
-                  {query || displayedQuery}
+                  {displayedQuery}
                 </span>
               </span>
               <input
@@ -3674,11 +3679,25 @@ export default function AtlasMap({
                 inset 0 0 0 1px rgba(255, 250, 226, 0.12),
                 0 0 18px rgba(255, 207, 116, 0.32),
                 0 7px 18px rgba(2, 5, 12, 0.24);
-              transform: translateY(-50%) scale(1.03);
+              transform: scale(1.03);
             }
 
             .atlas-search-submit:active {
-              transform: translateY(-50%) scale(0.97);
+              transform: scale(0.97);
+            }
+
+            .atlas-search-form .atlas-search-input {
+              opacity: 0;
+              transition: opacity 180ms ease;
+            }
+
+            .atlas-search-form--active .atlas-search-input {
+              opacity: 1;
+            }
+
+            .atlas-search-form--active .atlas-search-helper-copy {
+              opacity: 0;
+              transform: translate3d(0, -2px, 0);
             }
 
 
@@ -3722,40 +3741,31 @@ export default function AtlasMap({
               }
 
               .atlas-search-dock form {
-                min-height: 64px !important;
-                border-radius: 22px !important;
-                padding: 18px 14px 10px !important;
+                grid-template-columns: 38px minmax(0, 1fr) 38px !important;
+                column-gap: 10px !important;
+                min-height: 56px !important;
+                border-radius: 20px !important;
+                padding: 8px 10px 8px 12px !important;
               }
 
               .atlas-search-dock input {
-                padding: 36px 58px 9px 14px !important;
-                border-radius: 22px !important;
+                border-radius: 18px !important;
               }
 
-              .atlas-search-dock form > span:first-child {
-                top: 8px !important;
-                left: 14px !important;
-                font-size: 10.5px !important;
-              }
-
-              .atlas-search-helper {
-                display: block !important;
-                top: 23px !important;
-                left: 14px !important;
-                right: 58px !important;
-                font-size: 10px !important;
-              }
-
-              .atlas-search-query {
-                padding-top: 27px !important;
-              }
-
+              .atlas-search-dock form > span:first-child,
               .atlas-search-submit {
-                right: 8px !important;
                 width: 38px !important;
                 height: 38px !important;
                 min-width: 38px !important;
                 min-height: 38px !important;
+              }
+
+              .atlas-search-helper {
+                font-size: 10.5px !important;
+              }
+
+              .atlas-search-query {
+                font-size: 15px !important;
               }
 
               .mobile-live-sheet {
@@ -4996,24 +5006,24 @@ const styles: Record<string, CSSProperties> = {
   searchInputWrap: {
     position: 'relative',
     display: 'grid',
-    gridTemplateColumns: '44px minmax(0, 1fr) 44px',
+    gridTemplateColumns: '42px minmax(0, 1fr) 42px',
     alignItems: 'center',
-    columnGap: 12,
-    minHeight: 70,
+    columnGap: 10,
+    minHeight: 62,
     width: '100%',
-    borderRadius: 22,
+    borderRadius: 20,
     border: '1.5px solid rgba(255, 220, 151, 0.7)',
     background:
       'linear-gradient(145deg, rgba(22, 29, 43, 0.9), rgba(6, 10, 17, 0.84) 58%, rgba(17, 12, 10, 0.76))',
     boxShadow:
       'inset 0 0 0 1px rgba(255, 248, 224, 0.13), inset 0 12px 28px rgba(255, 223, 158, 0.04), inset 0 -18px 28px rgba(1, 3, 8, 0.34), 0 20px 48px rgba(2, 5, 12, 0.48), 0 0 30px rgba(228, 170, 79, 0.28)',
-    padding: '12px 12px 12px 14px',
+    padding: '9px 10px 9px 12px',
   },
   searchCompassMedallion: {
     position: 'relative',
     zIndex: 2,
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     flexShrink: 0,
     display: 'grid',
     placeItems: 'center',
@@ -5027,18 +5037,21 @@ const styles: Record<string, CSSProperties> = {
     pointerEvents: 'none',
   },
   searchCompassSvg: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     filter: 'drop-shadow(0 0 7px rgba(229, 174, 86, 0.3))',
   },
   searchTextBlock: {
     position: 'relative',
     zIndex: 2,
+    gridColumn: 2,
+    gridRow: 1,
     minWidth: 0,
     display: 'grid',
     alignContent: 'center',
     gap: 2,
     pointerEvents: 'none',
+    transition: 'opacity 180ms ease, transform 180ms ease',
   },
   searchPrefix: {
     display: 'block',
@@ -5047,9 +5060,13 @@ const styles: Record<string, CSSProperties> = {
     opacity: 0.98,
     textShadow: '0 1px 3px rgba(2, 3, 6, 0.9), 0 0 18px rgba(226, 171, 88, 0.18)',
     fontFamily: 'Georgia, Times New Roman, serif',
-    fontSize: 'clamp(17px, 4.6vw, 22px)',
+    fontSize: 'clamp(16px, 4.15vw, 21px)',
     fontWeight: 500,
-    letterSpacing: 0.18,
+    letterSpacing: 0.08,
+    lineHeight: 1.05,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
     textTransform: 'none',
   },
   searchHelperText: {
@@ -5058,7 +5075,7 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     fontWeight: 500,
     letterSpacing: 0.08,
-    lineHeight: 1.15,
+    lineHeight: 1.05,
     display: 'block',
     pointerEvents: 'none',
     whiteSpace: 'nowrap',
@@ -5087,15 +5104,18 @@ const styles: Record<string, CSSProperties> = {
     WebkitTouchCallout: 'none',
   },
   searchInput: {
-    position: 'absolute',
-    inset: 0,
+    position: 'relative',
+    zIndex: 3,
+    gridColumn: 2,
+    gridRow: 1,
+    minWidth: 0,
     width: '100%',
-    padding: '35px 66px 10px 70px',
-    zIndex: 1,
-    borderRadius: 26,
+    height: 34,
+    padding: 0,
+    borderRadius: 18,
     border: 'none',
     background: 'transparent',
-    color: 'transparent',
+    color: 'rgba(255, 239, 206, 0.98)',
     caretColor: 'rgba(255, 239, 206, 0.98)',
     fontSize: 16,
     fontWeight: 600,
@@ -5104,16 +5124,22 @@ const styles: Record<string, CSSProperties> = {
     textShadow: 'none',
     filter: 'none',
     boxShadow: 'none',
+    whiteSpace: 'nowrap',
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    textOverflow: 'clip',
+    WebkitAppearance: 'none',
+    appearance: 'none',
   },
   searchSubmitButton: {
     position: 'relative',
     zIndex: 3,
     display: 'grid',
     placeItems: 'center',
-    width: 44,
-    height: 44,
-    minWidth: 44,
-    minHeight: 44,
+    width: 42,
+    height: 42,
+    minWidth: 42,
+    minHeight: 42,
     padding: 0,
     borderRadius: 999,
     border: '1px solid rgba(255, 220, 151, 0.62)',
