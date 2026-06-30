@@ -1455,12 +1455,14 @@ export default function AtlasMap({
   );
   const [isCardMediaVisible, setIsCardMediaVisible] = useState(false);
   const [loadedLargeCardImageSrc, setLoadedLargeCardImageSrc] = useState<string | null>(null);
+  const [isFlyerImageRevealVisible, setIsFlyerImageRevealVisible] = useState(false);
   const [failedRemoteFlyerSrcs, setFailedRemoteFlyerSrcs] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
   const cardMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const flyerImageRevealFrameRef = useRef<number | null>(null);
   const calibrationLayerRef = useRef<HTMLDivElement | null>(null);
   const calibrationCopyStatusTimerRef = useRef<ReturnType<
     typeof setTimeout
@@ -1717,6 +1719,9 @@ export default function AtlasMap({
     displayedLargeCardImageSrc && loadedLargeCardImageSrc === displayedLargeCardImageSrc,
   );
   const isFlyerCard = Boolean(selectedMedia?.flyerSrc);
+  const shouldShowFlyerImage = Boolean(
+    isLargeCardImageReady && (!isFlyerCard || isFlyerImageRevealVisible),
+  );
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
   const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
   const fullCardBriefing = renderedEvent?.fullCardBriefing;
@@ -1748,9 +1753,23 @@ export default function AtlasMap({
       return nextIsSaved;
     });
   };
+  const revealLoadedFlyerImage = useCallback((loadedSrc: string) => {
+    setLoadedLargeCardImageSrc(loadedSrc);
+
+    if (!isFlyerCard) return;
+    if (flyerImageRevealFrameRef.current) {
+      cancelAnimationFrame(flyerImageRevealFrameRef.current);
+    }
+
+    flyerImageRevealFrameRef.current = requestAnimationFrame(() => {
+      setIsFlyerImageRevealVisible(true);
+      flyerImageRevealFrameRef.current = null;
+    });
+  }, [isFlyerCard]);
+
   const handleLargeCardImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
     if (displayedLargeCardImageSrc) {
-      setLoadedLargeCardImageSrc(displayedLargeCardImageSrc);
+      revealLoadedFlyerImage(displayedLargeCardImageSrc);
     }
 
     setFlyerMediaDebugSnapshot({
@@ -1763,6 +1782,11 @@ export default function AtlasMap({
   };
   const handleLargeCardImageError = (event: SyntheticEvent<HTMLImageElement>) => {
     setLoadedLargeCardImageSrc(null);
+    setIsFlyerImageRevealVisible(false);
+    if (flyerImageRevealFrameRef.current) {
+      cancelAnimationFrame(flyerImageRevealFrameRef.current);
+      flyerImageRevealFrameRef.current = null;
+    }
     setFlyerMediaDebugSnapshot({
       intendedSrc: selectedFlyerSrc,
       attemptedSrc: largeCardBackgroundImageSrc,
@@ -2193,6 +2217,11 @@ export default function AtlasMap({
       queueMicrotask(() => {
         if (!isCurrentSelection) return;
         setLoadedLargeCardImageSrc(null);
+        setIsFlyerImageRevealVisible(false);
+        if (flyerImageRevealFrameRef.current) {
+          cancelAnimationFrame(flyerImageRevealFrameRef.current);
+          flyerImageRevealFrameRef.current = null;
+        }
         setRenderedEvent(selected);
         setCardEnterOffset(48);
         setIsCardVisible(false);
@@ -2230,11 +2259,11 @@ export default function AtlasMap({
     if (!image.complete || image.naturalWidth <= 0) return;
 
     const cachedImageFrame = window.requestAnimationFrame(() => {
-      setLoadedLargeCardImageSrc(displayedLargeCardImageSrc);
+      revealLoadedFlyerImage(displayedLargeCardImageSrc);
     });
 
     return () => window.cancelAnimationFrame(cachedImageFrame);
-  }, [displayedLargeCardImageSrc, isFlyerCard]);
+  }, [displayedLargeCardImageSrc, isFlyerCard, revealLoadedFlyerImage]);
 
   useEffect(() => {
     let isCurrentMedia = true;
@@ -2551,6 +2580,8 @@ export default function AtlasMap({
       if (queryFadeTimerRef.current) clearTimeout(queryFadeTimerRef.current);
       if (cardMediaFadeTimerRef.current)
         clearTimeout(cardMediaFadeTimerRef.current);
+      if (flyerImageRevealFrameRef.current)
+        cancelAnimationFrame(flyerImageRevealFrameRef.current);
       if (exactEventOpenTimerRef.current)
         clearTimeout(exactEventOpenTimerRef.current);
       if (calibrationCopyStatusTimerRef.current)
@@ -2605,6 +2636,7 @@ export default function AtlasMap({
     shouldShowPolishedHomepageUi &&
       !isDesktop &&
       !isPhoneLandscape &&
+      !selectedId &&
       !isAtlasPanelOpen &&
       !hasSelectedEventCardOpen &&
       !isSearchFocused &&
@@ -3402,8 +3434,8 @@ export default function AtlasMap({
                     onError={handleLargeCardImageError}
                     style={{
                       ...styles.eventDetailFlyerImage,
-                      opacity: isLargeCardImageReady ? 1 : 0,
-                      transition: 'opacity 180ms ease',
+                      opacity: shouldShowFlyerImage ? 1 : 0,
+                      transition: 'opacity 210ms ease',
                     }}
                   />
                   {!isLargeCardImageReady ? (
