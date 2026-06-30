@@ -2680,11 +2680,6 @@ export default function AtlasMap({
       activePresentationPlan ||
       discoveryStatusText,
   );
-  const hasActiveMapInteraction =
-    mapTransform.scale > MAP_ZOOM_MIN_SCALE ||
-    Math.abs(mapTransform.translateX) > 0.5 ||
-    Math.abs(mapTransform.translateY) > 0.5;
-  const hasVisibleMapCallout = mapCalloutPlan.eventIds.size > 0;
   const hasMobileExplorationActivity = Boolean(
     selectedId ||
       renderedEvent ||
@@ -2693,19 +2688,21 @@ export default function AtlasMap({
       hasActiveAskQuery ||
       isMobileFilterOpen ||
       isMobileMenuOpen ||
-      hasActiveSearchResult ||
-      hasVisibleMapCallout ||
-      hasActiveMapInteraction,
+      hasActiveSearchResult,
   );
 
   useEffect(() => {
     if (hasMobileExplorationActivity) return undefined;
 
-    const idleClearTimer = window.setTimeout(() => {
+    let shouldClearExploration = true;
+    queueMicrotask(() => {
+      if (!shouldClearExploration) return;
       setIsMobileExploring(false);
-    }, 0);
+    });
 
-    return () => window.clearTimeout(idleClearTimer);
+    return () => {
+      shouldClearExploration = false;
+    };
   }, [hasMobileExplorationActivity]);
   const isMobileLandingIdle = Boolean(
     shouldShowPolishedHomepageUi &&
