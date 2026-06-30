@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useMobileFavorite } from './mobileFavorite';
 import { useRouter } from 'next/navigation';
@@ -54,7 +54,6 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
   { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
 ];
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
-const HOME_CONTROLS_RETURN_DURATION_MS = 280;
 const MICHIGAN_TITLE_ARTWORK_SRC = '/brand/michigan-landing-lockup.png';
 const MICHIGAN_DESKTOP_ARTWORK_SRC = '/maps/michigan-atlas-base.webp';
 const MICHIGAN_MOBILE_ARTWORK_SRC = '/maps/michigan-atlas-base-tall.webp';
@@ -1442,10 +1441,8 @@ export default function AtlasMap({
   const exactEventOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const homeControlsReturnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const hadExactSearchReturnStateRef = useRef(false);
+  const previousHomeControlsVisibleRef = useRef<boolean | null>(null);
+  const shouldAnimateNextExactSearchReturnRef = useRef(false);
   const enterFrameRef = useRef<number | null>(null);
   const enterFrameInnerRef = useRef<number | null>(null);
   const [renderedEvent, setRenderedEvent] = useState<
@@ -1462,6 +1459,7 @@ export default function AtlasMap({
   const [isMobileExploring, setIsMobileExploring] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [isHomeControlsReturning, setIsHomeControlsReturning] = useState(false);
+  const [isExactSearchReturnArmed, setIsExactSearchReturnArmed] = useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
     null,
   );
@@ -2656,8 +2654,6 @@ export default function AtlasMap({
         cancelAnimationFrame(flyerImageRevealSecondFrameRef.current);
       if (exactEventOpenTimerRef.current)
         clearTimeout(exactEventOpenTimerRef.current);
-      if (homeControlsReturnTimerRef.current)
-        clearTimeout(homeControlsReturnTimerRef.current);
       if (calibrationCopyStatusTimerRef.current)
         clearTimeout(calibrationCopyStatusTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
@@ -2736,53 +2732,64 @@ export default function AtlasMap({
     shouldShowPolishedHomepageUi && !isDesktop && !isPhoneLandscape;
   const mobileLandingTitleState = isMobileLandingIdle ? 'idle' : 'exploring';
   const shouldShowMobileMichiganBreadcrumb = shouldShowMobileLandingTitle;
-  const isExactSearchReturnStateActive = Boolean(exactEventIntent || renderedEvent);
+  const areMobileAmbientControlsVisible = Boolean(
+    shouldShowMobileAmbientAtlas && isMobileAmbientRailLayoutReady,
+  );
+  const homeControlsPhase = areMobileAmbientControlsVisible
+    ? isHomeControlsReturning
+      ? 'returning'
+      : 'resting'
+    : 'hidden';
 
-  useEffect(() => {
+  // The exact-search return class must be applied before the first eligible
+  // visible paint, so this layout effect intentionally synchronizes render
+  // state from the previous visibility snapshot.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useLayoutEffect(() => {
     if (isDesktop || isPhoneLandscape || !shouldShowPolishedHomepageUi) {
-      hadExactSearchReturnStateRef.current = isExactSearchReturnStateActive;
-      return undefined;
+      previousHomeControlsVisibleRef.current = null;
+      shouldAnimateNextExactSearchReturnRef.current = false;
+      setIsExactSearchReturnArmed(false);
+      setIsHomeControlsReturning(false);
+      return;
     }
 
-    if (!hadExactSearchReturnStateRef.current) {
-      hadExactSearchReturnStateRef.current = isExactSearchReturnStateActive;
-      return undefined;
-    }
+    const wasVisible = previousHomeControlsVisibleRef.current;
+    const isVisible = areMobileAmbientControlsVisible;
 
-    if (isExactSearchReturnStateActive) {
-      if (homeControlsReturnTimerRef.current) {
-        clearTimeout(homeControlsReturnTimerRef.current);
-        homeControlsReturnTimerRef.current = null;
+    if (!isVisible) {
+      if (exactEventIntent) {
+        shouldAnimateNextExactSearchReturnRef.current = true;
+        setIsExactSearchReturnArmed(true);
       }
-      queueMicrotask(() => setIsHomeControlsReturning(false));
-      hadExactSearchReturnStateRef.current = true;
-      return undefined;
+      previousHomeControlsVisibleRef.current = false;
+      setIsHomeControlsReturning(false);
+      return;
     }
 
-    hadExactSearchReturnStateRef.current = false;
-    if (prefersReducedMotion) return undefined;
+    const isHiddenToVisibleTransition = wasVisible === false;
+    const shouldRunExactSearchReturn =
+      isHiddenToVisibleTransition && shouldAnimateNextExactSearchReturnRef.current;
 
-    homeControlsReturnTimerRef.current = setTimeout(() => {
+    previousHomeControlsVisibleRef.current = true;
+    shouldAnimateNextExactSearchReturnRef.current = false;
+    setIsExactSearchReturnArmed(false);
+
+    if (shouldRunExactSearchReturn && !prefersReducedMotion) {
       setIsHomeControlsReturning(true);
-      homeControlsReturnTimerRef.current = setTimeout(() => {
-        setIsHomeControlsReturning(false);
-        homeControlsReturnTimerRef.current = null;
-      }, HOME_CONTROLS_RETURN_DURATION_MS + 80);
-    }, 0);
+      return;
+    }
 
-    return () => {
-      if (homeControlsReturnTimerRef.current) {
-        clearTimeout(homeControlsReturnTimerRef.current);
-        homeControlsReturnTimerRef.current = null;
-      }
-    };
+    setIsHomeControlsReturning(false);
   }, [
+    areMobileAmbientControlsVisible,
+    exactEventIntent,
     isDesktop,
-    isExactSearchReturnStateActive,
     isPhoneLandscape,
     prefersReducedMotion,
     shouldShowPolishedHomepageUi,
   ]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
   const shouldAllowPhoneLandscapeNativeScroll =
@@ -3480,6 +3487,10 @@ export default function AtlasMap({
           <div>breadcrumb computed opacity: {atlasDebugComputedStyles.breadcrumbOpacity}</div>
           <div>flyer cycle: {flyerOpenCycleKey}</div>
           <div>flyer animation class: {flyerRevealAnimationClass || 'none'}</div>
+          <div>ambient controls visible: {areMobileAmbientControlsVisible ? 'true' : 'false'}</div>
+          <div>rail layout ready: {isMobileAmbientRailLayoutReady ? 'true' : 'false'}</div>
+          <div>exact-search return armed: {isExactSearchReturnArmed ? 'true' : 'false'}</div>
+          <div>home-controls phase: {homeControlsPhase}</div>
         </div>
       ) : null}
 
@@ -3849,6 +3860,14 @@ export default function AtlasMap({
             style={{
               ...styles.searchDock,
               ...(isDesktop ? styles.searchDockDesktop : null),
+              ...(!isDesktop && !areMobileAmbientControlsVisible
+                ? styles.searchDockMobileHidden
+                : null),
+            }}
+            data-home-controls-phase={homeControlsPhase}
+            onAnimationEnd={(event) => {
+              if (event.currentTarget !== event.target) return;
+              setIsHomeControlsReturning(false);
             }}
           >
             <HomeDiscoveryLayer
@@ -4000,16 +4019,16 @@ export default function AtlasMap({
             </form>
             {!isDesktop ? (
               <section
-                className={`mobile-live-sheet${shouldShowMobileAmbientAtlas && isMobileAmbientRailLayoutReady ? ' mobile-live-sheet--ready' : ''}${isHomeControlsReturning ? ' mobile-live-sheet--returning' : ''}`}
+                className={`mobile-live-sheet${areMobileAmbientControlsVisible ? ' mobile-live-sheet--ready' : ''}${isHomeControlsReturning ? ' mobile-live-sheet--returning' : ''}`}
                 style={{
                   ...styles.mobileLiveStrip,
-                  ...(shouldShowMobileAmbientAtlas && isMobileAmbientRailLayoutReady
+                  ...(areMobileAmbientControlsVisible
                     ? styles.mobileLiveStripReady
                     : styles.mobileLiveStripHidden),
                 }}
                 aria-label="Michigan event rail"
-                aria-hidden={shouldShowMobileAmbientAtlas && isMobileAmbientRailLayoutReady ? undefined : true}
-                data-layout-ready={shouldShowMobileAmbientAtlas && isMobileAmbientRailLayoutReady ? 'true' : 'false'}
+                aria-hidden={areMobileAmbientControlsVisible ? undefined : true}
+                data-layout-ready={areMobileAmbientControlsVisible ? 'true' : 'false'}
               >
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
                   {ambientMobileEvents.map((event) => {
@@ -5478,6 +5497,11 @@ const styles: Record<string, CSSProperties> = {
     background: 'transparent',
     zIndex: Z_INDEX.searchDock,
     transition: 'bottom 240ms ease',
+  },
+  searchDockMobileHidden: {
+    opacity: 0,
+    pointerEvents: 'none',
+    transform: 'translate3d(0, 18px, 0)',
   },
   searchDockDesktop: {
     left: '6vw',
