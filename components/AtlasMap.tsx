@@ -56,6 +56,9 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
 const MOBILE_LANDING_TITLE_SESSION_KEY = 'celebration-atlas:michigan-title-dismissed';
 const MICHIGAN_TITLE_ARTWORK_SRC = '/brand/michigan-landing-lockup.png';
+const MICHIGAN_DESKTOP_ARTWORK_SRC = '/maps/michigan-atlas-base.webp';
+const MICHIGAN_MOBILE_ARTWORK_SRC = '/maps/michigan-atlas-base-tall.webp';
+const MICHIGAN_SAFE_FALLBACK_ARTWORK_SRC = MICHIGAN_DESKTOP_ARTWORK_SRC;
 const MOBILE_MENU_ITEMS = [
   'Explore Michigan',
   'Saved Celebrations',
@@ -1323,8 +1326,16 @@ export default function AtlasMap({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pressedEventDetailToolId, setPressedEventDetailToolId] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [hasResolvedResponsiveState, setHasResolvedResponsiveState] = useState(false);
   const [artworkVariant, setArtworkVariant] =
     useState<MichiganArtworkVariant>('desktop');
+  const [isMapArtworkLoaded, setIsMapArtworkLoaded] = useState(false);
+  const [isMapArtworkCelestialFallback, setIsMapArtworkCelestialFallback] =
+    useState(false);
+  const [mobileMapArtworkSrc, setMobileMapArtworkSrc] = useState(
+    MICHIGAN_MOBILE_ARTWORK_SRC,
+  );
+  const mapArtworkImageRef = useRef<HTMLImageElement | null>(null);
   const [isPhoneLandscape, setIsPhoneLandscape] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [parallaxOffset, setParallaxOffset] = useState({ x: 0, y: 0 });
@@ -2387,7 +2398,10 @@ export default function AtlasMap({
 
   useEffect(() => {
     const desktopQuery = window.matchMedia('(min-width: 1024px)');
-    const syncDesktopState = () => setIsDesktop(desktopQuery.matches);
+    const syncDesktopState = () => {
+      setIsDesktop(desktopQuery.matches);
+      setHasResolvedResponsiveState(true);
+    };
     syncDesktopState();
     desktopQuery.addEventListener('change', syncDesktopState);
 
@@ -2400,8 +2414,12 @@ export default function AtlasMap({
     const mobileArtworkQuery = window.matchMedia(
       MICHIGAN_ARTWORK_MOBILE_MEDIA_QUERY,
     );
-    const syncArtworkVariant = () =>
+    const syncArtworkVariant = () => {
       setArtworkVariant(mobileArtworkQuery.matches ? 'mobile' : 'desktop');
+      setIsMapArtworkLoaded(false);
+      setIsMapArtworkCelestialFallback(false);
+      setMobileMapArtworkSrc(MICHIGAN_MOBILE_ARTWORK_SRC);
+    };
     syncArtworkVariant();
     mobileArtworkQuery.addEventListener('change', syncArtworkVariant);
 
@@ -2409,6 +2427,37 @@ export default function AtlasMap({
       mobileArtworkQuery.removeEventListener('change', syncArtworkVariant);
     };
   }, []);
+
+  useEffect(() => {
+    const image = mapArtworkImageRef.current;
+    if (!image || !image.complete || image.naturalWidth <= 0) return;
+    setIsMapArtworkLoaded(true);
+    setIsMapArtworkCelestialFallback(false);
+  }, [artworkVariant, mobileMapArtworkSrc]);
+
+  const handleMapArtworkLoad = useCallback(
+    (event: SyntheticEvent<HTMLImageElement>) => {
+      if (event.currentTarget.naturalWidth <= 0) return;
+      setIsMapArtworkLoaded(true);
+      setIsMapArtworkCelestialFallback(false);
+    },
+    [],
+  );
+
+  const handleMapArtworkError = useCallback(() => {
+    setIsMapArtworkLoaded(false);
+
+    if (
+      artworkVariant === 'mobile' &&
+      mobileMapArtworkSrc !== MICHIGAN_SAFE_FALLBACK_ARTWORK_SRC
+    ) {
+      setIsMapArtworkCelestialFallback(false);
+      setMobileMapArtworkSrc(MICHIGAN_SAFE_FALLBACK_ARTWORK_SRC);
+      return;
+    }
+
+    setIsMapArtworkCelestialFallback(true);
+  }, [artworkVariant, mobileMapArtworkSrc]);
 
   useEffect(() => {
     const phoneLandscapeQuery = window.matchMedia(PHONE_LANDSCAPE_QUERY);
@@ -2483,14 +2532,31 @@ export default function AtlasMap({
   const isAtlasPanelOpen = Boolean(renderedEvent);
   const isStoryCardOpen = Boolean(renderedEvent);
   const hasSelectedEventCardOpen = Boolean(renderedEvent);
+  const isMobileViewportMeasured = Boolean(
+    mapViewportSize && mapViewportSize.width > 0 && mapViewportSize.height > 0,
+  );
+  const isAskBarInitialStateResolved = !displayedQuery && !isSubmittedQueryFading;
+  const isMapArtworkReady = isMapArtworkLoaded || isMapArtworkCelestialFallback;
+  const isMobileHomepageReady = Boolean(
+    hasResolvedResponsiveState &&
+      isMobileViewportMeasured &&
+      isMapArtworkReady &&
+      isAskBarInitialStateResolved,
+  );
+  const shouldGateMobileHomepageFirstPaint = !isDesktop && !isVerificationMode;
+  const shouldShowPolishedHomepageUi =
+    !shouldGateMobileHomepageFirstPaint || isMobileHomepageReady;
   const shouldShowMobileChromeControls =
+    shouldShowPolishedHomepageUi &&
     !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
   // Keep exact-search state separate from selected-card state so the mobile
   // event rail stays available for active exact searches until a flyer/card is
   // actually opened.
   const shouldShowMobileAmbientAtlas =
+    shouldShowPolishedHomepageUi &&
     !isDesktop && !isPhoneLandscape && !isAtlasPanelOpen && !hasSelectedEventCardOpen;
   const shouldShowMobileLandingTitle =
+    shouldShowPolishedHomepageUi &&
     !isDesktop &&
     !isPhoneLandscape &&
     shouldRenderMobileLandingTitle;
@@ -2521,6 +2587,10 @@ export default function AtlasMap({
         isPhoneLandscape ? 'atlas-hero--phone-landscape' : '',
         isAtlasPanelOpen ? 'atlas-hero--card-open' : '',
         isStoryCardOpen ? 'atlas-hero--story-card-open' : '',
+        shouldShowPolishedHomepageUi
+          ? 'atlas-hero--ready'
+          : 'atlas-hero--preparing',
+        isMapArtworkCelestialFallback ? 'atlas-hero--celestial-fallback' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -2561,15 +2631,18 @@ export default function AtlasMap({
           <picture>
             <source
               media="(max-width: 767px)"
-              srcSet="/maps/michigan-atlas-base-tall.webp"
+              srcSet={mobileMapArtworkSrc}
             />
             <img
               className="atlas-map-image atlas-map-image--atmosphere"
-              src="/maps/michigan-atlas-base.webp"
+              src={MICHIGAN_DESKTOP_ARTWORK_SRC}
               alt=""
               aria-hidden
               draggable={false}
-              style={styles.atmosphereMapImage}
+              style={{
+                ...styles.atmosphereMapImage,
+                opacity: isMapArtworkCelestialFallback ? 0 : 1,
+              }}
             />
           </picture>
         </div>
@@ -2584,14 +2657,20 @@ export default function AtlasMap({
           <picture>
             <source
               media="(max-width: 767px)"
-              srcSet="/maps/michigan-atlas-base-tall.webp"
+              srcSet={mobileMapArtworkSrc}
             />
             <img
               className="atlas-map-image"
-              src="/maps/michigan-atlas-base.webp"
+              src={MICHIGAN_DESKTOP_ARTWORK_SRC}
+              ref={mapArtworkImageRef}
               alt="Michigan Atlas"
               draggable={false}
-              style={styles.mapImage}
+              style={{
+                ...styles.mapImage,
+                opacity: isMapArtworkCelestialFallback ? 0 : 1,
+              }}
+              onLoad={handleMapArtworkLoad}
+              onError={handleMapArtworkError}
             />
           </picture>
 
@@ -2602,7 +2681,10 @@ export default function AtlasMap({
             }}
           />
 
-          {!shouldShowCalibration && !isVerificationMode && isDesktop ? (
+          {!shouldShowCalibration &&
+          !isVerificationMode &&
+          isDesktop &&
+          shouldShowPolishedHomepageUi ? (
             <>
               <AtmosphereLayer
                 events={ATLAS_EVENTS}
@@ -2633,7 +2715,10 @@ export default function AtlasMap({
             />
           ) : null}
 
-          {!shouldShowCalibration && !isVerificationMode && isDesktop ? (
+          {!shouldShowCalibration &&
+          !isVerificationMode &&
+          isDesktop &&
+          shouldShowPolishedHomepageUi ? (
             <ConstellationLineLayer points={constellationLinePoints} />
           ) : null}
 
@@ -2642,7 +2727,7 @@ export default function AtlasMap({
           <div style={styles.vignette} />
         </div>
 
-        {!shouldShowCalibration ? (
+        {!shouldShowCalibration && shouldShowPolishedHomepageUi ? (
           <div
             style={{
               ...styles.markerOverlayLayer,
@@ -3446,7 +3531,9 @@ export default function AtlasMap({
         </article>
       ) : null}
 
-      {!shouldShowCalibration && !isVerificationMode ? (
+      {!shouldShowCalibration &&
+      !isVerificationMode &&
+      shouldShowPolishedHomepageUi ? (
         <>
           <div
             className="atlas-search-dock"
@@ -3499,7 +3586,16 @@ export default function AtlasMap({
                   <circle cx="24" cy="24" r="2.35" fill="rgba(255, 240, 204, 0.96)" />
                 </svg>
               </span>
-              <span className="atlas-search-helper-copy" style={styles.searchTextBlock}>
+              <span
+                className="atlas-search-helper-copy"
+                style={{
+                  ...styles.searchTextBlock,
+                  visibility:
+                    query.trim() || displayedQuery || isSearchFocused
+                      ? 'hidden'
+                      : 'visible',
+                }}
+              >
                 <span style={styles.searchPrefix}>Ask Celebration Atlas</span>
                 <span className="atlas-search-helper" style={styles.searchHelperText}>Find events, places, and celebrations...</span>
                 <span
@@ -3695,16 +3791,50 @@ export default function AtlasMap({
 
             .atlas-search-form .atlas-search-input {
               opacity: 0;
+              color: transparent;
+              caret-color: transparent;
               transition: opacity 180ms ease;
+            }
+
+            .atlas-search-form .atlas-search-input::placeholder {
+              color: transparent;
             }
 
             .atlas-search-form--active .atlas-search-input {
               opacity: 1;
+              color: rgba(255, 239, 206, 0.98);
+              caret-color: rgba(255, 239, 206, 0.98);
+            }
+
+            .atlas-search-form--active .atlas-search-input::placeholder {
+              color: rgba(255, 239, 206, 0.46);
             }
 
             .atlas-search-form--active .atlas-search-helper-copy {
               opacity: 0;
               transform: translate3d(0, -2px, 0);
+            }
+
+            .atlas-hero--preparing::after,
+            .atlas-hero--celestial-fallback::after {
+              content: '';
+              position: absolute;
+              inset: 0;
+              z-index: 19;
+              pointer-events: none;
+              background:
+                radial-gradient(circle at 50% 36%, rgba(255, 210, 128, 0.08), transparent 34%),
+                linear-gradient(180deg, rgba(5, 9, 16, 0.18), rgba(3, 6, 11, 0.34));
+            }
+
+            .atlas-hero--celestial-fallback::after {
+              z-index: 0;
+              background:
+                radial-gradient(circle at 22% 24%, rgba(255, 235, 180, 0.12), transparent 2px),
+                radial-gradient(circle at 78% 18%, rgba(194, 220, 255, 0.1), transparent 1.5px),
+                radial-gradient(circle at 64% 62%, rgba(255, 210, 128, 0.1), transparent 1.8px),
+                radial-gradient(circle at 50% 36%, rgba(255, 210, 128, 0.08), transparent 34%),
+                linear-gradient(180deg, rgba(5, 9, 16, 0.36), rgba(3, 6, 11, 0.62));
             }
 
 
