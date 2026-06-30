@@ -1433,6 +1433,8 @@ export default function AtlasMap({
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const [mapViewportSize, setMapViewportSize] = useState<MapViewportSize | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
+  const mobileTitleArtworkRef = useRef<HTMLImageElement | null>(null);
+  const mobileMichiganBreadcrumbRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queryFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1460,6 +1462,11 @@ export default function AtlasMap({
   const [isCardMediaVisible, setIsCardMediaVisible] = useState(false);
   const [loadedLargeCardImageSrc, setLoadedLargeCardImageSrc] = useState<string | null>(null);
   const [isFlyerImageRevealVisible, setIsFlyerImageRevealVisible] = useState(false);
+  const [atlasDebugComputedStyles, setAtlasDebugComputedStyles] = useState({
+    titleOpacity: 'not rendered',
+    titleVisibility: 'not rendered',
+    breadcrumbOpacity: 'not rendered',
+  });
   const [failedRemoteFlyerSrcs, setFailedRemoteFlyerSrcs] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -1729,6 +1736,10 @@ export default function AtlasMap({
   const shouldShowFlyerImage = Boolean(
     isLargeCardImageReady && (!isFlyerCard || isFlyerImageRevealVisible),
   );
+  const flyerRevealAnimationClass =
+    isFlyerCard && shouldShowFlyerImage && !prefersReducedMotion
+      ? 'atlas-flyer-poster-reveal'
+      : '';
   const flyerImageRenderKey = `${displayedLargeCardImageSrc ?? 'no-flyer-src'}-${flyerOpenCycleKey}`;
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
   const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
@@ -1773,33 +1784,8 @@ export default function AtlasMap({
 
     if (!isFlyerCard) return;
     if (loadedCycle !== activeFlyerOpenCycleRef.current) return;
-    setIsFlyerImageRevealVisible(false);
-
-    if (flyerImageRevealFrameRef.current) {
-      cancelAnimationFrame(flyerImageRevealFrameRef.current);
-      flyerImageRevealFrameRef.current = null;
-    }
-    if (flyerImageRevealSecondFrameRef.current) {
-      cancelAnimationFrame(flyerImageRevealSecondFrameRef.current);
-      flyerImageRevealSecondFrameRef.current = null;
-    }
-
-    if (prefersReducedMotion) {
-      setIsFlyerImageRevealVisible(true);
-      return;
-    }
-
-    flyerImageRevealFrameRef.current = requestAnimationFrame(() => {
-      setIsFlyerImageRevealVisible(false);
-      flyerImageRevealFrameRef.current = null;
-      flyerImageRevealSecondFrameRef.current = requestAnimationFrame(() => {
-        if (loadedCycle === activeFlyerOpenCycleRef.current) {
-          setIsFlyerImageRevealVisible(true);
-        }
-        flyerImageRevealSecondFrameRef.current = null;
-      });
-    });
-  }, [isFlyerCard, prefersReducedMotion]);
+    setIsFlyerImageRevealVisible(true);
+  }, [isFlyerCard]);
 
   const handleLargeCardImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
     if (displayedLargeCardImageSrc) {
@@ -2312,6 +2298,34 @@ export default function AtlasMap({
 
     return () => window.cancelAnimationFrame(cachedImageFrame);
   }, [displayedLargeCardImageSrc, flyerOpenCycleKey, isFlyerCard, revealLoadedFlyerImage]);
+
+  useEffect(() => {
+    if (!isAtlasDebugMode) return;
+
+    const readComputedVisualState = () => {
+      const titleStyle = mobileTitleArtworkRef.current
+        ? window.getComputedStyle(mobileTitleArtworkRef.current)
+        : null;
+      const breadcrumbStyle = mobileMichiganBreadcrumbRef.current
+        ? window.getComputedStyle(mobileMichiganBreadcrumbRef.current)
+        : null;
+
+      setAtlasDebugComputedStyles({
+        titleOpacity: titleStyle?.opacity ?? 'not rendered',
+        titleVisibility: titleStyle?.visibility ?? 'not rendered',
+        breadcrumbOpacity: breadcrumbStyle?.opacity ?? 'not rendered',
+      });
+    };
+
+    readComputedVisualState();
+    const firstFrame = window.requestAnimationFrame(readComputedVisualState);
+    const transitionTimer = window.setTimeout(readComputedVisualState, 390);
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.clearTimeout(transitionTimer);
+    };
+  }, [isAtlasDebugMode, isMobileExploring, flyerOpenCycleKey, flyerRevealAnimationClass]);
 
   useEffect(() => {
     let isCurrentMedia = true;
@@ -3337,23 +3351,55 @@ export default function AtlasMap({
           <span
             className="mobile-atlas-identity-scrim"
             aria-hidden="true"
-            style={styles.mobileAtlasIdentityScrim}
+            style={{
+              ...styles.mobileAtlasIdentityScrim,
+              opacity: isMobileExploring ? 0 : 1,
+              transform: isMobileExploring
+                ? 'translate3d(-50%, -54%, 0) scale(0.94)'
+                : 'translate3d(-50%, -50%, 0)',
+              transition: isMobileExploring
+                ? 'opacity 340ms ease-out, transform 340ms ease-out'
+                : 'opacity 300ms ease-out, transform 300ms ease-out',
+            }}
           />
           {/* eslint-disable-next-line @next/next/no-img-element -- Title artwork must render as the approved transparent brand asset without layout-driven image optimization wrappers. */}
           <img
+            ref={mobileTitleArtworkRef}
             className="mobile-atlas-title-artwork"
             src={MICHIGAN_TITLE_ARTWORK_SRC}
             alt="Celebration Atlas Michigan"
             draggable={false}
-            style={styles.mobileAtlasTitleArtwork}
+            style={{
+              ...styles.mobileAtlasTitleArtwork,
+              opacity: isMobileExploring ? 0 : 1,
+              visibility: isMobileExploring ? 'hidden' : 'visible',
+              transform: isMobileExploring
+                ? 'translate3d(0, -8px, 0)'
+                : 'translate3d(0, 0, 0)',
+              pointerEvents: isMobileExploring ? 'none' : 'auto',
+              transition: isMobileExploring
+                ? 'opacity 340ms ease-out, transform 340ms ease-out, visibility 0ms linear 340ms'
+                : 'opacity 300ms ease-out, transform 300ms ease-out, visibility 0ms linear 0ms',
+            }}
           />
         </header>
       ) : null}
 
       {shouldShowMobileMichiganBreadcrumb ? (
         <div
-          className={`mobile-michigan-breadcrumb ${isMobileExploring ? 'mobile-michigan-breadcrumb--visible' : 'mobile-michigan-breadcrumb--hidden'}`}
-          style={styles.mobileMichiganBreadcrumb}
+          ref={mobileMichiganBreadcrumbRef}
+          className="mobile-michigan-breadcrumb"
+          style={{
+            ...styles.mobileMichiganBreadcrumb,
+            opacity: isMobileExploring ? 0.64 : 0,
+            visibility: isMobileExploring ? 'visible' : 'hidden',
+            transform: isMobileExploring
+              ? 'translate3d(0, 0, 0)'
+              : 'translate3d(0, -7px, 0)',
+            transition: isMobileExploring
+              ? 'opacity 280ms ease-out, transform 280ms ease-out, visibility 0ms linear 0ms'
+              : 'opacity 240ms ease-out, transform 240ms ease-out, visibility 0ms linear 240ms',
+          }}
           aria-hidden="true"
           data-mobile-title-state={mobileLandingTitleState}
           data-mobile-exploring={isMobileExploring ? 'true' : 'false'}
@@ -3374,6 +3420,11 @@ export default function AtlasMap({
           <div>menu open: {isMobileMenuOpen ? 'true' : 'false'}</div>
           <div>card open: {renderedEvent ? 'true' : 'false'}</div>
           <div>search/result: {hasActiveSearchResult ? 'true' : 'false'}</div>
+          <div>title computed opacity: {atlasDebugComputedStyles.titleOpacity}</div>
+          <div>title computed visibility: {atlasDebugComputedStyles.titleVisibility}</div>
+          <div>breadcrumb computed opacity: {atlasDebugComputedStyles.breadcrumbOpacity}</div>
+          <div>flyer cycle: {flyerOpenCycleKey}</div>
+          <div>flyer animation class: {flyerRevealAnimationClass || 'none'}</div>
         </div>
       ) : null}
 
@@ -3512,6 +3563,7 @@ export default function AtlasMap({
                   <img
                     key={flyerImageRenderKey}
                     ref={largeCardImageRef}
+                    className={flyerRevealAnimationClass || undefined}
                     src={displayedLargeCardImageSrc}
                     alt={`${safeEventCard.name} flyer`}
                     onLoad={handleLargeCardImageLoad}
@@ -3519,7 +3571,7 @@ export default function AtlasMap({
                     style={{
                       ...styles.eventDetailFlyerImage,
                       opacity: shouldShowFlyerImage ? 1 : 0,
-                      transition: prefersReducedMotion ? 'none' : 'opacity 210ms ease',
+                      transition: 'none',
                     }}
                   />
                   {!isLargeCardImageReady ? (
@@ -4215,29 +4267,21 @@ export default function AtlasMap({
             }
 
 
-            .mobile-atlas-identity--exploring .mobile-atlas-identity-scrim {
-              opacity: 0 !important;
-              transform: translate3d(-50%, -54%, 0) scale(0.94) !important;
+            @keyframes atlasFlyerPosterReveal {
+              from {
+                opacity: 0.15;
+                transform: scale(1.008);
+              }
+
+              to {
+                opacity: 1;
+                transform: scale(1);
+              }
             }
 
-            .mobile-atlas-identity--exploring {
-              opacity: 0 !important;
-              transform: translate3d(0, -14px, 0) scale(0.96) !important;
-            }
-
-            .mobile-atlas-identity--exploring .mobile-atlas-title-artwork {
-              opacity: 0 !important;
-              transform: translate3d(0, -6px, 0) scale(0.97) !important;
-            }
-
-            .mobile-michigan-breadcrumb--visible {
-              opacity: 1 !important;
-              transform: translate3d(0, 0, 0) !important;
-            }
-
-            .mobile-michigan-breadcrumb--hidden {
-              opacity: 0 !important;
-              transform: translate3d(0, -7px, 0) !important;
+            .atlas-flyer-poster-reveal {
+              animation: atlasFlyerPosterReveal 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+              transform-origin: center center;
             }
 
             @media (prefers-reduced-motion: reduce) {
