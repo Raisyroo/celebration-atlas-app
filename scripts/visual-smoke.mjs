@@ -29,6 +29,21 @@ async function waitForServer(url, timeoutMs = 90_000) {
   throw new Error(`Timed out waiting for ${url}: ${lastError instanceof Error ? lastError.message : String(lastError)}`);
 }
 
+async function waitForLocatorCountAtLeast(locator, minimumCount, timeoutMs, errorMessage) {
+  const deadline = Date.now() + timeoutMs;
+  let latestCount = 0;
+
+  while (Date.now() < deadline) {
+    latestCount = await locator.count();
+    if (latestCount >= minimumCount) return latestCount;
+
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  latestCount = await locator.count();
+  throw new Error(errorMessage(latestCount));
+}
+
 async function main() {
   await mkdir(outputDir, { recursive: true });
 
@@ -70,6 +85,13 @@ async function main() {
 
   const romeoRailButtonSelector = 'button[aria-label="Open Romeo Peach Festival"]';
   const romeoRailButton = page.locator('.mobile-live-sheet').locator(romeoRailButtonSelector);
+  await waitForLocatorCountAtLeast(
+    romeoRailButton,
+    1,
+    45_000,
+    (count) =>
+      `Expected Romeo Peach Festival button inside .mobile-live-sheet to appear within 45 seconds after exact search, but found ${count}.`,
+  );
   const romeoRailButtonCount = await romeoRailButton.count();
   if (romeoRailButtonCount !== 1) {
     throw new Error(
