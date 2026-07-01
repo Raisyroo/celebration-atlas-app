@@ -350,6 +350,14 @@ body.atlas-story-card-open {
     display: none;
   }
 
+
+  .atlas-media-reveal {
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 1300ms;
+    transition-timing-function: ease;
+  }
+
   .atlas-card.atlas-card--flyer .atlas-card-media > img {
     display: block;
   }
