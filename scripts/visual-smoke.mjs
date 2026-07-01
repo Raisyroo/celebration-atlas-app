@@ -42,6 +42,80 @@ async function waitForLoadedImage(page, selector, timeoutMs = 45_000) {
   );
 }
 
+async function waitForHomepageRailReady(page, timeoutMs = 45_000) {
+  const failureMessage =
+    'Timed out waiting for homepage mobile rail artwork readiness: expected visible rail, first visible card, no visible loading/placeholder/overlay in that card, and a loaded image or stable fallback.';
+
+  try {
+    await page.waitForFunction(
+      () => {
+        const isVisible = (element) => {
+          const style = window.getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return (
+            style.visibility !== 'hidden' &&
+            style.display !== 'none' &&
+            Number(style.opacity) > 0.01 &&
+            rect.width > 0 &&
+            rect.height > 0
+          );
+        };
+
+        const rail = document.querySelector(
+          '.mobile-live-sheet[data-layout-ready="true"][aria-label="Michigan event rail"]',
+        );
+
+        if (!(rail instanceof HTMLElement) || !isVisible(rail)) return false;
+
+        const firstVisibleCard = Array.from(rail.querySelectorAll('.mobile-live-card')).find(
+          (card) => card instanceof HTMLElement && isVisible(card),
+        );
+
+        if (!(firstVisibleCard instanceof HTMLElement)) return false;
+
+        const unsettledArtwork = Array.from(firstVisibleCard.querySelectorAll('*')).some((element) => {
+          if (!(element instanceof HTMLElement) || !isVisible(element)) return false;
+
+          const markerText = [
+            element.getAttribute('aria-label'),
+            element.getAttribute('role'),
+            element.getAttribute('class'),
+            element.getAttribute('data-state'),
+            element.getAttribute('data-loading'),
+            element.textContent,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+          return (
+            element.getAttribute('aria-busy') === 'true' ||
+            markerText.includes('progressbar') ||
+            markerText.includes('spinner') ||
+            markerText.includes('skeleton') ||
+            markerText.includes('placeholder') ||
+            markerText.includes('loading') ||
+            markerText.includes('overlay')
+          );
+        });
+
+        if (unsettledArtwork) return false;
+
+        const image = firstVisibleCard.querySelector('img');
+        if (image instanceof HTMLImageElement) {
+          return image.complete && image.naturalWidth > 0 && image.naturalHeight > 0;
+        }
+
+        const fallback = firstVisibleCard.querySelector('[role="img"], [aria-label*="fallback visual" i]');
+        return fallback instanceof HTMLElement && isVisible(fallback);
+      },
+      { timeout: timeoutMs },
+    );
+  } catch (error) {
+    throw new Error(`${failureMessage} ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 function createServerExitPromise(childProcess) {
   return new Promise((resolve) => {
     childProcess.once('close', (code, signal) => resolve({ code, signal }));
@@ -121,8 +195,8 @@ async function main() {
   await page.locator('img.atlas-map-image[alt="Michigan Atlas"]').waitFor({ state: 'visible', timeout: 45_000 });
   await waitForLoadedImage(page, 'img.atlas-map-image[alt="Michigan Atlas"]');
   await page.getByLabel('Ask Celebration Atlas').waitFor({ state: 'visible', timeout: 45_000 });
-  await page.locator('.mobile-live-sheet[data-layout-ready="true"][aria-label="Michigan event rail"]').waitFor({ state: 'visible', timeout: 45_000 });
-  await page.locator('.mobile-live-sheet[data-layout-ready="true"] .mobile-live-card').first().waitFor({ state: 'visible', timeout: 45_000 });
+  await waitForHomepageRailReady(page);
+  console.log('Homepage rail ready; capturing visual smoke screenshot.');
 
   await page.screenshot({ path: homepageScreenshotPath, fullPage: true });
   console.log(`Visual smoke screenshot written to ${path.relative(process.cwd(), homepageScreenshotPath)}`);
