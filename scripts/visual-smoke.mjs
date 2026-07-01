@@ -67,7 +67,17 @@ async function main() {
 
   await page.getByLabel('Ask Celebration Atlas').fill('Romeo Peach Festival');
   await page.getByLabel('Submit Atlas question').click();
-  await page.getByLabel('Open Romeo Peach Festival').click({ timeout: 45_000 });
+
+  const romeoRailButtonSelector = 'button[aria-label="Open Romeo Peach Festival"]';
+  const romeoRailButton = page.locator('.mobile-live-sheet').locator(romeoRailButtonSelector);
+  const romeoRailButtonCount = await romeoRailButton.count();
+  if (romeoRailButtonCount !== 1) {
+    throw new Error(
+      `Expected exactly one Romeo Peach Festival button inside .mobile-live-sheet, found ${romeoRailButtonCount}.`,
+    );
+  }
+  await romeoRailButton.waitFor({ state: 'visible', timeout: 45_000 });
+  await romeoRailButton.click({ timeout: 45_000 });
   await page.getByAltText('Romeo Peach Festival flyer').waitFor({ state: 'visible', timeout: 45_000 });
   await page.screenshot({ path: path.join(outputDir, 'romeo-peach-flyer-mobile.png'), fullPage: true });
 
