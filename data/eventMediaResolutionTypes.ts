@@ -3,6 +3,7 @@ import type { ResolvedEventMedia } from './eventMedia';
 export type EventFlyerResolution = ResolvedEventMedia & {
   canonicalSlug: string;
   officialUrl?: `https://${string}`;
+  officialUrlSource?: 'events' | 'event_sources';
   officialUrlField?: string;
 };
 

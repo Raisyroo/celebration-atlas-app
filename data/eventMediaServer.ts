@@ -3,10 +3,15 @@ import 'server-only';
 import { getEventFlyer } from './eventFlyers';
 import { resolveEventFlyerMedia, type ResolvedEventMedia } from './eventMedia';
 import { getCanonicalEventSlug } from './eventCanonicalSlugs';
+import {
+  OFFICIAL_EVENT_URL_FIELDS,
+  selectOfficialEventUrl,
+  type OfficialEventSourceRow,
+  type ResolvedOfficialEventUrl,
+} from './officialEventUrl';
 import type { EventFlyerResolution, EventFlyerResolutionMap } from './eventMediaResolutionTypes';
 
 const APPROVED_FLYER_SELECT = 'public_url,storage_bucket,storage_path,title,alt_text';
-const OFFICIAL_URL_FIELDS = ['official_url', 'official_site', 'website_url'] as const;
 
 type SupabaseEventMediaRow = {
   public_url?: unknown;
@@ -17,11 +22,6 @@ type SupabaseEventMediaRow = {
 };
 
 type SupabaseOfficialUrlRow = Record<string, unknown>;
-
-type ResolvedOfficialUrl = {
-  url: `https://${string}`;
-  field: (typeof OFFICIAL_URL_FIELDS)[number];
-};
 
 function getSupabaseConfig(): { url: URL; serviceRoleKey: string } | undefined {
   const rawUrl = process.env.SUPABASE_URL?.trim();
@@ -123,11 +123,11 @@ async function lookupApprovedSupabaseFlyer(
   }
 }
 
-async function lookupOfficialEventUrl(canonicalSlug: string): Promise<ResolvedOfficialUrl | undefined> {
+async function lookupOfficialUrlFromEvents(canonicalSlug: string): Promise<SupabaseOfficialUrlRow | undefined> {
   const config = getSupabaseConfig();
   if (!config) return undefined;
 
-  for (const field of OFFICIAL_URL_FIELDS) {
+  for (const field of OFFICIAL_EVENT_URL_FIELDS) {
     const requestUrl = new URL('/rest/v1/events', config.url);
     requestUrl.searchParams.set('select', `slug,${field}`);
     requestUrl.searchParams.set('slug', `eq.${canonicalSlug}`);
@@ -145,17 +145,51 @@ async function lookupOfficialEventUrl(canonicalSlug: string): Promise<ResolvedOf
       if (!response.ok) continue;
 
       const rows = (await response.json()) as SupabaseOfficialUrlRow[];
-      const candidate = rows[0]?.[field];
-
-      if (isHttpsUrl(candidate)) {
-        return { url: candidate as `https://${string}`, field };
-      }
+      if (isHttpsUrl(rows[0]?.[field])) return rows[0];
     } catch {
       continue;
     }
   }
 
   return undefined;
+}
+
+async function lookupOfficialUrlFromEventSources(
+  canonicalSlug: string,
+): Promise<OfficialEventSourceRow[]> {
+  const config = getSupabaseConfig();
+  if (!config) return [];
+
+  const requestUrl = new URL('/rest/v1/event_sources', config.url);
+  requestUrl.searchParams.set('select', '*,events!inner(slug)');
+  requestUrl.searchParams.set('events.slug', `eq.${canonicalSlug}`);
+
+  try {
+    const response = await fetch(requestUrl, {
+      headers: {
+        apikey: config.serviceRoleKey,
+        Authorization: `Bearer ${config.serviceRoleKey}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return [];
+
+    return (await response.json()) as OfficialEventSourceRow[];
+  } catch {
+    return [];
+  }
+}
+
+async function lookupOfficialEventUrl(
+  canonicalSlug: string,
+): Promise<ResolvedOfficialEventUrl | undefined> {
+  const [eventsRow, eventSourceRows] = await Promise.all([
+    lookupOfficialUrlFromEvents(canonicalSlug),
+    lookupOfficialUrlFromEventSources(canonicalSlug),
+  ]);
+
+  return selectOfficialEventUrl(eventsRow, eventSourceRows);
 }
 
 export async function resolveEventFlyerMediaServer(
@@ -175,6 +209,7 @@ export async function resolveEventFlyerMediaServer(
       fallback: getEventFlyer(event.id),
       canonicalSlug,
       officialUrl: officialUrl?.url,
+      officialUrlSource: officialUrl?.source,
       officialUrlField: officialUrl?.field,
     };
   }
@@ -185,6 +220,7 @@ export async function resolveEventFlyerMediaServer(
         ...localFallback,
         canonicalSlug,
         officialUrl: officialUrl?.url,
+        officialUrlSource: officialUrl?.source,
         officialUrlField: officialUrl?.field,
       }
     : undefined;

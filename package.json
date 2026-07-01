@@ -17,6 +17,7 @@
     "atlas:runbook": "node scripts/atlas-runbook.mjs",
     "atlas:doctor": "node scripts/atlas-doctor.mjs",
     "atlas:generate-thumbnails": "node --experimental-strip-types scripts/generate-event-thumbnails.ts",
+    "validate:official-urls": "node --experimental-strip-types scripts/validate-official-url-resolver.ts",
     "validate:flyers": "node --experimental-strip-types scripts/validate-flyers.ts",
     "validate:flyers:local": "node --experimental-strip-types scripts/validate-flyers.ts --local",
     "test:visual-install": "playwright install chromium",
