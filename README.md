@@ -47,7 +47,7 @@ Poster image files are optional and not required.
 
 ## Visual smoke screenshots
 
-This repo includes a minimal Playwright smoke script for Codex visual verification. Install the Chromium browser binary once in the Codex container:
+This repo includes a minimal Playwright smoke script for visual verification. Install the Chromium browser binary locally when your environment allows browser downloads:
 
 ```bash
 npm run test:visual-install
@@ -63,4 +63,6 @@ The script starts the local Next.js app when `VISUAL_SMOKE_BASE_URL` is not set.
 
 Screenshots are written to `artifacts/visual-smoke/` and are ignored by git. Do not commit screenshot files unless a task explicitly asks for them.
 
-Future visual PR summaries must not claim visual success unless screenshots were generated and inspected.
+Codex cloud may be unable to install Playwright browsers because Chromium downloads can be blocked there. GitHub Actions is the expected screenshot-capture environment for PRs; it runs the visual smoke workflow and uploads `artifacts/visual-smoke/` as the `celebration-atlas-visual-smoke` artifact.
+
+Future visual PR summaries must not claim visual success unless screenshots were generated and inspected. Visual PRs should link to or reference the GitHub Actions artifact before claiming visual success.

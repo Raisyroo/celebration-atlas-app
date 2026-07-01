@@ -1,0 +1,81 @@
+name: Visual smoke screenshots
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-smoke:
+    name: Capture visual smoke screenshots
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        id: install_browsers
+        continue-on-error: true
+        run: npx playwright install --with-deps chromium
+
+      - name: Run visual smoke screenshots
+        id: visual_smoke
+        if: steps.install_browsers.outcome == 'success'
+        continue-on-error: true
+        run: npm run test:visual-smoke
+
+      - name: Upload visual smoke screenshots
+        id: upload_screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: celebration-atlas-visual-smoke
+          path: artifacts/visual-smoke/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Write workflow summary
+        if: always()
+        run: |
+          if [ "${{ steps.visual_smoke.outcome }}" = "success" ]; then
+            smoke_status="passed"
+          elif [ "${{ steps.visual_smoke.outcome }}" = "skipped" ]; then
+            smoke_status="skipped"
+          else
+            smoke_status="failed"
+          fi
+
+          if [ -n "${{ steps.upload_screenshots.outputs.artifact-id }}" ]; then
+            artifact_status="uploaded"
+          else
+            artifact_status="not uploaded"
+          fi
+
+          {
+            echo "## Celebration Atlas visual smoke"
+            echo ""
+            echo "- Visual-smoke command: ${smoke_status}"
+            echo "- Screenshot artifact: ${artifact_status}"
+            echo "- Artifact name: celebration-atlas-visual-smoke"
+            echo "- Artifact folder path: artifacts/visual-smoke/"
+            echo ""
+            echo "This workflow captures screenshot evidence only; it does not approve visual design changes."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if visual smoke failed
+        if: steps.install_browsers.outcome != 'success' || steps.visual_smoke.outcome != 'success'
+        run: exit 1
