@@ -5,7 +5,9 @@ import { resolveEventFlyerMedia, type ResolvedEventMedia } from './eventMedia';
 import { getCanonicalEventSlug } from './eventCanonicalSlugs';
 import {
   OFFICIAL_EVENT_URL_FIELDS,
+  diagnoseOfficialEventUrl,
   selectOfficialEventUrl,
+  type OfficialEventSourceRejectionReason,
   type OfficialEventSourceRow,
   type ResolvedOfficialEventUrl,
 } from './officialEventUrl';
@@ -183,20 +185,29 @@ async function lookupOfficialUrlFromEventSources(
 
 async function lookupOfficialEventUrl(
   canonicalSlug: string,
-): Promise<ResolvedOfficialEventUrl | undefined> {
+): Promise<{ officialUrl?: ResolvedOfficialEventUrl; debug: { sourcePath: 'events' | 'event_sources' | 'none'; rejectedReasons: OfficialEventSourceRejectionReason[] } }> {
   const [eventsRow, eventSourceRows] = await Promise.all([
     lookupOfficialUrlFromEvents(canonicalSlug),
     lookupOfficialUrlFromEventSources(canonicalSlug),
   ]);
 
-  return selectOfficialEventUrl(eventsRow, eventSourceRows);
+  const officialUrl = selectOfficialEventUrl(eventsRow, eventSourceRows);
+  const diagnostics = diagnoseOfficialEventUrl(eventsRow, eventSourceRows);
+
+  return {
+    officialUrl,
+    debug: {
+      sourcePath: diagnostics.sourcePath,
+      rejectedReasons: diagnostics.eventSourceRejectedReasons,
+    },
+  };
 }
 
 export async function resolveEventFlyerMediaServer(
   event: { id: string; flyerSrc?: string },
 ): Promise<EventFlyerResolution | undefined> {
   const canonicalSlug = getCanonicalEventSlug(event);
-  const [supabaseFlyer, officialUrl] = await Promise.all([
+  const [supabaseFlyer, officialUrlResolution] = await Promise.all([
     lookupApprovedSupabaseFlyer(canonicalSlug),
     lookupOfficialEventUrl(canonicalSlug),
   ]);
@@ -208,9 +219,10 @@ export async function resolveEventFlyerMediaServer(
       fallbackUsed: false,
       fallback: getEventFlyer(event.id),
       canonicalSlug,
-      officialUrl: officialUrl?.url,
-      officialUrlSource: officialUrl?.source,
-      officialUrlField: officialUrl?.field,
+      officialUrl: officialUrlResolution.officialUrl?.url,
+      officialUrlSource: officialUrlResolution.officialUrl?.source,
+      officialUrlField: officialUrlResolution.officialUrl?.field,
+      officialUrlDebug: officialUrlResolution.debug,
     };
   }
 
@@ -219,9 +231,10 @@ export async function resolveEventFlyerMediaServer(
     ? {
         ...localFallback,
         canonicalSlug,
-        officialUrl: officialUrl?.url,
-        officialUrlSource: officialUrl?.source,
-        officialUrlField: officialUrl?.field,
+        officialUrl: officialUrlResolution.officialUrl?.url,
+        officialUrlSource: officialUrlResolution.officialUrl?.source,
+        officialUrlField: officialUrlResolution.officialUrl?.field,
+        officialUrlDebug: officialUrlResolution.debug,
       }
     : undefined;
 }
