@@ -2547,11 +2547,15 @@ export default function AtlasMap({
   );
   const isAskBarInitialStateResolved = !displayedQuery && !isSubmittedQueryFading;
   const isMapArtworkReady = isMapArtworkLoaded || isMapArtworkCelestialFallback;
+  const hasActiveAskQuery = Boolean(query.trim() || submittedQuery.trim() || displayedQuery.trim());
+  const shouldBypassAskBarInitialGate = Boolean(
+    isMobileExploring || hasActiveAskQuery || selectedId || renderedEvent || isCardVisible,
+  );
   const isMobileHomepageReady = Boolean(
     hasResolvedResponsiveState &&
       isMobileViewportMeasured &&
       isMapArtworkReady &&
-      isAskBarInitialStateResolved,
+      (isAskBarInitialStateResolved || shouldBypassAskBarInitialGate),
   );
   const shouldGateMobileHomepageFirstPaint = !isDesktop && !isVerificationMode;
   const shouldShowPolishedHomepageUi =
@@ -2560,12 +2564,13 @@ export default function AtlasMap({
     shouldShowPolishedHomepageUi &&
     !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
   // Keep exact-search state separate from selected-card state so the mobile
-  // event rail stays available for active exact searches until a flyer/card is
-  // actually opened.
+  // Ask bar and rail stay mounted through exact lookup, flyer opening, and close.
   const shouldShowMobileAmbientAtlas =
     shouldShowPolishedHomepageUi &&
-    !isDesktop && !isPhoneLandscape && !isAtlasPanelOpen && !hasSelectedEventCardOpen;
-  const hasActiveAskQuery = Boolean(query.trim() || submittedQuery.trim() || displayedQuery.trim());
+    !isDesktop &&
+    !isPhoneLandscape &&
+    (!isAtlasPanelOpen || exactEventIntent) &&
+    (!hasSelectedEventCardOpen || exactEventIntent);
   const hasActiveSearchResult = Boolean(
     exactEventIntent ||
       hasSubmittedSearchMatches ||
@@ -3357,12 +3362,15 @@ export default function AtlasMap({
       {isAtlasDebugMode ? (
         <div style={styles.atlasDebugOverlay} aria-label="Atlas exploration debug">
           <div>exploring: {isMobileExploring ? 'true' : 'false'}</div>
-          <div>selected: {selectedId ?? 'none'}</div>
+          <div>ambient shell visible: {shouldShowMobileAmbientAtlas ? 'true' : 'false'}</div>
+          <div>selected event: {selectedId ?? 'none'}</div>
           <div>ask focused: {isSearchFocused ? 'true' : 'false'}</div>
           <div>ask value: {query.trim() ? 'non-empty' : 'empty'}</div>
           <div>filter open: {isMobileFilterOpen ? 'true' : 'false'}</div>
           <div>menu open: {isMobileMenuOpen ? 'true' : 'false'}</div>
+          <div>rendered event: {renderedEvent?.id ?? 'none'}</div>
           <div>card open: {renderedEvent ? 'true' : 'false'}</div>
+          <div>exact-event intent: {exactEventIntent?.eventId ?? 'none'}</div>
           <div>search/result: {hasActiveSearchResult ? 'true' : 'false'}</div>
           <div>title computed opacity: {atlasDebugComputedStyles.titleOpacity}</div>
           <div>title computed visibility: {atlasDebugComputedStyles.titleVisibility}</div>
