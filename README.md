@@ -53,7 +53,7 @@ This repo includes a minimal Playwright smoke script for visual verification. In
 npm run test:visual-install
 ```
 
-Then capture the mobile homepage and Romeo Peach Festival flyer flow screenshots:
+Then capture the mobile homepage baseline screenshot:
 
 ```bash
 npm run test:visual-smoke
@@ -61,8 +61,8 @@ npm run test:visual-smoke
 
 The script starts the local Next.js app when `VISUAL_SMOKE_BASE_URL` is not set. To reuse an already-running app, set `VISUAL_SMOKE_BASE_URL` to that origin before running the smoke command.
 
-Screenshots are written to `artifacts/visual-smoke/` and are ignored by git. Do not commit screenshot files unless a task explicitly asks for them.
+The current visual smoke captures `artifacts/visual-smoke/homepage-mobile.png` only. Screenshots are review evidence, not automatic approval, and are ignored by git. Do not commit screenshot files unless a task explicitly asks for them.
 
 Codex cloud may be unable to install Playwright browsers because Chromium downloads can be blocked there. GitHub Actions is the expected screenshot-capture environment for PRs; it runs the visual smoke workflow and uploads `artifacts/visual-smoke/` as the `celebration-atlas-visual-smoke` artifact.
 
-Future visual PR summaries must not claim visual success unless screenshots were generated and inspected. Visual PRs should link to or reference the GitHub Actions artifact before claiming visual success.
+Future flyer/detail visual flows may be added later after a stable, intentional test-data strategy is chosen. Future visual PR summaries must not claim visual success unless screenshots were generated and inspected. Visual PRs should link to or reference the GitHub Actions artifact before claiming visual success.
