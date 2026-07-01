@@ -34,6 +34,7 @@
 *.diff
 
 # temporary screenshots and test exports
+artifacts/visual-smoke/
 screenshots/
 test-exports/
 playwright-report/

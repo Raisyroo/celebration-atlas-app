@@ -18,7 +18,9 @@
     "atlas:doctor": "node scripts/atlas-doctor.mjs",
     "atlas:generate-thumbnails": "node --experimental-strip-types scripts/generate-event-thumbnails.ts",
     "validate:flyers": "node --experimental-strip-types scripts/validate-flyers.ts",
-    "validate:flyers:local": "node --experimental-strip-types scripts/validate-flyers.ts --local"
+    "validate:flyers:local": "node --experimental-strip-types scripts/validate-flyers.ts --local",
+    "test:visual-install": "playwright install chromium",
+    "test:visual-smoke": "node scripts/visual-smoke.mjs"
   },
   "dependencies": {
     "next": "16.2.6",
@@ -33,6 +35,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "playwright": "^1.61.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
