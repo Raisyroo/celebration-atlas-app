@@ -9,6 +9,7 @@ import type { CSSProperties, PointerEvent, RefObject, SyntheticEvent } from 'rea
 import { ATLAS_EVENTS } from '../data/events';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
 import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes';
+import { getFlyerEventPresentation } from '../data/flyerEventPresentation';
 import {
   getEventProfileById,
   searchEventProfiles,
@@ -1667,7 +1668,8 @@ export default function AtlasMap({
   const isLargeCardImageReady = Boolean(
     displayedLargeCardImageSrc && loadedLargeCardImageSrc === displayedLargeCardImageSrc,
   );
-  const isFlyerCard = Boolean(selectedMedia?.flyerSrc);
+  const flyerPresentation = getFlyerEventPresentation(safeEventCard);
+  const isFlyerCard = flyerPresentation.isFlyerFirst;
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
   const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
   const fullCardBriefing = renderedEvent?.fullCardBriefing;
@@ -1682,7 +1684,6 @@ export default function AtlasMap({
       : 'none';
   const selectedFlyerResolution = safeEventCard ? flyerResolutions[safeEventCard.id] : undefined;
   const officialUrlDebug = selectedFlyerResolution?.officialUrlDebug;
-  const isRomeoFlyerCard = Boolean(safeEventCard?.id === 'romeo-peach' && isFlyerCard);
   const isFlyerMediaDebug = Boolean(isMediaDebugMode && isFlyerCard);
   const beginMobileExploration = useCallback(() => {
     setIsMobileExploring(true);
@@ -3472,7 +3473,7 @@ export default function AtlasMap({
           >
             ×
           </button>
-          {isRomeoFlyerCard ? (
+          {isFlyerCard ? (
             <>
               <button
                 type="button"
@@ -3534,7 +3535,7 @@ export default function AtlasMap({
                       Loading flyer…
                     </div>
                   ) : null}
-                  {safeEventCard.officialUrl ? (
+                  {flyerPresentation.hasOfficialHotspot && safeEventCard.officialUrl ? (
                     <a
                       className="flyer-official-hotspot"
                       href={safeEventCard.officialUrl}

@@ -1,7 +1,9 @@
 import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { strict as assert } from 'node:assert';
 import { EVENT_FLYERS } from '../data/eventFlyers.ts';
 import { ATLAS_EVENTS } from '../data/events.ts';
+import { getFlyerEventPresentation } from '../data/flyerEventPresentation.ts';
 
 const LOCAL_RUNTIME_PREFIX = '/event-media/flyers/';
 const LOCAL_PUBLIC_PREFIX = path.join('public', 'event-media', 'flyers');
@@ -26,6 +28,45 @@ for (const event of ATLAS_EVENTS) {
 
 for (const eventId of duplicateEventIds) {
   errors.push(`Duplicate event id in ATLAS_EVENTS: ${eventId}`);
+}
+
+const fixtureEventsById = new Map(ATLAS_EVENTS.map((event) => [event.id, event]));
+const nonRomeoFlyerFixture = fixtureEventsById.get('goodells-fair');
+const nonFlyerFixture = fixtureEventsById.get('armada-fair');
+
+if (!nonRomeoFlyerFixture) errors.push('Missing flyer presentation fixture event: goodells-fair');
+if (!nonFlyerFixture) errors.push('Missing standard-card fixture event: armada-fair');
+
+if (nonRomeoFlyerFixture && nonFlyerFixture) {
+  assert.equal(
+    getFlyerEventPresentation({
+      media: { flyerSrc: 'https://media.example.test/goodells-fair-approved-flyer.webp' },
+      officialUrl: 'https://goodells.example.test',
+    }).isFlyerFirst,
+    true,
+    'Non-Romeo event with resolved flyer media should use flyer-first presentation',
+  );
+  assert.equal(
+    getFlyerEventPresentation({
+      media: { flyerSrc: 'https://media.example.test/goodells-fair-approved-flyer.webp' },
+      officialUrl: 'https://goodells.example.test',
+    }).hasOfficialHotspot,
+    true,
+    'Flyer event with official URL should expose the footer hotspot',
+  );
+  assert.equal(
+    getFlyerEventPresentation({ media: undefined, officialUrl: undefined }).isFlyerFirst,
+    false,
+    'Event without resolved flyer media should keep the standard event card path',
+  );
+  assert.equal(
+    getFlyerEventPresentation({
+      media: { flyerSrc: 'https://media.example.test/goodells-fair-approved-flyer.webp' },
+      officialUrl: undefined,
+    }).hasOfficialHotspot,
+    false,
+    'Flyer event without official URL should not expose a footer hotspot',
+  );
 }
 
 const flyerEntries = Object.entries(EVENT_FLYERS as Record<string, FlyerRecord>);
