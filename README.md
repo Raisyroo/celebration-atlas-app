@@ -44,3 +44,23 @@ Add the required media files locally (and in your deployment artifact) at:
 - `public/event-media/electric-forest-loop.mp4`
 
 Poster image files are optional and not required.
+
+## Visual smoke screenshots
+
+This repo includes a minimal Playwright smoke script for Codex visual verification. Install the Chromium browser binary once in the Codex container:
+
+```bash
+npm run test:visual-install
+```
+
+Then capture the mobile homepage and Romeo Peach Festival flyer flow screenshots:
+
+```bash
+npm run test:visual-smoke
+```
+
+The script starts the local Next.js app when `VISUAL_SMOKE_BASE_URL` is not set. To reuse an already-running app, set `VISUAL_SMOKE_BASE_URL` to that origin before running the smoke command.
+
+Screenshots are written to `artifacts/visual-smoke/` and are ignored by git. Do not commit screenshot files unless a task explicitly asks for them.
+
+Future visual PR summaries must not claim visual success unless screenshots were generated and inspected.
