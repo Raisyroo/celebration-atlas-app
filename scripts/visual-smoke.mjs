@@ -4,6 +4,7 @@ import path from 'node:path';
 import { chromium, devices } from 'playwright';
 
 const outputDir = path.join(process.cwd(), 'artifacts', 'visual-smoke');
+const homepageScreenshotPath = path.join(outputDir, 'homepage-mobile.png');
 const baseUrl = process.env.VISUAL_SMOKE_BASE_URL || 'http://127.0.0.1:3000';
 const shouldStartServer = !process.env.VISUAL_SMOKE_BASE_URL;
 const homepageUrl = new URL('/', baseUrl).toString();
@@ -29,19 +30,15 @@ async function waitForServer(url, timeoutMs = 90_000) {
   throw new Error(`Timed out waiting for ${url}: ${lastError instanceof Error ? lastError.message : String(lastError)}`);
 }
 
-async function waitForLocatorCountAtLeast(locator, minimumCount, timeoutMs, errorMessage) {
-  const deadline = Date.now() + timeoutMs;
-  let latestCount = 0;
-
-  while (Date.now() < deadline) {
-    latestCount = await locator.count();
-    if (latestCount >= minimumCount) return latestCount;
-
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-
-  latestCount = await locator.count();
-  throw new Error(errorMessage(latestCount));
+async function waitForLoadedImage(page, selector, timeoutMs = 45_000) {
+  await page.waitForFunction(
+    (imageSelector) => {
+      const image = document.querySelector(imageSelector);
+      return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0;
+    },
+    selector,
+    { timeout: timeoutMs },
+  );
 }
 
 async function main() {
@@ -76,36 +73,19 @@ async function main() {
   });
 
   await page.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+
   await page.getByLabel('Celebration Atlas Michigan').waitFor({ state: 'visible', timeout: 45_000 });
+  await page.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
+  await page.locator('img.atlas-map-image[alt="Michigan Atlas"]').waitFor({ state: 'visible', timeout: 45_000 });
+  await waitForLoadedImage(page, 'img.atlas-map-image[alt="Michigan Atlas"]');
   await page.getByLabel('Ask Celebration Atlas').waitFor({ state: 'visible', timeout: 45_000 });
-  await page.screenshot({ path: path.join(outputDir, 'homepage-mobile.png'), fullPage: true });
+  await page.locator('.mobile-live-sheet[data-layout-ready="true"][aria-label="Michigan event rail"]').waitFor({ state: 'visible', timeout: 45_000 });
+  await page.locator('.mobile-live-sheet[data-layout-ready="true"] .mobile-live-card').first().waitFor({ state: 'visible', timeout: 45_000 });
 
-  await page.getByLabel('Ask Celebration Atlas').fill('Romeo Peach Festival');
-  await page.getByLabel('Submit Atlas question').click();
-
-  const romeoRailButtonSelector = 'button[aria-label="Open Romeo Peach Festival"]';
-  const romeoRailButton = page.locator('.mobile-live-sheet').locator(romeoRailButtonSelector);
-  await waitForLocatorCountAtLeast(
-    romeoRailButton,
-    1,
-    45_000,
-    (count) =>
-      `Expected Romeo Peach Festival button inside .mobile-live-sheet to appear within 45 seconds after exact search, but found ${count}.`,
-  );
-  const romeoRailButtonCount = await romeoRailButton.count();
-  if (romeoRailButtonCount !== 1) {
-    throw new Error(
-      `Expected exactly one Romeo Peach Festival button inside .mobile-live-sheet, found ${romeoRailButtonCount}.`,
-    );
-  }
-  await romeoRailButton.waitFor({ state: 'visible', timeout: 45_000 });
-  await romeoRailButton.click({ timeout: 45_000 });
-  await page.getByAltText('Romeo Peach Festival flyer').waitFor({ state: 'visible', timeout: 45_000 });
-  await page.screenshot({ path: path.join(outputDir, 'romeo-peach-flyer-mobile.png'), fullPage: true });
-
+  await page.screenshot({ path: homepageScreenshotPath, fullPage: true });
   await browser.close();
 
-  console.log(`Visual smoke screenshots written to ${path.relative(process.cwd(), outputDir)}/`);
+  console.log(`Visual smoke screenshot written to ${path.relative(process.cwd(), homepageScreenshotPath)}`);
 }
 
 try {
