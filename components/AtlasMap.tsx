@@ -1465,7 +1465,6 @@ export default function AtlasMap({
   );
   const [isCardMediaVisible, setIsCardMediaVisible] = useState(false);
   const [loadedLargeCardImageSrc, setLoadedLargeCardImageSrc] = useState<string | null>(null);
-  const [isFlyerImageRevealVisible, setIsFlyerImageRevealVisible] = useState(false);
   const [atlasDebugComputedStyles, setAtlasDebugComputedStyles] = useState({
     titleOpacity: 'not rendered',
     titleVisibility: 'not rendered',
@@ -1477,10 +1476,6 @@ export default function AtlasMap({
   const cardMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const flyerImageRevealFrameRef = useRef<number | null>(null);
-  const flyerImageRevealSecondFrameRef = useRef<number | null>(null);
-  const [flyerOpenCycleKey, setFlyerOpenCycleKey] = useState(0);
-  const activeFlyerOpenCycleRef = useRef(0);
   const calibrationLayerRef = useRef<HTMLDivElement | null>(null);
   const calibrationCopyStatusTimerRef = useRef<ReturnType<
     typeof setTimeout
@@ -1737,14 +1732,6 @@ export default function AtlasMap({
     displayedLargeCardImageSrc && loadedLargeCardImageSrc === displayedLargeCardImageSrc,
   );
   const isFlyerCard = Boolean(selectedMedia?.flyerSrc);
-  const shouldShowFlyerImage = Boolean(
-    isLargeCardImageReady && (!isFlyerCard || isFlyerImageRevealVisible),
-  );
-  const flyerRevealAnimationClass =
-    isFlyerCard && shouldShowFlyerImage && !prefersReducedMotion
-      ? 'atlas-flyer-poster-reveal'
-      : '';
-  const flyerImageRenderKey = `${displayedLargeCardImageSrc ?? 'no-flyer-src'}-${flyerOpenCycleKey}`;
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
   const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
   const fullCardBriefing = renderedEvent?.fullCardBriefing;
@@ -1764,9 +1751,7 @@ export default function AtlasMap({
       eventDetailTools.length < EVENT_DETAIL_TOOL_ORDER.length,
   );
   const isRomeoFlyerCard = Boolean(safeEventCard?.id === 'romeo-peach' && isFlyerCard);
-  const isRomeoFlyerMediaDebug = Boolean(
-    isMediaDebugMode && isRomeoFlyerCard,
-  );
+  const isFlyerMediaDebug = Boolean(isMediaDebugMode && isFlyerCard);
   const beginMobileExploration = useCallback(() => {
     setIsMobileExploring(true);
   }, []);
@@ -1783,17 +1768,9 @@ export default function AtlasMap({
       return nextIsSaved;
     });
   };
-  const revealLoadedFlyerImage = useCallback((loadedSrc: string, loadedCycle = activeFlyerOpenCycleRef.current) => {
-    setLoadedLargeCardImageSrc(loadedSrc);
-
-    if (!isFlyerCard) return;
-    if (loadedCycle !== activeFlyerOpenCycleRef.current) return;
-    setIsFlyerImageRevealVisible(true);
-  }, [isFlyerCard]);
-
   const handleLargeCardImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
     if (displayedLargeCardImageSrc) {
-      revealLoadedFlyerImage(displayedLargeCardImageSrc, flyerOpenCycleKey);
+      setLoadedLargeCardImageSrc(displayedLargeCardImageSrc);
     }
 
     setFlyerMediaDebugSnapshot({
@@ -1806,15 +1783,7 @@ export default function AtlasMap({
   };
   const handleLargeCardImageError = (event: SyntheticEvent<HTMLImageElement>) => {
     setLoadedLargeCardImageSrc(null);
-    setIsFlyerImageRevealVisible(false);
-    if (flyerImageRevealFrameRef.current) {
-      cancelAnimationFrame(flyerImageRevealFrameRef.current);
-      flyerImageRevealFrameRef.current = null;
-    }
-    if (flyerImageRevealSecondFrameRef.current) {
-      cancelAnimationFrame(flyerImageRevealSecondFrameRef.current);
-      flyerImageRevealSecondFrameRef.current = null;
-    }
+    setIsCardMediaVisible(false);
     setFlyerMediaDebugSnapshot({
       intendedSrc: selectedFlyerSrc,
       attemptedSrc: largeCardBackgroundImageSrc,
@@ -1858,7 +1827,7 @@ export default function AtlasMap({
   }, [flyerFavoriteConfirmation]);
 
   useEffect(() => {
-    if (!isRomeoFlyerMediaDebug) return;
+    if (!isFlyerMediaDebug) return;
 
     setFlyerMediaDebugSnapshot({
       intendedSrc: selectedFlyerSrc,
@@ -1877,7 +1846,7 @@ export default function AtlasMap({
 
     return () => window.cancelAnimationFrame(animationFrame);
   }, [
-    isRomeoFlyerMediaDebug,
+    isFlyerMediaDebug,
     largeCardBackgroundImageSrc,
     selectedFlyerSrc,
   ]);
@@ -2245,20 +2214,7 @@ export default function AtlasMap({
       queueMicrotask(() => {
         if (!isCurrentSelection) return;
         setLoadedLargeCardImageSrc(null);
-        setIsFlyerImageRevealVisible(false);
-        setFlyerOpenCycleKey((cycle) => {
-          const nextCycle = cycle + 1;
-          activeFlyerOpenCycleRef.current = nextCycle;
-          return nextCycle;
-        });
-        if (flyerImageRevealFrameRef.current) {
-          cancelAnimationFrame(flyerImageRevealFrameRef.current);
-          flyerImageRevealFrameRef.current = null;
-        }
-        if (flyerImageRevealSecondFrameRef.current) {
-          cancelAnimationFrame(flyerImageRevealSecondFrameRef.current);
-          flyerImageRevealSecondFrameRef.current = null;
-        }
+        setIsCardMediaVisible(false);
         setRenderedEvent(selected);
         setCardEnterOffset(48);
         setIsCardVisible(false);
@@ -2292,16 +2248,11 @@ export default function AtlasMap({
 
   useEffect(() => {
     const image = largeCardImageRef.current;
-    if (!isFlyerCard || !displayedLargeCardImageSrc || !image) return;
+    if (!hasCardMediaSource || !displayedLargeCardImageSrc || !image) return;
     if (!image.complete || image.naturalWidth <= 0) return;
 
-    const cachedCycle = flyerOpenCycleKey;
-    const cachedImageFrame = window.requestAnimationFrame(() => {
-      revealLoadedFlyerImage(displayedLargeCardImageSrc, cachedCycle);
-    });
-
-    return () => window.cancelAnimationFrame(cachedImageFrame);
-  }, [displayedLargeCardImageSrc, flyerOpenCycleKey, isFlyerCard, revealLoadedFlyerImage]);
+    setLoadedLargeCardImageSrc(displayedLargeCardImageSrc);
+  }, [displayedLargeCardImageSrc, hasCardMediaSource]);
 
   useEffect(() => {
     if (!isAtlasDebugMode) return;
@@ -2329,7 +2280,7 @@ export default function AtlasMap({
       window.cancelAnimationFrame(firstFrame);
       window.clearTimeout(transitionTimer);
     };
-  }, [isAtlasDebugMode, isMobileExploring, flyerOpenCycleKey, flyerRevealAnimationClass]);
+  }, [isAtlasDebugMode, isMobileExploring]);
 
   useEffect(() => {
     let isCurrentMedia = true;
@@ -2362,12 +2313,12 @@ export default function AtlasMap({
   }, [selectedId]);
 
   useEffect(() => {
-    if (!hasCardMediaSource || !isCardVisible || isFlyerCard) return;
+    if (!hasCardMediaSource || !isCardVisible || !isLargeCardImageReady) return;
     cardMediaFadeTimerRef.current = setTimeout(() => {
       setIsCardMediaVisible(true);
       cardMediaFadeTimerRef.current = null;
     }, mediaDelayMs);
-  }, [hasCardMediaSource, isCardVisible, isFlyerCard, mediaDelayMs]);
+  }, [hasCardMediaSource, isCardVisible, isLargeCardImageReady, mediaDelayMs]);
 
 
 
@@ -2648,10 +2599,6 @@ export default function AtlasMap({
       if (queryFadeTimerRef.current) clearTimeout(queryFadeTimerRef.current);
       if (cardMediaFadeTimerRef.current)
         clearTimeout(cardMediaFadeTimerRef.current);
-      if (flyerImageRevealFrameRef.current)
-        cancelAnimationFrame(flyerImageRevealFrameRef.current);
-      if (flyerImageRevealSecondFrameRef.current)
-        cancelAnimationFrame(flyerImageRevealSecondFrameRef.current);
       if (exactEventOpenTimerRef.current)
         clearTimeout(exactEventOpenTimerRef.current);
       if (calibrationCopyStatusTimerRef.current)
@@ -3490,8 +3437,6 @@ export default function AtlasMap({
           <div>title computed opacity: {atlasDebugComputedStyles.titleOpacity}</div>
           <div>title computed visibility: {atlasDebugComputedStyles.titleVisibility}</div>
           <div>breadcrumb computed opacity: {atlasDebugComputedStyles.breadcrumbOpacity}</div>
-          <div>flyer cycle: {flyerOpenCycleKey}</div>
-          <div>flyer animation class: {flyerRevealAnimationClass || 'none'}</div>
           <div>ambient controls visible: {areMobileAmbientControlsVisible ? 'true' : 'false'}</div>
           <div>rail layout ready: {isMobileAmbientRailLayoutReady ? 'true' : 'false'}</div>
           <div>exact-search return armed: {isExactSearchReturnArmed ? 'true' : 'false'}</div>
@@ -3632,20 +3577,19 @@ export default function AtlasMap({
               {hasCardMedia && hasCardMediaSource ? (
                 <figure style={styles.eventDetailFlyerHero}>
                   <img
-                    key={flyerImageRenderKey}
                     ref={largeCardImageRef}
-                    className={flyerRevealAnimationClass || undefined}
+                    className="atlas-media-reveal"
                     src={displayedLargeCardImageSrc}
                     alt={`${safeEventCard.name} flyer`}
                     onLoad={handleLargeCardImageLoad}
                     onError={handleLargeCardImageError}
                     style={{
                       ...styles.eventDetailFlyerImage,
-                      opacity: shouldShowFlyerImage ? 1 : 0,
-                      transition: 'none',
+                      opacity: isCardMediaVisible ? 1 : 0,
+                      transitionDuration: `${mediaFadeDurationMs}ms`,
                     }}
                   />
-                  {!isLargeCardImageReady ? (
+                  {!isCardMediaVisible ? (
                     <div style={styles.flyerLoadingState} role="status" aria-live="polite">
                       Loading flyer…
                     </div>
@@ -3657,14 +3601,16 @@ export default function AtlasMap({
                   <span>The flyer image could not be loaded right now.</span>
                 </div>
               )}
-              {isRomeoFlyerMediaDebug ? (
-                <div style={styles.flyerMediaDebugPanel} aria-label="Romeo flyer media debug">
+              {isFlyerMediaDebug ? (
+                <div style={styles.flyerMediaDebugPanel} aria-label="Flyer media debug">
                   <div>intended flyer src: {selectedFlyerSrc ?? 'none'}</div>
                   <div>actual currentSrc: {flyerMediaDebugSnapshot.currentSrc ?? 'not rendered yet'}</div>
                   <div>load fired: {flyerMediaDebugSnapshot.loaded ? 'yes' : 'no'}</div>
                   <div>error fired: {flyerMediaDebugSnapshot.errored ? 'yes' : 'no'}</div>
                   <div>fallback src: {selectedFlyerFallbackSrc ?? 'none'}</div>
                   <div>displayed source kind: {displayedFlyerSourceKind}</div>
+                  <div>selected event id: {safeEventCard.id}</div>
+                  <div>shared media visible: {isCardMediaVisible ? 'yes' : 'no'}</div>
                   <div>attempted src: {flyerMediaDebugSnapshot.attemptedSrc ?? 'none'}</div>
                 </div>
               ) : null}
@@ -4370,24 +4316,6 @@ export default function AtlasMap({
                 font-size: 16px !important;
                 letter-spacing: 0.18em !important;
               }
-            }
-
-
-            @keyframes atlasFlyerPosterReveal {
-              from {
-                opacity: 0.15;
-                transform: scale(1.008);
-              }
-
-              to {
-                opacity: 1;
-                transform: scale(1);
-              }
-            }
-
-            .atlas-flyer-poster-reveal {
-              animation: atlasFlyerPosterReveal 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
-              transform-origin: center center;
             }
 
             @media (prefers-reduced-motion: reduce) {
