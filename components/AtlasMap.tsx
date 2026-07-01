@@ -1680,6 +1680,8 @@ export default function AtlasMap({
     : displayedLargeCardImageSrc?.startsWith('/')
       ? 'local'
       : 'none';
+  const selectedFlyerResolution = safeEventCard ? flyerResolutions[safeEventCard.id] : undefined;
+  const officialUrlDebug = selectedFlyerResolution?.officialUrlDebug;
   const isRomeoFlyerCard = Boolean(safeEventCard?.id === 'romeo-peach' && isFlyerCard);
   const isFlyerMediaDebug = Boolean(isMediaDebugMode && isFlyerCard);
   const beginMobileExploration = useCallback(() => {
@@ -3560,6 +3562,11 @@ export default function AtlasMap({
                   <div>fallback src: {selectedFlyerFallbackSrc ?? 'none'}</div>
                   <div>displayed source kind: {displayedFlyerSourceKind}</div>
                   <div>selected event id: {safeEventCard.id}</div>
+                  <div>canonical slug: {selectedFlyerResolution?.canonicalSlug ?? 'none'}</div>
+                  <div>event media resolved: {selectedMedia ? 'yes' : 'no'}</div>
+                  <div>official URL resolved: {safeEventCard.officialUrl ?? 'none'}</div>
+                  <div>official URL source path: {officialUrlDebug?.sourcePath ?? selectedFlyerResolution?.officialUrlSource ?? 'none'}</div>
+                  <div>source rejection reasons: {officialUrlDebug?.rejectedReasons.length ? officialUrlDebug.rejectedReasons.join(', ') : 'none'}</div>
                   <div>shared media visible: {isCardMediaVisible ? 'yes' : 'no'}</div>
                   <div>attempted src: {flyerMediaDebugSnapshot.attemptedSrc ?? 'none'}</div>
                 </div>

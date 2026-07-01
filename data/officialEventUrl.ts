@@ -8,6 +8,18 @@ export type ResolvedOfficialEventUrl = {
   field: OfficialEventUrlField | 'source_url';
 };
 
+export type OfficialEventSourceRejectionReason =
+  | 'missing_https_source_url'
+  | 'explicitly_inactive_or_unapproved'
+  | 'unapproved_status'
+  | 'explicitly_not_official'
+  | 'rejected_source_hint_or_host';
+
+export type OfficialEventUrlDiagnostics = {
+  sourcePath: 'events' | 'event_sources' | 'none';
+  eventSourceRejectedReasons: OfficialEventSourceRejectionReason[];
+};
+
 export type OfficialEventSourceRow = Record<string, unknown> & {
   source_url?: unknown;
 };
@@ -72,23 +84,39 @@ function hasRejectedSourceHint(row: OfficialEventSourceRow): boolean {
   ].some((rejectedHost) => hostname === rejectedHost || hostname.endsWith(`.${rejectedHost}`));
 }
 
-function isApprovedSource(row: OfficialEventSourceRow): boolean {
-  if (row.approved === false || row.is_approved === false || row.is_active === false) return false;
+function getSourceApprovalRejectionReason(
+  row: OfficialEventSourceRow,
+): OfficialEventSourceRejectionReason | undefined {
+  if (row.approved === false || row.is_approved === false || row.is_active === false) {
+    return 'explicitly_inactive_or_unapproved';
+  }
 
   const status = typeof row.status === 'string' ? row.status.toLowerCase() : undefined;
-  if (!status) return true;
+  if (!status) return undefined;
 
-  return ['approved', 'active', 'verified', 'official'].includes(status);
+  return ['approved', 'active', 'verified', 'official'].includes(status)
+    ? undefined
+    : 'unapproved_status';
 }
 
-function isOfficialWebsiteSource(row: OfficialEventSourceRow): boolean {
-  if (row.is_official === false) return false;
+function getSourceRejectionReason(
+  row: OfficialEventSourceRow,
+): OfficialEventSourceRejectionReason | undefined {
+  if (!isHttpsUrl(row.source_url)) return 'missing_https_source_url';
+  if (row.is_official === false) return 'explicitly_not_official';
 
+  return getSourceApprovalRejectionReason(row)
+    ?? (hasRejectedSourceHint(row) ? 'rejected_source_hint_or_host' : undefined);
+}
+
+function getOfficialWebsiteSignalRank(row: OfficialEventSourceRow): number {
   const text = normalizedSearchText(row);
   const hasOfficialSignal = row.is_official === true || text.includes('official');
   const hasWebsiteSignal = OFFICIAL_WEBSITE_HINTS.some((hint) => text.includes(hint));
 
-  return hasOfficialSignal && hasWebsiteSignal;
+  if (hasOfficialSignal && hasWebsiteSignal) return 0;
+  if (hasOfficialSignal || hasWebsiteSignal) return 1;
+  return 2;
 }
 
 function getSourceSortKey(row: OfficialEventSourceRow, index: number): string {
@@ -101,7 +129,7 @@ function getSourceSortKey(row: OfficialEventSourceRow, index: number): string {
   const createdAt = typeof row.created_at === 'string' ? row.created_at : '';
   const id = typeof row.id === 'string' || typeof row.id === 'number' ? String(row.id) : '';
 
-  return `${String(priority).padStart(16, '0')}|${createdAt}|${id}|${String(index).padStart(6, '0')}`;
+  return `${String(getOfficialWebsiteSignalRank(row)).padStart(2, '0')}|${String(priority).padStart(16, '0')}|${createdAt}|${id}|${String(index).padStart(6, '0')}`;
 }
 
 export function selectOfficialUrlFromEventsRow(
@@ -124,10 +152,7 @@ export function selectOfficialUrlFromEventSources(
 ): ResolvedOfficialEventUrl | undefined {
   const candidates = rows
     .map((row, index) => ({ row, index }))
-    .filter(({ row }) => isHttpsUrl(row.source_url))
-    .filter(({ row }) => isApprovedSource(row))
-    .filter(({ row }) => !hasRejectedSourceHint(row))
-    .filter(({ row }) => isOfficialWebsiteSource(row))
+    .filter(({ row }) => !getSourceRejectionReason(row))
     .sort((a, b) => getSourceSortKey(a.row, a.index).localeCompare(getSourceSortKey(b.row, b.index)));
 
   const sourceUrl = candidates[0]?.row.source_url;
@@ -135,6 +160,23 @@ export function selectOfficialUrlFromEventSources(
   return isHttpsUrl(sourceUrl)
     ? { url: sourceUrl, source: 'event_sources', field: 'source_url' }
     : undefined;
+}
+
+export function diagnoseOfficialEventUrl(
+  eventsRow: Record<string, unknown> | undefined,
+  eventSourceRows: readonly OfficialEventSourceRow[],
+): OfficialEventUrlDiagnostics {
+  const selected = selectOfficialEventUrl(eventsRow, eventSourceRows);
+  const eventSourceRejectedReasons = Array.from(new Set(
+    eventSourceRows
+      .map((row) => getSourceRejectionReason(row))
+      .filter((reason): reason is OfficialEventSourceRejectionReason => Boolean(reason)),
+  ));
+
+  return {
+    sourcePath: selected?.source ?? 'none',
+    eventSourceRejectedReasons,
+  };
 }
 
 export function selectOfficialEventUrl(
