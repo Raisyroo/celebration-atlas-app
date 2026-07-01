@@ -10,6 +10,7 @@ export type SafeAtlasEventCard = {
   category: AtlasEvent['category'];
   cardTag?: AtlasEvent['cardTag'];
   flyerSrc?: AtlasEvent['flyerSrc'];
+  officialUrl?: `https://${string}`;
   description: AtlasEvent['blurb'];
   atmosphereLabel: string;
   media?: {
@@ -81,6 +82,7 @@ export function deriveSafeAtlasEventCard(
     category: event.category,
     cardTag: event.cardTag,
     flyerSrc,
+    officialUrl: flyerResolutions[event.id]?.officialUrl,
     description: event.blurb,
     atmosphereLabel: event.cardMedia?.atmosphereTitle ?? event.atmosphereLabel,
     media,

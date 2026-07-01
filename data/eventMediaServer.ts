@@ -6,6 +6,7 @@ import { getCanonicalEventSlug } from './eventCanonicalSlugs';
 import type { EventFlyerResolution, EventFlyerResolutionMap } from './eventMediaResolutionTypes';
 
 const APPROVED_FLYER_SELECT = 'public_url,storage_bucket,storage_path,title,alt_text';
+const OFFICIAL_URL_FIELDS = ['official_url', 'official_site', 'website_url'] as const;
 
 type SupabaseEventMediaRow = {
   public_url?: unknown;
@@ -13,6 +14,13 @@ type SupabaseEventMediaRow = {
   storage_path?: unknown;
   title?: unknown;
   alt_text?: unknown;
+};
+
+type SupabaseOfficialUrlRow = Record<string, unknown>;
+
+type ResolvedOfficialUrl = {
+  url: `https://${string}`;
+  field: (typeof OFFICIAL_URL_FIELDS)[number];
 };
 
 function getSupabaseConfig(): { url: URL; serviceRoleKey: string } | undefined {
@@ -115,11 +123,49 @@ async function lookupApprovedSupabaseFlyer(
   }
 }
 
+async function lookupOfficialEventUrl(canonicalSlug: string): Promise<ResolvedOfficialUrl | undefined> {
+  const config = getSupabaseConfig();
+  if (!config) return undefined;
+
+  for (const field of OFFICIAL_URL_FIELDS) {
+    const requestUrl = new URL('/rest/v1/events', config.url);
+    requestUrl.searchParams.set('select', `slug,${field}`);
+    requestUrl.searchParams.set('slug', `eq.${canonicalSlug}`);
+    requestUrl.searchParams.set('limit', '1');
+
+    try {
+      const response = await fetch(requestUrl, {
+        headers: {
+          apikey: config.serviceRoleKey,
+          Authorization: `Bearer ${config.serviceRoleKey}`,
+        },
+        cache: 'no-store',
+      });
+
+      if (!response.ok) continue;
+
+      const rows = (await response.json()) as SupabaseOfficialUrlRow[];
+      const candidate = rows[0]?.[field];
+
+      if (isHttpsUrl(candidate)) {
+        return { url: candidate as `https://${string}`, field };
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return undefined;
+}
+
 export async function resolveEventFlyerMediaServer(
   event: { id: string; flyerSrc?: string },
 ): Promise<EventFlyerResolution | undefined> {
   const canonicalSlug = getCanonicalEventSlug(event);
-  const supabaseFlyer = await lookupApprovedSupabaseFlyer(canonicalSlug);
+  const [supabaseFlyer, officialUrl] = await Promise.all([
+    lookupApprovedSupabaseFlyer(canonicalSlug),
+    lookupOfficialEventUrl(canonicalSlug),
+  ]);
 
   if (supabaseFlyer) {
     return {
@@ -128,11 +174,20 @@ export async function resolveEventFlyerMediaServer(
       fallbackUsed: false,
       fallback: getEventFlyer(event.id),
       canonicalSlug,
+      officialUrl: officialUrl?.url,
+      officialUrlField: officialUrl?.field,
     };
   }
 
   const localFallback = resolveEventFlyerMedia(event, getEventFlyer(event.id));
-  return localFallback ? { ...localFallback, canonicalSlug } : undefined;
+  return localFallback
+    ? {
+        ...localFallback,
+        canonicalSlug,
+        officialUrl: officialUrl?.url,
+        officialUrlField: officialUrl?.field,
+      }
+    : undefined;
 }
 
 export async function resolveEventFlyerMediaMapServer(

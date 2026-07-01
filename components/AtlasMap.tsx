@@ -955,69 +955,6 @@ const resolveMapCalloutPlan = ({
 
 
 
-type EventDetailToolId =
-  | 'event_card'
-  | 'festival_schedule'
-  | 'music_schedule'
-  | 'tickets_info'
-  | 'watch_live'
-  | 'participate'
-  | 'event_map'
-  | 'gallery';
-
-type EventDetailToolCard = {
-  id: EventDetailToolId;
-  title: string;
-  subtitle: string;
-  icon: string;
-  status: 'approved_available';
-  href: `/events/${string}` | `https://${string}`;
-  featured?: boolean;
-};
-
-const EVENT_DETAIL_TOOL_ORDER: readonly EventDetailToolId[] = [
-  'event_card',
-  'festival_schedule',
-  'music_schedule',
-  'tickets_info',
-  'watch_live',
-  'participate',
-  'event_map',
-  'gallery',
-];
-
-function getAvailableEventDetailTools(event: typeof ATLAS_EVENTS[number]): EventDetailToolCard[] {
-  const tools: EventDetailToolCard[] = [];
-
-  if (event.detailPage) {
-    tools.push({
-      id: 'event_card',
-      title: 'Event Card',
-      subtitle: 'Open details',
-      icon: '✦',
-      status: 'approved_available',
-      href: `/events/${event.id}`,
-      featured: true,
-    });
-  }
-
-  const officialSite = event.fullCardBriefing?.officialSite;
-  if (officialSite?.startsWith('https://')) {
-    tools.push({
-      id: 'tickets_info',
-      title: 'Tickets & Info',
-      subtitle: 'Official site',
-      icon: '◈',
-      status: 'approved_available',
-      href: officialSite as `https://${string}`,
-    });
-  }
-
-  return tools.sort(
-    (a, b) => EVENT_DETAIL_TOOL_ORDER.indexOf(a.id) - EVENT_DETAIL_TOOL_ORDER.indexOf(b.id),
-  );
-}
-
 type FlyerMediaDebugSnapshot = {
   intendedSrc?: string;
   attemptedSrc?: string;
@@ -1371,7 +1308,6 @@ export default function AtlasMap({
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [pressedEventDetailToolId, setPressedEventDetailToolId] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const [hasResolvedResponsiveState, setHasResolvedResponsiveState] = useState(false);
   const [artworkVariant, setArtworkVariant] =
@@ -1744,12 +1680,6 @@ export default function AtlasMap({
     : displayedLargeCardImageSrc?.startsWith('/')
       ? 'local'
       : 'none';
-  const eventDetailTools = renderedEvent ? getAvailableEventDetailTools(renderedEvent) : [];
-  const shouldShowArtifactTrail = Boolean(
-    isFlyerCard &&
-      eventDetailTools.length > 0 &&
-      eventDetailTools.length < EVENT_DETAIL_TOOL_ORDER.length,
-  );
   const isRomeoFlyerCard = Boolean(safeEventCard?.id === 'romeo-peach' && isFlyerCard);
   const isFlyerMediaDebug = Boolean(isMediaDebugMode && isFlyerCard);
   const beginMobileExploration = useCallback(() => {
@@ -3594,6 +3524,18 @@ export default function AtlasMap({
                       Loading flyer…
                     </div>
                   ) : null}
+                  {safeEventCard.officialUrl ? (
+                    <a
+                      className="flyer-official-hotspot"
+                      href={safeEventCard.officialUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open ${safeEventCard.name} official website`}
+                      style={styles.flyerOfficialHotspot}
+                    >
+                      <span style={styles.visuallyHidden}>Open {safeEventCard.name} official website</span>
+                    </a>
+                  ) : null}
                 </figure>
               ) : (
                 <div style={styles.flyerUnavailableState} role="status">
@@ -3612,59 +3554,6 @@ export default function AtlasMap({
                   <div>selected event id: {safeEventCard.id}</div>
                   <div>shared media visible: {isCardMediaVisible ? 'yes' : 'no'}</div>
                   <div>attempted src: {flyerMediaDebugSnapshot.attemptedSrc ?? 'none'}</div>
-                </div>
-              ) : null}
-              {eventDetailTools.length > 0 ? (
-                <div
-                  style={{
-                    ...styles.eventDetailToolDock,
-                    ...(eventDetailTools.length === 1 ? styles.eventDetailToolDockSingle : null),
-                    ...(eventDetailTools.length === 2 ? styles.eventDetailToolDockPair : null),
-                    ...(eventDetailTools.length === 3 ? styles.eventDetailToolDockTrio : null),
-                  }}
-                  aria-label={`${safeEventCard.name} event tools`}
-                >
-                  {eventDetailTools.map((toolCard) => {
-                    const isToolPressed = pressedEventDetailToolId === toolCard.id;
-                    const isExternalTool = toolCard.href.startsWith('https://');
-
-                    return (
-                      <Link
-                        key={toolCard.id}
-                        href={toolCard.href}
-                        target={isExternalTool ? '_blank' : undefined}
-                        rel={isExternalTool ? 'noreferrer' : undefined}
-                        aria-label={`${toolCard.title}: ${toolCard.subtitle}`}
-                        onPointerDown={() => setPressedEventDetailToolId(toolCard.id)}
-                        onPointerUp={() => setPressedEventDetailToolId(null)}
-                        onPointerCancel={() => setPressedEventDetailToolId(null)}
-                        onPointerLeave={() => setPressedEventDetailToolId(null)}
-                        onBlur={() => setPressedEventDetailToolId(null)}
-                        style={{
-                          ...styles.eventDetailToolTile,
-                          ...(toolCard.featured ? styles.eventDetailToolTileFeatured : null),
-                          ...(isToolPressed ? styles.eventDetailToolTilePressed : null),
-                        }}
-                      >
-                        <span
-                          style={{
-                            ...styles.eventDetailToolIcon,
-                            ...(toolCard.featured ? styles.eventDetailToolIconFeatured : null),
-                          }}
-                          aria-hidden="true"
-                        >
-                          {toolCard.icon}
-                        </span>
-                        <span style={styles.eventDetailToolTitle}>{toolCard.title}</span>
-                        <span style={styles.eventDetailToolSubtitle}>{toolCard.subtitle}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : null}
-              {shouldShowArtifactTrail ? (
-                <div style={styles.eventDetailArtifactTrail} aria-hidden="true">
-                  <span style={styles.eventDetailArtifactTrailStars}>✦ · ✧ · ✦</span>
                 </div>
               ) : null}
             </div>
@@ -5678,6 +5567,36 @@ const styles: Record<string, CSSProperties> = {
     objectPosition: 'center center',
     transition: 'opacity 1300ms ease',
   },
+  flyerOfficialHotspot: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '20%',
+    minHeight: 64,
+    zIndex: 3,
+    display: 'block',
+    borderRadius: '0 0 22px 22px',
+    outline: '0 solid transparent',
+    background:
+      'linear-gradient(to top, rgba(255, 232, 179, 0.02), rgba(255, 232, 179, 0))',
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+    WebkitTapHighlightColor: 'rgba(255, 225, 160, 0.12)',
+    transition:
+      'background 140ms ease, box-shadow 140ms ease, transform 140ms ease',
+  },
+  visuallyHidden: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    padding: 0,
+    margin: -1,
+    overflow: 'hidden',
+    clip: 'rect(0, 0, 0, 0)',
+    whiteSpace: 'nowrap',
+    border: 0,
+  },
   flyerLoadingState: {
     position: 'absolute',
     inset: 0,
@@ -5692,119 +5611,6 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     background:
       'radial-gradient(circle at 50% 22%, rgba(255,221,146,.22), transparent 42%), rgba(9,12,22,.46)',
-  },
-  eventDetailToolDock: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    gap: 8,
-    padding: '12px 2px 2px',
-  },
-  eventDetailToolDockSingle: {
-    gridTemplateColumns: 'minmax(112px, 148px)',
-    justifyContent: 'center',
-  },
-  eventDetailToolDockPair: {
-    gridTemplateColumns: 'repeat(2, minmax(112px, 148px))',
-    justifyContent: 'center',
-  },
-  eventDetailToolDockTrio: {
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  },
-  eventDetailToolTile: {
-    appearance: 'none',
-    WebkitAppearance: 'none',
-    position: 'relative',
-    overflow: 'hidden',
-    display: 'flex',
-    minWidth: 0,
-    minHeight: 86,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'column',
-    gap: 4,
-    borderRadius: 18,
-    border: '1px solid rgba(255,225,160,.18)',
-    padding: '10px 5px 9px',
-    background:
-      'radial-gradient(circle at 50% 0%, rgba(255,226,170,.14), transparent 50%), linear-gradient(150deg, rgba(24,31,58,.68), rgba(10,13,27,.78))',
-    boxShadow:
-      'inset 0 0 0 1px rgba(255,255,255,.045), 0 10px 24px rgba(0,0,0,.24)',
-    color: '#fff1ce',
-    cursor: 'pointer',
-    font: 'inherit',
-    textDecoration: 'none',
-    textAlign: 'center',
-    touchAction: 'manipulation',
-    transform: 'translateY(0) scale(1)',
-    transition: 'transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease',
-  },
-  eventDetailToolTileFeatured: {
-    borderColor: 'rgba(255,211,122,.5)',
-    background:
-      'radial-gradient(circle at 50% 0%, rgba(255,212,116,.34), transparent 54%), linear-gradient(150deg, rgba(72,45,18,.74), rgba(16,15,32,.78))',
-    boxShadow:
-      'inset 0 0 0 1px rgba(255,246,211,.12), 0 0 20px rgba(255,199,89,.24), 0 10px 24px rgba(0,0,0,.24)',
-  },
-  eventDetailToolTilePressed: {
-    transform: 'translateY(1px) scale(.965)',
-    borderColor: 'rgba(255,238,190,.58)',
-    boxShadow:
-      'inset 0 0 18px rgba(255,214,128,.12), 0 6px 16px rgba(0,0,0,.26)',
-  },
-  eventDetailToolIcon: {
-    display: 'grid',
-    width: 26,
-    height: 26,
-    placeItems: 'center',
-    borderRadius: 10,
-    background: 'rgba(255,231,179,.12)',
-    color: '#ffd98a',
-    fontSize: 15,
-    lineHeight: 1,
-    boxShadow: 'inset 0 0 0 1px rgba(255,226,166,.15)',
-  },
-  eventDetailToolIconFeatured: {
-    background: 'rgba(255,211,122,.22)',
-    color: '#fff2bd',
-    boxShadow: 'inset 0 0 0 1px rgba(255,236,183,.28), 0 0 16px rgba(255,202,91,.32)',
-  },
-  eventDetailToolTitle: {
-    display: 'block',
-    maxWidth: '100%',
-    overflow: 'hidden',
-    color: '#fff4d8',
-    fontSize: 11,
-    fontWeight: 850,
-    letterSpacing: '-.02em',
-    lineHeight: 1.08,
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  eventDetailToolSubtitle: {
-    display: 'block',
-    maxWidth: '100%',
-    overflow: 'hidden',
-    color: 'rgba(255,235,196,.66)',
-    fontSize: 9,
-    fontWeight: 700,
-    letterSpacing: '.01em',
-    lineHeight: 1.1,
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  eventDetailArtifactTrail: {
-    display: 'grid',
-    justifyItems: 'center',
-    gap: 5,
-    padding: '10px 8px 0',
-    color: 'rgba(255,221,151,.48)',
-    pointerEvents: 'none',
-    userSelect: 'none',
-  },
-  eventDetailArtifactTrailStars: {
-    fontSize: 12,
-    letterSpacing: '.35em',
-    textShadow: '0 0 14px rgba(255,199,89,.24)',
   },
   cardMediaWrap: {
     position: 'absolute',
