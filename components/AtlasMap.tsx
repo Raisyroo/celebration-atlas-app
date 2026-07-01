@@ -3466,7 +3466,29 @@ export default function AtlasMap({
           data-mobile-title-state={mobileLandingTitleState}
           data-mobile-exploring={isMobileExploring ? 'true' : 'false'}
         >
-          MICHIGAN
+          <svg
+            className="mobile-michigan-breadcrumb-arc"
+            viewBox="0 0 220 44"
+            role="img"
+            aria-label="Michigan"
+            focusable="false"
+          >
+            <defs>
+              <path
+                id="mobile-michigan-breadcrumb-arc"
+                d="M 38 24 Q 110 13 182 24"
+              />
+            </defs>
+            <text>
+              <textPath
+                href="#mobile-michigan-breadcrumb-arc"
+                startOffset="50%"
+                textAnchor="middle"
+              >
+                MICHIGAN
+              </textPath>
+            </text>
+          </svg>
         </div>
       ) : null}
 
@@ -4357,6 +4379,34 @@ export default function AtlasMap({
                 font-size: 48px !important;
                 line-height: 0.95 !important;
                 letter-spacing: 0.04em !important;
+              }
+            }
+
+            .mobile-michigan-breadcrumb-arc {
+              display: block;
+              width: min(178px, 100%);
+              height: 44px;
+              overflow: visible;
+            }
+
+            .mobile-michigan-breadcrumb-arc text {
+              fill: rgba(255, 232, 184, 0.92);
+              font-family: Georgia, "Times New Roman", serif;
+              font-size: 17px;
+              font-weight: 400;
+              letter-spacing: 0.235em;
+              text-transform: uppercase;
+              text-shadow: 0 1px 7px rgba(0, 0, 0, 0.76);
+            }
+
+            @media (max-width: 360px) {
+              .mobile-michigan-breadcrumb-arc {
+                width: min(166px, 100%);
+              }
+
+              .mobile-michigan-breadcrumb-arc text {
+                font-size: 16px;
+                letter-spacing: 0.21em;
               }
             }
 
@@ -6370,20 +6420,14 @@ const styles: Record<string, CSSProperties> = {
   },
   mobileMichiganBreadcrumb: {
     position: 'absolute',
-    top: 'calc(15px + env(safe-area-inset-top))',
+    top: 'calc(13px + env(safe-area-inset-top))',
     left: 'calc(env(safe-area-inset-left) + 72px)',
     right: 'calc(env(safe-area-inset-right) + 72px)',
     zIndex: Z_INDEX.searchDock + 1,
     pointerEvents: 'none',
-    textAlign: 'center',
-    color: 'rgba(255, 226, 168, 0.58)',
-    fontFamily: 'Georgia, Times New Roman, serif',
-    fontSize: 13,
-    fontWeight: 700,
-    letterSpacing: '0.22em',
-    lineHeight: '44px',
-    textTransform: 'uppercase',
-    textShadow: '0 1px 8px rgba(0, 0, 0, 0.72), 0 0 14px rgba(255, 202, 102, 0.12)',
+    display: 'grid',
+    placeItems: 'start center',
+    height: 44,
     opacity: 0,
     transform: 'translate3d(0, -7px, 0)',
     transition: 'opacity 280ms ease, transform 280ms ease',
