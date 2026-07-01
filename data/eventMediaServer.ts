@@ -3,6 +3,12 @@ import 'server-only';
 import { getEventFlyer } from './eventFlyers';
 import { resolveEventFlyerMedia, type ResolvedEventMedia } from './eventMedia';
 import { getCanonicalEventSlug } from './eventCanonicalSlugs';
+import {
+  OFFICIAL_EVENT_URL_FIELDS,
+  selectOfficialEventUrl,
+  type OfficialEventSourceRow,
+  type ResolvedOfficialEventUrl,
+} from './officialEventUrl';
 import type { EventFlyerResolution, EventFlyerResolutionMap } from './eventMediaResolutionTypes';
 
 const APPROVED_FLYER_SELECT = 'public_url,storage_bucket,storage_path,title,alt_text';
@@ -14,6 +20,8 @@ type SupabaseEventMediaRow = {
   title?: unknown;
   alt_text?: unknown;
 };
+
+type SupabaseOfficialUrlRow = Record<string, unknown>;
 
 function getSupabaseConfig(): { url: URL; serviceRoleKey: string } | undefined {
   const rawUrl = process.env.SUPABASE_URL?.trim();
@@ -115,11 +123,83 @@ async function lookupApprovedSupabaseFlyer(
   }
 }
 
+async function lookupOfficialUrlFromEvents(canonicalSlug: string): Promise<SupabaseOfficialUrlRow | undefined> {
+  const config = getSupabaseConfig();
+  if (!config) return undefined;
+
+  for (const field of OFFICIAL_EVENT_URL_FIELDS) {
+    const requestUrl = new URL('/rest/v1/events', config.url);
+    requestUrl.searchParams.set('select', `slug,${field}`);
+    requestUrl.searchParams.set('slug', `eq.${canonicalSlug}`);
+    requestUrl.searchParams.set('limit', '1');
+
+    try {
+      const response = await fetch(requestUrl, {
+        headers: {
+          apikey: config.serviceRoleKey,
+          Authorization: `Bearer ${config.serviceRoleKey}`,
+        },
+        cache: 'no-store',
+      });
+
+      if (!response.ok) continue;
+
+      const rows = (await response.json()) as SupabaseOfficialUrlRow[];
+      if (isHttpsUrl(rows[0]?.[field])) return rows[0];
+    } catch {
+      continue;
+    }
+  }
+
+  return undefined;
+}
+
+async function lookupOfficialUrlFromEventSources(
+  canonicalSlug: string,
+): Promise<OfficialEventSourceRow[]> {
+  const config = getSupabaseConfig();
+  if (!config) return [];
+
+  const requestUrl = new URL('/rest/v1/event_sources', config.url);
+  requestUrl.searchParams.set('select', '*,events!inner(slug)');
+  requestUrl.searchParams.set('events.slug', `eq.${canonicalSlug}`);
+
+  try {
+    const response = await fetch(requestUrl, {
+      headers: {
+        apikey: config.serviceRoleKey,
+        Authorization: `Bearer ${config.serviceRoleKey}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return [];
+
+    return (await response.json()) as OfficialEventSourceRow[];
+  } catch {
+    return [];
+  }
+}
+
+async function lookupOfficialEventUrl(
+  canonicalSlug: string,
+): Promise<ResolvedOfficialEventUrl | undefined> {
+  const [eventsRow, eventSourceRows] = await Promise.all([
+    lookupOfficialUrlFromEvents(canonicalSlug),
+    lookupOfficialUrlFromEventSources(canonicalSlug),
+  ]);
+
+  return selectOfficialEventUrl(eventsRow, eventSourceRows);
+}
+
 export async function resolveEventFlyerMediaServer(
   event: { id: string; flyerSrc?: string },
 ): Promise<EventFlyerResolution | undefined> {
   const canonicalSlug = getCanonicalEventSlug(event);
-  const supabaseFlyer = await lookupApprovedSupabaseFlyer(canonicalSlug);
+  const [supabaseFlyer, officialUrl] = await Promise.all([
+    lookupApprovedSupabaseFlyer(canonicalSlug),
+    lookupOfficialEventUrl(canonicalSlug),
+  ]);
 
   if (supabaseFlyer) {
     return {
@@ -128,11 +208,22 @@ export async function resolveEventFlyerMediaServer(
       fallbackUsed: false,
       fallback: getEventFlyer(event.id),
       canonicalSlug,
+      officialUrl: officialUrl?.url,
+      officialUrlSource: officialUrl?.source,
+      officialUrlField: officialUrl?.field,
     };
   }
 
   const localFallback = resolveEventFlyerMedia(event, getEventFlyer(event.id));
-  return localFallback ? { ...localFallback, canonicalSlug } : undefined;
+  return localFallback
+    ? {
+        ...localFallback,
+        canonicalSlug,
+        officialUrl: officialUrl?.url,
+        officialUrlSource: officialUrl?.source,
+        officialUrlField: officialUrl?.field,
+      }
+    : undefined;
 }
 
 export async function resolveEventFlyerMediaMapServer(
