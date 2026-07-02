@@ -21,13 +21,16 @@
     "validate:flyers": "node --experimental-strip-types scripts/validate-flyers.ts",
     "validate:flyers:local": "node --experimental-strip-types scripts/validate-flyers.ts --local",
     "test:visual-install": "playwright install chromium",
-    "test:visual-smoke": "node scripts/visual-smoke.mjs"
+    "test:visual-smoke": "node scripts/visual-smoke.mjs",
+    "validate:atlas-control": "node scripts/validate-atlas-control.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.110.0",
+    "maplibre-gl": "5.10.0",
     "next": "16.2.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "maplibre-gl": "5.10.0"
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

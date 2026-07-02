@@ -5,9 +5,11 @@ import { chromium, devices } from 'playwright';
 
 const outputDir = path.join(process.cwd(), 'artifacts', 'visual-smoke');
 const homepageScreenshotPath = path.join(outputDir, 'homepage-mobile.png');
+const atlasControlScreenshotPath = path.join(outputDir, 'atlas-control-unauthenticated.png');
 const baseUrl = process.env.VISUAL_SMOKE_BASE_URL || 'http://127.0.0.1:3000';
 const shouldStartServer = !process.env.VISUAL_SMOKE_BASE_URL;
 const homepageUrl = new URL('/', baseUrl).toString();
+const atlasControlUrl = new URL('/atlas-control', baseUrl).toString();
 
 let server;
 let browser;
@@ -200,6 +202,11 @@ async function main() {
 
   await page.screenshot({ path: homepageScreenshotPath, fullPage: true });
   console.log(`Visual smoke screenshot written to ${path.relative(process.cwd(), homepageScreenshotPath)}`);
+
+  await page.goto(atlasControlUrl, { waitUntil: 'domcontentloaded' });
+  await page.getByText(/Atlas Control Desk|Control Plane Configuration Incomplete|Atlas Control Desk sign-in/).first().waitFor({ state: 'visible', timeout: 45_000 });
+  await page.screenshot({ path: atlasControlScreenshotPath, fullPage: true });
+  console.log(`Atlas Control Desk unauthenticated/configuration screenshot written to ${path.relative(process.cwd(), atlasControlScreenshotPath)}`);
 }
 
 try {
