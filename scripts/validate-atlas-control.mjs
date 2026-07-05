@@ -10,6 +10,16 @@ function assert(condition, message) { if (!condition) failures.push(message); }
 const clientFiles = walk('app').filter((file) => /\.(tsx?|jsx?)$/.test(file) && read(file).startsWith('"use client"'));
 for (const file of clientFiles) assert(!read(file).includes('SUPABASE_SERVICE_ROLE_KEY'), `${file} references SUPABASE_SERVICE_ROLE_KEY`);
 
+const loginForm = read('app/atlas-login/LoginForm.tsx');
+assert(!loginForm.includes('createBrowserClient'), 'LoginForm still imports or creates a browser Supabase client');
+assert(!loginForm.includes('signInWithOtp'), 'LoginForm still calls signInWithOtp directly');
+assert(loginForm.includes('/api/atlas-auth/request-link'), 'LoginForm does not call the same-origin Atlas login endpoint');
+
+const atlasAuthRoute = read('app/api/atlas-auth/request-link/route.ts');
+assert(atlasAuthRoute.includes('isAllowedAdminEmail'), 'Atlas auth route does not check the admin allowlist');
+assert(atlasAuthRoute.includes('signInWithOtp'), 'Atlas auth route does not request a Supabase magic link');
+assert(!atlasAuthRoute.includes('SUPABASE_SERVICE_ROLE_KEY'), 'Atlas auth route references SUPABASE_SERVICE_ROLE_KEY');
+
 for (const file of walk('app/api/atlas-control').filter((file) => file.endsWith('route.ts'))) {
   const source = read(file);
   assert(source.includes('requireAtlasAdmin'), `${file} does not independently require Atlas admin authorization`);
