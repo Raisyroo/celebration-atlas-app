@@ -18,6 +18,9 @@ assert(loginForm.includes('/api/atlas-auth/request-link'), 'LoginForm does not c
 const atlasAuthRoute = read('app/api/atlas-auth/request-link/route.ts');
 assert(atlasAuthRoute.includes('isAllowedAdminEmail'), 'Atlas auth route does not check the admin allowlist');
 assert(atlasAuthRoute.includes('signInWithOtp'), 'Atlas auth route does not request a Supabase magic link');
+assert(atlasAuthRoute.includes('crypto.randomUUID()'), 'Atlas auth route does not generate a request ID');
+assert(atlasAuthRoute.includes('requestId'), 'Atlas auth route does not return a request ID on failures');
+assert(atlasAuthRoute.includes('atlas_auth_magic_link_failed'), 'Atlas auth route does not log magic-link failures');
 assert(!atlasAuthRoute.includes('SUPABASE_SERVICE_ROLE_KEY'), 'Atlas auth route references SUPABASE_SERVICE_ROLE_KEY');
 
 for (const file of walk('app/api/atlas-control').filter((file) => file.endsWith('route.ts'))) {
