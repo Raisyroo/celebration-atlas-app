@@ -37,6 +37,9 @@ assert(atlasAuthRoute.includes('signInWithOtp'), 'Atlas auth route does not requ
 assert(atlasAuthRoute.includes('crypto.randomUUID()'), 'Atlas auth route does not generate a request ID');
 assert(atlasAuthRoute.includes('requestId'), 'Atlas auth route does not return a request ID on failures');
 assert(atlasAuthRoute.includes('atlas_auth_magic_link_failed'), 'Atlas auth route does not log magic-link failures');
+assert(/status === 0[\s\S]*return "supabase_unreachable"/.test(atlasAuthRoute), 'Atlas auth route does not classify upstream status 0 as supabase_unreachable');
+assert(/authretryablefetcherror[\s\S]*return "supabase_unreachable"/.test(atlasAuthRoute), 'Atlas auth route does not classify AuthRetryableFetchError as supabase_unreachable');
+assert(/fetch failed[\s\S]*return "supabase_unreachable"/.test(atlasAuthRoute), 'Atlas auth route does not classify fetch failed as supabase_unreachable');
 assert(!atlasAuthRoute.includes('SUPABASE_SERVICE_ROLE_KEY'), 'Atlas auth route references SUPABASE_SERVICE_ROLE_KEY');
 
 for (const file of walk('app/api/atlas-control').filter((file) => file.endsWith('route.ts'))) {
