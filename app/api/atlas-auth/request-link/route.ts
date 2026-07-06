@@ -90,11 +90,22 @@ function classifySupabaseFailure(details: UpstreamErrorDetails): SupabaseFailure
   const message = details.message?.toLowerCase() ?? "";
   const name = details.name?.toLowerCase() ?? "";
   const combined = `${code} ${message} ${name}`;
+  const connectivityCodes = ["enotfound", "econnrefused", "etimedout", "econnreset", "eai_again"];
 
   if (status === 429 || combined.includes("rate limit") || combined.includes("too many")) return "auth_rate_limited";
   if (status === 401 || status === 403 || combined.includes("api key") || combined.includes("jwt") || combined.includes("credential")) return "supabase_credentials_rejected";
   if (combined.includes("redirect") || combined.includes("emailredirectto") || combined.includes("not allowed") || combined.includes("site url")) return "redirect_url_rejected";
   if (combined.includes("smtp") || combined.includes("email provider") || combined.includes("email sign-in") || combined.includes("mailer") || combined.includes("send email")) return "email_provider_unavailable";
+  if (
+    status === 0 ||
+    name.includes("authretryablefetcherror") ||
+    message.includes("fetch failed") ||
+    message.includes("failed to fetch") ||
+    message.includes("network") ||
+    connectivityCodes.some((connectivityCode) => code.includes(connectivityCode))
+  ) {
+    return "supabase_unreachable";
+  }
   if (status === 500 || status === 502 || status === 503 || status === 504) return "email_provider_unavailable";
   return "magic_link_request_failed";
 }
