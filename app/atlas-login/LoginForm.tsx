@@ -1,8 +1,28 @@
 "use client";
 
+import { createBrowserClient } from "@supabase/ssr";
 import { useState } from "react";
 
+type AtlasLoginResponse = { ok?: boolean; code?: string; message?: string };
+
 const FETCH_FAILURE_MESSAGE = "Could not reach the Atlas sign-in service. Please try again.";
+const FALLBACK_START_MESSAGE = "Atlas server could not reach Supabase. Trying direct secure sign-in…";
+const FALLBACK_SUCCESS_MESSAGE = "Check your inbox for the Atlas Control Desk sign-in link.";
+const FALLBACK_FAILURE_MESSAGE = "Could not reach Supabase for secure sign-in. Please try again.";
+
+async function requestBrowserMagicLink(email: string): Promise<boolean> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) return false;
+
+  const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/atlas-control` },
+  });
+
+  return !error;
+}
 
 export default function LoginForm({ configured }: { configured: boolean }) {
   const [email, setEmail] = useState("");
@@ -22,7 +42,14 @@ export default function LoginForm({ configured }: { configured: boolean }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const payload = (await response.json()) as { message?: string };
+      const payload = (await response.json()) as AtlasLoginResponse;
+
+      if (payload.code === "supabase_unreachable") {
+        setMessage(FALLBACK_START_MESSAGE);
+        setMessage((await requestBrowserMagicLink(email)) ? FALLBACK_SUCCESS_MESSAGE : FALLBACK_FAILURE_MESSAGE);
+        return;
+      }
+
       setMessage(payload.message || FETCH_FAILURE_MESSAGE);
     } catch {
       setMessage(FETCH_FAILURE_MESSAGE);
