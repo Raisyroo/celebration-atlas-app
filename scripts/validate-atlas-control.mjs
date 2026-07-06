@@ -11,9 +11,25 @@ const clientFiles = walk('app').filter((file) => /\.(tsx?|jsx?)$/.test(file) && 
 for (const file of clientFiles) assert(!read(file).includes('SUPABASE_SERVICE_ROLE_KEY'), `${file} references SUPABASE_SERVICE_ROLE_KEY`);
 
 const loginForm = read('app/atlas-login/LoginForm.tsx');
-assert(!loginForm.includes('createBrowserClient'), 'LoginForm still imports or creates a browser Supabase client');
-assert(!loginForm.includes('signInWithOtp'), 'LoginForm still calls signInWithOtp directly');
-assert(loginForm.includes('/api/atlas-auth/request-link'), 'LoginForm does not call the same-origin Atlas login endpoint');
+const sameOriginIndex = loginForm.indexOf('/api/atlas-auth/request-link');
+const supabaseUnreachableIndex = loginForm.indexOf('payload.code === "supabase_unreachable"');
+const browserClientIndex = loginForm.indexOf('createBrowserClient');
+const signInWithOtpIndex = loginForm.indexOf('signInWithOtp');
+const fallbackStartIndex = loginForm.indexOf('Atlas server could not reach Supabase. Trying direct secure sign-in…');
+const fallbackFailureIndex = loginForm.indexOf('Could not reach Supabase for secure sign-in. Please try again.');
+
+assert(sameOriginIndex !== -1, 'LoginForm does not call the same-origin Atlas login endpoint');
+assert(browserClientIndex !== -1, 'LoginForm does not create a browser Supabase client for the narrow fallback');
+assert(signInWithOtpIndex !== -1, 'LoginForm does not call signInWithOtp for the narrow fallback');
+assert(sameOriginIndex !== -1 && loginForm.indexOf('requestBrowserMagicLink(email)') !== -1 && sameOriginIndex < loginForm.indexOf('requestBrowserMagicLink(email)'), 'LoginForm must call the same-origin Atlas login endpoint before invoking the browser Supabase fallback');
+assert(supabaseUnreachableIndex !== -1, 'LoginForm fallback is not gated by supabase_unreachable');
+assert(fallbackStartIndex !== -1, 'LoginForm does not show the direct secure sign-in fallback start message');
+assert(fallbackFailureIndex !== -1, 'LoginForm does not show the direct secure sign-in fallback failure message');
+assert(/payload\.code\s*===\s*["']supabase_unreachable["']\s*\)\s*{[\s\S]*requestBrowserMagicLink/.test(loginForm), 'LoginForm browser fallback is not inside the supabase_unreachable branch');
+assert(!/payload\.code\s*===\s*["']email_not_authorized["']\s*\)\s*{[\s\S]*requestBrowserMagicLink/.test(loginForm), 'LoginForm falls back for email_not_authorized');
+assert(!/payload\.code\s*!==\s*["']supabase_unreachable["'][\s\S]*requestBrowserMagicLink/.test(loginForm), 'LoginForm appears to fall back for non-supabase_unreachable server errors');
+assert(!/\bSUPABASE_SERVICE_ROLE_KEY\b/.test(loginForm), 'LoginForm references SUPABASE_SERVICE_ROLE_KEY');
+assert(/NEXT_PUBLIC_SUPABASE_URL/.test(loginForm) && /NEXT_PUBLIC_SUPABASE_ANON_KEY/.test(loginForm), 'LoginForm fallback does not use only public Supabase browser credentials');
 
 const atlasAuthRoute = read('app/api/atlas-auth/request-link/route.ts');
 assert(atlasAuthRoute.includes('isAllowedAdminEmail'), 'Atlas auth route does not check the admin allowlist');
