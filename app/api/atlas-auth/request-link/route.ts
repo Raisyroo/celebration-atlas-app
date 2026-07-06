@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { isAllowedAdminEmail } from "@/lib/atlas-control/auth";
-import { getAtlasConfigStatus } from "@/lib/atlas-control/config";
+import { getAtlasConfigStatus, getAtlasSupabaseUrl } from "@/lib/atlas-control/config";
 
 type AtlasAuthErrorCode =
   | "malformed_request"
@@ -136,7 +136,8 @@ export async function POST(request: Request) {
   }
 
   const config = getAtlasConfigStatus();
-  if (!config.hasUrl || !config.hasAnonKey || !config.hasAdminAllowlist) {
+  const supabaseUrl = getAtlasSupabaseUrl();
+  if (!supabaseUrl || !config.hasAnonKey || !config.hasAdminAllowlist) {
     return failureJson("atlas_auth_not_configured", "Atlas sign-in is not fully configured. Contact an operator.", 503, requestId);
   }
 
@@ -144,7 +145,7 @@ export async function POST(request: Request) {
     return failureJson("email_not_authorized", "This email is not authorized for Atlas Control Desk sign-in.", 403, requestId);
   }
 
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const emailRedirectTo = `${new URL(request.url).origin}/auth/callback?next=/atlas-control`;

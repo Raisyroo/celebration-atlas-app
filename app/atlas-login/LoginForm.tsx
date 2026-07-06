@@ -9,11 +9,12 @@ const FETCH_FAILURE_MESSAGE = "Could not reach the Atlas sign-in service. Please
 const FALLBACK_START_MESSAGE = "Atlas server could not reach Supabase. Trying direct secure sign-in…";
 const FALLBACK_SUCCESS_MESSAGE = "Check your inbox for the Atlas Control Desk sign-in link.";
 const FALLBACK_FAILURE_MESSAGE = "Could not reach Supabase for secure sign-in. Please try again.";
+const FALLBACK_CONFIG_MESSAGE = "Direct secure sign-in is missing public Supabase browser credentials. Ask an operator to set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY before rebuilding.";
 
-async function requestBrowserMagicLink(email: string): Promise<boolean> {
+async function requestBrowserMagicLink(email: string): Promise<{ ok: true } | { ok: false; message: string }> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseAnonKey) return false;
+  if (!supabaseUrl || !supabaseAnonKey) return { ok: false, message: FALLBACK_CONFIG_MESSAGE };
 
   const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
   const { error } = await supabase.auth.signInWithOtp({
@@ -21,7 +22,7 @@ async function requestBrowserMagicLink(email: string): Promise<boolean> {
     options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/atlas-control` },
   });
 
-  return !error;
+  return error ? { ok: false, message: FALLBACK_FAILURE_MESSAGE } : { ok: true };
 }
 
 export default function LoginForm({ configured }: { configured: boolean }) {
@@ -46,7 +47,8 @@ export default function LoginForm({ configured }: { configured: boolean }) {
 
       if (payload.code === "supabase_unreachable") {
         setMessage(FALLBACK_START_MESSAGE);
-        setMessage((await requestBrowserMagicLink(email)) ? FALLBACK_SUCCESS_MESSAGE : FALLBACK_FAILURE_MESSAGE);
+        const fallbackResult = await requestBrowserMagicLink(email);
+        setMessage(fallbackResult.ok ? FALLBACK_SUCCESS_MESSAGE : fallbackResult.message);
         return;
       }
 
