@@ -35,7 +35,7 @@ import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
 
-const RESULT_LABEL_SERIF_FONT_STACK = 'Palatino Linotype, Palatino, Georgia, Times New Roman, serif';
+const RESULT_LABEL_SERIF_FONT_STACK = 'Cormorant Garamond, EB Garamond, Libre Baskerville, Georgia, serif';
 
 const ATMOSPHERIC_SUGGESTIONS = [
   'Ask for festivals, fireworks, fairs, or Romeo Peach Festival',
@@ -508,6 +508,37 @@ function SearchResultTextField({
       style={styles.resultTextField}
     >
       {placements.map((placement) => {
+        if (placement.kind === 'cluster') {
+          return (
+            <details
+              key={placement.id}
+              className="atlas-result-text-cluster"
+              style={{
+                ...styles.resultTextCluster,
+                left: `${placement.x}%`,
+                top: `${placement.y}%`,
+                zIndex: Z_INDEX.markers + 36 + placement.zIndex,
+              }}
+            >
+              <summary aria-label={`Open ${placement.label}`} style={styles.resultTextClusterSummary}>
+                {placement.label}
+              </summary>
+              <div style={styles.resultTextClusterPanel}>
+                {placement.events.map((event) => {
+                  const locationLabel = formatResultLabelLocation(event.location);
+
+                  return (
+                    <button key={event.id} type="button" onClick={() => onEventSelect(event.id)} style={styles.resultTextClusterEvent}>
+                      <span style={styles.resultTextClusterEventName}>{event.name}</span>
+                      {locationLabel ? <span style={styles.resultTextClusterEventLocation}>{locationLabel}</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </details>
+          );
+        }
+
         const locationLabel = formatResultLabelLocation(placement.event.location);
 
         return (
@@ -5338,12 +5369,45 @@ const styles: Record<string, CSSProperties> = {
   resultTextLabelName: {
     display: '-webkit-box',
     maxWidth: 'min(30vw, 300px)',
-    overflow: 'hidden',
-    overflowWrap: 'normal',
+    overflow: 'visible',
+    overflowWrap: 'break-word',
     textWrap: 'balance',
     WebkitBoxOrient: 'vertical',
     WebkitLineClamp: 2,
   },
+  resultTextCluster: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    pointerEvents: 'auto',
+    fontFamily: RESULT_LABEL_SERIF_FONT_STACK,
+    color: 'rgba(238, 197, 122, 0.82)',
+  },
+  resultTextClusterSummary: {
+    cursor: 'pointer',
+    listStyle: 'none',
+    fontWeight: 600,
+    fontSize: 'clamp(12px, 3.2vw, 15px)',
+    textShadow: '0 1px 4px rgba(0, 0, 0, 0.72)',
+  },
+  resultTextClusterPanel: {
+    display: 'grid',
+    gap: 6,
+    marginTop: 8,
+    minWidth: 190,
+  },
+  resultTextClusterEvent: {
+    display: 'grid',
+    gap: 2,
+    padding: 0,
+    border: 0,
+    background: 'transparent',
+    color: 'rgba(255, 246, 218, 0.96)',
+    fontFamily: RESULT_LABEL_SERIF_FONT_STACK,
+    textAlign: 'left',
+    cursor: 'pointer',
+  },
+  resultTextClusterEventName: { fontSize: 15, fontWeight: 600, lineHeight: 1.08 },
+  resultTextClusterEventLocation: { fontSize: 10, letterSpacing: 0.9, textTransform: 'uppercase', color: 'rgba(235, 198, 132, 0.78)' },
   resultTextLabelLocation: {
     display: 'block',
     color: 'rgba(235, 198, 132, 0.78)',
