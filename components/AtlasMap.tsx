@@ -17,6 +17,10 @@ import {
 import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
 import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
 import { resolveExactEventIntent } from '../data/exactEventIntent';
+import {
+  formatResultLabelLocation,
+  resolveResultLabelPlacements,
+} from '../data/searchResultTextLayout';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
 import type { MapPresentationPlan } from '../data/mapPresentationPlan';
 import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
@@ -461,6 +465,56 @@ function getEventStoryDetails(event: AtlasEvent): { title: string; body: string 
   }
 
   return details;
+}
+
+
+function SearchResultTextField({
+  results,
+  isDesktop,
+  onEventSelect,
+}: {
+  results: readonly AtlasEvent[];
+  isDesktop: boolean;
+  onEventSelect: (eventId: string) => void;
+}) {
+  const placements = useMemo(
+    () => resolveResultLabelPlacements(results, isDesktop ? 'desktop' : 'mobile'),
+    [isDesktop, results],
+  );
+
+  if (placements.length === 0) return null;
+
+  return (
+    <div
+      aria-label="Search result text field"
+      className="atlas-result-text-field"
+      style={styles.resultTextField}
+    >
+      {placements.map((placement) => (
+        <button
+          key={placement.event.id}
+          type="button"
+          aria-label={`Open ${placement.event.name}`}
+          className={`atlas-result-text-label atlas-result-text-label--${placement.tier}`}
+          data-result-label-tier={placement.tier}
+          data-result-label-slot={placement.slot}
+          onClick={() => onEventSelect(placement.event.id)}
+          style={{
+            ...styles.resultTextLabel,
+            ...placement.style,
+            left: `${placement.x}%`,
+            top: `${placement.y}%`,
+            zIndex: Z_INDEX.markers + 36 + placement.zIndex,
+          }}
+        >
+          <span style={styles.resultTextLabelName}>{placement.event.name}</span>
+          <span style={styles.resultTextLabelLocation}>
+            {formatResultLabelLocation(placement.event.location)}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function formatMobileEventDate(event: AtlasEvent): string {
@@ -1447,19 +1501,21 @@ export default function AtlasMap({
     isSubmittedSearchActive && highlightedIds.size > 0;
   const hasSubmittedSearchNoResults =
     isSubmittedSearchActive && highlightedIds.size === 0;
-  const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
+  const rankedSubmittedSearchResults = useMemo(() => {
     if (exactEventIntent || !q || highlightedIds.size === 0) return [];
 
-    return ATLAS_EVENTS.filter((event) => highlightedIds.has(event.id))
-      .map((event) => ({
-        id: event.id,
-        name: event.name,
-        location: event.location,
-        category: event.category,
-        atmosphereLabel: event.atmosphereLabel,
-        blurb: event.blurb,
-      }));
+    return ATLAS_EVENTS.filter((event) => highlightedIds.has(event.id));
   }, [exactEventIntent, highlightedIds, q]);
+  const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
+    return rankedSubmittedSearchResults.map((event) => ({
+      id: event.id,
+      name: event.name,
+      location: event.location,
+      category: event.category,
+      atmosphereLabel: event.atmosphereLabel,
+      blurb: event.blurb,
+    }));
+  }, [rankedSubmittedSearchResults]);
   const markerLayouts = useMemo(
     () => resolveAtlasMarkerLayouts(ATLAS_EVENTS, artworkVariant),
     [artworkVariant],
@@ -2851,7 +2907,7 @@ export default function AtlasMap({
               transform: mapLayerTransform,
             }}
           >
-            {isDesktop && mobileSearchConnectors.length > 0 && mapViewportSize ? (
+            {isDesktop && mobileSearchConnectors.length > 0 && mapViewportSize && rankedSubmittedSearchResults.length === 0 ? (
               <svg
                 aria-hidden="true"
                 style={styles.mobileCalloutConnectorLayer}
@@ -2967,7 +3023,7 @@ export default function AtlasMap({
                       : 1;
                 const markerLabelEvent = exactHighlightedEvent ??
                   (!isCluster ? primaryEvent : null);
-                const shouldShowMarkerLabel = !isCluster && markerLabelEvent
+                const shouldShowMarkerLabel = !isCluster && markerLabelEvent && rankedSubmittedSearchResults.length === 0
                   ? mapCalloutPlan.eventIds.has(markerLabelEvent.id)
                   : false;
                 const mobileTagPlacement = markerLabelEvent
@@ -3239,6 +3295,13 @@ export default function AtlasMap({
                   </div>
                 );
               })}
+            {rankedSubmittedSearchResults.length > 0 ? (
+              <SearchResultTextField
+                results={rankedSubmittedSearchResults}
+                isDesktop={isDesktop}
+                onEventSelect={selectAtlasEvent}
+              />
+            ) : null}
             {isDesktop ? mapCalloutPlan.clusterIndicators.map((cluster) => (
               <button
                 key={cluster.id}
@@ -4668,6 +4731,17 @@ export default function AtlasMap({
               }
             }
 
+            .atlas-result-text-label:focus-visible {
+              outline: 2px solid rgba(255, 237, 184, 0.92);
+              outline-offset: 5px;
+            }
+
+            @media (max-width: 767px) {
+              .atlas-result-text-label span:first-child {
+                max-width: 42vw !important;
+              }
+            }
+
             @media (prefers-reduced-motion: reduce) {
               .marker-pulse,
               .atlas-marker-starburst,
@@ -5210,6 +5284,52 @@ const styles: Record<string, CSSProperties> = {
     overflow: 'visible',
     pointerEvents: 'none',
   },
+  resultTextField: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: Z_INDEX.markers + 36,
+    pointerEvents: 'none',
+  },
+  resultTextLabel: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    display: 'grid',
+    justifyItems: 'center',
+    gap: 4,
+    padding: 0,
+    border: 0,
+    borderRadius: 0,
+    background: 'transparent',
+    boxShadow: 'none',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    fontFamily: 'inherit',
+    fontWeight: 900,
+    lineHeight: 0.96,
+    letterSpacing: 0.18,
+    textAlign: 'center',
+    whiteSpace: 'nowrap',
+    cursor: 'pointer',
+    pointerEvents: 'auto',
+    touchAction: 'manipulation',
+  },
+  resultTextLabelName: {
+    display: 'block',
+    maxWidth: 'min(34vw, 420px)',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  resultTextLabelLocation: {
+    display: 'block',
+    color: 'rgba(235, 198, 132, 0.78)',
+    fontSize: '0.42em',
+    fontWeight: 800,
+    letterSpacing: 1.2,
+    lineHeight: 1.05,
+    textTransform: 'uppercase',
+    textShadow: '0 1px 4px rgba(0, 0, 0, 0.78)',
+  },
+
   markerLabel: {
     position: 'absolute',
     left: '50%',
