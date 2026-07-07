@@ -10,6 +10,7 @@ export type ProjectedResultLabelEvent = {
 
 export type ResultLabelTier = 'hero' | 'strong' | 'supporting' | 'ambient' | 'compact' | 'micro';
 export type ResultLabelViewport = 'desktop' | 'mobile';
+export type ResultLabelAlign = 'left' | 'center' | 'right';
 
 type LabelRect = { left: number; right: number; top: number; bottom: number };
 
@@ -22,6 +23,7 @@ export type ResultLabelPlacement = {
   y: number;
   anchorX: number;
   anchorY: number;
+  align: ResultLabelAlign;
   zIndex: number;
   style: CSSProperties;
   rect: LabelRect;
@@ -51,21 +53,21 @@ const LABEL_GAP_PERCENT = { desktop: 1.2, mobile: 2.35 } as const;
 const LOCAL_CLUSTER_DISTANCE_PERCENT = { desktop: 12, mobile: 14 } as const;
 
 const DESKTOP_TIER_STYLES: Record<ResultLabelTier, CSSProperties> = {
-  hero: { fontSize: 'clamp(25px, 2.02vw, 30px)', fontWeight: 500, color: 'rgba(255, 249, 228, 0.98)', opacity: 1, textShadow: '0 0 6px rgba(255, 232, 174, 0.28), 0 0 16px rgba(218, 151, 58, 0.16), 0 2px 6px rgba(0, 0, 0, 0.76)' },
-  strong: { fontSize: 'clamp(20px, 1.58vw, 24px)', fontWeight: 500, color: 'rgba(248, 219, 160, 0.93)', opacity: 0.92, textShadow: '0 0 5px rgba(246, 203, 126, 0.2), 0 0 12px rgba(206, 132, 42, 0.11), 0 2px 5px rgba(0, 0, 0, 0.74)' },
-  supporting: { fontSize: 'clamp(16px, 1.18vw, 19px)', fontWeight: 400, color: 'rgba(233, 198, 135, 0.84)', opacity: 0.78, textShadow: '0 0 4px rgba(227, 180, 104, 0.14), 0 1px 4px rgba(0, 0, 0, 0.72)' },
-  ambient: { fontSize: 'clamp(12px, .98vw, 15px)', fontWeight: 400, color: 'rgba(208, 157, 88, 0.68)', opacity: 0.58, textShadow: '0 0 3px rgba(219, 169, 91, 0.1), 0 1px 4px rgba(0, 0, 0, 0.7)' },
-  compact: { fontSize: 'clamp(11px, .84vw, 13px)', fontWeight: 400, color: 'rgba(206, 158, 92, 0.64)', opacity: 0.56, textShadow: '0 1px 4px rgba(0, 0, 0, 0.68)' },
-  micro: { fontSize: 'clamp(10px, .74vw, 12px)', fontWeight: 400, color: 'rgba(204, 154, 88, 0.58)', opacity: 0.52, textShadow: '0 1px 3px rgba(0, 0, 0, 0.66)' },
+  hero: { fontSize: 'clamp(25px, 2.02vw, 30px)', fontWeight: 500, color: 'rgba(255, 249, 228, 0.98)', opacity: 1, textShadow: '0 1px 1px rgba(1, 4, 9, 0.96), 0 0 2px rgba(0, 0, 0, 0.9), 0 0 6px rgba(255, 232, 174, 0.3), 0 0 16px rgba(218, 151, 58, 0.16)' },
+  strong: { fontSize: 'clamp(20px, 1.58vw, 24px)', fontWeight: 500, color: 'rgba(250, 224, 168, 0.96)', opacity: 0.94, textShadow: '0 1px 1px rgba(1, 4, 9, 0.95), 0 0 2px rgba(0, 0, 0, 0.88), 0 0 5px rgba(246, 203, 126, 0.22), 0 0 12px rgba(206, 132, 42, 0.12)' },
+  supporting: { fontSize: 'clamp(16px, 1.18vw, 19px)', fontWeight: 400, color: 'rgba(238, 205, 143, 0.9)', opacity: 0.84, textShadow: '0 1px 1px rgba(1, 4, 9, 0.94), 0 0 2px rgba(0, 0, 0, 0.84), 0 0 4px rgba(227, 180, 104, 0.16)' },
+  ambient: { fontSize: 'clamp(12px, .98vw, 15px)', fontWeight: 400, color: 'rgba(224, 176, 106, 0.86)', opacity: 0.74, textShadow: '0 1px 1px rgba(1, 4, 9, 0.95), 0 0 2px rgba(0, 0, 0, 0.88), 0 0 3px rgba(219, 169, 91, 0.13)' },
+  compact: { fontSize: 'clamp(11px, .84vw, 13px)', fontWeight: 400, color: 'rgba(222, 174, 106, 0.8)', opacity: 0.7, textShadow: '0 1px 1px rgba(1, 4, 9, 0.95), 0 0 2px rgba(0, 0, 0, 0.86)' },
+  micro: { fontSize: 'clamp(10px, .74vw, 12px)', fontWeight: 400, color: 'rgba(220, 170, 102, 0.76)', opacity: 0.66, textShadow: '0 1px 1px rgba(1, 4, 9, 0.95), 0 0 2px rgba(0, 0, 0, 0.86)' },
 };
 
 const MOBILE_TIER_STYLES: Record<ResultLabelTier, CSSProperties> = {
   hero: { ...DESKTOP_TIER_STYLES.hero, fontSize: 'clamp(19px, 5.15vw, 22px)', opacity: 0.96 },
   strong: { ...DESKTOP_TIER_STYLES.strong, fontSize: 'clamp(16px, 4.35vw, 19px)', opacity: 0.86 },
-  supporting: { ...DESKTOP_TIER_STYLES.supporting, fontSize: 'clamp(13px, 3.5vw, 16px)', opacity: 0.72 },
-  ambient: { ...DESKTOP_TIER_STYLES.ambient, fontSize: 'clamp(10.5px, 2.9vw, 13px)', opacity: 0.58 },
-  compact: { ...DESKTOP_TIER_STYLES.compact, fontSize: 'clamp(9.5px, 2.55vw, 11.5px)', opacity: 0.54 },
-  micro: { ...DESKTOP_TIER_STYLES.micro, fontSize: 'clamp(8.5px, 2.3vw, 10.5px)', opacity: 0.5 },
+  supporting: { ...DESKTOP_TIER_STYLES.supporting, fontSize: 'clamp(13px, 3.5vw, 16px)', opacity: 0.82 },
+  ambient: { ...DESKTOP_TIER_STYLES.ambient, fontSize: 'clamp(10.5px, 2.9vw, 13px)', opacity: 0.72 },
+  compact: { ...DESKTOP_TIER_STYLES.compact, fontSize: 'clamp(9.5px, 2.55vw, 11.5px)', opacity: 0.68 },
+  micro: { ...DESKTOP_TIER_STYLES.micro, fontSize: 'clamp(8.5px, 2.3vw, 10.5px)', opacity: 0.64 },
 };
 
 export function getResultLabelTier(index: number): ResultLabelTier {
@@ -81,6 +83,12 @@ export function formatResultLabelLocation(location: string): string {
 }
 
 const intersects = (a: LabelRect, b: LabelRect) => a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
+
+const getResultLabelAlign = (x: number): ResultLabelAlign => {
+  if (x <= 38) return 'left';
+  if (x >= 62) return 'right';
+  return 'center';
+};
 
 const localOffsets = (() => {
   const offsets: [number, number][] = [[0, 0]];
@@ -142,9 +150,10 @@ function placeEvent(
     if (Math.hypot(dx, dy) > MAX_LOCAL_OFFSET_PERCENT[viewport]) continue;
     const x = Math.min(98, Math.max(2, item.position.x + dx));
     const y = Math.min(100 - PROTECTED_BOTTOM_PERCENT[viewport], Math.max(PROTECTED_TOP_PERCENT[viewport], item.position.y + dy));
+    const align = getResultLabelAlign(x);
     const rect = estimateRect(item.event, x, y, tier, viewport);
     if (!fits(rect, occupied, viewport)) continue;
-    return { kind: 'label', event: item.event, tier, slot: `projected-${item.event.id}`, x, y, anchorX: item.position.x, anchorY: item.position.y, zIndex: labelLimit - index, style: styles[tier], rect };
+    return { kind: 'label', event: item.event, tier, slot: `projected-${item.event.id}`, x, y, anchorX: item.position.x, anchorY: item.position.y, align, zIndex: labelLimit - index, style: styles[tier], rect };
   }
 
   return null;
