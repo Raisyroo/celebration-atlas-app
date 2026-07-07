@@ -50,21 +50,21 @@ const PROTECTED_BOTTOM_PERCENT = { desktop: 18, mobile: 26 } as const;
 const LABEL_GAP_PERCENT = { desktop: 1.2, mobile: 1.8 } as const;
 
 const DESKTOP_TIER_STYLES: Record<ResultLabelTier, CSSProperties> = {
-  hero: { fontSize: 'clamp(22px, 2.05vw, 31px)', color: 'rgba(255, 246, 218, 0.98)', opacity: 1, textShadow: '0 0 8px rgba(255, 232, 174, 0.34), 0 0 22px rgba(220, 150, 56, 0.18), 0 2px 7px rgba(0, 0, 0, 0.76)' },
-  strong: { fontSize: 'clamp(18px, 1.68vw, 25px)', color: 'rgba(246, 215, 154, 0.92)', opacity: 0.9, textShadow: '0 0 7px rgba(246, 203, 126, 0.24), 0 0 16px rgba(206, 132, 42, 0.13), 0 2px 6px rgba(0, 0, 0, 0.74)' },
-  supporting: { fontSize: 'clamp(15px, 1.28vw, 20px)', color: 'rgba(232, 196, 132, 0.82)', opacity: 0.76, textShadow: '0 0 5px rgba(227, 180, 104, 0.18), 0 1px 5px rgba(0, 0, 0, 0.72)' },
-  ambient: { fontSize: 'clamp(13px, 1.02vw, 16px)', color: 'rgba(218, 177, 112, 0.72)', opacity: 0.6, textShadow: '0 0 4px rgba(219, 169, 91, 0.12), 0 1px 4px rgba(0, 0, 0, 0.7)' },
-  compact: { fontSize: 'clamp(12px, .88vw, 14px)', color: 'rgba(216, 175, 110, 0.68)', opacity: 0.58, textShadow: '0 1px 4px rgba(0, 0, 0, 0.68)' },
-  micro: { fontSize: 'clamp(11px, .78vw, 12px)', color: 'rgba(214, 171, 105, 0.62)', opacity: 0.54, textShadow: '0 1px 3px rgba(0, 0, 0, 0.66)' },
+  hero: { fontSize: 'clamp(25px, 2.02vw, 30px)', fontWeight: 500, color: 'rgba(255, 249, 228, 0.98)', opacity: 1, textShadow: '0 0 6px rgba(255, 232, 174, 0.28), 0 0 16px rgba(218, 151, 58, 0.16), 0 2px 6px rgba(0, 0, 0, 0.76)' },
+  strong: { fontSize: 'clamp(20px, 1.58vw, 24px)', fontWeight: 500, color: 'rgba(248, 219, 160, 0.93)', opacity: 0.92, textShadow: '0 0 5px rgba(246, 203, 126, 0.2), 0 0 12px rgba(206, 132, 42, 0.11), 0 2px 5px rgba(0, 0, 0, 0.74)' },
+  supporting: { fontSize: 'clamp(16px, 1.18vw, 19px)', fontWeight: 400, color: 'rgba(233, 198, 135, 0.84)', opacity: 0.78, textShadow: '0 0 4px rgba(227, 180, 104, 0.14), 0 1px 4px rgba(0, 0, 0, 0.72)' },
+  ambient: { fontSize: 'clamp(12px, .98vw, 15px)', fontWeight: 400, color: 'rgba(208, 157, 88, 0.68)', opacity: 0.58, textShadow: '0 0 3px rgba(219, 169, 91, 0.1), 0 1px 4px rgba(0, 0, 0, 0.7)' },
+  compact: { fontSize: 'clamp(11px, .84vw, 13px)', fontWeight: 400, color: 'rgba(206, 158, 92, 0.64)', opacity: 0.56, textShadow: '0 1px 4px rgba(0, 0, 0, 0.68)' },
+  micro: { fontSize: 'clamp(10px, .74vw, 12px)', fontWeight: 400, color: 'rgba(204, 154, 88, 0.58)', opacity: 0.52, textShadow: '0 1px 3px rgba(0, 0, 0, 0.66)' },
 };
 
 const MOBILE_TIER_STYLES: Record<ResultLabelTier, CSSProperties> = {
-  hero: { ...DESKTOP_TIER_STYLES.hero, fontSize: 'clamp(19px, 5.8vw, 23px)' },
-  strong: { ...DESKTOP_TIER_STYLES.strong, fontSize: 'clamp(16px, 4.8vw, 19px)' },
-  supporting: { ...DESKTOP_TIER_STYLES.supporting, fontSize: 'clamp(14px, 4.15vw, 17px)' },
-  ambient: { ...DESKTOP_TIER_STYLES.ambient, fontSize: 'clamp(12px, 3.55vw, 14px)', opacity: 0.62 },
-  compact: { ...DESKTOP_TIER_STYLES.compact, fontSize: 'clamp(11px, 3.18vw, 12px)' },
-  micro: { ...DESKTOP_TIER_STYLES.micro, fontSize: 'clamp(10px, 2.85vw, 11px)' },
+  hero: { ...DESKTOP_TIER_STYLES.hero, fontSize: 'clamp(25px, 7vw, 30px)' },
+  strong: { ...DESKTOP_TIER_STYLES.strong, fontSize: 'clamp(20px, 5.7vw, 24px)' },
+  supporting: { ...DESKTOP_TIER_STYLES.supporting, fontSize: 'clamp(16px, 4.6vw, 19px)' },
+  ambient: { ...DESKTOP_TIER_STYLES.ambient, fontSize: 'clamp(12px, 3.6vw, 15px)', opacity: 0.6 },
+  compact: { ...DESKTOP_TIER_STYLES.compact, fontSize: 'clamp(11px, 3.2vw, 13px)' },
+  micro: { ...DESKTOP_TIER_STYLES.micro, fontSize: 'clamp(10px, 2.9vw, 12px)' },
 };
 
 export function getResultLabelTier(index: number): ResultLabelTier {

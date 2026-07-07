@@ -35,7 +35,7 @@ import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
 
-const RESULT_LABEL_SERIF_FONT_STACK = 'Cormorant Garamond, EB Garamond, Libre Baskerville, Georgia, serif';
+const RESULT_LABEL_SERIF_FONT_STACK = '"Cormorant Garamond", "EB Garamond", "Libre Baskerville", Georgia, serif';
 
 const ATMOSPHERIC_SUGGESTIONS = [
   'Ask for festivals, fireworks, fairs, or Romeo Peach Festival',
@@ -5357,9 +5357,9 @@ const styles: Record<string, CSSProperties> = {
     appearance: 'none',
     WebkitAppearance: 'none',
     fontFamily: RESULT_LABEL_SERIF_FONT_STACK,
-    fontWeight: 600,
-    lineHeight: 1.02,
-    letterSpacing: 0.1,
+    fontWeight: 400,
+    lineHeight: 0.96,
+    letterSpacing: '-0.015em',
     textAlign: 'center',
     whiteSpace: 'normal',
     cursor: 'pointer',
@@ -5385,7 +5385,7 @@ const styles: Record<string, CSSProperties> = {
   resultTextClusterSummary: {
     cursor: 'pointer',
     listStyle: 'none',
-    fontWeight: 600,
+    fontWeight: 500,
     fontSize: 'clamp(12px, 3.2vw, 15px)',
     textShadow: '0 1px 4px rgba(0, 0, 0, 0.72)',
   },
@@ -5406,15 +5406,15 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'left',
     cursor: 'pointer',
   },
-  resultTextClusterEventName: { fontSize: 15, fontWeight: 600, lineHeight: 1.08 },
-  resultTextClusterEventLocation: { fontSize: 10, letterSpacing: 0.9, textTransform: 'uppercase', color: 'rgba(235, 198, 132, 0.78)' },
+  resultTextClusterEventName: { fontSize: 15, fontWeight: 500, lineHeight: 1.02, letterSpacing: '-0.01em' },
+  resultTextClusterEventLocation: { fontSize: 10, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'rgba(235, 198, 132, 0.74)' },
   resultTextLabelLocation: {
     display: 'block',
     color: 'rgba(235, 198, 132, 0.78)',
     fontSize: '0.46em',
-    fontWeight: 500,
-    letterSpacing: 1.05,
-    lineHeight: 1.05,
+    fontWeight: 400,
+    letterSpacing: '0.12em',
+    lineHeight: 1.08,
     textTransform: 'uppercase',
     textShadow: '0 1px 4px rgba(0, 0, 0, 0.78)',
   },
