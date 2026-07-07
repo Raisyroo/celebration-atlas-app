@@ -490,29 +490,33 @@ function SearchResultTextField({
       className="atlas-result-text-field"
       style={styles.resultTextField}
     >
-      {placements.map((placement) => (
-        <button
-          key={placement.event.id}
-          type="button"
-          aria-label={`Open ${placement.event.name}`}
-          className={`atlas-result-text-label atlas-result-text-label--${placement.tier}`}
-          data-result-label-tier={placement.tier}
-          data-result-label-slot={placement.slot}
-          onClick={() => onEventSelect(placement.event.id)}
-          style={{
-            ...styles.resultTextLabel,
-            ...placement.style,
-            left: `${placement.x}%`,
-            top: `${placement.y}%`,
-            zIndex: Z_INDEX.markers + 36 + placement.zIndex,
-          }}
-        >
-          <span style={styles.resultTextLabelName}>{placement.event.name}</span>
-          <span style={styles.resultTextLabelLocation}>
-            {formatResultLabelLocation(placement.event.location)}
-          </span>
-        </button>
-      ))}
+      {placements.map((placement) => {
+        const locationLabel = formatResultLabelLocation(placement.event.location);
+
+        return (
+          <button
+            key={placement.event.id}
+            type="button"
+            aria-label={`Open ${placement.event.name}`}
+            className={`atlas-result-text-label atlas-result-text-label--${placement.tier}`}
+            data-result-label-tier={placement.tier}
+            data-result-label-slot={placement.slot}
+            onClick={() => onEventSelect(placement.event.id)}
+            style={{
+              ...styles.resultTextLabel,
+              ...placement.style,
+              left: `${placement.x}%`,
+              top: `${placement.y}%`,
+              zIndex: Z_INDEX.markers + 36 + placement.zIndex,
+            }}
+          >
+            <span style={styles.resultTextLabelName}>{placement.event.name}</span>
+            {locationLabel ? (
+              <span style={styles.resultTextLabelLocation}>{locationLabel}</span>
+            ) : null}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -5305,24 +5309,24 @@ const styles: Record<string, CSSProperties> = {
     WebkitAppearance: 'none',
     fontFamily: 'inherit',
     fontWeight: 900,
-    lineHeight: 0.96,
-    letterSpacing: 0.18,
+    lineHeight: 1.02,
+    letterSpacing: 0.08,
     textAlign: 'center',
-    whiteSpace: 'nowrap',
+    whiteSpace: 'normal',
     cursor: 'pointer',
     pointerEvents: 'auto',
     touchAction: 'manipulation',
   },
   resultTextLabelName: {
     display: 'block',
-    maxWidth: 'min(34vw, 420px)',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    maxWidth: 'min(30vw, 300px)',
+    overflowWrap: 'normal',
+    textWrap: 'balance',
   },
   resultTextLabelLocation: {
     display: 'block',
     color: 'rgba(235, 198, 132, 0.78)',
-    fontSize: '0.42em',
+    fontSize: '0.46em',
     fontWeight: 800,
     letterSpacing: 1.2,
     lineHeight: 1.05,
