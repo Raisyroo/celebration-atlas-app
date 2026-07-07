@@ -1,4 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { type CookieOptions, createServerClient } from "@supabase/ssr";
+import { NextResponse } from "next/server";
 import { isAllowedAdminEmail } from "@/lib/atlas-control/auth";
 import { getAtlasConfigStatus, getAtlasSupabaseUrl } from "@/lib/atlas-control/config";
 
@@ -29,6 +30,8 @@ type UpstreamErrorDetails = {
   message?: string;
 };
 
+type PendingCookie = { name: string; value: string; options?: CookieOptions };
+
 const SUCCESS_MESSAGE = "Check your inbox for the Atlas Control Desk sign-in link.";
 const SAFE_FAILURE_MESSAGES: Record<SupabaseFailureCode, (requestId: string) => string> = {
   auth_rate_limited: () => "Too many sign-in link requests. Please wait a few minutes and try again.",
@@ -39,8 +42,10 @@ const SAFE_FAILURE_MESSAGES: Record<SupabaseFailureCode, (requestId: string) => 
   magic_link_request_failed: (requestId) => `Atlas sign-in link could not be sent. Reference: ${requestId}`,
 };
 
-function json(body: SafeAtlasAuthResponse, status: number): Response {
-  return Response.json(body, { status });
+function json(body: SafeAtlasAuthResponse, status: number, pendingCookies: PendingCookie[] = []): Response {
+  const response = NextResponse.json(body, { status });
+  pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+  return response;
 }
 
 function failureJson(code: AtlasAuthErrorCode, message: string, status: number, requestId: string): Response {
@@ -145,14 +150,20 @@ export async function POST(request: Request) {
     return failureJson("email_not_authorized", "This email is not authorized for Atlas Control Desk sign-in.", 403, requestId);
   }
 
-  const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
+  const pendingCookies: PendingCookie[] = [];
+  const supabase = createServerClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      getAll: () => request.headers.get("cookie")?.split(/; */).filter(Boolean).map((cookie) => { const [name, ...parts] = cookie.split("="); return { name, value: parts.join("=") }; }) ?? [],
+      setAll: (items) => {
+        pendingCookies.push(...items);
+      },
+    },
   });
   const emailRedirectTo = `${new URL(request.url).origin}/auth/callback?next=/atlas-control`;
 
   try {
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo } });
-    if (!error) return json({ ok: true, message: SUCCESS_MESSAGE }, 200);
+    if (!error) return json({ ok: true, message: SUCCESS_MESSAGE }, 200, pendingCookies);
 
     const details = getUpstreamErrorDetails(error);
     const category = classifySupabaseFailure(details);

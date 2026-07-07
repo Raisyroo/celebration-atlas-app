@@ -34,6 +34,8 @@ assert(/NEXT_PUBLIC_SUPABASE_URL/.test(loginForm) && /NEXT_PUBLIC_SUPABASE_ANON_
 const atlasAuthRoute = read('app/api/atlas-auth/request-link/route.ts');
 assert(atlasAuthRoute.includes('isAllowedAdminEmail'), 'Atlas auth route does not check the admin allowlist');
 assert(atlasAuthRoute.includes('signInWithOtp'), 'Atlas auth route does not request a Supabase magic link');
+assert(atlasAuthRoute.includes('createServerClient'), 'Atlas auth route does not use the Supabase SSR client');
+assert(atlasAuthRoute.includes('pendingCookies'), 'Atlas auth route does not preserve Supabase auth cookies for PKCE callbacks');
 assert(atlasAuthRoute.includes('crypto.randomUUID()'), 'Atlas auth route does not generate a request ID');
 assert(atlasAuthRoute.includes('requestId'), 'Atlas auth route does not return a request ID on failures');
 assert(atlasAuthRoute.includes('atlas_auth_magic_link_failed'), 'Atlas auth route does not log magic-link failures');
@@ -41,6 +43,12 @@ assert(/status === 0[\s\S]*return "supabase_unreachable"/.test(atlasAuthRoute), 
 assert(/authretryablefetcherror[\s\S]*return "supabase_unreachable"/.test(atlasAuthRoute), 'Atlas auth route does not classify AuthRetryableFetchError as supabase_unreachable');
 assert(/fetch failed[\s\S]*return "supabase_unreachable"/.test(atlasAuthRoute), 'Atlas auth route does not classify fetch failed as supabase_unreachable');
 assert(!atlasAuthRoute.includes('SUPABASE_SERVICE_ROLE_KEY'), 'Atlas auth route references SUPABASE_SERVICE_ROLE_KEY');
+
+const authCallbackRoute = read('app/auth/callback/route.ts');
+assert(authCallbackRoute.includes('exchangeCodeForSession'), 'Auth callback does not exchange Supabase code callbacks for a session');
+assert(authCallbackRoute.includes('token_hash'), 'Auth callback does not read Supabase token_hash callbacks');
+assert(authCallbackRoute.includes('verifyOtp'), 'Auth callback does not verify Supabase token_hash callbacks');
+assert(authCallbackRoute.includes('signup'), 'Auth callback does not allow signup confirmation token callbacks');
 
 for (const file of walk('app/api/atlas-control').filter((file) => file.endsWith('route.ts'))) {
   const source = read(file);
