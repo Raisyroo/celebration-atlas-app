@@ -1,4 +1,5 @@
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { isAllowedAdminEmail } from "@/lib/atlas-control/auth";
 import { getAtlasConfigStatus, getAtlasSupabaseUrl } from "@/lib/atlas-control/config";
@@ -126,7 +127,7 @@ function logSupabaseFailure(requestId: string, category: SupabaseFailureCode, de
   });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
   let body: unknown;
   try {
@@ -153,7 +154,7 @@ export async function POST(request: Request) {
   const pendingCookies: PendingCookie[] = [];
   const supabase = createServerClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
-      getAll: () => request.headers.get("cookie")?.split(/; */).filter(Boolean).map((cookie) => { const [name, ...parts] = cookie.split("="); return { name, value: parts.join("=") }; }) ?? [],
+      getAll: () => request.cookies.getAll(),
       setAll: (items) => {
         pendingCookies.push(...items);
       },

@@ -36,6 +36,7 @@ assert(atlasAuthRoute.includes('isAllowedAdminEmail'), 'Atlas auth route does no
 assert(atlasAuthRoute.includes('signInWithOtp'), 'Atlas auth route does not request a Supabase magic link');
 assert(atlasAuthRoute.includes('createServerClient'), 'Atlas auth route does not use the Supabase SSR client');
 assert(atlasAuthRoute.includes('pendingCookies'), 'Atlas auth route does not preserve Supabase auth cookies for PKCE callbacks');
+assert(atlasAuthRoute.includes('request.cookies.getAll()'), 'Atlas auth route should read cookies through NextRequest cookies for PKCE callbacks');
 assert(atlasAuthRoute.includes('crypto.randomUUID()'), 'Atlas auth route does not generate a request ID');
 assert(atlasAuthRoute.includes('requestId'), 'Atlas auth route does not return a request ID on failures');
 assert(atlasAuthRoute.includes('atlas_auth_magic_link_failed'), 'Atlas auth route does not log magic-link failures');
@@ -49,6 +50,15 @@ assert(authCallbackRoute.includes('exchangeCodeForSession'), 'Auth callback does
 assert(authCallbackRoute.includes('token_hash'), 'Auth callback does not read Supabase token_hash callbacks');
 assert(authCallbackRoute.includes('verifyOtp'), 'Auth callback does not verify Supabase token_hash callbacks');
 assert(authCallbackRoute.includes('signup'), 'Auth callback does not allow signup confirmation token callbacks');
+assert(authCallbackRoute.includes('request.cookies.getAll()'), 'Auth callback should read cookies through NextRequest cookies for PKCE callbacks');
+assert(authCallbackRoute.includes('supabase.auth.getUser()'), 'Auth callback should verify a readable user session before redirecting to Atlas Control');
+assert(authCallbackRoute.includes('auth_error'), 'Auth callback should redirect failed sign-ins with a visible login error');
+
+const loginPage = read('app/atlas-login/LoginForm.tsx');
+const loginRoute = read('app/atlas-login/page.tsx');
+assert(loginRoute.includes('searchParams') && loginRoute.includes('authError={params?.auth_error}'), 'Login page should pass auth callback error parameters to the form');
+assert(loginPage.includes('authError?: string'), 'Login form should accept auth callback error parameters');
+assert(loginPage.includes('session_exchange_failed') && loginPage.includes('session_missing'), 'Login form should explain callback session failures');
 
 for (const file of walk('app/api/atlas-control').filter((file) => file.endsWith('route.ts'))) {
   const source = read(file);
