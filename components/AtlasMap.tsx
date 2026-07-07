@@ -21,6 +21,7 @@ import {
   formatResultLabelLocation,
   resolveResultLabelPlacements,
 } from '../data/searchResultTextLayout';
+import type { ResultLabelClusterPlacement } from '../data/searchResultTextLayout';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
 import type { MapPresentationPlan } from '../data/mapPresentationPlan';
 import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
@@ -498,6 +499,11 @@ function SearchResultTextField({
     () => resolveResultLabelPlacements(projectedResults, isDesktop ? 'desktop' : 'mobile'),
     [isDesktop, projectedResults],
   );
+  const [openClusterId, setOpenClusterId] = useState<string | null>(null);
+  const openCluster = placements.find(
+    (placement): placement is ResultLabelClusterPlacement => placement.kind === 'cluster' && placement.id === openClusterId,
+  );
+
 
   if (placements.length === 0) return null;
 
@@ -510,9 +516,12 @@ function SearchResultTextField({
       {placements.map((placement) => {
         if (placement.kind === 'cluster') {
           return (
-            <details
+            <button
               key={placement.id}
+              type="button"
+              aria-label={`Open ${placement.label}`}
               className="atlas-result-text-cluster"
+              onClick={() => setOpenClusterId(placement.id)}
               style={{
                 ...styles.resultTextCluster,
                 left: `${placement.x}%`,
@@ -520,22 +529,8 @@ function SearchResultTextField({
                 zIndex: Z_INDEX.markers + 36 + placement.zIndex,
               }}
             >
-              <summary aria-label={`Open ${placement.label}`} style={styles.resultTextClusterSummary}>
-                {placement.label}
-              </summary>
-              <div style={styles.resultTextClusterPanel}>
-                {placement.events.map((event) => {
-                  const locationLabel = formatResultLabelLocation(event.location);
-
-                  return (
-                    <button key={event.id} type="button" onClick={() => onEventSelect(event.id)} style={styles.resultTextClusterEvent}>
-                      <span style={styles.resultTextClusterEventName}>{event.name}</span>
-                      {locationLabel ? <span style={styles.resultTextClusterEventLocation}>{locationLabel}</span> : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </details>
+              {placement.label}
+            </button>
           );
         }
 
@@ -565,6 +560,34 @@ function SearchResultTextField({
           </button>
         );
       })}
+      {openCluster ? (
+        <div style={styles.resultTextClusterBackdrop} role="presentation">
+          <section
+            aria-label={`${openCluster.label} near this Michigan region`}
+            style={{
+              ...styles.resultTextClusterSheet,
+              left: `${openCluster.x}%`,
+              top: `${openCluster.y}%`,
+            }}
+          >
+            <p style={styles.resultTextClusterKicker}>Local event cluster</p>
+            <h2 style={styles.resultTextClusterTitle}>{openCluster.label}</h2>
+            <button type="button" aria-label="Close event cluster" onClick={() => setOpenClusterId(null)} style={styles.resultTextClusterClose}>×</button>
+            <div style={styles.resultTextClusterPanel}>
+              {openCluster.events.map((event) => {
+                const locationLabel = formatResultLabelLocation(event.location);
+
+                return (
+                  <button key={event.id} type="button" onClick={() => onEventSelect(event.id)} style={styles.resultTextClusterEvent}>
+                    <span style={styles.resultTextClusterEventName}>{event.name}</span>
+                    {locationLabel ? <span style={styles.resultTextClusterEventLocation}>{locationLabel}</span> : null}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -5380,14 +5403,64 @@ const styles: Record<string, CSSProperties> = {
     transform: 'translate(-50%, -50%)',
     pointerEvents: 'auto',
     fontFamily: RESULT_LABEL_SERIF_FONT_STACK,
-    color: 'rgba(238, 197, 122, 0.82)',
-  },
-  resultTextClusterSummary: {
+    fontWeight: 700,
+    color: 'rgba(238, 197, 122, 0.9)',
     cursor: 'pointer',
     listStyle: 'none',
     fontWeight: 500,
     fontSize: 'clamp(12px, 3.2vw, 15px)',
-    textShadow: '0 1px 4px rgba(0, 0, 0, 0.72)',
+    textShadow: '0 16px rgba(245, 177, 72, 0.16), 0 8px 20px rgba(0, 0, 0, 0.22)',
+    touchAction: 'manipulation',
+  },
+  resultTextClusterBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: Z_INDEX.markers + 80,
+    pointerEvents: 'auto',
+    background: 'rgba(4, 7, 12, 0.28)',
+    backdropFilter: 'blur(5px) saturate(0.92)',
+    WebkitBackdropFilter: 'blur(5px) saturate(0.92)',
+  },
+  resultTextClusterSheet: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    width: 'min(86vw, 360px)',
+    maxHeight: 'min(62vh, 430px)',
+    overflow: 'auto',
+    padding: '16px 16px 18px',
+    borderRadius: 22,
+    border: '1px solid rgba(255, 225, 160, 0.4)',
+    background: 'linear-gradient(160deg, rgba(16, 21, 30, 0.76), rgba(9, 12, 18, 0.62))',
+    boxShadow: '0 24px 60px rgba(0, 0, 0, 0.46), inset 0 0 0 1px rgba(255, 241, 203, 0.08)',
+    fontFamily: RESULT_LABEL_SERIF_FONT_STACK,
+  },
+  resultTextClusterKicker: {
+    margin: '0 36px 4px 0',
+    color: 'rgba(255, 232, 188, 0.68)',
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+  },
+  resultTextClusterTitle: {
+    margin: '0 36px 12px 0',
+    color: '#ffebb9',
+    fontSize: 22,
+    lineHeight: 1,
+  },
+  resultTextClusterClose: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    border: '1px solid rgba(255, 232, 186, 0.28)',
+    background: 'rgba(6, 9, 14, 0.52)',
+    color: '#ffebb9',
+    fontSize: 22,
+    lineHeight: 1,
+    cursor: 'pointer',
   },
   resultTextClusterPanel: {
     display: 'grid',
