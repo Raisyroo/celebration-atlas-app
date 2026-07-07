@@ -65,6 +65,8 @@ assert(!/(rotate|skew|perspective|rotateX|rotateY|rotateZ)/i.test(`${fieldBlock}
 assert(!/(textOverflow\s*:\s*['"]ellipsis|whiteSpace\s*:\s*['"]nowrap)/i.test(`${fieldBlock}\n${styleBlock}`), 'result label titles must not use ellipsis or nowrap');
 assert(fieldBlock.includes('markerLayouts') && fieldBlock.includes('isFiniteMarkerPosition(position)') && helperSource.includes('position.x') && helperSource.includes('position.y'), 'floating search labels should use existing projected marker positions and omit invalid projections');
 assert(!/(SLOTS|type Slot|const [A-Z_]*SLOTS)/.test(helperSource), 'result label helper must not contain arbitrary composition slot coordinates');
+assert(helperSource.includes("export type ResultLabelAlign") && fieldBlock.includes('data-result-label-align') && fieldBlock.includes('placement.align'), 'floating result labels should expose and render adaptive side alignment');
+assert(fieldBlock.includes('resultTextLabelHalo') && styleBlock.includes('radial-gradient(ellipse at center'), 'floating result labels should include a subtle text-bound readability halo');
 assert(atlasMapSource.includes('rankedSubmittedSearchResults.length > 0 ?') && atlasMapSource.includes('<SearchResultTextField') && atlasMapSource.includes('if (exactEventIntent || !q || highlightedIds.size === 0) return [];'), 'exact-event search should remain separate from broad result text field rendering');
 assert(atlasMapSource.includes('isDesktop && !hasActiveAskQuery'), 'desktop intro panel should not cover submitted search result labels');
 assert(atlasMapSource.includes('aria-label="Michigan event rail"') && atlasMapSource.includes('areMobileAmbientControlsVisible'), 'bottom event rail should remain present in ambient/broad search UI');

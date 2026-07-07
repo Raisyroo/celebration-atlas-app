@@ -582,6 +582,7 @@ function SearchResultTextField({
             aria-label={`Open ${placement.event.name}`}
             className={`atlas-result-text-label atlas-result-text-label--${placement.tier}`}
             data-result-label-tier={placement.tier}
+            data-result-label-align={placement.align}
             data-result-label-slot={placement.slot}
             data-result-label-font="atlas-result-label-serif"
             data-result-label-diagnostic={fontDiagnostic === null ? 'sample' : undefined}
@@ -591,10 +592,13 @@ function SearchResultTextField({
               ...placement.style,
               left: `${placement.x}%`,
               top: `${placement.y}%`,
+              justifyItems: placement.align === 'left' ? 'start' : placement.align === 'right' ? 'end' : 'center',
+              textAlign: placement.align,
               zIndex: Z_INDEX.markers + 36 + placement.zIndex,
             }}
           >
-            <span style={styles.resultTextLabelName}>{placement.event.name}</span>
+            <span aria-hidden="true" style={styles.resultTextLabelHalo} />
+            <span data-result-label-name="true" style={styles.resultTextLabelName}>{placement.event.name}</span>
             {locationLabel ? (
               <span style={styles.resultTextLabelLocation}>{locationLabel}</span>
             ) : null}
@@ -4863,21 +4867,21 @@ export default function AtlasMap({
             }
 
             @media (max-width: 767px) {
-              .atlas-result-text-label--hero span:first-child {
+              .atlas-result-text-label--hero [data-result-label-name="true"] {
                 max-width: 43vw !important;
               }
 
-              .atlas-result-text-label--strong span:first-child {
+              .atlas-result-text-label--strong [data-result-label-name="true"] {
                 max-width: 38vw !important;
               }
 
-              .atlas-result-text-label--supporting span:first-child {
+              .atlas-result-text-label--supporting [data-result-label-name="true"] {
                 max-width: 34vw !important;
               }
 
-              .atlas-result-text-label--ambient span:first-child,
-              .atlas-result-text-label--compact span:first-child,
-              .atlas-result-text-label--micro span:first-child {
+              .atlas-result-text-label--ambient [data-result-label-name="true"],
+              .atlas-result-text-label--compact [data-result-label-name="true"],
+              .atlas-result-text-label--micro [data-result-label-name="true"] {
                 max-width: 29vw !important;
               }
             }
@@ -5447,13 +5451,25 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 400,
     lineHeight: 1,
     letterSpacing: '0',
+    isolation: 'isolate',
     textAlign: 'center',
     whiteSpace: 'normal',
     cursor: 'pointer',
     pointerEvents: 'auto',
     touchAction: 'manipulation',
   },
+  resultTextLabelHalo: {
+    position: 'absolute',
+    zIndex: -1,
+    inset: '-0.5em -0.7em -0.42em',
+    borderRadius: '999px',
+    background: 'radial-gradient(ellipse at center, rgba(0, 3, 8, 0.52) 0%, rgba(0, 3, 8, 0.34) 42%, rgba(0, 3, 8, 0.08) 72%, rgba(0, 3, 8, 0) 100%)',
+    filter: 'blur(3px)',
+    pointerEvents: 'none',
+  },
   resultTextLabelName: {
+    position: 'relative',
+    zIndex: 1,
     display: 'block',
     maxWidth: 'min(34vw, 300px)',
     overflow: 'visible',
@@ -5543,13 +5559,15 @@ const styles: Record<string, CSSProperties> = {
   resultTextClusterEventName: { fontSize: 15, fontWeight: 500, lineHeight: 1.02, letterSpacing: '-0.01em' },
   resultTextClusterEventLocation: { fontSize: 10, fontWeight: 400, letterSpacing: '0.08em', color: 'rgba(235, 198, 132, 0.74)' },
   resultTextLabelLocation: {
+    position: 'relative',
+    zIndex: 1,
     display: 'block',
-    color: 'rgba(232, 194, 130, 0.68)',
+    color: 'rgba(239, 205, 144, 0.78)',
     fontSize: '0.5em',
     fontWeight: 400,
     letterSpacing: '0.03em',
     lineHeight: 1.04,
-    textShadow: '0 1px 3px rgba(0, 0, 0, 0.72)',
+    textShadow: '0 1px 1px rgba(0, 0, 0, 0.92), 0 0 2px rgba(0, 0, 0, 0.8), 0 0 4px rgba(236, 178, 86, 0.16)',
   },
   resultTextFontDiagnostic: {
     position: 'fixed',
