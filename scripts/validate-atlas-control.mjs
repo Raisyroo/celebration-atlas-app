@@ -12,37 +12,26 @@ for (const file of clientFiles) assert(!read(file).includes('SUPABASE_SERVICE_RO
 
 const loginForm = read('app/atlas-login/LoginForm.tsx');
 const sameOriginIndex = loginForm.indexOf('/api/atlas-auth/request-link');
-const supabaseUnreachableIndex = loginForm.indexOf('payload.code === "supabase_unreachable"');
+const approvedIndex = loginForm.indexOf('if (payload.ok)');
 const browserClientIndex = loginForm.indexOf('createBrowserClient');
 const signInWithOtpIndex = loginForm.indexOf('signInWithOtp');
-const fallbackStartIndex = loginForm.indexOf('Atlas server could not reach Supabase. Trying direct secure sign-in…');
-const fallbackFailureIndex = loginForm.indexOf('Could not reach Supabase for secure sign-in. Please try again.');
+const browserLinkIndex = loginForm.indexOf('requestBrowserMagicLink(email)');
 
 assert(sameOriginIndex !== -1, 'LoginForm does not call the same-origin Atlas login endpoint');
-assert(browserClientIndex !== -1, 'LoginForm does not create a browser Supabase client for the narrow fallback');
-assert(signInWithOtpIndex !== -1, 'LoginForm does not call signInWithOtp for the narrow fallback');
-assert(sameOriginIndex !== -1 && loginForm.indexOf('requestBrowserMagicLink(email)') !== -1 && sameOriginIndex < loginForm.indexOf('requestBrowserMagicLink(email)'), 'LoginForm must call the same-origin Atlas login endpoint before invoking the browser Supabase fallback');
-assert(supabaseUnreachableIndex !== -1, 'LoginForm fallback is not gated by supabase_unreachable');
-assert(fallbackStartIndex !== -1, 'LoginForm does not show the direct secure sign-in fallback start message');
-assert(fallbackFailureIndex !== -1, 'LoginForm does not show the direct secure sign-in fallback failure message');
-assert(/payload\.code\s*===\s*["']supabase_unreachable["']\s*\)\s*{[\s\S]*requestBrowserMagicLink/.test(loginForm), 'LoginForm browser fallback is not inside the supabase_unreachable branch');
-assert(!/payload\.code\s*===\s*["']email_not_authorized["']\s*\)\s*{[\s\S]*requestBrowserMagicLink/.test(loginForm), 'LoginForm falls back for email_not_authorized');
-assert(!/payload\.code\s*!==\s*["']supabase_unreachable["'][\s\S]*requestBrowserMagicLink/.test(loginForm), 'LoginForm appears to fall back for non-supabase_unreachable server errors');
+assert(browserClientIndex !== -1, 'LoginForm does not create a browser Supabase client for PKCE magic links');
+assert(signInWithOtpIndex !== -1, 'LoginForm does not call signInWithOtp in the browser');
+assert(sameOriginIndex !== -1 && approvedIndex !== -1 && browserLinkIndex !== -1 && sameOriginIndex < approvedIndex && approvedIndex < browserLinkIndex, 'LoginForm must verify the admin allowlist before invoking browser Supabase sign-in');
+assert(!/payload\.code\s*===\s*["']email_not_authorized["']\s*\)\s*{[\s\S]*requestBrowserMagicLink/.test(loginForm), 'LoginForm sends Supabase links for email_not_authorized');
 assert(!/\bSUPABASE_SERVICE_ROLE_KEY\b/.test(loginForm), 'LoginForm references SUPABASE_SERVICE_ROLE_KEY');
-assert(/NEXT_PUBLIC_SUPABASE_URL/.test(loginForm) && /NEXT_PUBLIC_SUPABASE_ANON_KEY/.test(loginForm), 'LoginForm fallback does not use only public Supabase browser credentials');
+assert(/NEXT_PUBLIC_SUPABASE_URL/.test(loginForm) && /NEXT_PUBLIC_SUPABASE_ANON_KEY/.test(loginForm), 'LoginForm browser sign-in does not use only public Supabase credentials');
 
 const atlasAuthRoute = read('app/api/atlas-auth/request-link/route.ts');
 assert(atlasAuthRoute.includes('isAllowedAdminEmail'), 'Atlas auth route does not check the admin allowlist');
-assert(atlasAuthRoute.includes('signInWithOtp'), 'Atlas auth route does not request a Supabase magic link');
-assert(atlasAuthRoute.includes('createServerClient'), 'Atlas auth route does not use the Supabase SSR client');
-assert(atlasAuthRoute.includes('pendingCookies'), 'Atlas auth route does not preserve Supabase auth cookies for PKCE callbacks');
-assert(atlasAuthRoute.includes('request.cookies.getAll()'), 'Atlas auth route should read cookies through NextRequest cookies for PKCE callbacks');
+assert(!atlasAuthRoute.includes('signInWithOtp'), 'Atlas auth route should not request the PKCE Supabase magic link server-side');
+assert(!atlasAuthRoute.includes('createServerClient'), 'Atlas auth route should not create a Supabase auth client for browser PKCE magic links');
+assert(atlasAuthRoute.includes('Administrator email approved'), 'Atlas auth route should return an allowlist-approved response before browser sign-in');
 assert(atlasAuthRoute.includes('crypto.randomUUID()'), 'Atlas auth route does not generate a request ID');
 assert(atlasAuthRoute.includes('requestId'), 'Atlas auth route does not return a request ID on failures');
-assert(atlasAuthRoute.includes('atlas_auth_magic_link_failed'), 'Atlas auth route does not log magic-link failures');
-assert(/status === 0[\s\S]*return "supabase_unreachable"/.test(atlasAuthRoute), 'Atlas auth route does not classify upstream status 0 as supabase_unreachable');
-assert(/authretryablefetcherror[\s\S]*return "supabase_unreachable"/.test(atlasAuthRoute), 'Atlas auth route does not classify AuthRetryableFetchError as supabase_unreachable');
-assert(/fetch failed[\s\S]*return "supabase_unreachable"/.test(atlasAuthRoute), 'Atlas auth route does not classify fetch failed as supabase_unreachable');
 assert(!atlasAuthRoute.includes('SUPABASE_SERVICE_ROLE_KEY'), 'Atlas auth route references SUPABASE_SERVICE_ROLE_KEY');
 
 const authCallbackRoute = read('app/auth/callback/route.ts');
@@ -54,11 +43,11 @@ assert(authCallbackRoute.includes('request.cookies.getAll()'), 'Auth callback sh
 assert(authCallbackRoute.includes('supabase.auth.getUser()'), 'Auth callback should verify a readable user session before redirecting to Atlas Control');
 assert(authCallbackRoute.includes('auth_error'), 'Auth callback should redirect failed sign-ins with a visible login error');
 
-const loginPage = read('app/atlas-login/LoginForm.tsx');
 const loginRoute = read('app/atlas-login/page.tsx');
 assert(loginRoute.includes('searchParams') && loginRoute.includes('authError={params?.auth_error}'), 'Login page should pass auth callback error parameters to the form');
-assert(loginPage.includes('authError?: string'), 'Login form should accept auth callback error parameters');
-assert(loginPage.includes('session_exchange_failed') && loginPage.includes('session_missing'), 'Login form should explain callback session failures');
+assert(loginForm.includes('authError?: string'), 'Login form should accept auth callback error parameters');
+assert(loginForm.includes('session_exchange_failed') && loginForm.includes('session_missing'), 'Login form should explain callback session failures');
+assert(loginForm.includes('window.location.hash') && loginForm.includes('otp_expired'), 'Login form should surface Supabase hash-only expired link errors');
 
 for (const file of walk('app/api/atlas-control').filter((file) => file.endsWith('route.ts'))) {
   const source = read(file);
