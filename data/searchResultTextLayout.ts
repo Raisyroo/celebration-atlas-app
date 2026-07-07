@@ -43,11 +43,11 @@ export type ResultLabelClusterPlacement = {
 export type ResultLabelLayoutItem = ResultLabelPlacement | ResultLabelClusterPlacement;
 
 const DESKTOP_LABEL_LIMIT = 18;
-const MOBILE_LABEL_LIMIT = 12;
-const MAX_LOCAL_OFFSET_PERCENT = { desktop: 9.4, mobile: 10.8 } as const;
+const MOBILE_LABEL_LIMIT = 20;
+const MAX_LOCAL_OFFSET_PERCENT = { desktop: 9.4, mobile: 10.2 } as const;
 const PROTECTED_TOP_PERCENT = { desktop: 12, mobile: 16 } as const;
 const PROTECTED_BOTTOM_PERCENT = { desktop: 18, mobile: 26 } as const;
-const LABEL_GAP_PERCENT = { desktop: 1.2, mobile: 1.8 } as const;
+const LABEL_GAP_PERCENT = { desktop: 1.2, mobile: 2.35 } as const;
 const LOCAL_CLUSTER_DISTANCE_PERCENT = { desktop: 12, mobile: 14 } as const;
 
 const DESKTOP_TIER_STYLES: Record<ResultLabelTier, CSSProperties> = {
@@ -60,12 +60,12 @@ const DESKTOP_TIER_STYLES: Record<ResultLabelTier, CSSProperties> = {
 };
 
 const MOBILE_TIER_STYLES: Record<ResultLabelTier, CSSProperties> = {
-  hero: { ...DESKTOP_TIER_STYLES.hero, fontSize: 'clamp(25px, 7vw, 30px)' },
-  strong: { ...DESKTOP_TIER_STYLES.strong, fontSize: 'clamp(20px, 5.7vw, 24px)' },
-  supporting: { ...DESKTOP_TIER_STYLES.supporting, fontSize: 'clamp(16px, 4.6vw, 19px)' },
-  ambient: { ...DESKTOP_TIER_STYLES.ambient, fontSize: 'clamp(12px, 3.6vw, 15px)', opacity: 0.6 },
-  compact: { ...DESKTOP_TIER_STYLES.compact, fontSize: 'clamp(11px, 3.2vw, 13px)' },
-  micro: { ...DESKTOP_TIER_STYLES.micro, fontSize: 'clamp(10px, 2.9vw, 12px)' },
+  hero: { ...DESKTOP_TIER_STYLES.hero, fontSize: 'clamp(19px, 5.15vw, 22px)', opacity: 0.96 },
+  strong: { ...DESKTOP_TIER_STYLES.strong, fontSize: 'clamp(16px, 4.35vw, 19px)', opacity: 0.86 },
+  supporting: { ...DESKTOP_TIER_STYLES.supporting, fontSize: 'clamp(13px, 3.5vw, 16px)', opacity: 0.72 },
+  ambient: { ...DESKTOP_TIER_STYLES.ambient, fontSize: 'clamp(10.5px, 2.9vw, 13px)', opacity: 0.58 },
+  compact: { ...DESKTOP_TIER_STYLES.compact, fontSize: 'clamp(9.5px, 2.55vw, 11.5px)', opacity: 0.54 },
+  micro: { ...DESKTOP_TIER_STYLES.micro, fontSize: 'clamp(8.5px, 2.3vw, 10.5px)', opacity: 0.5 },
 };
 
 export function getResultLabelTier(index: number): ResultLabelTier {
@@ -84,7 +84,7 @@ const intersects = (a: LabelRect, b: LabelRect) => a.left <= b.right && a.right 
 
 const localOffsets = (() => {
   const offsets: [number, number][] = [[0, 0]];
-  const rings = [2.2, 3.8, 5.6, 7.4, 9.2, 10.6];
+  const rings = [2.2, 3.8, 5.6, 7.4, 9.2, 10.6, 12.4, 14];
   const directions = [[0, -1], [0, 1], [-1, 0], [1, 0], [-0.72, -0.72], [0.72, -0.72], [-0.72, 0.72], [0.72, 0.72], [-1, -0.38], [1, -0.38], [-1, 0.38], [1, 0.38], [-0.38, -1], [0.38, -1], [-0.38, 1], [0.38, 1]] as const;
   for (const radius of rings) {
     for (const [x, y] of directions) offsets.push([Number((x * radius).toFixed(2)), Number((y * radius).toFixed(2))]);
@@ -93,16 +93,16 @@ const localOffsets = (() => {
 })();
 
 const wrappedTitleLineCount = (title: string, tier: ResultLabelTier, viewport: ResultLabelViewport) => {
-  const scale = tier === 'hero' ? 1.25 : tier === 'strong' ? 1.12 : tier === 'supporting' ? 1 : tier === 'ambient' ? 0.88 : tier === 'compact' ? 0.74 : 0.66;
-  const charsPerLine = Math.floor((viewport === 'mobile' ? 15 : 23) / scale);
+  const scale = tier === 'hero' ? 1.16 : tier === 'strong' ? 1.05 : tier === 'supporting' ? 0.94 : tier === 'ambient' ? 0.82 : tier === 'compact' ? 0.7 : 0.62;
+  const charsPerLine = Math.floor((viewport === 'mobile' ? 21 : 23) / scale);
   const words = title.split(/\s+/).filter(Boolean);
   let lines = 1;
   let lineLength = 0;
 
   for (const word of words) {
     const nextLength = lineLength === 0 ? word.length : lineLength + 1 + word.length;
-    if (nextLength > charsPerLine && lines === 1) {
-      lines = 2;
+    if (nextLength > charsPerLine && lines < 3) {
+      lines += 1;
       lineLength = word.length;
     } else {
       lineLength = nextLength;
@@ -115,11 +115,11 @@ const wrappedTitleLineCount = (title: string, tier: ResultLabelTier, viewport: R
 const estimateRect = (event: SearchResultTextEvent, x: number, y: number, tier: ResultLabelTier, viewport: ResultLabelViewport): LabelRect => {
   const chars = event.name.length;
   const city = formatResultLabelLocation(event.location);
-  const scale = tier === 'hero' ? 1.25 : tier === 'strong' ? 1.12 : tier === 'supporting' ? 1 : tier === 'ambient' ? 0.88 : tier === 'compact' ? 0.74 : 0.66;
+  const scale = tier === 'hero' ? 1.16 : tier === 'strong' ? 1.05 : tier === 'supporting' ? 0.94 : tier === 'ambient' ? 0.82 : tier === 'compact' ? 0.7 : 0.62;
   const titleLines = wrappedTitleLineCount(event.name, tier, viewport);
   const lineChars = Math.ceil(chars / titleLines);
-  const width = Math.min(viewport === 'mobile' ? 39 : 28, Math.max(viewport === 'mobile' ? 14 : 9, (lineChars * (viewport === 'mobile' ? 0.74 : 0.48) + 7) * scale));
-  const height = ((titleLines * (viewport === 'mobile' ? 3.05 : 2.12)) + (city ? (viewport === 'mobile' ? 2.05 : 1.32) : 0)) * scale;
+  const width = Math.min(viewport === 'mobile' ? 44 : 28, Math.max(viewport === 'mobile' ? 13 : 9, (lineChars * (viewport === 'mobile' ? 0.56 : 0.48) + 8) * scale));
+  const height = ((titleLines * (viewport === 'mobile' ? 2.35 : 2.12)) + (city ? (viewport === 'mobile' ? 1.3 : 1.32) : 0)) * scale;
   const gap = LABEL_GAP_PERCENT[viewport];
   return { left: x - width / 2 - gap, right: x + width / 2 + gap, top: y - height / 2 - gap, bottom: y + height / 2 + gap };
 };
@@ -150,7 +150,12 @@ function placeEvent(
   return null;
 }
 
-function clusterUnresolved(unresolved: readonly ProjectedResultLabelEvent[], viewport: ResultLabelViewport): ResultLabelClusterPlacement[] {
+const estimateClusterRect = (x: number, y: number, viewport: ResultLabelViewport): LabelRect => {
+  const gap = viewport === 'mobile' ? 0.9 : 0.7;
+  return { left: x - 9.5 - gap, right: x + 9.5 + gap, top: y - 2.5 - gap, bottom: y + 2.5 + gap };
+};
+
+function clusterUnresolved(unresolved: readonly ProjectedResultLabelEvent[], viewport: ResultLabelViewport, occupied: LabelRect[]): ResultLabelClusterPlacement[] {
   const groups: ProjectedResultLabelEvent[][] = [];
   for (const item of unresolved) {
     const group = groups.find((candidate) => candidate.some((other) => Math.hypot(other.position.x - item.position.x, other.position.y - item.position.y) <= LOCAL_CLUSTER_DISTANCE_PERCENT[viewport]));
@@ -158,12 +163,28 @@ function clusterUnresolved(unresolved: readonly ProjectedResultLabelEvent[], vie
     else groups.push([item]);
   }
 
-  return groups.map((group) => {
+  const clusters: ResultLabelClusterPlacement[] = [];
+  for (const group of groups) {
     const anchor = group.reduce((acc, item) => ({ x: acc.x + item.position.x / group.length, y: acc.y + item.position.y / group.length }), { x: 0, y: 0 });
-    const x = Math.min(96, Math.max(4, anchor.x));
-    const y = Math.min(100 - PROTECTED_BOTTOM_PERCENT[viewport], Math.max(PROTECTED_TOP_PERCENT[viewport], anchor.y));
-    return { kind: 'cluster' as const, id: `result-label-cluster-${group.map(({ event }) => event.id).join('-')}`, events: group.map(({ event }) => event), label: `+${group.length} events`, x, y, anchorX: anchor.x, anchorY: anchor.y, zIndex: 1, rect: { left: x - 7, right: x + 7, top: y - 2.5, bottom: y + 2.5 } };
-  });
+    let placed: ResultLabelClusterPlacement | null = null;
+
+    for (const [dx, dy] of localOffsets) {
+      if (Math.hypot(dx, dy) > LOCAL_CLUSTER_DISTANCE_PERCENT[viewport]) continue;
+      const x = Math.min(96, Math.max(4, anchor.x + dx));
+      const y = Math.min(100 - PROTECTED_BOTTOM_PERCENT[viewport], Math.max(PROTECTED_TOP_PERCENT[viewport], anchor.y + dy));
+      const rect = estimateClusterRect(x, y, viewport);
+      if (!fits(rect, occupied, viewport)) continue;
+      placed = { kind: 'cluster', id: `result-label-cluster-${group.map(({ event }) => event.id).join('-')}`, events: group.map(({ event }) => event), label: `+${group.length} events`, x, y, anchorX: anchor.x, anchorY: anchor.y, zIndex: 1, rect };
+      break;
+    }
+
+    if (placed) {
+      occupied.push(placed.rect);
+      clusters.push(placed);
+    }
+  }
+
+  return clusters;
 }
 
 export function resolveResultLabelPlacements(
@@ -197,5 +218,5 @@ export function resolveResultLabelPlacements(
     }
   }
 
-  return [...labels.sort((a, b) => b.zIndex - a.zIndex), ...clusterUnresolved(unresolved, viewport)];
+  return [...labels.sort((a, b) => b.zIndex - a.zIndex), ...clusterUnresolved(unresolved, viewport, occupied)];
 }
