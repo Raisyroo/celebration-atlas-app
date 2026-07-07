@@ -3607,7 +3607,7 @@ export default function AtlasMap({
         </div>
       ) : null}
 
-      {!shouldShowCalibration && !isVerificationMode && isDesktop ? (
+      {!shouldShowCalibration && !isVerificationMode && isDesktop && !hasActiveAskQuery ? (
         <aside
           style={styles.desktopIntroPanel}
           aria-label="Atlas desktop introduction"
@@ -4863,8 +4863,22 @@ export default function AtlasMap({
             }
 
             @media (max-width: 767px) {
-              .atlas-result-text-label span:first-child {
-                max-width: 42vw !important;
+              .atlas-result-text-label--hero span:first-child {
+                max-width: 43vw !important;
+              }
+
+              .atlas-result-text-label--strong span:first-child {
+                max-width: 38vw !important;
+              }
+
+              .atlas-result-text-label--supporting span:first-child {
+                max-width: 34vw !important;
+              }
+
+              .atlas-result-text-label--ambient span:first-child,
+              .atlas-result-text-label--compact span:first-child,
+              .atlas-result-text-label--micro span:first-child {
+                max-width: 29vw !important;
               }
             }
 
@@ -5421,7 +5435,7 @@ const styles: Record<string, CSSProperties> = {
     transform: 'translate(-50%, -50%)',
     display: 'grid',
     justifyItems: 'center',
-    gap: 4,
+    gap: 2,
     padding: 0,
     border: 0,
     borderRadius: 0,
@@ -5431,8 +5445,8 @@ const styles: Record<string, CSSProperties> = {
     WebkitAppearance: 'none',
     fontFamily: RESULT_LABEL_SERIF_FONT_STACK,
     fontWeight: 400,
-    lineHeight: 0.96,
-    letterSpacing: '-0.015em',
+    lineHeight: 1,
+    letterSpacing: '0',
     textAlign: 'center',
     whiteSpace: 'normal',
     cursor: 'pointer',
@@ -5440,13 +5454,11 @@ const styles: Record<string, CSSProperties> = {
     touchAction: 'manipulation',
   },
   resultTextLabelName: {
-    display: '-webkit-box',
-    maxWidth: 'min(30vw, 300px)',
+    display: 'block',
+    maxWidth: 'min(34vw, 300px)',
     overflow: 'visible',
     overflowWrap: 'break-word',
     textWrap: 'balance',
-    WebkitBoxOrient: 'vertical',
-    WebkitLineClamp: 2,
   },
   resultTextCluster: {
     position: 'absolute',
@@ -5532,12 +5544,12 @@ const styles: Record<string, CSSProperties> = {
   resultTextClusterEventLocation: { fontSize: 10, fontWeight: 400, letterSpacing: '0.08em', color: 'rgba(235, 198, 132, 0.74)' },
   resultTextLabelLocation: {
     display: 'block',
-    color: 'rgba(235, 198, 132, 0.78)',
-    fontSize: '0.46em',
+    color: 'rgba(232, 194, 130, 0.68)',
+    fontSize: '0.5em',
     fontWeight: 400,
-    letterSpacing: '0.12em',
-    lineHeight: 1.08,
-    textShadow: '0 1px 4px rgba(0, 0, 0, 0.78)',
+    letterSpacing: '0.03em',
+    lineHeight: 1.04,
+    textShadow: '0 1px 3px rgba(0, 0, 0, 0.72)',
   },
   resultTextFontDiagnostic: {
     position: 'fixed',

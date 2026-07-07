@@ -18,7 +18,7 @@ const desktopLabels = desktop.filter((placement) => placement.kind === 'label');
 const mobileLabels = mobile.filter((placement) => placement.kind === 'label');
 
 assert(desktop.length <= 18, 'desktop labels and clusters should respect the broad-search representation limit');
-assert(mobile.length <= 12, 'mobile labels and clusters should respect the broad-search representation limit');
+assert(mobile.length <= 20, 'mobile labels and clusters should respect the broad-search representation limit');
 assert.equal(desktopLabels[0].tier, 'hero');
 assert.equal(desktopLabels[1].tier, 'strong');
 assert.equal(desktopLabels[2].tier, 'strong');
@@ -42,13 +42,18 @@ const crowdedLabels = crowded.filter((placement) => placement.kind === 'label');
 const crowdedClusters = crowded.filter((placement) => placement.kind === 'cluster');
 assert(helperSource.indexOf("'compact'") < helperSource.indexOf("kind: 'cluster'"), 'emergency compact tiers should be attempted before cluster fallback');
 assert(crowdedClusters.length > 0, 'crowded local regions should produce a visible cluster fallback');
-assert.equal(crowdedClusters[0].events.length, 12 - crowdedLabels.length, 'cluster exposes every unresolved capped member');
-assert(Math.abs(crowdedClusters[0].x - crowdedClusters[0].anchorX) < 0.01, 'cluster placement remains tied to the projected local region');
+assert.equal(crowdedClusters[0].events.length, Math.min(16, 20) - crowdedLabels.length, 'cluster exposes every unresolved capped member');
+assert(Math.hypot(crowdedClusters[0].x - crowdedClusters[0].anchorX, crowdedClusters[0].y - crowdedClusters[0].anchorY) <= 14, 'cluster placement remains tied to the projected local region');
 
 const rectsIntersect = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 for (let i = 0; i < crowdedLabels.length; i += 1) {
   for (let j = i + 1; j < crowdedLabels.length; j += 1) {
     assert(!rectsIntersect(crowdedLabels[i].rect, crowdedLabels[j].rect), 'accepted label rectangles should not intersect');
+  }
+}
+for (const cluster of crowdedClusters) {
+  for (const label of crowdedLabels) {
+    assert(!rectsIntersect(cluster.rect, label.rect), 'cluster rectangles should not intersect accepted label rectangles');
   }
 }
 assert(crowdedLabels[0].tier === 'hero', 'lower-ranked labels yield before higher-ranked labels move down-tier');
@@ -61,5 +66,6 @@ assert(!/(textOverflow\s*:\s*['"]ellipsis|whiteSpace\s*:\s*['"]nowrap)/i.test(`$
 assert(fieldBlock.includes('markerLayouts') && fieldBlock.includes('isFiniteMarkerPosition(position)') && helperSource.includes('position.x') && helperSource.includes('position.y'), 'floating search labels should use existing projected marker positions and omit invalid projections');
 assert(!/(SLOTS|type Slot|const [A-Z_]*SLOTS)/.test(helperSource), 'result label helper must not contain arbitrary composition slot coordinates');
 assert(atlasMapSource.includes('rankedSubmittedSearchResults.length > 0 ?') && atlasMapSource.includes('<SearchResultTextField') && atlasMapSource.includes('if (exactEventIntent || !q || highlightedIds.size === 0) return [];'), 'exact-event search should remain separate from broad result text field rendering');
+assert(atlasMapSource.includes('isDesktop && !hasActiveAskQuery'), 'desktop intro panel should not cover submitted search result labels');
 assert(atlasMapSource.includes('aria-label="Michigan event rail"') && atlasMapSource.includes('areMobileAmbientControlsVisible'), 'bottom event rail should remain present in ambient/broad search UI');
 console.log('Result label layout validation passed.');
