@@ -5,6 +5,9 @@ import { chromium, devices } from 'playwright';
 
 const outputDir = path.join(process.cwd(), 'artifacts', 'visual-smoke');
 const homepageScreenshotPath = path.join(outputDir, 'homepage-mobile.png');
+const resultCloudScreenshotPath = path.join(outputDir, 'map-search-result-text-cloud-desktop.png');
+const exactEventScreenshotPath = path.join(outputDir, 'map-search-exact-event-desktop.png');
+const resultCloudMobileScreenshotPath = path.join(outputDir, 'map-search-result-text-cloud-mobile.png');
 const atlasControlScreenshotPath = path.join(outputDir, 'atlas-control-unauthenticated.png');
 const baseUrl = process.env.VISUAL_SMOKE_BASE_URL || 'http://127.0.0.1:3000';
 const shouldStartServer = !process.env.VISUAL_SMOKE_BASE_URL;
@@ -42,6 +45,13 @@ async function waitForLoadedImage(page, selector, timeoutMs = 45_000) {
     selector,
     { timeout: timeoutMs },
   );
+}
+
+async function submitAtlasSearch(page, query) {
+  const input = page.getByLabel('Ask Celebration Atlas');
+  await input.waitFor({ state: 'visible', timeout: 45_000 });
+  await input.fill(query);
+  await input.press('Enter');
 }
 
 async function waitForHomepageRailReady(page, timeoutMs = 45_000) {
@@ -179,12 +189,12 @@ async function main() {
   await waitForServer(homepageUrl);
 
   browser = await chromium.launch();
-  const context = await browser.newContext({
-    ...devices['iPhone 14'],
+  const desktopContext = await browser.newContext({
+    viewport: { width: 1440, height: 1000 },
     colorScheme: 'dark',
     reducedMotion: 'reduce',
   });
-  const page = await context.newPage();
+  const page = await desktopContext.newPage();
 
   page.on('console', (message) => {
     if (message.type() === 'error') console.error(`[browser:${message.type()}] ${message.text()}`);
@@ -197,10 +207,41 @@ async function main() {
   await page.locator('img.atlas-map-image[alt="Michigan Atlas"]').waitFor({ state: 'visible', timeout: 45_000 });
   await waitForLoadedImage(page, 'img.atlas-map-image[alt="Michigan Atlas"]');
   await page.getByLabel('Ask Celebration Atlas').waitFor({ state: 'visible', timeout: 45_000 });
-  await waitForHomepageRailReady(page);
+  await submitAtlasSearch(page, 'music festivals');
+  await page.locator('.atlas-result-text-field').waitFor({ state: 'visible', timeout: 45_000 });
+  await page.screenshot({ path: resultCloudScreenshotPath, fullPage: true });
+  console.log(`Desktop multi-result search screenshot written to ${path.relative(process.cwd(), resultCloudScreenshotPath)}`);
+
+  await page.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+  await page.getByLabel('Ask Celebration Atlas').waitFor({ state: 'visible', timeout: 45_000 });
+  await submitAtlasSearch(page, 'Romeo Peach Festival');
+  await page.getByLabel(/Romeo Peach Festival/).first().waitFor({ state: 'visible', timeout: 45_000 });
+  await page.screenshot({ path: exactEventScreenshotPath, fullPage: true });
+  console.log(`Desktop exact-event search screenshot written to ${path.relative(process.cwd(), exactEventScreenshotPath)}`);
+
+  const mobileContext = await browser.newContext({
+    ...devices['iPhone 14'],
+    colorScheme: 'dark',
+    reducedMotion: 'reduce',
+  });
+  const mobilePage = await mobileContext.newPage();
+  await mobilePage.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+  await mobilePage.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
+  await submitAtlasSearch(mobilePage, 'music festivals');
+  await mobilePage.locator('.atlas-result-text-field').waitFor({ state: 'visible', timeout: 45_000 });
+  await mobilePage.screenshot({ path: resultCloudMobileScreenshotPath, fullPage: true });
+  console.log(`Mobile multi-result search screenshot written to ${path.relative(process.cwd(), resultCloudMobileScreenshotPath)}`);
+
+  await mobilePage.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+  await mobilePage.getByLabel('Celebration Atlas Michigan').waitFor({ state: 'visible', timeout: 45_000 });
+  await mobilePage.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
+  await mobilePage.locator('img.atlas-map-image[alt="Michigan Atlas"]').waitFor({ state: 'visible', timeout: 45_000 });
+  await waitForLoadedImage(mobilePage, 'img.atlas-map-image[alt="Michigan Atlas"]');
+  await mobilePage.getByLabel('Ask Celebration Atlas').waitFor({ state: 'visible', timeout: 45_000 });
+  await waitForHomepageRailReady(mobilePage);
   console.log('Homepage rail ready; capturing visual smoke screenshot.');
 
-  await page.screenshot({ path: homepageScreenshotPath, fullPage: true });
+  await mobilePage.screenshot({ path: homepageScreenshotPath, fullPage: true });
   console.log(`Visual smoke screenshot written to ${path.relative(process.cwd(), homepageScreenshotPath)}`);
 
   await page.goto(atlasControlUrl, { waitUntil: 'domcontentloaded' });
