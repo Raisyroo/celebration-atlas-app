@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import localFont from 'next/font/local';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useMobileFavorite } from './mobileFavorite';
@@ -36,7 +37,26 @@ import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
 
-const RESULT_LABEL_SERIF_FONT_STACK = '"Cormorant Garamond", "EB Garamond", "Libre Baskerville", Georgia, serif';
+const resultLabelSerif = localFont({
+  src: [
+    {
+      path: '../node_modules/@fontsource/cormorant-garamond/files/cormorant-garamond-latin-400-normal.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../node_modules/@fontsource/cormorant-garamond/files/cormorant-garamond-latin-500-normal.woff2',
+      weight: '500',
+      style: 'normal',
+    },
+  ],
+  display: 'swap',
+  variable: '--font-atlas-result-label',
+  fallback: ['Georgia', 'serif'],
+});
+
+const RESULT_LABEL_SERIF_FONT_STACK = 'var(--font-atlas-result-label), Georgia, serif';
+const SHOW_RESULT_LABEL_FONT_DIAGNOSTIC = process.env.NODE_ENV !== 'production';
 
 const ATMOSPHERIC_SUGGESTIONS = [
   'Ask for festivals, fireworks, fairs, or Romeo Peach Festival',
@@ -500,17 +520,36 @@ function SearchResultTextField({
     [isDesktop, projectedResults],
   );
   const [openClusterId, setOpenClusterId] = useState<string | null>(null);
+  const fieldRef = useRef<HTMLDivElement | null>(null);
+  const [fontDiagnostic, setFontDiagnostic] = useState<{ family: string; weight: string } | null>(null);
   const openCluster = placements.find(
     (placement): placement is ResultLabelClusterPlacement => placement.kind === 'cluster' && placement.id === openClusterId,
   );
 
+  useEffect(() => {
+    if (!SHOW_RESULT_LABEL_FONT_DIAGNOSTIC) return;
+
+    const label = fieldRef.current?.querySelector<HTMLElement>('[data-result-label-diagnostic="sample"]');
+
+    if (!label) {
+      setFontDiagnostic(null);
+      return;
+    }
+
+    const computedStyle = window.getComputedStyle(label);
+    setFontDiagnostic({
+      family: computedStyle.fontFamily,
+      weight: computedStyle.fontWeight,
+    });
+  }, [placements]);
 
   if (placements.length === 0) return null;
 
   return (
     <div
       aria-label="Search result text field"
-      className="atlas-result-text-field"
+      ref={fieldRef}
+      className={`atlas-result-text-field ${resultLabelSerif.variable}`}
       style={styles.resultTextField}
     >
       {placements.map((placement) => {
@@ -544,6 +583,8 @@ function SearchResultTextField({
             className={`atlas-result-text-label atlas-result-text-label--${placement.tier}`}
             data-result-label-tier={placement.tier}
             data-result-label-slot={placement.slot}
+            data-result-label-font="atlas-result-label-serif"
+            data-result-label-diagnostic={fontDiagnostic === null ? 'sample' : undefined}
             onClick={() => onEventSelect(placement.event.id)}
             style={{
               ...styles.resultTextLabel,
@@ -560,6 +601,15 @@ function SearchResultTextField({
           </button>
         );
       })}
+      {fontDiagnostic ? (
+        <output
+          aria-label="Floating result label font diagnostic"
+          data-result-label-font-diagnostic="development-only"
+          style={styles.resultTextFontDiagnostic}
+        >
+          Floating label font: {fontDiagnostic.family} · weight {fontDiagnostic.weight}
+        </output>
+      ) : null}
       {openCluster ? (
         <div style={styles.resultTextClusterBackdrop} role="presentation">
           <section
@@ -5403,11 +5453,10 @@ const styles: Record<string, CSSProperties> = {
     transform: 'translate(-50%, -50%)',
     pointerEvents: 'auto',
     fontFamily: RESULT_LABEL_SERIF_FONT_STACK,
-    fontWeight: 700,
+    fontWeight: 500,
     color: 'rgba(238, 197, 122, 0.9)',
     cursor: 'pointer',
     listStyle: 'none',
-    fontWeight: 500,
     fontSize: 'clamp(12px, 3.2vw, 15px)',
     textShadow: '0 16px rgba(245, 177, 72, 0.16), 0 8px 20px rgba(0, 0, 0, 0.22)',
     touchAction: 'manipulation',
@@ -5438,7 +5487,7 @@ const styles: Record<string, CSSProperties> = {
     margin: '0 36px 4px 0',
     color: 'rgba(255, 232, 188, 0.68)',
     fontSize: 10,
-    fontWeight: 800,
+    fontWeight: 500,
     letterSpacing: 1.3,
     textTransform: 'uppercase',
   },
@@ -5480,7 +5529,7 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
   },
   resultTextClusterEventName: { fontSize: 15, fontWeight: 500, lineHeight: 1.02, letterSpacing: '-0.01em' },
-  resultTextClusterEventLocation: { fontSize: 10, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'rgba(235, 198, 132, 0.74)' },
+  resultTextClusterEventLocation: { fontSize: 10, fontWeight: 400, letterSpacing: '0.08em', color: 'rgba(235, 198, 132, 0.74)' },
   resultTextLabelLocation: {
     display: 'block',
     color: 'rgba(235, 198, 132, 0.78)',
@@ -5488,8 +5537,22 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 400,
     letterSpacing: '0.12em',
     lineHeight: 1.08,
-    textTransform: 'uppercase',
     textShadow: '0 1px 4px rgba(0, 0, 0, 0.78)',
+  },
+  resultTextFontDiagnostic: {
+    position: 'fixed',
+    left: 10,
+    bottom: 10,
+    zIndex: Z_INDEX.searchDock + 100,
+    maxWidth: 'calc(100vw - 20px)',
+    padding: '6px 8px',
+    borderRadius: 8,
+    background: 'rgba(5, 8, 18, 0.86)',
+    color: '#ffe7af',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    fontSize: 10,
+    lineHeight: 1.25,
+    pointerEvents: 'none',
   },
 
   markerLabel: {
