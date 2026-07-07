@@ -35,6 +35,8 @@ import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
 
+const RESULT_LABEL_SERIF_FONT_STACK = 'Palatino Linotype, Palatino, Georgia, Times New Roman, serif';
+
 const ATMOSPHERIC_SUGGESTIONS = [
   'Ask for festivals, fireworks, fairs, or Romeo Peach Festival',
 ];
@@ -470,16 +472,31 @@ function getEventStoryDetails(event: AtlasEvent): { title: string; body: string 
 
 function SearchResultTextField({
   results,
+  markerLayouts,
   isDesktop,
   onEventSelect,
 }: {
   results: readonly AtlasEvent[];
+  markerLayouts: readonly AtlasMarkerLayout[];
   isDesktop: boolean;
   onEventSelect: (eventId: string) => void;
 }) {
+  const projectedResults = useMemo(() => {
+    const layoutByEventId = new Map(
+      markerLayouts.map((layout) => [layout.event.id, layout]),
+    );
+
+    return results.flatMap((event) => {
+      const position = layoutByEventId.get(event.id)?.position;
+
+      if (!position || !isFiniteMarkerPosition(position)) return [];
+
+      return [{ event, position }];
+    });
+  }, [markerLayouts, results]);
   const placements = useMemo(
-    () => resolveResultLabelPlacements(results, isDesktop ? 'desktop' : 'mobile'),
-    [isDesktop, results],
+    () => resolveResultLabelPlacements(projectedResults, isDesktop ? 'desktop' : 'mobile'),
+    [isDesktop, projectedResults],
   );
 
   if (placements.length === 0) return null;
@@ -3302,6 +3319,7 @@ export default function AtlasMap({
             {rankedSubmittedSearchResults.length > 0 ? (
               <SearchResultTextField
                 results={rankedSubmittedSearchResults}
+                markerLayouts={displayMarkerLayouts}
                 isDesktop={isDesktop}
                 onEventSelect={selectAtlasEvent}
               />
@@ -5307,10 +5325,10 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: 'none',
     appearance: 'none',
     WebkitAppearance: 'none',
-    fontFamily: 'inherit',
-    fontWeight: 900,
+    fontFamily: RESULT_LABEL_SERIF_FONT_STACK,
+    fontWeight: 600,
     lineHeight: 1.02,
-    letterSpacing: 0.08,
+    letterSpacing: 0.1,
     textAlign: 'center',
     whiteSpace: 'normal',
     cursor: 'pointer',
@@ -5318,17 +5336,20 @@ const styles: Record<string, CSSProperties> = {
     touchAction: 'manipulation',
   },
   resultTextLabelName: {
-    display: 'block',
+    display: '-webkit-box',
     maxWidth: 'min(30vw, 300px)',
+    overflow: 'hidden',
     overflowWrap: 'normal',
     textWrap: 'balance',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 2,
   },
   resultTextLabelLocation: {
     display: 'block',
     color: 'rgba(235, 198, 132, 0.78)',
     fontSize: '0.46em',
-    fontWeight: 800,
-    letterSpacing: 1.2,
+    fontWeight: 500,
+    letterSpacing: 1.05,
     lineHeight: 1.05,
     textTransform: 'uppercase',
     textShadow: '0 1px 4px rgba(0, 0, 0, 0.78)',
