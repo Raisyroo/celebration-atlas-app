@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { getEventFlyer } from './eventFlyers';
-import { resolveEventFlyerMedia, type ResolvedEventMedia } from './eventMedia';
+import { CELEBRATION_ATLAS_MEDIA_BUCKET, resolveEventFlyerMedia, type ResolvedEventMedia } from './eventMedia';
 import { getCanonicalEventSlug } from './eventCanonicalSlugs';
 import {
   OFFICIAL_EVENT_URL_FIELDS,
@@ -14,6 +14,32 @@ import {
 import type { EventFlyerResolution, EventFlyerResolutionMap } from './eventMediaResolutionTypes';
 
 const APPROVED_FLYER_SELECT = 'media_role,public_url,storage_bucket,storage_path,title,alt_text,sort_order';
+
+const CURATED_EVENT_CARD_DECKS = {
+  'alpena-brown-trout': [
+    {
+      mediaRole: 'event-card',
+      storagePath: 'alpena-brown-trout/cards/why-go.webp',
+      title: 'Brown Trout Festival Why Go card',
+      altText: 'Brown Trout Festival Why Go planning card',
+      sortOrder: 10,
+    },
+    {
+      mediaRole: 'event-card',
+      storagePath: 'alpena-brown-trout/cards/fishing-tournament-schedule.webp',
+      title: 'Brown Trout Festival fishing tournament schedule',
+      altText: 'Brown Trout Festival fishing tournament schedule card',
+      sortOrder: 20,
+    },
+    {
+      mediaRole: 'event-card',
+      storagePath: 'alpena-brown-trout/cards/music-tent-schedule.webp',
+      title: 'Brown Trout Festival music tent schedule',
+      altText: 'Brown Trout Festival music tent schedule card',
+      sortOrder: 30,
+    },
+  ],
+} as const;
 
 type SupabaseEventMediaRow = {
   media_role?: unknown;
@@ -104,6 +130,18 @@ function toResolvedSupabaseMedia(
   };
 }
 
+function getSupabasePublicUrl(): URL | undefined {
+  const rawUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)?.trim();
+  if (!rawUrl) return undefined;
+
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === 'https:' ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function lookupApprovedSupabaseDeck(
   canonicalSlug: string,
 ): Promise<Omit<ResolvedEventMedia, 'eventId' | 'fallbackUsed'>[]> {
@@ -137,6 +175,37 @@ async function lookupApprovedSupabaseDeck(
   } catch {
     return [];
   }
+}
+
+function getCuratedSupabaseDeckFallback(
+  canonicalSlug: string,
+): Omit<ResolvedEventMedia, 'eventId' | 'fallbackUsed'>[] {
+  const supabaseUrl = getSupabasePublicUrl();
+  const cards = CURATED_EVENT_CARD_DECKS[canonicalSlug as keyof typeof CURATED_EVENT_CARD_DECKS];
+  if (!supabaseUrl || !cards?.length) return [];
+
+  return cards.map((card) => {
+    const src = buildPublicStorageUrl(supabaseUrl, CELEBRATION_ATLAS_MEDIA_BUCKET, card.storagePath);
+
+    return {
+      mediaRole: card.mediaRole,
+      src,
+      source: 'supabase',
+      record: {
+        eventId: canonicalSlug,
+        mediaRole: card.mediaRole,
+        source: 'supabase',
+        url: src,
+        storagePath: card.storagePath,
+        title: card.title,
+        altText: card.altText,
+        sortOrder: card.sortOrder,
+        status: 'approved',
+      },
+      title: card.title,
+      altText: card.altText,
+    };
+  });
 }
 
 async function lookupOfficialUrlFromEvents(canonicalSlug: string): Promise<SupabaseOfficialUrlRow | undefined> {
@@ -225,7 +294,10 @@ export async function resolveEventFlyerMediaServer(
     lookupApprovedSupabaseDeck(canonicalSlug),
     lookupOfficialEventUrl(canonicalSlug),
   ]);
-  const supabaseFlyer = supabaseDeck[0];
+  const resolvedSupabaseDeck = supabaseDeck.length
+    ? supabaseDeck
+    : getCuratedSupabaseDeckFallback(canonicalSlug);
+  const supabaseFlyer = resolvedSupabaseDeck[0];
 
   if (supabaseFlyer) {
     return {
@@ -233,7 +305,7 @@ export async function resolveEventFlyerMediaServer(
       eventId: event.id,
       fallbackUsed: false,
       fallback: getEventFlyer(event.id),
-      deck: supabaseDeck.map((card) => ({
+      deck: resolvedSupabaseDeck.map((card) => ({
         ...card,
         eventId: event.id,
         fallbackUsed: false,
