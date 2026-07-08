@@ -13,14 +13,16 @@ import {
 } from './officialEventUrl';
 import type { EventFlyerResolution, EventFlyerResolutionMap } from './eventMediaResolutionTypes';
 
-const APPROVED_FLYER_SELECT = 'public_url,storage_bucket,storage_path,title,alt_text';
+const APPROVED_FLYER_SELECT = 'media_role,public_url,storage_bucket,storage_path,title,alt_text,sort_order';
 
 type SupabaseEventMediaRow = {
+  media_role?: unknown;
   public_url?: unknown;
   storage_bucket?: unknown;
   storage_path?: unknown;
   title?: unknown;
   alt_text?: unknown;
+  sort_order?: unknown;
 };
 
 type SupabaseOfficialUrlRow = Record<string, unknown>;
@@ -66,19 +68,55 @@ function buildPublicStorageUrl(supabaseUrl: URL, bucket: string, path: string): 
   return publicUrl.toString();
 }
 
-async function lookupApprovedSupabaseFlyer(
+function toResolvedSupabaseMedia(
+  config: { url: URL; serviceRoleKey: string },
   canonicalSlug: string,
-): Promise<Omit<ResolvedEventMedia, 'eventId' | 'fallbackUsed'> | undefined> {
+  row: SupabaseEventMediaRow,
+): Omit<ResolvedEventMedia, 'eventId' | 'fallbackUsed'> | undefined {
+  const mediaRole = row.media_role === 'event-card' ? 'event-card' : row.media_role === 'flyer' ? 'flyer' : undefined;
+  if (!mediaRole) return undefined;
+
+  const src = isHttpsUrl(row.public_url)
+    ? row.public_url
+    : isStorageValue(row.storage_bucket) && isStorageValue(row.storage_path)
+      ? buildPublicStorageUrl(config.url, row.storage_bucket, row.storage_path)
+      : undefined;
+
+  if (!src) return undefined;
+
+  return {
+    mediaRole,
+    src,
+    source: 'supabase',
+    record: {
+      eventId: canonicalSlug,
+      mediaRole,
+      source: 'supabase',
+      url: src,
+      storagePath: isStorageValue(row.storage_path) ? row.storage_path : undefined,
+      title: typeof row.title === 'string' ? row.title : undefined,
+      altText: typeof row.alt_text === 'string' ? row.alt_text : undefined,
+      sortOrder: typeof row.sort_order === 'number' ? row.sort_order : undefined,
+      status: 'approved',
+    },
+    title: typeof row.title === 'string' ? row.title : undefined,
+    altText: typeof row.alt_text === 'string' ? row.alt_text : undefined,
+  };
+}
+
+async function lookupApprovedSupabaseDeck(
+  canonicalSlug: string,
+): Promise<Omit<ResolvedEventMedia, 'eventId' | 'fallbackUsed'>[]> {
   const config = getSupabaseConfig();
-  if (!config) return undefined;
+  if (!config) return [];
 
   const requestUrl = new URL('/rest/v1/event_media', config.url);
   requestUrl.searchParams.set('select', `${APPROVED_FLYER_SELECT},events!inner(slug)`);
-  requestUrl.searchParams.set('media_role', 'eq.flyer');
+  requestUrl.searchParams.set('media_role', 'in.(flyer,event-card)');
   requestUrl.searchParams.set('status', 'eq.approved');
   requestUrl.searchParams.set('source', 'eq.supabase');
   requestUrl.searchParams.set('events.slug', `eq.${canonicalSlug}`);
-  requestUrl.searchParams.set('limit', '1');
+  requestUrl.searchParams.set('order', 'sort_order.asc.nullslast,updated_at.desc');
 
   try {
     const response = await fetch(requestUrl, {
@@ -89,39 +127,15 @@ async function lookupApprovedSupabaseFlyer(
       cache: 'no-store',
     });
 
-    if (!response.ok) return undefined;
+    if (!response.ok) return [];
 
     const rows = (await response.json()) as SupabaseEventMediaRow[];
-    const row = rows[0];
-    if (!row) return undefined;
-
-    const src = isHttpsUrl(row.public_url)
-      ? row.public_url
-      : isStorageValue(row.storage_bucket) && isStorageValue(row.storage_path)
-        ? buildPublicStorageUrl(config.url, row.storage_bucket, row.storage_path)
-        : undefined;
-
-    if (!src) return undefined;
-
-    return {
-      mediaRole: 'flyer',
-      src,
-      source: 'supabase',
-      record: {
-        eventId: canonicalSlug,
-        mediaRole: 'flyer',
-        source: 'supabase',
-        url: src,
-        storagePath: isStorageValue(row.storage_path) ? row.storage_path : undefined,
-        title: typeof row.title === 'string' ? row.title : undefined,
-        altText: typeof row.alt_text === 'string' ? row.alt_text : undefined,
-        status: 'approved',
-      },
-      title: typeof row.title === 'string' ? row.title : undefined,
-      altText: typeof row.alt_text === 'string' ? row.alt_text : undefined,
-    };
+    return rows.flatMap((row) => {
+      const media = toResolvedSupabaseMedia(config, canonicalSlug, row);
+      return media ? [media] : [];
+    });
   } catch {
-    return undefined;
+    return [];
   }
 }
 
@@ -207,10 +221,11 @@ export async function resolveEventFlyerMediaServer(
   event: { id: string; flyerSrc?: string },
 ): Promise<EventFlyerResolution | undefined> {
   const canonicalSlug = getCanonicalEventSlug(event);
-  const [supabaseFlyer, officialUrlResolution] = await Promise.all([
-    lookupApprovedSupabaseFlyer(canonicalSlug),
+  const [supabaseDeck, officialUrlResolution] = await Promise.all([
+    lookupApprovedSupabaseDeck(canonicalSlug),
     lookupOfficialEventUrl(canonicalSlug),
   ]);
+  const supabaseFlyer = supabaseDeck[0];
 
   if (supabaseFlyer) {
     return {
@@ -218,6 +233,11 @@ export async function resolveEventFlyerMediaServer(
       eventId: event.id,
       fallbackUsed: false,
       fallback: getEventFlyer(event.id),
+      deck: supabaseDeck.map((card) => ({
+        ...card,
+        eventId: event.id,
+        fallbackUsed: false,
+      })),
       canonicalSlug,
       officialUrl: officialUrlResolution.officialUrl?.url,
       officialUrlSource: officialUrlResolution.officialUrl?.source,

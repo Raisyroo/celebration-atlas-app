@@ -3,6 +3,7 @@ import type { OfficialEventSourceRejectionReason } from './officialEventUrl';
 
 export type EventFlyerResolution = ResolvedEventMedia & {
   canonicalSlug: string;
+  deck?: ResolvedEventMedia[];
   officialUrl?: `https://${string}`;
   officialUrlSource?: 'events' | 'event_sources';
   officialUrlField?: string;
