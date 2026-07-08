@@ -4,6 +4,7 @@ export type AtlasConfigStatus = {
   hasAnonKey: boolean;
   hasServiceRoleKey: boolean;
   hasAdminAllowlist: boolean;
+  hasAccessToken: boolean;
   isComplete: boolean;
 };
 
@@ -17,7 +18,8 @@ export function getAtlasConfigStatus(): AtlasConfigStatus {
   const hasAnonKey = Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   const hasServiceRoleKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
   const hasAdminAllowlist = getAdminEmails().length > 0;
-  return { hasUrl, hasPublicUrl, hasAnonKey, hasServiceRoleKey, hasAdminAllowlist, isComplete: hasUrl && hasAnonKey && hasServiceRoleKey && hasAdminAllowlist };
+  const hasAccessToken = Boolean(process.env.ATLAS_CONTROL_ACCESS_TOKEN?.trim());
+  return { hasUrl, hasPublicUrl, hasAnonKey, hasServiceRoleKey, hasAdminAllowlist, hasAccessToken, isComplete: hasUrl && hasAnonKey && hasServiceRoleKey && (hasAdminAllowlist || hasAccessToken) };
 }
 
 export function getAdminEmails(): string[] {

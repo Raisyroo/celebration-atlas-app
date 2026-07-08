@@ -11,6 +11,7 @@ const BROWSER_SIGN_IN_SUCCESS_MESSAGE = "Check your inbox for the Atlas Control 
 const BROWSER_SIGN_IN_FAILURE_MESSAGE = "Could not send the Supabase magic link from this browser. Please try again.";
 const BROWSER_SIGN_IN_CONFIG_MESSAGE = "Browser sign-in is missing public Supabase credentials. Ask an operator to set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY before rebuilding.";
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  access_denied: "Enter the current Atlas Control access code.",
   auth_not_configured: "Atlas sign-in is missing Supabase configuration. Contact an operator.",
   missing_auth_params: "That sign-in link was missing its Supabase login token. Request a fresh magic link.",
   session_exchange_failed: "That magic link reached Atlas, but Supabase could not finish the secure session. Request a fresh link in this same browser.",
@@ -42,23 +43,50 @@ async function requestBrowserMagicLink(email: string): Promise<{ ok: true } | { 
 
   const message = error.message.toLowerCase();
   if (error.status === 429 || message.includes("rate") || message.includes("too many")) {
-    return { ok: false, message: "Too many sign-in link requests. Please wait a few minutes and try again." };
+    return { ok: false, message: "Too many sign-in link requests. Use direct access or wait a few minutes and try again." };
   }
 
   return { ok: false, message: BROWSER_SIGN_IN_FAILURE_MESSAGE };
 }
 
-export default function LoginForm({ configured, authError }: { configured: boolean; authError?: string }) {
+export default function LoginForm({ configured, directAccessConfigured, authError }: { configured: boolean; directAccessConfigured: boolean; authError?: string }) {
   const [email, setEmail] = useState("");
+  const [accessCode, setAccessCode] = useState("");
   const [message, setMessage] = useState(
-    authError ? AUTH_ERROR_MESSAGES[authError] ?? "That sign-in link could not be completed. Request a fresh magic link." : "",
+    authError ? AUTH_ERROR_MESSAGES[authError] ?? "That sign-in link could not be completed. Use direct access or request a fresh magic link." : "",
   );
   const [submitting, setSubmitting] = useState(false);
+  const [accessSubmitting, setAccessSubmitting] = useState(false);
 
   useEffect(() => {
     const hashMessage = getHashAuthErrorMessage();
     if (hashMessage) queueMicrotask(() => setMessage(hashMessage));
   }, []);
+
+  async function submitAccess(event: React.FormEvent) {
+    event.preventDefault();
+    if (!directAccessConfigured || accessSubmitting) return;
+
+    setAccessSubmitting(true);
+    setMessage("Checking Atlas Control access code...");
+    try {
+      const response = await fetch("/api/atlas-auth/direct-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: accessCode }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(payload.error ?? "That access code was not accepted.");
+        return;
+      }
+      window.location.assign("/atlas-control");
+    } catch {
+      setMessage(FETCH_FAILURE_MESSAGE);
+    } finally {
+      setAccessSubmitting(false);
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -90,5 +118,19 @@ export default function LoginForm({ configured, authError }: { configured: boole
     }
   }
 
-  return <form onSubmit={submit} className="control-panel login-form"><label>Email address<input type="email" required value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="admin@example.com" /></label><button disabled={!configured || submitting}>{submitting ? "Sending secure sign-in link..." : "Send magic link"}</button><p>{configured ? message : "Atlas sign-in configuration is needed before sign-in."}</p></form>;
+  return (
+    <div className="login-stack">
+      <form onSubmit={submitAccess} className="control-panel login-form">
+        <p className="eyebrow">Direct access</p>
+        <label>Access code<input type="password" required value={accessCode} onChange={(e) => setAccessCode(e.target.value)} placeholder="Atlas Control access code" /></label>
+        <button disabled={!directAccessConfigured || accessSubmitting}>{accessSubmitting ? "Opening Control Desk..." : "Open Control Desk"}</button>
+      </form>
+      <form onSubmit={submit} className="control-panel login-form">
+        <p className="eyebrow">Magic link fallback</p>
+        <label>Email address<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@example.com" /></label>
+        <button disabled={!configured || submitting}>{submitting ? "Sending secure sign-in link..." : "Send magic link"}</button>
+      </form>
+      <p className="result-text login-message">{directAccessConfigured || configured ? message : "Atlas access configuration is needed before sign-in."}</p>
+    </div>
+  );
 }
