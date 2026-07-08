@@ -13,14 +13,17 @@ body { background: #050812; color: #eef4ff; }
 .control-panel p, .status-card p { color: #c6d3e7; line-height: 1.55; }
 .wide { grid-column: 1 / -1; }
 .intake-form, .login-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.login-stack { display: grid; gap: 14px; max-width: 640px; }
 .login-form { max-width: 640px; }
 .login-form label, .login-form p, .login-form button { grid-column: 1 / -1; }
 .intake-form textarea, .intake-form button { grid-column: 1 / -1; }
-input, textarea { width: 100%; box-sizing: border-box; border-radius: 16px; border: 1px solid rgba(184,218,255,.2); background: rgba(2,6,15,.7); color: #f8fbff; padding: 13px 14px; font: inherit; }
+input, select, textarea { width: 100%; box-sizing: border-box; border-radius: 16px; border: 1px solid rgba(184,218,255,.2); background: rgba(2,6,15,.7); color: #f8fbff; padding: 13px 14px; font: inherit; }
+select { color-scheme: dark; }
 textarea { min-height: 88px; resize: vertical; }
 button { border: 0; border-radius: 999px; padding: 14px 18px; font-weight: 800; color: #05101c; background: linear-gradient(135deg,#b5eeff,#8bf3c8); cursor: pointer; }
 button:disabled { opacity: .55; cursor: not-allowed; }
 .result-text { min-height: 24px; color: #aee8ff !important; }
+.login-message { max-width: 640px; }
 .record-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 12px 0 24px; }
 .record-list article { border-radius: 18px; border: 1px solid rgba(170,212,255,.14); background: rgba(255,255,255,.045); padding: 14px; display: grid; gap: 6px; }
 .record-list span, .record-list small { color: #b9c9dc; overflow-wrap: anywhere; }

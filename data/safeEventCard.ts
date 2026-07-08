@@ -2,6 +2,7 @@ import type { AtlasEvent } from './events';
 import { resolveExplicitEventThumbnail } from './eventThumbnail';
 import { resolveEventFlyerSrc } from './eventFlyers';
 import type { EventFlyerResolutionMap } from './eventMediaResolutionTypes';
+import type { ResolvedEventMedia } from './eventMedia';
 
 export type SafeAtlasEventCard = {
   id: AtlasEvent['id'];
@@ -17,6 +18,7 @@ export type SafeAtlasEventCard = {
     mediaType?: NonNullable<AtlasEvent['cardMedia']>['mediaType'];
     flyerSrc?: NonNullable<AtlasEvent['flyerSrc']>;
     flyerFallbackSrc?: NonNullable<AtlasEvent['flyerSrc']>;
+    flyerDeck?: ResolvedEventMedia[];
     mediaSrc?: NonNullable<AtlasEvent['cardMedia']>['mediaSrc'];
     posterSrc?: NonNullable<AtlasEvent['cardMedia']>['posterSrc'];
     atmosphereTitle?: NonNullable<AtlasEvent['cardMedia']>['atmosphereTitle'];
@@ -41,11 +43,13 @@ export function deriveSafeAtlasEventCard(
   const flyerSrc = (flyerResolutions[event.id]?.src
     ?? resolveEventFlyerSrc(event)) as AtlasEvent['flyerSrc'];
   const flyerFallbackSrc = flyerResolutions[event.id]?.fallback?.src as AtlasEvent['flyerSrc'] | undefined;
+  const flyerDeck = flyerResolutions[event.id]?.deck;
   const media = flyerSrc
     ? {
         mediaType: 'image' as const,
         flyerSrc,
         flyerFallbackSrc,
+        flyerDeck,
         mediaSrc: flyerSrc,
         mediaPosition: event.cardMedia?.mediaPosition,
         mediaScale: event.cardMedia?.mediaScale,

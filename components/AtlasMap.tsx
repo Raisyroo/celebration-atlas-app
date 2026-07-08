@@ -1575,6 +1575,7 @@ export default function AtlasMap({
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useMobileFavorite();
   const [flyerFavoriteConfirmation, setFlyerFavoriteConfirmation] = useState<string | null>(null);
+  const [activeFlyerDeckIndex, setActiveFlyerDeckIndex] = useState(0);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileExploring, setIsMobileExploring] = useState(false);
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
@@ -1593,6 +1594,7 @@ export default function AtlasMap({
   const [failedRemoteFlyerSrcs, setFailedRemoteFlyerSrcs] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
+  const flyerDeckPointerStartXRef = useRef<number | null>(null);
   const cardMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -1824,10 +1826,28 @@ export default function AtlasMap({
     ? deriveSafeAtlasEventCard(renderedEvent, flyerResolutions)
     : null;
   const selectedMedia = safeEventCard?.media;
+  const flyerDeck = selectedMedia?.flyerDeck?.length
+    ? selectedMedia.flyerDeck
+    : selectedMedia?.flyerSrc
+      ? [{
+          eventId: safeEventCard?.id ?? '',
+          mediaRole: 'flyer' as const,
+          src: selectedMedia.flyerSrc,
+          source: selectedMedia.flyerSrc.startsWith('https://') ? 'supabase' as const : 'local' as const,
+          fallbackUsed: false,
+          title: `${safeEventCard?.name ?? 'Event'} flyer`,
+        }]
+      : [];
+  const boundedFlyerDeckIndex = flyerDeck.length
+    ? Math.min(activeFlyerDeckIndex, flyerDeck.length - 1)
+    : 0;
+  const activeFlyerDeckCard = flyerDeck[boundedFlyerDeckIndex];
+  const hasFlyerDeck = flyerDeck.length > 1;
   const largeCardThumbnail = renderedEvent
     ? getEventThumbnail(renderedEvent)
     : null;
   const resolvedLargeCardImageSrc =
+    activeFlyerDeckCard?.src ??
     selectedMedia?.flyerSrc ??
     selectedMedia?.posterSrc ??
     selectedMedia?.mediaSrc ??
@@ -1861,6 +1881,7 @@ export default function AtlasMap({
   const mediaFadeDurationMs = selectedMedia?.mediaFadeDurationMs ?? 1300;
   const mediaDelayMs = selectedMedia?.mediaDelayMs ?? 0;
   const selectedFlyerSrc = selectedMedia?.flyerSrc;
+  const activeFlyerSrc = activeFlyerDeckCard?.src ?? selectedFlyerSrc;
   const selectedFlyerFallbackSrc = selectedMedia?.flyerFallbackSrc;
   const displayedFlyerSourceKind = displayedLargeCardImageSrc?.startsWith('https://')
     ? 'Supabase'
@@ -1875,6 +1896,9 @@ export default function AtlasMap({
   }, []);
   const selectAtlasEvent = useCallback((eventId: string | null) => {
     if (eventId) beginMobileExploration();
+    setActiveFlyerDeckIndex(0);
+    setLoadedLargeCardImageSrc(null);
+    setIsCardMediaVisible(false);
     setSelectedId(eventId);
   }, [beginMobileExploration]);
   const handleFlyerFavoriteToggle = () => {
@@ -1886,13 +1910,37 @@ export default function AtlasMap({
       return nextIsSaved;
     });
   };
+  const setFlyerDeckIndex = (index: number) => {
+    setIsCardMediaVisible(false);
+    setLoadedLargeCardImageSrc(null);
+    setActiveFlyerDeckIndex(index);
+  };
+  const moveFlyerDeck = (direction: -1 | 1) => {
+    setIsCardMediaVisible(false);
+    setLoadedLargeCardImageSrc(null);
+    setActiveFlyerDeckIndex((current) => {
+      if (!flyerDeck.length) return 0;
+      return (current + direction + flyerDeck.length) % flyerDeck.length;
+    });
+  };
+  const handleFlyerDeckPointerDown = (event: PointerEvent<HTMLElement>) => {
+    flyerDeckPointerStartXRef.current = event.clientX;
+  };
+  const handleFlyerDeckPointerUp = (event: PointerEvent<HTMLElement>) => {
+    const startX = flyerDeckPointerStartXRef.current;
+    flyerDeckPointerStartXRef.current = null;
+    if (startX === null || flyerDeck.length <= 1) return;
+    const deltaX = event.clientX - startX;
+    if (Math.abs(deltaX) < 44) return;
+    moveFlyerDeck(deltaX < 0 ? 1 : -1);
+  };
   const handleLargeCardImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
     if (displayedLargeCardImageSrc) {
       setLoadedLargeCardImageSrc(displayedLargeCardImageSrc);
     }
 
     setFlyerMediaDebugSnapshot({
-      intendedSrc: selectedFlyerSrc,
+      intendedSrc: activeFlyerSrc,
       attemptedSrc: largeCardBackgroundImageSrc,
       currentSrc: event.currentTarget.currentSrc,
       loaded: true,
@@ -1903,7 +1951,7 @@ export default function AtlasMap({
     setLoadedLargeCardImageSrc(null);
     setIsCardMediaVisible(false);
     setFlyerMediaDebugSnapshot({
-      intendedSrc: selectedFlyerSrc,
+      intendedSrc: activeFlyerSrc,
       attemptedSrc: largeCardBackgroundImageSrc,
       currentSrc: event.currentTarget.currentSrc,
       loaded: false,
@@ -1948,7 +1996,7 @@ export default function AtlasMap({
     if (!isFlyerMediaDebug) return;
 
     setFlyerMediaDebugSnapshot({
-      intendedSrc: selectedFlyerSrc,
+      intendedSrc: activeFlyerSrc,
       attemptedSrc: largeCardBackgroundImageSrc,
       currentSrc: largeCardImageRef.current?.currentSrc,
       loaded: false,
@@ -1966,7 +2014,7 @@ export default function AtlasMap({
   }, [
     isFlyerMediaDebug,
     largeCardBackgroundImageSrc,
-    selectedFlyerSrc,
+    activeFlyerSrc,
   ]);
 
   const cardBaseTheme = safeEventCard
@@ -2505,7 +2553,17 @@ export default function AtlasMap({
       setIsSubmittedQueryFading(false);
       queryFadeTimerRef.current = null;
     }, 680);
-  }, [beginMobileExploration, onSearchActivate, selectAtlasEvent]);
+  }, [
+    beginMobileExploration,
+    onSearchActivate,
+    selectAtlasEvent,
+    setDiscoveryStatusText,
+    setDisplayedQuery,
+    setIsSubmittedQueryFading,
+    setQuery,
+    setSearchPulseTick,
+    setSubmittedQuery,
+  ]);
 
   useEffect(() => {
     let isCurrentConstellationState = true;
@@ -3709,12 +3767,19 @@ export default function AtlasMap({
           {isFlyerCard ? (
             <div style={styles.eventDetailSheet}>
               {hasCardMedia && hasCardMediaSource ? (
-                <figure style={styles.eventDetailFlyerHero}>
+                <figure
+                  style={styles.eventDetailFlyerHero}
+                  onPointerDown={handleFlyerDeckPointerDown}
+                  onPointerUp={handleFlyerDeckPointerUp}
+                  onPointerCancel={() => {
+                    flyerDeckPointerStartXRef.current = null;
+                  }}
+                >
                   <img
                     ref={largeCardImageRef}
                     className="atlas-media-reveal"
                     src={displayedLargeCardImageSrc}
-                    alt={`${safeEventCard.name} flyer`}
+                    alt={activeFlyerDeckCard?.altText ?? `${safeEventCard.name} event card`}
                     onLoad={handleLargeCardImageLoad}
                     onError={handleLargeCardImageError}
                     style={{
@@ -3728,7 +3793,27 @@ export default function AtlasMap({
                       Loading flyer…
                     </div>
                   ) : null}
-                  {flyerPresentation.hasOfficialHotspot && safeEventCard.officialUrl ? (
+                  {hasFlyerDeck ? (
+                    <>
+                      <button
+                        type="button"
+                        aria-label="Show previous event card"
+                        onClick={() => moveFlyerDeck(-1)}
+                        style={{ ...styles.flyerDeckButton, ...styles.flyerDeckButtonPrevious }}
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Show next event card"
+                        onClick={() => moveFlyerDeck(1)}
+                        style={{ ...styles.flyerDeckButton, ...styles.flyerDeckButtonNext }}
+                      >
+                        ›
+                      </button>
+                    </>
+                  ) : null}
+                  {flyerPresentation.hasOfficialHotspot && safeEventCard.officialUrl && !hasFlyerDeck ? (
                     <a
                       className="flyer-official-hotspot"
                       href={safeEventCard.officialUrl}
@@ -3740,6 +3825,23 @@ export default function AtlasMap({
                       <span style={styles.visuallyHidden}>Open {safeEventCard.name} official website</span>
                     </a>
                   ) : null}
+                  {hasFlyerDeck ? (
+                    <figcaption style={styles.flyerDeckDots} aria-label={`${flyerDeck.length} event cards`}>
+                      {flyerDeck.map((card, index) => (
+                        <button
+                          key={`${card.src}-${index}`}
+                          type="button"
+                          aria-label={`Show event card ${index + 1}`}
+                          aria-current={index === boundedFlyerDeckIndex ? 'true' : undefined}
+                          onClick={() => setFlyerDeckIndex(index)}
+                          style={{
+                            ...styles.flyerDeckDot,
+                            ...(index === boundedFlyerDeckIndex ? styles.flyerDeckDotActive : null),
+                          }}
+                        />
+                      ))}
+                    </figcaption>
+                  ) : null}
                 </figure>
               ) : (
                 <div style={styles.flyerUnavailableState} role="status">
@@ -3750,6 +3852,8 @@ export default function AtlasMap({
               {isFlyerMediaDebug ? (
                 <div style={styles.flyerMediaDebugPanel} aria-label="Flyer media debug">
                   <div>intended flyer src: {selectedFlyerSrc ?? 'none'}</div>
+                  <div>active deck src: {activeFlyerSrc ?? 'none'}</div>
+                  <div>deck index: {flyerDeck.length ? boundedFlyerDeckIndex + 1 : 0} / {flyerDeck.length}</div>
                   <div>actual currentSrc: {flyerMediaDebugSnapshot.currentSrc ?? 'not rendered yet'}</div>
                   <div>load fired: {flyerMediaDebugSnapshot.loaded ? 'yes' : 'no'}</div>
                   <div>error fired: {flyerMediaDebugSnapshot.errored ? 'yes' : 'no'}</div>
@@ -5949,6 +6053,7 @@ const styles: Record<string, CSSProperties> = {
     background:
       'radial-gradient(circle at 50% 0%, rgba(255,221,146,.18), transparent 45%), rgba(9,12,22,.42)',
     boxShadow: '0 18px 42px rgba(0,0,0,.28)',
+    touchAction: 'pan-y',
   },
   eventDetailFlyerImage: {
     display: 'block',
@@ -5976,6 +6081,57 @@ const styles: Record<string, CSSProperties> = {
     WebkitTapHighlightColor: 'rgba(255, 225, 160, 0.12)',
     transition:
       'background 140ms ease, box-shadow 140ms ease, transform 140ms ease',
+  },
+  flyerDeckButton: {
+    position: 'absolute',
+    top: '50%',
+    zIndex: 4,
+    width: 40,
+    height: 64,
+    display: 'grid',
+    placeItems: 'center',
+    border: '0 solid transparent',
+    borderRadius: 999,
+    color: 'rgba(255, 238, 197, 0.9)',
+    background: 'rgba(5, 8, 14, 0.18)',
+    boxShadow: '0 10px 26px rgba(0, 0, 0, 0.18)',
+    transform: 'translateY(-50%)',
+    fontSize: 34,
+    fontFamily: 'Georgia, Times New Roman, serif',
+    lineHeight: 1,
+    cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent',
+  },
+  flyerDeckButtonPrevious: {
+    left: 8,
+  },
+  flyerDeckButtonNext: {
+    right: 8,
+  },
+  flyerDeckDots: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 13,
+    zIndex: 5,
+    display: 'flex',
+    justifyContent: 'center',
+    gap: 13,
+    pointerEvents: 'auto',
+  },
+  flyerDeckDot: {
+    width: 12,
+    height: 12,
+    padding: 0,
+    border: '1px solid rgba(255, 238, 197, 0.6)',
+    borderRadius: 999,
+    background: 'rgba(24, 18, 18, 0.58)',
+    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.4)',
+    cursor: 'pointer',
+  },
+  flyerDeckDotActive: {
+    background: '#ffe9bc',
+    borderColor: 'rgba(36, 20, 18, 0.68)',
   },
   visuallyHidden: {
     position: 'absolute',

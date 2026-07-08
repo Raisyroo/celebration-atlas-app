@@ -1,5 +1,7 @@
 "use client";
+
 import { useMemo, useState } from "react";
+import { ATLAS_EVENTS } from "@/data/events";
 
 type Ready = { title: string; detail: string; state: string };
 type OperationRun = { id: string; operation_type: string; actor_identity: string; status: string; summary?: { candidate_id?: string } | null; created_at: string };
@@ -12,24 +14,139 @@ export default function ControlDesk({ initialReadiness, initialOps, initialRevie
   const [ops, setOps] = useState<Ops>(initialOps);
   const [reviews, setReviews] = useState<ReviewItem[]>(initialReviews);
   const [pending, setPending] = useState(false);
+  const [uploadPending, setUploadPending] = useState(false);
   const [result, setResult] = useState<string>("");
+  const [uploadResult, setUploadResult] = useState<string>("");
   const key = useMemo(() => `candidate-intake:${crypto.randomUUID()}`, []);
+
   async function refresh() {
-    const [status, operations, reviewItems] = await Promise.all([fetch("/api/atlas-control/status"), fetch("/api/atlas-control/operations"), fetch("/api/atlas-control/review-items")]);
+    const [status, operations, reviewItems] = await Promise.all([
+      fetch("/api/atlas-control/status"),
+      fetch("/api/atlas-control/operations"),
+      fetch("/api/atlas-control/review-items"),
+    ]);
     if (status.ok) setReadiness(await status.json());
     if (operations.ok) setOps(await operations.json());
     if (reviewItems.ok) setReviews((await reviewItems.json()).items ?? []);
   }
+
+  async function uploadFlyer(formData: FormData) {
+    setUploadPending(true);
+    setUploadResult("Uploading flyer and approving it for the public map...");
+    const response = await fetch("/api/atlas-control/flyer-upload", { method: "POST", body: formData });
+    const body = await response.json().catch(() => ({}));
+    setUploadPending(false);
+    if (!response.ok) {
+      setUploadResult(body.error ?? "Flyer upload failed.");
+      return;
+    }
+    setUploadResult(`Approved flyer for ${body.canonicalSlug}. Public URL: ${body.flyerUrl}`);
+  }
+
   async function submit(formData: FormData) {
-    setPending(true); setResult("Submitting source-backed candidate intake…");
+    setPending(true);
+    setResult("Submitting source-backed candidate intake...");
     const payload = Object.fromEntries(formData.entries());
-    const response = await fetch("/api/atlas-control/candidate-intake", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, idempotencyKey: key, confidence: payload.confidence ? Number(payload.confidence) : undefined }) });
+    const response = await fetch("/api/atlas-control/candidate-intake", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ...payload, idempotencyKey: key, confidence: payload.confidence ? Number(payload.confidence) : undefined }),
+    });
     const body = await response.json();
     setPending(false);
-    if (!response.ok) { setResult((body.errors ?? [body.error]).join(" ")); return; }
+    if (!response.ok) {
+      setResult((body.errors ?? [body.error]).join(" "));
+      return;
+    }
     const r = body.result;
     setResult(`Candidate ${r.candidate_id} via operation ${r.operation_run_id}: ${r.idempotent_replay ? "replayed idempotently" : r.status}.`);
     refresh();
   }
-  return <div className="control-grid"><section className={`status-card ${readiness.state}`}><p className="eyebrow">Readiness</p><h2>{readiness.title}</h2><p>{readiness.detail}</p></section><section className="control-panel"><p className="eyebrow">Source-backed intake</p><h2>Single event candidate</h2><form action={submit} className="intake-form"><input name="name" placeholder="Event or festival name" required /><input name="city" placeholder="City" required /><input name="county" placeholder="County (optional)" /><input name="state" defaultValue="MI" /><input name="startDate" type="date" /><input name="endDate" type="date" /><input name="sourceName" placeholder="Official source name" required /><input name="sourceUrl" placeholder="https://official-source.example/event" required /><textarea name="sourceExcerpt" placeholder="Source excerpt / notes (optional)" /><input name="confidence" type="number" min="0" max="1" step="0.01" placeholder="Confidence 0-1" /><button disabled={pending}>{pending ? "Submitting…" : "Intake candidate"}</button></form><p className="result-text">{result || "No canonical event will be published from this action."}</p></section><section className="control-panel wide"><p className="eyebrow">Operational visibility</p><h2>Recent operation runs</h2><div className="record-list">{ops.runs.map((run)=><article key={run.id}><b>{run.operation_type}</b><span>{run.status} · {new Date(run.created_at).toLocaleString()}</span><small>Actor: {run.actor_identity}</small><small>Target: {run.summary?.candidate_id ?? "—"}</small></article>)}{!ops.runs.length && <p>No operation runs visible yet.</p>}</div><h2>Recent operation actions</h2><div className="record-list">{ops.actions.map((action)=><article key={action.id}><b>{action.action_type}</b><span>{action.lifecycle_state} · {new Date(action.created_at).toLocaleString()}</span><small>Target: {action.target_entity_type ?? "—"} {action.target_entity_id ?? ""}</small><small>Reason: {action.reason ?? "—"}</small></article>)}{!ops.actions.length && <p>No operation actions visible yet.</p>}</div><h2>Open review items</h2><div className="record-list">{reviews.map((item)=><article key={item.id}><b>{item.review_type}</b><span>{item.status} · priority {item.priority}</span><small>Target: {item.candidate_id ?? item.event_id ?? "—"}</small><small>Recommended: {item.recommended_action}</small></article>)}{!reviews.length && <p>No open review items visible.</p>}</div></section></div>;
+
+  return (
+    <div className="control-grid">
+      <section className={`status-card ${readiness.state}`}>
+        <p className="eyebrow">Readiness</p>
+        <h2>{readiness.title}</h2>
+        <p>{readiness.detail}</p>
+      </section>
+
+      <section className="control-panel">
+        <p className="eyebrow">Flyer media</p>
+        <h2>Upload approved flyer</h2>
+        <form action={uploadFlyer} className="intake-form">
+          <select name="eventId" required defaultValue="">
+            <option value="" disabled>Choose event</option>
+            {ATLAS_EVENTS.map((event) => (
+              <option key={event.id} value={event.id}>{event.name} - {event.location}</option>
+            ))}
+          </select>
+          <input name="flyer" type="file" accept="image/png,image/jpeg,image/webp,image/gif" required />
+          <button disabled={uploadPending}>{uploadPending ? "Uploading..." : "Upload and approve flyer"}</button>
+        </form>
+        <p className="result-text">{uploadResult || "Approved flyer uploads replace the current Supabase flyer for that event."}</p>
+      </section>
+
+      <section className="control-panel">
+        <p className="eyebrow">Source-backed intake</p>
+        <h2>Single event candidate</h2>
+        <form action={submit} className="intake-form">
+          <input name="name" placeholder="Event or festival name" required />
+          <input name="city" placeholder="City" required />
+          <input name="county" placeholder="County (optional)" />
+          <input name="state" defaultValue="MI" />
+          <input name="startDate" type="date" />
+          <input name="endDate" type="date" />
+          <input name="sourceName" placeholder="Official source name" required />
+          <input name="sourceUrl" placeholder="https://official-source.example/event" required />
+          <textarea name="sourceExcerpt" placeholder="Source excerpt / notes (optional)" />
+          <input name="confidence" type="number" min="0" max="1" step="0.01" placeholder="Confidence 0-1" />
+          <button disabled={pending}>{pending ? "Submitting..." : "Intake candidate"}</button>
+        </form>
+        <p className="result-text">{result || "No canonical event will be published from this action."}</p>
+      </section>
+
+      <section className="control-panel wide">
+        <p className="eyebrow">Operational visibility</p>
+        <h2>Recent operation runs</h2>
+        <div className="record-list">
+          {ops.runs.map((run) => (
+            <article key={run.id}>
+              <b>{run.operation_type}</b>
+              <span>{run.status} - {new Date(run.created_at).toLocaleString()}</span>
+              <small>Actor: {run.actor_identity}</small>
+              <small>Target: {run.summary?.candidate_id ?? "-"}</small>
+            </article>
+          ))}
+          {!ops.runs.length && <p>No operation runs visible yet.</p>}
+        </div>
+
+        <h2>Recent operation actions</h2>
+        <div className="record-list">
+          {ops.actions.map((action) => (
+            <article key={action.id}>
+              <b>{action.action_type}</b>
+              <span>{action.lifecycle_state} - {new Date(action.created_at).toLocaleString()}</span>
+              <small>Target: {action.target_entity_type ?? "-"} {action.target_entity_id ?? ""}</small>
+              <small>Reason: {action.reason ?? "-"}</small>
+            </article>
+          ))}
+          {!ops.actions.length && <p>No operation actions visible yet.</p>}
+        </div>
+
+        <h2>Open review items</h2>
+        <div className="record-list">
+          {reviews.map((item) => (
+            <article key={item.id}>
+              <b>{item.review_type}</b>
+              <span>{item.status} - priority {item.priority}</span>
+              <small>Target: {item.candidate_id ?? item.event_id ?? "-"}</small>
+              <small>Recommended: {item.recommended_action}</small>
+            </article>
+          ))}
+          {!reviews.length && <p>No open review items visible.</p>}
+        </div>
+      </section>
+    </div>
+  );
 }
