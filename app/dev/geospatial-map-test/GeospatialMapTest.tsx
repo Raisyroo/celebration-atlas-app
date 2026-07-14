@@ -233,7 +233,7 @@ export default function GeospatialMapTest() {
           map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
         });
 
-        mapRef.current = map as MapLibreMap;
+        mapRef.current = map as unknown as MapLibreMap;
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'MapLibre failed to initialize.';
         setMapError(message);

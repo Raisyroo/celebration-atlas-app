@@ -90,7 +90,7 @@ export function deriveSafeAtlasEventCard(
     description: event.blurb,
     atmosphereLabel: event.cardMedia?.atmosphereTitle ?? event.atmosphereLabel,
     media,
-    detailAction: event.detailPage
+    detailAction: event.detailPage || event.eventPageKind === 'manifest'
       ? {
           label: 'Open full event',
           href: `/events/${event.id}`,

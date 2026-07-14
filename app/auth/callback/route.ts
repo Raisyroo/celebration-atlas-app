@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { getAtlasAnonKey, getAtlasSupabaseUrl } from "@/lib/atlas-control/config";
 
 const allowedOtpTypes = new Set(["email", "magiclink", "signup", "invite", "recovery", "email_change"]);
 
@@ -22,14 +23,19 @@ export async function GET(request: NextRequest) {
   const type = url.searchParams.get("type");
   const next = safeNextPath(url.searchParams.get("next"));
   const response = NextResponse.redirect(new URL(next, url.origin));
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  const supabaseUrl = getAtlasSupabaseUrl();
+  const anonKey = getAtlasAnonKey();
+  if (!supabaseUrl || !anonKey) {
     return loginRedirect(url, "auth_not_configured");
   }
 
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+  const supabase = createServerClient(supabaseUrl, anonKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),
-      setAll: (items) => items.forEach(({ name, value, options }) => response.cookies.set(name, value, options)),
+      setAll: (items, headers) => {
+        items.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        Object.entries(headers).forEach(([name, value]) => response.headers.set(name, value));
+      },
     },
   });
 

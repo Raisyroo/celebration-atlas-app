@@ -80,8 +80,8 @@ export function getEventProfileSearchText(profile: EventProfile): string {
   return getSearchableProfileValues(profile).join(' ');
 }
 
-export function getEventProfileById(id: string): EventProfile | undefined {
-  return EVENT_PROFILES.find((profile) => profile.id === id);
+export function getEventProfileById(id: string, profiles: readonly EventProfile[] = EVENT_PROFILES): EventProfile | undefined {
+  return profiles.find((profile) => profile.id === id);
 }
 
 export function getEventProfileBySlug(slug: string): EventProfile | undefined {
@@ -104,7 +104,7 @@ export function getEventProfilesByCategory(category: string): EventProfile[] {
   );
 }
 
-export function searchEventProfiles(query: string): EventProfile[] {
+export function searchEventProfiles(query: string, profiles: readonly EventProfile[] = EVENT_PROFILES): EventProfile[] {
   const normalizedQuery = normalizeSearchValue(query);
   const queryTokens = getSearchTokens(normalizedQuery);
 
@@ -114,7 +114,7 @@ export function searchEventProfiles(query: string): EventProfile[] {
 
   const matchingProfiles = new Map<string, EventProfile>();
 
-  for (const profile of EVENT_PROFILES) {
+  for (const profile of profiles) {
     const searchText = getEventProfileSearchText(profile);
     const profileTokens = getSearchTokens(searchText);
     const matchesFullQuery = searchText.includes(normalizedQuery);

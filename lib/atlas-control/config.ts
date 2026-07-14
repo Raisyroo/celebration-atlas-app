@@ -9,14 +9,22 @@ export type AtlasConfigStatus = {
 };
 
 export function getAtlasSupabaseUrl(): string | undefined {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  return (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL)?.trim() || undefined;
+}
+
+export function getAtlasAnonKey(): string | undefined {
+  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() || undefined;
+}
+
+export function getAtlasServiceRoleKey(): string | undefined {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || undefined;
 }
 
 export function getAtlasConfigStatus(): AtlasConfigStatus {
   const hasPublicUrl = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const hasUrl = Boolean(getAtlasSupabaseUrl());
-  const hasAnonKey = Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  const hasServiceRoleKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const hasAnonKey = Boolean(getAtlasAnonKey());
+  const hasServiceRoleKey = Boolean(getAtlasServiceRoleKey());
   const hasAdminAllowlist = getAdminEmails().length > 0;
   const hasAccessToken = Boolean(process.env.ATLAS_CONTROL_ACCESS_TOKEN?.trim());
   return { hasUrl, hasPublicUrl, hasAnonKey, hasServiceRoleKey, hasAdminAllowlist, hasAccessToken, isComplete: hasUrl && hasAnonKey && hasServiceRoleKey && (hasAdminAllowlist || hasAccessToken) };

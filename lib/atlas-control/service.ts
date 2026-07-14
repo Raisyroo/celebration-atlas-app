@@ -1,12 +1,13 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
-import { getAtlasConfigStatus, getAtlasSupabaseUrl } from "./config";
+import { getAtlasConfigStatus, getAtlasServiceRoleKey, getAtlasSupabaseUrl } from "./config";
 
 export function createAtlasServiceClient() {
   const status = getAtlasConfigStatus();
   const supabaseUrl = getAtlasSupabaseUrl();
-  if (!status.hasUrl || !status.hasServiceRoleKey || !supabaseUrl) return null;
-  return createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  const serviceRoleKey = getAtlasServiceRoleKey();
+  if (!status.hasUrl || !status.hasServiceRoleKey || !supabaseUrl || !serviceRoleKey) return null;
+  return createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

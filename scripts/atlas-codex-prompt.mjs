@@ -48,9 +48,12 @@ function buildPrompt(task, protectedAreas) {
 
   return `Read MASTER_ATLAS_CONTEXT.md first.
 Then read:
+- docs/PROJECT_STATE.md
 - docs/ATLAS_DEV_LOOP.md
 - docs/ATLAS_TASK_QUEUE.md
 - docs/ATLAS_CODEX_RUN_TEMPLATE.md
+
+Read any task-specific brief named in the selected queue item's Notes.
 
 Use npm run atlas:next to confirm the selected queue item.
 Take only the next task marked Status: next.

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   ATLAS_CONTROL_ACCESS_COOKIE,
+  ATLAS_CONTROL_ACCESS_MAX_AGE,
   hashAccessToken,
   isValidAtlasAccessToken,
 } from "@/lib/atlas-control/auth";
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: ATLAS_CONTROL_ACCESS_MAX_AGE,
   });
   return response;
 }

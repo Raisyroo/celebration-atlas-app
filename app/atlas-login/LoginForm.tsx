@@ -29,14 +29,14 @@ function getHashAuthErrorMessage(): string | null {
 }
 
 async function requestBrowserMagicLink(email: string): Promise<{ ok: true } | { ok: false; message: string }> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   if (!supabaseUrl || !supabaseAnonKey) return { ok: false, message: BROWSER_SIGN_IN_CONFIG_MESSAGE };
 
   const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/atlas-control` },
+    options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
   });
 
   if (!error) return { ok: true };
@@ -125,11 +125,13 @@ export default function LoginForm({ configured, directAccessConfigured, authErro
         <label>Access code<input type="password" required value={accessCode} onChange={(e) => setAccessCode(e.target.value)} placeholder="Atlas Control access code" /></label>
         <button disabled={!directAccessConfigured || accessSubmitting}>{accessSubmitting ? "Opening Control Desk..." : "Open Control Desk"}</button>
       </form>
-      <form onSubmit={submit} className="control-panel login-form">
-        <p className="eyebrow">Magic link fallback</p>
-        <label>Email address<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@example.com" /></label>
-        <button disabled={!configured || submitting}>{submitting ? "Sending secure sign-in link..." : "Send magic link"}</button>
-      </form>
+      {!directAccessConfigured ? (
+        <form onSubmit={submit} className="control-panel login-form">
+          <p className="eyebrow">Emergency email access</p>
+          <label>Email address<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@example.com" /></label>
+          <button disabled={!configured || submitting}>{submitting ? "Sending secure sign-in link..." : "Send sign-in link"}</button>
+        </form>
+      ) : null}
       <p className="result-text login-message">{directAccessConfigured || configured ? message : "Atlas access configuration is needed before sign-in."}</p>
     </div>
   );

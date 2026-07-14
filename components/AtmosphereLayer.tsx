@@ -7,7 +7,7 @@ import GeeseEffect from './effects/GeeseEffect';
 import FerrisGlowEffect from './effects/FerrisGlowEffect';
 
 type AtmosphereLayerProps = {
-  events: AtlasEvent[];
+  events: readonly AtlasEvent[];
   selectedEvent: AtlasEvent | null;
   depthOffsetX?: number;
   depthOffsetY?: number;

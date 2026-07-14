@@ -78,7 +78,7 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 10. Diagnose hidden national atlas route strategy
 
 - **Type:** diagnostic
-- **Status:** next
+- **Status:** superseded by current Event Hub factory milestone
 - **Scope:** routing / national atlas shell / feature-flag strategy only
 - **Protected files/areas:** app UI, homepage runtime behavior, app/page.tsx, HomeAtlasExperience behavior, AtlasMap behavior, NationalAtlasShell runtime wiring, StateAtlasShell runtime wiring, MichiganAtlasExperience runtime wiring, CelebrationSearchPanel runtime wiring, routing, event data, media files, CSS, package scripts, automation scripts
 - **Notes:** Determine the safest way to expose the NationalAtlasShell for development review without changing the visible homepage. Compare hidden route, dev-only route, feature flag, and non-rendered import strategies.
@@ -182,6 +182,15 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - **Protected files/areas:** homepage runtime behavior unless explicitly approved, AtlasMap projection, marker behavior, event data, Romeo page, media files, package scripts, automation scripts
 - **Notes:** Prototype a richer card shell from existing safe structured data only; do not redesign cards or add live/current claims without explicit approval.
 - **Verification:** `npm run atlas:doctor`, `npm run atlas:check`, `npm run atlas:status`, `npm run lint`, `npm run build`
+
+### 22. Build Coast Guard Festival through the Event Factory
+
+- **Type:** implementation
+- **Status:** next
+- **Scope:** Coast Guard Festival source intake, evidence bundle, synthesis, visual workflow, private package, and mobile preview
+- **Protected files/areas:** existing published Event Hub packages, homepage map geometry, illustrated-map calibration, universal Scout AI runtime, production publication before human review, sponsor listings
+- **Notes:** Read `docs/PROJECT_STATE.md` and `docs/COAST_GUARD_FESTIVAL_BRIEF.md`. Use fresh official-source research and the supplied repository hero. Build an elegant, source-complete private Event Hub package with the Hero Image Factory. Do not publish it until Ray reviews the exact mobile preview.
+- **Verification:** `npm run build`, Atlas Control readiness, migration parity, private package mobile review, no horizontal overflow, no browser errors, existing public Event Hub smoke check
 
 ## Completed Tasks
 

@@ -6,15 +6,16 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useSearchParams } from 'next/navigation';
 import { useMobileFavorite } from './mobileFavorite';
 import { useRouter } from 'next/navigation';
-import type { CSSProperties, PointerEvent, RefObject, SyntheticEvent } from 'react';
-import { ATLAS_EVENTS } from '../data/events';
+import type { CSSProperties, PointerEvent, ReactNode, RefObject, SyntheticEvent } from 'react';
+import { ATLAS_EVENTS, type AtlasEvent } from '../data/events';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
 import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes';
 import { getFlyerEventPresentation } from '../data/flyerEventPresentation';
 import {
-  getEventProfileById,
   searchEventProfiles,
 } from '../data/eventProfiles';
+import { toEventProfiles } from '../data/eventProfileAdapter';
+import type { EventProfile } from '../data/eventProfileTypes';
 import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
 import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
 import { resolveExactEventIntent } from '../data/exactEventIntent';
@@ -133,7 +134,7 @@ const Z_INDEX = {
 // anchors in data/mapCalibration.ts; keep this off for production.
 const showAtlasCalibration = false;
 const CARD_THEME_BY_CATEGORY: Record<
-  (typeof ATLAS_EVENTS)[number]['category'],
+  AtlasEvent['category'],
   { edge: string; glow: string; wash: string }
 > = {
   Festivals: {
@@ -159,7 +160,7 @@ const CARD_THEME_BY_CATEGORY: Record<
 };
 
 const CARD_THEME_BY_REGION: Record<
-  NonNullable<(typeof ATLAS_EVENTS)[number]['regionAtmosphere']>,
+  NonNullable<AtlasEvent['regionAtmosphere']>,
   { edge: string; glow: string; wash: string }
 > = {
   lakeshore: {
@@ -191,7 +192,7 @@ const CARD_THEME_BY_REGION: Record<
 
 const blendCardTheme = (
   base: { edge: string; glow: string; wash: string },
-  regionAtmosphere?: (typeof ATLAS_EVENTS)[number]['regionAtmosphere'],
+  regionAtmosphere?: AtlasEvent['regionAtmosphere'],
 ) => {
   if (!regionAtmosphere) return base;
   const region = CARD_THEME_BY_REGION[regionAtmosphere];
@@ -268,7 +269,7 @@ const REGIONAL_DISCOVERY_EVENT_IDS: Record<string, string[]> = {
 
 const isResetSearchCommand = (queryText: string) =>
   RESET_SEARCH_COMMANDS.has(queryText.trim().toLowerCase());
-const getLegacyHighlightedIdsFromQuery = (queryText: string) => {
+const getLegacyHighlightedIdsFromQuery = (queryText: string, events: readonly AtlasEvent[]) => {
   const ids = new Set<string>();
   const normalizedQuery = queryText.trim().toLowerCase();
 
@@ -326,7 +327,7 @@ const getLegacyHighlightedIdsFromQuery = (queryText: string) => {
     ids.add('romeo-peach');
   }
 
-  for (const event of ATLAS_EVENTS) {
+  for (const event of events) {
     const searchableTerms = [
       event.name,
       event.location,
@@ -347,10 +348,14 @@ const getLegacyHighlightedIdsFromQuery = (queryText: string) => {
   return ids;
 };
 
-const getHighlightedIdsFromQuery = (queryText: string) => {
-  const ids = getLegacyHighlightedIdsFromQuery(queryText);
+const getHighlightedIdsFromQuery = (
+  queryText: string,
+  events: readonly AtlasEvent[],
+  profiles: readonly EventProfile[],
+) => {
+  const ids = getLegacyHighlightedIdsFromQuery(queryText, events);
 
-  for (const profile of searchEventProfiles(queryText)) {
+  for (const profile of searchEventProfiles(queryText, profiles)) {
     ids.add(profile.id);
   }
 
@@ -370,8 +375,6 @@ const MOBILE_LANDING_MAP_LOWERING = '3dvh';
 // inverse workbench calibration in data/michiganArtworkCalibration.ts. Keeping a
 // second global shift here would double-apply calibration and hide future tuning.
 
-type AtlasEvent = (typeof ATLAS_EVENTS)[number];
-
 const FALLBACK_THUMBNAIL_BY_ICON: Record<
   NonNullable<AtlasEvent['iconType']>,
   string
@@ -390,6 +393,63 @@ const FALLBACK_THUMBNAIL_BY_ICON: Record<
 
 
 type EventStatusBadge = 'LIVE' | 'UPCOMING';
+
+function EventNavigationControl({
+  event,
+  ariaLabel,
+  ariaHidden,
+  ariaCurrent,
+  tabIndex,
+  className,
+  dataActive,
+  style,
+  onLegacyClick,
+  children,
+}: {
+  event: AtlasEvent;
+  ariaLabel: string;
+  ariaHidden?: boolean;
+  ariaCurrent?: 'true';
+  tabIndex?: number;
+  className?: string;
+  dataActive?: 'true' | 'false';
+  style?: CSSProperties;
+  onLegacyClick: () => void;
+  children: ReactNode;
+}) {
+  if (event.eventPageKind === 'manifest') {
+    return (
+      <Link
+        href={`/events/${event.id}`}
+        aria-label={ariaLabel}
+        aria-hidden={ariaHidden}
+        aria-current={ariaCurrent}
+        tabIndex={tabIndex}
+        className={className}
+        data-active={dataActive}
+        style={{ textDecoration: 'none', ...style }}
+      >
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      aria-hidden={ariaHidden}
+      aria-current={ariaCurrent}
+      tabIndex={tabIndex}
+      className={className}
+      data-active={dataActive}
+      style={style}
+      onClick={onLegacyClick}
+    >
+      {children}
+    </button>
+  );
+}
 
 function parseReliableEventDate(dateText: string | undefined): Date | null {
   if (!dateText) return null;
@@ -1148,6 +1208,7 @@ type FlyerMediaDebugSnapshot = {
 };
 
 type AtlasMapProps = {
+  events?: readonly AtlasEvent[];
   constellationHighlightedIds?: readonly string[];
   celebrationSearchHighlightedIds?: readonly string[];
   activeConstellationTitle?: string | null;
@@ -1231,7 +1292,7 @@ const projectEventToMichiganArtworkPosition = (
 };
 
 const resolveAtlasMarkerLayouts = (
-  events: typeof ATLAS_EVENTS,
+  events: readonly AtlasEvent[],
   artworkVariant: MichiganArtworkVariant,
 ): AtlasMarkerLayout[] =>
   events.map((event, eventIndex) => ({
@@ -1478,6 +1539,7 @@ function AtlasCalibrationPanel({
 }
 
 export default function AtlasMap({
+  events = ATLAS_EVENTS,
   constellationHighlightedIds = [],
   celebrationSearchHighlightedIds = [],
   activeConstellationTitle = null,
@@ -1565,9 +1627,7 @@ export default function AtlasMap({
   const shouldAnimateNextExactSearchReturnRef = useRef(false);
   const enterFrameRef = useRef<number | null>(null);
   const enterFrameInnerRef = useRef<number | null>(null);
-  const [renderedEvent, setRenderedEvent] = useState<
-    (typeof ATLAS_EVENTS)[number] | null
-  >(null);
+  const [renderedEvent, setRenderedEvent] = useState<AtlasEvent | null>(null);
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [searchPulseTick, setSearchPulseTick] = useState(0);
@@ -1602,16 +1662,21 @@ export default function AtlasMap({
   const calibrationCopyStatusTimerRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
+  const eventProfiles = useMemo(() => toEventProfiles([...events]), [events]);
+  const eventProfileById = useMemo(
+    () => new Map(eventProfiles.map((profile) => [profile.id, profile])),
+    [eventProfiles],
+  );
   const q = submittedQuery.trim().toLowerCase();
   const exactEventIntent = useMemo(
-    () => resolveExactEventIntent(submittedQuery),
-    [submittedQuery],
+    () => resolveExactEventIntent(submittedQuery, events, eventProfiles),
+    [eventProfiles, events, submittedQuery],
   );
   const searchHighlightedIds = useMemo(() => {
     if (exactEventIntent) return new Set([exactEventIntent.eventId]);
 
-    return getHighlightedIdsFromQuery(q);
-  }, [exactEventIntent, q]);
+    return getHighlightedIdsFromQuery(q, events, eventProfiles);
+  }, [eventProfiles, events, exactEventIntent, q]);
   const celebrationSearchHighlightedIdSet = useMemo(
     () => new Set(celebrationSearchHighlightedIds),
     [celebrationSearchHighlightedIds],
@@ -1635,8 +1700,8 @@ export default function AtlasMap({
   const rankedSubmittedSearchResults = useMemo(() => {
     if (exactEventIntent || !q || highlightedIds.size === 0) return [];
 
-    return ATLAS_EVENTS.filter((event) => highlightedIds.has(event.id));
-  }, [exactEventIntent, highlightedIds, q]);
+    return events.filter((event) => highlightedIds.has(event.id));
+  }, [events, exactEventIntent, highlightedIds, q]);
   const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
     return rankedSubmittedSearchResults.map((event) => ({
       id: event.id,
@@ -1648,8 +1713,8 @@ export default function AtlasMap({
     }));
   }, [rankedSubmittedSearchResults]);
   const markerLayouts = useMemo(
-    () => resolveAtlasMarkerLayouts(ATLAS_EVENTS, artworkVariant),
-    [artworkVariant],
+    () => resolveAtlasMarkerLayouts(events, artworkVariant),
+    [artworkVariant, events],
   );
   const displayMarkerLayouts = markerLayouts;
   const activePresentationPlan = presentationPlan ?? null;
@@ -1707,7 +1772,7 @@ export default function AtlasMap({
       displayMarkerLayouts,
     ],
   );
-  const ambientMobileEvents = ATLAS_EVENTS;
+  const ambientMobileEvents = events;
   const isMobileAmbientRailLayoutReady = Boolean(
     mapViewportSize &&
       mapViewportSize.width > 0 &&
@@ -1814,7 +1879,7 @@ export default function AtlasMap({
     }));
 
   const selected = !isVerificationMode
-    ? (ATLAS_EVENTS.find((event) => event.id === selectedId) ?? null)
+    ? (events.find((event) => event.id === selectedId) ?? null)
     : null;
   const startElectricForestTransition = useCallback(
     (eventId: string) => {
@@ -1901,6 +1966,14 @@ export default function AtlasMap({
     setIsCardMediaVisible(false);
     setSelectedId(eventId);
   }, [beginMobileExploration]);
+  const openAtlasEvent = useCallback((eventId: string) => {
+    const event = events.find((candidate) => candidate.id === eventId);
+    if (event?.eventPageKind === 'manifest') {
+      router.push(`/events/${event.id}`);
+      return;
+    }
+    selectAtlasEvent(eventId);
+  }, [events, router, selectAtlasEvent]);
   const handleFlyerFavoriteToggle = () => {
     setIsMobileFavoriteSaved((isSaved) => {
       const nextIsSaved = !isSaved;
@@ -2459,7 +2532,7 @@ export default function AtlasMap({
     queueMicrotask(() => {
       if (!isCurrentMedia) return;
       setIsCardMediaVisible(false);
-      const selectedEvent = ATLAS_EVENTS.find(
+      const selectedEvent = events.find(
         (event) => event.id === selectedId,
       );
       if (!selectedEvent) return;
@@ -2476,7 +2549,7 @@ export default function AtlasMap({
     return () => {
       isCurrentMedia = false;
     };
-  }, [selectedId]);
+  }, [events, selectedId]);
 
   useEffect(() => {
     if (!hasCardMediaSource || !isCardVisible || !isLargeCardImageReady) return;
@@ -2520,7 +2593,7 @@ export default function AtlasMap({
       return;
     }
 
-    const exactMatch = resolveExactEventIntent(trimmedQuery);
+    const exactMatch = resolveExactEventIntent(trimmedQuery, events, eventProfiles);
 
     if (exactEventOpenTimerRef.current) {
       clearTimeout(exactEventOpenTimerRef.current);
@@ -2531,11 +2604,11 @@ export default function AtlasMap({
       selectAtlasEvent(null);
       setDiscoveryStatusText(null);
       exactEventOpenTimerRef.current = setTimeout(() => {
-        selectAtlasEvent(exactMatch.eventId);
+        openAtlasEvent(exactMatch.eventId);
         exactEventOpenTimerRef.current = null;
       }, EXACT_EVENT_CARD_OPEN_DELAY_MS);
     } else {
-      const nextHighlightedIds = getHighlightedIdsFromQuery(trimmedQuery);
+      const nextHighlightedIds = getHighlightedIdsFromQuery(trimmedQuery, events, eventProfiles);
       setDiscoveryStatusText(
         nextHighlightedIds.size > 0
           ? `Showing ${nextHighlightedIds.size} ${nextHighlightedIds.size === 1 ? 'discovery' : 'discoveries'} for “${trimmedQuery}”`
@@ -2555,7 +2628,10 @@ export default function AtlasMap({
     }, 680);
   }, [
     beginMobileExploration,
+    eventProfiles,
+    events,
     onSearchActivate,
+    openAtlasEvent,
     selectAtlasEvent,
     setDiscoveryStatusText,
     setDisplayedQuery,
@@ -2634,15 +2710,15 @@ export default function AtlasMap({
     initialEventParamHandledRef.current = true;
     if (!requestedEventId) return;
 
-    const matchingEvent = ATLAS_EVENTS.find(
+    const matchingEvent = events.find(
       (event) => event.id === requestedEventId,
     );
     if (!matchingEvent) return;
 
     queueMicrotask(() => {
-      selectAtlasEvent(matchingEvent.id);
+      openAtlasEvent(matchingEvent.id);
     });
-  }, [searchParams, selectAtlasEvent]);
+  }, [events, openAtlasEvent, searchParams]);
 
   useEffect(() => {
     const rotateId = setInterval(() => {
@@ -3044,7 +3120,7 @@ export default function AtlasMap({
           shouldShowPolishedHomepageUi ? (
             <>
               <AtmosphereLayer
-                events={ATLAS_EVENTS}
+                events={events}
                 selectedEvent={selected}
                 depthOffsetX={parallaxOffset.x}
                 depthOffsetY={parallaxOffset.y}
@@ -3158,9 +3234,7 @@ export default function AtlasMap({
                     !isCluster &&
                     (isHighlighted || isSelectedMarker || isExactRevealMarker),
                 );
-                const primaryEventProfile = getEventProfileById(
-                  primaryEvent.id,
-                );
+                const primaryEventProfile = eventProfileById.get(primaryEvent.id);
                 const markerPresentation = primaryEventProfile
                   ? getEventMarkerPresentation(primaryEventProfile)
                   : null;
@@ -3210,6 +3284,7 @@ export default function AtlasMap({
                       : 1;
                 const markerLabelEvent = exactHighlightedEvent ??
                   (!isCluster ? primaryEvent : null);
+                const navigationEvent = exactHighlightedEvent ?? primaryEvent;
                 const shouldShowMarkerLabel = !isCluster && markerLabelEvent && rankedSubmittedSearchResults.length === 0
                   ? mapCalloutPlan.eventIds.has(markerLabelEvent.id)
                   : false;
@@ -3250,16 +3325,16 @@ export default function AtlasMap({
                         </>
                       ) : (
                         <>
-                          <button
-                            type="button"
-                            aria-label={
+                          <EventNavigationControl
+                            event={navigationEvent}
+                            ariaLabel={
                               isCluster
                                 ? `Open ${events.length} events near ${primaryEvent.location}`
                                 : primaryEvent.name
                             }
-                            aria-hidden={shouldEnableMarkerTapTarget ? undefined : true}
+                            ariaHidden={shouldEnableMarkerTapTarget ? undefined : true}
                             tabIndex={shouldEnableMarkerTapTarget ? undefined : -1}
-                            onClick={() => {
+                            onLegacyClick={() => {
                               if (!shouldEnableMarkerTapTarget) return;
                               if (shouldSuppressMarkerTap()) return;
                               if (exactEventOpenTimerRef.current) {
@@ -3267,11 +3342,11 @@ export default function AtlasMap({
                                 exactEventOpenTimerRef.current = null;
                               }
                               if (exactHighlightedEvent) {
-                                selectAtlasEvent(exactHighlightedEvent.id);
+                                openAtlasEvent(exactHighlightedEvent.id);
                                 return;
                               }
 
-                              selectAtlasEvent(primaryEvent.id);
+                              openAtlasEvent(primaryEvent.id);
                             }}
                             style={{
                               ...styles.markerTapTarget,
@@ -3428,26 +3503,26 @@ export default function AtlasMap({
                               ) : null}
                             </span>
                             ) : null}
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={
+                          </EventNavigationControl>
+                          <EventNavigationControl
+                            event={navigationEvent}
+                            ariaLabel={
                               markerLabelEvent
                                 ? `Open ${markerLabelEvent.name}`
                                 : `Open ${events.length} nearby celebrations`
                             }
-                            onClick={() => {
+                            onLegacyClick={() => {
                               if (shouldSuppressMarkerTap()) return;
                               if (exactEventOpenTimerRef.current) {
                                 clearTimeout(exactEventOpenTimerRef.current);
                                 exactEventOpenTimerRef.current = null;
                               }
                               if (exactHighlightedEvent) {
-                                selectAtlasEvent(exactHighlightedEvent.id);
+                                openAtlasEvent(exactHighlightedEvent.id);
                                 return;
                               }
 
-                              selectAtlasEvent(primaryEvent.id);
+                              openAtlasEvent(primaryEvent.id);
                             }}
                             style={{
                               ...styles.markerLabel,
@@ -3475,7 +3550,7 @@ export default function AtlasMap({
                             ) : (
                               `${events.length} celebrations`
                             )}
-                          </button>
+                          </EventNavigationControl>
                         </>
                       )}
                     </div>
@@ -3487,7 +3562,7 @@ export default function AtlasMap({
                 results={rankedSubmittedSearchResults}
                 markerLayouts={displayMarkerLayouts}
                 isDesktop={isDesktop}
-                onEventSelect={selectAtlasEvent}
+                onEventSelect={openAtlasEvent}
               />
             ) : null}
             {isDesktop ? mapCalloutPlan.clusterIndicators.map((cluster) => (
@@ -4191,14 +4266,14 @@ export default function AtlasMap({
                     const isActiveRailEvent = event.id === selectedId || event.id === exactEventIntent?.eventId;
 
                     return (
-                      <button
+                      <EventNavigationControl
                         key={event.id}
-                        type="button"
-                        aria-label={`Open ${event.name}`}
-                        aria-current={isActiveRailEvent ? 'true' : undefined}
-                        onClick={() => selectAtlasEvent(event.id)}
+                        event={event}
+                        ariaLabel={`Open ${event.name}`}
+                        ariaCurrent={isActiveRailEvent ? 'true' : undefined}
+                        onLegacyClick={() => openAtlasEvent(event.id)}
                         className="mobile-live-card"
-                        data-active={isActiveRailEvent ? 'true' : 'false'}
+                        dataActive={isActiveRailEvent ? 'true' : 'false'}
                         style={{
                           ...styles.mobileLiveCard,
                           ...(isActiveRailEvent ? styles.mobileLiveCardActive : null),
@@ -4225,7 +4300,7 @@ export default function AtlasMap({
                           <span style={styles.mobileLiveCardMeta}>{event.location}</span>
                           <span style={styles.mobileLiveCardDate}>{eventDate}</span>
                         </span>
-                      </button>
+                      </EventNavigationControl>
                     );
                   })}
                 </div>

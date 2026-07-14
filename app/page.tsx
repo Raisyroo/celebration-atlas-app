@@ -1,16 +1,19 @@
 import { Suspense } from 'react';
 import CinematicIntro from '../components/CinematicIntro';
 import HomeAtlasExperience from '../components/HomeAtlasExperience';
-import { ATLAS_EVENTS } from '../data/events';
+import AuthCallbackRecovery from '../components/AuthCallbackRecovery';
 import { resolveEventFlyerMediaMapServer } from '../data/eventMediaServer';
+import { resolvePublishedAtlasEvents } from '../lib/events/publishedAtlasEvents';
 
 export default async function HomePage() {
-  const flyerResolutions = await resolveEventFlyerMediaMapServer(ATLAS_EVENTS);
+  const events = await resolvePublishedAtlasEvents();
+  const flyerResolutions = await resolveEventFlyerMediaMapServer(events);
 
   return (
     <Suspense fallback={null}>
+      <AuthCallbackRecovery />
       <CinematicIntro skipOnDesktop>
-        <HomeAtlasExperience flyerResolutions={flyerResolutions} />
+        <HomeAtlasExperience events={events} flyerResolutions={flyerResolutions} />
       </CinematicIntro>
     </Suspense>
   );

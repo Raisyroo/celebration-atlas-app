@@ -11,12 +11,18 @@ export type AtmosphereEffect =
 export type AtlasEvent = {
   searchAliases?: string[];
   pageArchetype?: 'standard' | 'livingScrapbook';
+  eventPageKind?: 'manifest';
   iconType?: 'music' | 'fair' | 'food' | 'fireworks' | 'flower' | 'harvest' | 'waterfront' | 'winter' | 'art' | 'heritage';
   id: string;
   name: string;
   location: string;
   latitude: number;
   longitude: number;
+  coordinateSource?: {
+    label: string;
+    url: string;
+    method: 'venue-address-geocode' | 'official-coordinates' | 'manual-verification';
+  };
   atmosphereLabel: string;
   blurb: string;
   category: AtlasCategory;
@@ -163,6 +169,8 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     atmosphereLabel: 'Hart Plaza jazz weekend',
     blurb: 'The world’s largest free jazz festival returns to Hart Plaza over Labor Day weekend with jazz legends and innovators.',
     category: 'Music',
+    cardTag: 'Free jazz festival',
+    eventPageKind: 'manifest',
     iconType: 'music',
     x: 75,
     y: 44,
@@ -285,10 +293,66 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       'Barefoot hammock circles humming with distant basslines.',
     ],
   },
-  { id: 'traverse-city-cherry', name: 'National Cherry Festival', location: 'Traverse City, MI', latitude: 44.7631, longitude: -85.6206, atmosphereLabel: 'Bayfront summer glow', blurb: 'A week of cherry treats, parades, and bayfront gatherings in Traverse City each summer.', category: 'Festivals', iconType: 'food', x: 30, y: 28, regionAtmosphere: 'lakeshore', cardMedia: { thumbnailSrc: '/event-media/generated/traverse-city-cherry-thumb.webp', thumbnailSourceType: 'generated', thumbnailGenerationStatus: 'generated', thumbnailAlt: 'National Cherry Festival generated thumbnail' } },
+  {
+    id: 'traverse-city-cherry',
+    name: 'National Cherry Festival',
+    location: 'Traverse City, MI',
+    latitude: 44.7666995,
+    longitude: -85.6249394,
+    coordinateSource: {
+      label: 'OpenStreetMap Nominatim venue geocode for Open Space Park',
+      url: 'https://nominatim.openstreetmap.org/ui/search.html?q=Open+Space+Park%2C+Traverse+City%2C+Michigan',
+      method: 'venue-address-geocode',
+    },
+    atmosphereLabel: 'Bayfront summer glow',
+    blurb: 'A week of cherry treats, parades, and bayfront gatherings in Traverse City each summer.',
+    category: 'Festivals',
+    iconType: 'food',
+    x: 30,
+    y: 28,
+    regionAtmosphere: 'lakeshore',
+    cardMedia: {
+      thumbnailSrc: '/event-media/generated/traverse-city-cherry-thumb.webp',
+      thumbnailSourceType: 'generated',
+      thumbnailGenerationStatus: 'generated',
+      thumbnailAlt: 'National Cherry Festival generated thumbnail',
+    },
+  },
   { id: 'west-michigan-coast-guard', name: 'Coast Guard Festival', location: 'Grand Haven, MI', latitude: 43.0631, longitude: -86.2284, atmosphereLabel: 'Shoreline honor lights', blurb: 'Grand Haven hosts ship tours, concerts, and shoreline fireworks honoring Coast Guard heritage.', category: 'Festivals', iconType: 'heritage', x: 24, y: 44, atmosphere: atmosphere(['fireworks'], 'medium'), regionAtmosphere: 'lakeshore' },
   { id: 'holland-tulip-time', name: 'Tulip Time Festival', location: 'Holland, MI', latitude: 42.7875, longitude: -86.1089, atmosphereLabel: 'Spring street color', blurb: 'Spring blooms, Dutch dance, and family street events color downtown Holland.', category: 'Festivals', iconType: 'flower', x: 30, y: 49, regionAtmosphere: 'lakeshore', cardMedia: { thumbnailSrc: '/event-media/generated/holland-tulip-time-thumb.webp', thumbnailSourceType: 'generated', thumbnailGenerationStatus: 'generated', thumbnailAlt: 'Tulip Time Festival generated thumbnail' } },
-  { id: 'alpena-brown-trout', name: 'Brown Trout Festival', location: 'Alpena, MI', latitude: 45.0617, longitude: -83.4328, atmosphereLabel: 'Riverfront carnival dusk', blurb: 'A Northeast Michigan tradition with carnival rides, food booths, and riverfront festivities.', category: 'Festivals', iconType: 'fair', x: 58, y: 21, atmosphere: atmosphere(['ferrisGlow'], 'subtle'), regionAtmosphere: 'lakeshore' },
+  {
+    id: 'alpena-brown-trout',
+    name: 'Brown Trout Festival',
+    searchAliases: ['Michigan Brown Trout Festival', 'Alpena Brown Trout Festival'],
+    location: 'Alpena, MI',
+    latitude: 45.0590675,
+    longitude: -83.428529,
+    coordinateSource: {
+      label: 'OpenStreetMap Nominatim venue-address geocode',
+      url: 'https://nominatim.openstreetmap.org/ui/search.html?q=Alpena+Marina%2C+400+E+Chisholm+St%2C+Alpena%2C+MI+49707',
+      method: 'venue-address-geocode',
+    },
+    atmosphereLabel: 'Thunder Bay tournament nights',
+    blurb: 'Ten days of fishing tournaments, live Michigan bands, family events, and waterfront traditions at Alpena Marina.',
+    category: 'Festivals',
+    cardTag: 'Fishing festival',
+    eventPageKind: 'manifest',
+    iconType: 'waterfront',
+    x: 58,
+    y: 21,
+    atmosphere: atmosphere([], 'subtle'),
+    regionAtmosphere: 'lakeshore',
+    dateRange: {
+      startDate: '2026-07-17',
+      endDate: '2026-07-26',
+    },
+    cardMedia: {
+      thumbnailSrc: '/event-media/brown-trout/brown-trout-hero-v1.webp',
+      thumbnailSourceType: 'generated',
+      thumbnailGenerationStatus: 'generated',
+      thumbnailAlt: 'Celebration Atlas artwork for the Michigan Brown Trout Festival on the Alpena waterfront',
+    },
+  },
   { id: 'charlevoix-venetian', name: 'Charlevoix Venetian Festival', location: 'Charlevoix, MI', latitude: 45.3181, longitude: -85.2584, atmosphereLabel: 'Marina twilight rhythm', blurb: 'A harbor-centered summer celebration featuring waterfront music and a boat parade.', category: 'Festivals', iconType: 'waterfront', x: 40, y: 22, atmosphere: atmosphere([], 'subtle'), regionAtmosphere: 'lakeshore' },
   { id: 'cheboygan-4th-fireworks', name: 'Cheboygan Independence Day Festival', location: 'Cheboygan, MI', latitude: 45.6469, longitude: -84.4745, atmosphereLabel: 'Patriotic night burst', blurb: 'Holiday crowds gather for parades, family activities, and fireworks by the water.', category: 'Festivals', iconType: 'fireworks', x: 50, y: 16, atmosphere: atmosphere(['fireworks'], 'signature'), regionAtmosphere: 'lakeshore' },
   { id: 'muskegon-summer-celebration', name: 'Muskegon Summer Celebration', location: 'Muskegon, MI', latitude: 43.2342, longitude: -86.2484, atmosphereLabel: 'Lakefront stage energy', blurb: 'Lakefront performances and food vendors keep this multi-day event lively into the night.', category: 'Music', iconType: 'music', x: 24, y: 42, atmosphere: atmosphere([], 'medium'), regionAtmosphere: 'lakeshore' },
@@ -301,8 +365,13 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     id: 'black-river-tattoo',
     name: 'Black River Tattoo Convention',
     location: 'Port Huron, MI',
-    latitude: 42.9709,
-    longitude: -82.4249,
+    latitude: 42.99856,
+    longitude: -82.42682,
+    coordinateSource: {
+      label: 'OpenStreetMap venue coordinates for Blue Water Convention Center',
+      url: 'https://www.openstreetmap.org/way/687195718',
+      method: 'venue-address-geocode',
+    },
     atmosphereLabel: 'Event-floor discovery',
     blurb: 'A tattoo, art, and culture convention in Port Huron featuring artists, vendors, live energy, and event-floor discovery.',
     category: 'Arts & Culture',

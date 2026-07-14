@@ -70,3 +70,9 @@ public/event-media/flyers/
 
 # Generated fallback thumbnails stay local until asset storage is finalized.
 public/event-media/fallback/*.webp
+
+# Local research and one-off operational scripts are not product source.
+/work/
+
+# Manual map backups remain local; active map assets use their canonical names.
+/public/maps/*-backup.*

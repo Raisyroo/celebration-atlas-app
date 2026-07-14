@@ -2,11 +2,17 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createHash, timingSafeEqual } from "crypto";
 import { createServerClient } from "@supabase/ssr";
-import { getAdminEmails, getAtlasConfigStatus } from "./config";
+import { getAdminEmails, getAtlasAnonKey, getAtlasConfigStatus, getAtlasSupabaseUrl } from "./config";
 
 export type AtlasAdmin = { email: string; userId: string };
 export const ATLAS_CONTROL_ACCESS_COOKIE = "atlas_control_access";
+export const ATLAS_CONTROL_ACCESS_MAX_AGE = 60 * 60 * 24 * 180;
 const DIRECT_ACCESS_IDENTITY = "direct-access@celebration-atlas.local";
+const DEVELOPMENT_ACCESS_IDENTITY = "development-access@celebration-atlas.local";
+
+export function hasLocalAtlasDevelopmentAccess(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.ATLAS_REQUIRE_LOCAL_AUTH !== "true";
+}
 
 export function isAllowedAdminEmail(email: string | null | undefined): boolean {
   return Boolean(email && getAdminEmails().includes(email.toLowerCase()));
@@ -40,17 +46,28 @@ export function isValidAtlasAccessHash(hash: string | null | undefined): boolean
 
 export async function createUserSupabaseClient() {
   const status = getAtlasConfigStatus();
-  if (!status.hasUrl || !status.hasAnonKey) return null;
+  const supabaseUrl = getAtlasSupabaseUrl();
+  const anonKey = getAtlasAnonKey();
+  if (!status.hasUrl || !status.hasAnonKey || !supabaseUrl || !anonKey) return null;
   const cookieStore = await cookies();
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  return createServerClient(supabaseUrl, anonKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
-      setAll: (items) => items.forEach(({ name, value, options }) => cookieStore.set(name, value, options)),
+      setAll: (items) => {
+        try {
+          items.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        } catch {
+          // The request proxy persists refreshed sessions when this runs in a Server Component.
+        }
+      },
     },
   });
 }
 
 export async function requireAtlasAdmin(): Promise<{ ok: true; admin: AtlasAdmin } | { ok: false; status: 401 | 403 | 503; message: string }> {
+  if (hasLocalAtlasDevelopmentAccess()) {
+    return { ok: true, admin: { email: DEVELOPMENT_ACCESS_IDENTITY, userId: "atlas-control-development-access" } };
+  }
   const config = getAtlasConfigStatus();
   const cookieStore = await cookies();
   if (config.hasAccessToken && isValidAtlasAccessHash(cookieStore.get(ATLAS_CONTROL_ACCESS_COOKIE)?.value)) {

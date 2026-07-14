@@ -1,5 +1,6 @@
 import { EVENT_PROFILES } from './eventProfiles';
-import { ATLAS_EVENTS } from './events';
+import { ATLAS_EVENTS, type AtlasEvent } from './events';
+import type { EventProfile } from './eventProfileTypes';
 
 export type ExactEventIntentMatch = {
   eventId: string;
@@ -41,17 +42,19 @@ function uniqueIdentityValues(values: Array<string | undefined | null>) {
 
 export function resolveExactEventIntent(
   queryText: string,
+  events: readonly AtlasEvent[] = ATLAS_EVENTS,
+  profiles: readonly EventProfile[] = EVENT_PROFILES,
 ): ExactEventIntentMatch | null {
   const normalizedQuery = normalizeExactEventIntentValue(queryText);
 
   if (!normalizedQuery) return null;
 
   const profileById = new Map(
-    EVENT_PROFILES.map((profile) => [profile.id, profile]),
+    profiles.map((profile) => [profile.id, profile]),
   );
   const matches = new Map<string, ExactEventIntentMatch>();
 
-  for (const event of ATLAS_EVENTS) {
+  for (const event of events) {
     const profile = profileById.get(event.id);
     const identityValues = uniqueIdentityValues([
       event.id,

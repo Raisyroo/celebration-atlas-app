@@ -1,9 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import nextEnv from '@next/env';
 import { CELEBRATION_ATLAS_MEDIA_BUCKET } from '../data/eventMedia.ts';
 import { ATLAS_EVENTS } from '../data/events.ts';
 import { getCanonicalEventSlug } from '../data/eventCanonicalSlugs.ts';
+
+const { loadEnvConfig } = nextEnv;
 
 type EventRow = { id: string; slug: string };
 
@@ -14,21 +17,6 @@ const MIME_BY_EXTENSION: Record<string, string> = {
   '.png': 'image/png',
   '.webp': 'image/webp',
 };
-
-function loadLocalEnv() {
-  const envPath = path.join(process.cwd(), '.env.local');
-  return fs.readFile(envPath, 'utf8')
-    .then((contents) => {
-      for (const line of contents.split(/\r?\n/)) {
-        const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
-        if (!match) continue;
-        const [, key, rawValue] = match;
-        if (process.env[key]) continue;
-        process.env[key] = rawValue.replace(/^['"]|['"]$/g, '');
-      }
-    })
-    .catch(() => undefined);
-}
 
 function safeFilename(name: string): string {
   return path.basename(name, path.extname(name))
@@ -50,7 +38,7 @@ function printUsage() {
 }
 
 async function main() {
-  await loadLocalEnv();
+  loadEnvConfig(process.cwd());
 
   const [, , eventId, rawFilePath] = process.argv;
   if (!eventId || !rawFilePath || eventId === '--help' || eventId === '-h') {
@@ -65,8 +53,8 @@ async function main() {
     process.exit(1);
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)?.trim();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!supabaseUrl || !serviceRoleKey) {
     console.error('Missing SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local.');
     process.exit(1);
