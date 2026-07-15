@@ -189,7 +189,7 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - **Status:** needs human review
 - **Scope:** Coast Guard Festival source intake, evidence bundle, synthesis, visual workflow, private package, and mobile preview
 - **Protected files/areas:** existing published Event Hub packages, homepage map geometry, illustrated-map calibration, universal Scout AI runtime, production publication before human review, sponsor listings
-- **Notes:** Private package `26dde20f-d707-4321-947c-49a45d507d13` is at 100% readiness with an approved migration-014 hero workflow and authenticated mobile preview at `https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13`. It remains unpublished. Resume only after Ray explicitly approves or requests revisions.
+- **Notes:** Private package `26dde20f-d707-4321-947c-49a45d507d13` is at v4 and 100% readiness with an approved migration-014 hero workflow and authenticated mobile preview at `https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13`. The editorial revision keeps the 1924 origin in one dedicated card and gives present-day scale and the 1998 `Coast Guard City, USA` designation separate story space. It remains unpublished. Resume only after Ray explicitly approves or requests revisions.
 - **Verification:** `npm run build`, Atlas Control readiness, migration parity, private package mobile review, no horizontal overflow, no browser errors, existing public Event Hub smoke check
 
 ## Completed Tasks

@@ -46,7 +46,7 @@ Private review queue:
 
 | Event | Package | Status | Authenticated preview |
 | --- | --- | --- | --- |
-| Grand Haven Coast Guard Festival | `26dde20f-d707-4321-947c-49a45d507d13` | `ready_for_review`, 100% readiness | `https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13` |
+| Grand Haven Coast Guard Festival | `26dde20f-d707-4321-947c-49a45d507d13` | `ready_for_review` v4, 100% readiness | `https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13` |
 
 The Coast Guard package is not approved or published and is not a new public Event Hub release. Its approved visual workflow, accepted synthesis, verified evidence case, and package may be reviewed without crossing the publication boundary.
 
@@ -127,6 +127,8 @@ Ray should review the authenticated Grand Haven Coast Guard Festival package at:
 `https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13`
 
 The package retains 11 source snapshots, 40 current official schedule rows, the distinct organizer/program/City date windows, an approved visual-signature workflow, Census-geocoded waterfront venue provenance, four visitor-planning links, and a source-backed maritime traditions module. The optional AI Gateway prose request was unavailable in the local environment, so the exact accepted child uses the existing evidence-bound editorial API with operator-reviewed copy and immutable facts locked.
+
+Private package v4 incorporates Ray's editorial feedback: the 1924 picnic and 1937 formal-festival origin appears in one dedicated tradition card, while the Traditions introduction covers present-day attendance and national dignitary scale and the Why Go Spotlight explains Grand Haven's 1998 `Coast Guard City, USA` designation. The authenticated 390x844 preview has no horizontal overflow or browser console errors.
 
 Do not approve or publish package `26dde20f-d707-4321-947c-49a45d507d13` until Ray explicitly approves the preview. No unrelated next implementation task is selected while this human review is pending.
 
