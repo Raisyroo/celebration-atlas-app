@@ -192,10 +192,20 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - **Notes:** Ray approved package `26dde20f-d707-4321-947c-49a45d507d13` in Atlas Control. Package v4, immutable Event Hub v1, the verified canonical event and map record, approved hero, and public homepage entry were published on July 15, 2026. Public route: `https://celebration-atlas-app.vercel.app/events/coast-guard-festival`.
 - **Verification:** `npm run build`, Atlas Control readiness, migration parity, private package mobile review, no horizontal overflow, no browser errors, existing public Event Hub smoke check
 
+### 23. Audit and stabilize the Michigan homepage
+
+- **Type:** diagnostic + implementation
+- **Status:** complete
+- **Scope:** Michigan homepage event rail, phone-landscape fallback, desktop framing, and multi-state handoff documentation
+- **Protected files/areas:** event publication state, Event Hub manifests, verified event coordinates, illustrated-map calibration values, constellation behavior, universal Scout runtime
+- **Notes:** The rail now includes only exact-dated live/upcoming public events in chronological order. Phone landscape retains its controls beside a bounded full-art map, desktop preserves the artwork content box without panel overlap, and `docs/MICHIGAN_HOMEPAGE_AUDIT.md` records the remaining star/presentation and multi-state work.
+- **Verification:** `npm run lint`, `npm run build`, 390×844 portrait, 844×390 and 960×432 landscape, 1024×768 and 1440×900 desktop, no horizontal overflow, Event Hub rail navigation, no browser errors
+
 ## Completed Tasks
 
 - Define Celebration Search command model — completed in current queue item 6 as a data/model architecture step.
 - Task 22: Grand Haven Coast Guard Festival completed the Event Factory and was published after Ray's Atlas Control approval.
+- Task 23: Michigan homepage rail and responsive baseline completed with a durable multi-state audit.
 
 ## Paused / Needs Human Review
 
