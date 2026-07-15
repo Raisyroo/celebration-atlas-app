@@ -318,7 +318,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
       thumbnailAlt: 'National Cherry Festival generated thumbnail',
     },
   },
-  { id: 'west-michigan-coast-guard', name: 'Coast Guard Festival', location: 'Grand Haven, MI', latitude: 43.0631, longitude: -86.2284, atmosphereLabel: 'Shoreline honor lights', blurb: 'Grand Haven hosts ship tours, concerts, and shoreline fireworks honoring Coast Guard heritage.', category: 'Festivals', iconType: 'heritage', x: 24, y: 44, atmosphere: atmosphere(['fireworks'], 'medium'), regionAtmosphere: 'lakeshore' },
+  { id: 'coast-guard-festival', name: 'Coast Guard Festival', location: 'Grand Haven, MI', latitude: 43.0631, longitude: -86.2284, atmosphereLabel: 'Shoreline honor lights', blurb: 'Grand Haven hosts ship tours, concerts, and shoreline fireworks honoring Coast Guard heritage.', category: 'Festivals', iconType: 'heritage', x: 24, y: 44, atmosphere: atmosphere(['fireworks'], 'medium'), regionAtmosphere: 'lakeshore' },
   { id: 'holland-tulip-time', name: 'Tulip Time Festival', location: 'Holland, MI', latitude: 42.7875, longitude: -86.1089, atmosphereLabel: 'Spring street color', blurb: 'Spring blooms, Dutch dance, and family street events color downtown Holland.', category: 'Festivals', iconType: 'flower', x: 30, y: 49, regionAtmosphere: 'lakeshore', cardMedia: { thumbnailSrc: '/event-media/generated/holland-tulip-time-thumb.webp', thumbnailSourceType: 'generated', thumbnailGenerationStatus: 'generated', thumbnailAlt: 'Tulip Time Festival generated thumbnail' } },
   {
     id: 'alpena-brown-trout',

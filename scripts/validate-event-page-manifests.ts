@@ -1,5 +1,7 @@
 import { BROWN_TROUT_EVENT_PAGE_MANIFEST } from '../data/brownTroutEventPageManifest.ts';
 import { DETROIT_JAZZ_EVENT_PAGE_MANIFEST } from '../data/detroitJazzEventPageManifest.ts';
+import { ATLAS_CONSTELLATIONS } from '../data/atlasConstellations.ts';
+import { ATLAS_EVENTS } from '../data/events.ts';
 import {
   stableStringifyEventPageManifest,
   validateEventPageManifest,
@@ -12,6 +14,23 @@ const manifests = [
 ];
 
 const failures: string[] = [];
+
+const coastGuardPlaceholders = ATLAS_EVENTS.filter((event) => (
+  event.location === 'Grand Haven, MI' && /coast guard festival/i.test(event.name)
+));
+if (coastGuardPlaceholders.length !== 1 || coastGuardPlaceholders[0]?.id !== 'coast-guard-festival') {
+  failures.push('The Grand Haven Coast Guard Festival placeholder must use the canonical published slug so Event Factory data replaces it in the mobile rail.');
+}
+
+const atlasEventIds = new Set(ATLAS_EVENTS.map((event) => event.id));
+const missingConstellationEventIds = [...new Set(
+  ATLAS_CONSTELLATIONS.flatMap((constellation) => (
+    constellation.eventIds.filter((eventId) => !atlasEventIds.has(eventId))
+  )),
+)];
+if (missingConstellationEventIds.length) {
+  failures.push(`Atlas constellations reference unknown event ids: ${missingConstellationEventIds.join(', ')}.`);
+}
 
 if (getDateKeyInTimeZone('2026-07-12T02:30:00.000Z', 'America/Detroit') !== '2026-07-11') {
   failures.push('Late-evening schedule items are not grouped by their event-local date.');

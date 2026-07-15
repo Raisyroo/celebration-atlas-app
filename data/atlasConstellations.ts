@@ -38,7 +38,7 @@ export const ATLAS_CONSTELLATIONS: AtlasConstellation[] = [
     theme: 'fireworks',
     season: 'summer',
     category: 'Festivals',
-    eventIds: ['west-michigan-coast-guard', 'cheboygan-4th-fireworks'],
+    eventIds: ['coast-guard-festival', 'cheboygan-4th-fireworks'],
     relationshipType: 'editorial',
     visibilityMode: 'hiddenUntilDiscovered',
     lineStyle: 'dotted',

@@ -252,7 +252,7 @@ const REGIONAL_DISCOVERY_EVENT_IDS: Record<string, string[]> = {
   thumb: ['black-river-tattoo', 'goodells-fair', 'armada-fair'],
   'west michigan': [
     'electric-forest',
-    'west-michigan-coast-guard',
+    'coast-guard-festival',
     'holland-tulip-time',
     'muskegon-summer-celebration',
     'allendale-balloon-fest',
