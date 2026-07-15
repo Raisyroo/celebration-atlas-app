@@ -39,16 +39,13 @@ Current public Event Hub coverage:
 | National Cherry Festival | `national-cherry-festival` | Published package |
 | Black River Tattoo Convention | `black-river-tattoo-convention` | Published package |
 | St. Clair County 4-H & Youth Fair | `st-clair-county-4-h-youth-fair` | Published package |
+| Grand Haven Coast Guard Festival | `coast-guard-festival` | Published package |
 
-The five factory-published packages are at 100 percent readiness. Existing package and manifest fallbacks must remain valid while the generalized pipeline expands.
+The six factory-published packages are at 100 percent readiness. Existing package and manifest fallbacks must remain valid while the generalized pipeline expands.
 
 Private review queue:
 
-| Event | Package | Status | Authenticated preview |
-| --- | --- | --- | --- |
-| Grand Haven Coast Guard Festival | `26dde20f-d707-4321-947c-49a45d507d13` | `ready_for_review` v4, 100% readiness | `https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13` |
-
-The Coast Guard package is not approved or published and is not a new public Event Hub release. Its approved visual workflow, accepted synthesis, verified evidence case, and package may be reviewed without crossing the publication boundary.
+No packages are currently waiting for private review.
 
 ## Event Factory
 
@@ -122,15 +119,15 @@ Never place Supabase or Vercel credentials in documentation, source code, prompt
 
 ## Current Next Milestone
 
-Ray should review the authenticated Grand Haven Coast Guard Festival package at:
+The Grand Haven Coast Guard Festival package completed the Event Factory and is public at:
 
-`https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13`
+`https://celebration-atlas-app.vercel.app/events/coast-guard-festival`
 
 The package retains 11 source snapshots, 40 current official schedule rows, the distinct organizer/program/City date windows, an approved visual-signature workflow, Census-geocoded waterfront venue provenance, four visitor-planning links, and a source-backed maritime traditions module. The optional AI Gateway prose request was unavailable in the local environment, so the exact accepted child uses the existing evidence-bound editorial API with operator-reviewed copy and immutable facts locked.
 
-Private package v4 incorporates Ray's editorial feedback: the 1924 picnic and 1937 formal-festival origin appears in one dedicated tradition card, while the Traditions introduction covers present-day attendance and national dignitary scale and the Why Go Spotlight explains Grand Haven's 1998 `Coast Guard City, USA` designation. The authenticated 390x844 preview has no horizontal overflow or browser console errors.
+Published package v4 incorporates Ray's editorial feedback: the 1924 picnic and 1937 formal-festival origin appears in one dedicated tradition card, while the Traditions introduction covers present-day attendance and national dignitary scale and the Why Go Spotlight explains Grand Haven's 1998 `Coast Guard City, USA` designation. The package, immutable Event Hub v1, canonical event, approved hero, and homepage map entry were published together on July 15, 2026.
 
-Do not approve or publish package `26dde20f-d707-4321-947c-49a45d507d13` until Ray explicitly approves the preview. No unrelated next implementation task is selected while this human review is pending.
+No unrelated next implementation task is selected. Promote one future queue item to `next` only when Ray chooses the next milestone.
 
 ## Required Verification
 

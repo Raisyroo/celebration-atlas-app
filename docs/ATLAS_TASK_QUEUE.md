@@ -186,19 +186,20 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 22. Build Coast Guard Festival through the Event Factory
 
 - **Type:** implementation
-- **Status:** needs human review
+- **Status:** completed
 - **Scope:** Coast Guard Festival source intake, evidence bundle, synthesis, visual workflow, private package, and mobile preview
 - **Protected files/areas:** existing published Event Hub packages, homepage map geometry, illustrated-map calibration, universal Scout AI runtime, production publication before human review, sponsor listings
-- **Notes:** Private package `26dde20f-d707-4321-947c-49a45d507d13` is at v4 and 100% readiness with an approved migration-014 hero workflow and authenticated mobile preview at `https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13`. The editorial revision keeps the 1924 origin in one dedicated card and gives present-day scale and the 1998 `Coast Guard City, USA` designation separate story space. It remains unpublished. Resume only after Ray explicitly approves or requests revisions.
+- **Notes:** Ray approved package `26dde20f-d707-4321-947c-49a45d507d13` in Atlas Control. Package v4, immutable Event Hub v1, the verified canonical event and map record, approved hero, and public homepage entry were published on July 15, 2026. Public route: `https://celebration-atlas-app.vercel.app/events/coast-guard-festival`.
 - **Verification:** `npm run build`, Atlas Control readiness, migration parity, private package mobile review, no horizontal overflow, no browser errors, existing public Event Hub smoke check
 
 ## Completed Tasks
 
 - Define Celebration Search command model — completed in current queue item 6 as a data/model architecture step.
+- Task 22: Grand Haven Coast Guard Festival completed the Event Factory and was published after Ray's Atlas Control approval.
 
 ## Paused / Needs Human Review
 
-- Task 22: Grand Haven Coast Guard Festival package `26dde20f-d707-4321-947c-49a45d507d13` is ready for Ray's authenticated mobile review. Do not publish without explicit approval.
+No tasks are currently paused for human review.
 
 ## Task Template
 
