@@ -69,5 +69,5 @@ assert(helperSource.includes("export type ResultLabelAlign") && fieldBlock.inclu
 assert(fieldBlock.includes('resultTextLabelHalo') && styleBlock.includes('radial-gradient(ellipse at center'), 'floating result labels should include a subtle text-bound readability halo');
 assert(atlasMapSource.includes('rankedSubmittedSearchResults.length > 0 ?') && atlasMapSource.includes('<SearchResultTextField') && atlasMapSource.includes('if (exactEventIntent || !q || highlightedIds.size === 0) return [];'), 'exact-event search should remain separate from broad result text field rendering');
 assert(atlasMapSource.includes('isDesktop && !hasActiveAskQuery'), 'desktop intro panel should not cover submitted search result labels');
-assert(atlasMapSource.includes('aria-label="Michigan event rail"') && atlasMapSource.includes('areMobileAmbientControlsVisible'), 'bottom event rail should remain present in ambient/broad search UI');
+assert(atlasMapSource.includes('data-testid="event-rail"') && atlasMapSource.includes('areMobileAmbientControlsVisible'), 'bottom event rail should remain present in ambient/broad search UI');
 console.log('Result label layout validation passed.');

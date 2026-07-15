@@ -4246,6 +4246,7 @@ export default function AtlasMap({
                 aria-label="Live and upcoming Michigan events"
                 aria-hidden={areMobileAmbientControlsVisible ? undefined : true}
                 data-layout-ready={areMobileAmbientControlsVisible ? 'true' : 'false'}
+                data-testid="event-rail"
               >
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
                   {liveUpcomingRailEvents.map((event) => {
