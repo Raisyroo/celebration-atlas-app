@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: July 14, 2026
+Last updated: July 15, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -109,15 +109,28 @@ Do not build one-off deep-question logic into individual event pages. The future
 
 Never place Supabase or Vercel credentials in documentation, source code, prompts, or commits.
 
+## Michigan Homepage State
+
+The Michigan Atlas homepage completed a rail and responsive-layout baseline on July 15, 2026.
+
+- The bottom rail now contains only exact-dated live or upcoming public events, evaluated in the Michigan time zone and sorted live-first then chronologically.
+- Completed, undated, TBA, estimated, and recurrence-only events remain eligible for general map/search discovery when otherwise public, but do not appear in the time-sensitive rail.
+- Ask Celebration Atlas remains visible when no rail event qualifies.
+- Short non-desktop landscape viewports retain menu, favorite, filter, Ask Atlas, and dated event access beside a bounded full-art map.
+- Desktop preserves the portrait artwork content box beside a non-overlapping introduction/discovery panel instead of cropping the state art into a wide phone-like frame.
+- The illustrated map remains approximate. A unified coded-star and presentation-position resolver is not implemented yet.
+
+The durable audit and multi-state recommendations are in `docs/MICHIGAN_HOMEPAGE_AUDIT.md`.
+
 ## Known Transition State
 
 - Several older architecture and task documents describe flyer-first behavior. The Event Hub decisions in this file supersede those passages.
-- `docs/ATLAS_TASK_QUEUE.md` contains historical completed/future map work. Only the single item marked `Status: next` is active.
+- `docs/ATLAS_TASK_QUEUE.md` contains historical completed/future map work. No item should become `next` until Ray chooses the follow-up milestone.
 - A deliberately excluded `Codex Event Write Test` database row still appears in factory diagnostics and must never become public.
 - The universal Scout AI runtime, periodic update agents, nationwide discovery campaigns, and map redesign are future milestones.
 - Source update monitoring must eventually detect material schedule/date changes, create a new synthesis/package version, and require the configured review policy before public replacement.
 
-## Current Next Milestone
+## Latest Completed Event Factory Milestone
 
 The Grand Haven Coast Guard Festival package completed the Event Factory and is public at:
 
@@ -127,7 +140,11 @@ The package retains 11 source snapshots, 40 current official schedule rows, the 
 
 Published package v4 incorporates Ray's editorial feedback: the 1924 picnic and 1937 formal-festival origin appears in one dedicated tradition card, while the Traditions introduction covers present-day attendance and national dignitary scale and the Why Go Spotlight explains Grand Haven's 1998 `Coast Guard City, USA` designation. The package, immutable Event Hub v1, canonical event, approved hero, and homepage map entry were published together on July 15, 2026.
 
-No unrelated next implementation task is selected. Promote one future queue item to `next` only when Ray chooses the next milestone.
+## Current Next Milestone
+
+The Michigan homepage audit and safe responsive baseline are complete. The recommended next map milestone is a diagnostic definition of the shared `StateMapPresentationProfile` and one position resolver for stars, labels, atmosphere, constellation lines, and audits. That work should preserve verified coordinates as source truth and treat illustrated offsets as versioned presentation data.
+
+No follow-up implementation task is selected. Promote one future queue item to `next` only when Ray chooses the next milestone.
 
 ## Required Verification
 

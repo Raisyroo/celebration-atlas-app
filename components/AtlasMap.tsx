@@ -20,6 +20,10 @@ import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
 import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
 import { resolveExactEventIntent } from '../data/exactEventIntent';
 import {
+  getEventRailStatus,
+  selectEventRailEvents,
+} from '../data/eventRail';
+import {
   formatResultLabelLocation,
   resolveResultLabelPlacements,
 } from '../data/searchResultTextLayout';
@@ -366,7 +370,7 @@ const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
 const MARKER_EDGE_INSET_PERCENT = 6;
 const PHONE_LANDSCAPE_QUERY =
-  '(orientation: landscape) and (max-height: 520px) and (max-width: 932px)';
+  '(orientation: landscape) and (max-height: 520px) and (max-width: 1023px)';
 const HOME_DISCOVERY_SCROLL_CLASS = 'home-discovery-scroll';
 const HOME_PHONE_LANDSCAPE_SCROLL_CLASS = 'home-phone-landscape-scroll';
 const MOBILE_LANDING_MAP_LOWERING = '3dvh';
@@ -391,8 +395,6 @@ const FALLBACK_THUMBNAIL_BY_ICON: Record<
   heritage: '◈',
 };
 
-
-type EventStatusBadge = 'LIVE' | 'UPCOMING';
 
 function EventNavigationControl({
   event,
@@ -460,22 +462,6 @@ function parseReliableEventDate(dateText: string | undefined): Date | null {
   const [, year, month, day] = match;
   return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
 }
-
-function getEventStatusBadge(event: AtlasEvent, now = new Date()): EventStatusBadge | null {
-  const start = parseReliableEventDate(event.dateRange?.startDate);
-  const end = parseReliableEventDate(event.dateRange?.endDate ?? event.dateRange?.startDate);
-
-  if (!start || !end) return null;
-
-  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-
-  if (today >= start && today <= end) return 'LIVE';
-  if (today < start) return 'UPCOMING';
-
-  return null;
-}
-
-
 
 function formatEventDateRange(event: AtlasEvent): string | null {
   const start = parseReliableEventDate(event.dateRange?.startDate);
@@ -1772,12 +1758,14 @@ export default function AtlasMap({
       displayMarkerLayouts,
     ],
   );
-  const ambientMobileEvents = events;
-  const isMobileAmbientRailLayoutReady = Boolean(
+  const liveUpcomingRailEvents = useMemo(
+    () => selectEventRailEvents(events),
+    [events],
+  );
+  const isMobileAmbientLayoutReady = Boolean(
     mapViewportSize &&
       mapViewportSize.width > 0 &&
-      mapViewportSize.height > 0 &&
-      ambientMobileEvents.length > 0,
+      mapViewportSize.height > 0,
   );
   const mobileSearchTagPlacements = useMemo(() => {
     if (isDesktop || mapPresentationMode === 'idle') return new Map<string, MobileTagPlacement>();
@@ -2884,13 +2872,12 @@ export default function AtlasMap({
     !shouldGateMobileHomepageFirstPaint || isMobileHomepageReady;
   const shouldShowMobileChromeControls =
     shouldShowPolishedHomepageUi &&
-    !isDesktop && !isPhoneLandscape && !exactEventIntent && !isAtlasPanelOpen;
+    !isDesktop && !exactEventIntent && !isAtlasPanelOpen;
   // Keep exact-search state separate from selected-card state so the mobile
   // Ask bar and rail stay mounted through exact lookup, flyer opening, and close.
   const shouldShowMobileAmbientAtlas =
     shouldShowPolishedHomepageUi &&
     !isDesktop &&
-    !isPhoneLandscape &&
     (!isAtlasPanelOpen || exactEventIntent) &&
     (!hasSelectedEventCardOpen || exactEventIntent);
   const hasActiveSearchResult = Boolean(
@@ -2937,7 +2924,7 @@ export default function AtlasMap({
   const mobileLandingTitleState = isMobileLandingIdle ? 'idle' : 'exploring';
   const shouldShowMobileMichiganBreadcrumb = shouldShowMobileLandingTitle;
   const areMobileAmbientControlsVisible = Boolean(
-    shouldShowMobileAmbientAtlas && isMobileAmbientRailLayoutReady,
+    shouldShowMobileAmbientAtlas && isMobileAmbientLayoutReady,
   );
   const homeControlsPhase = areMobileAmbientControlsVisible
     ? isHomeControlsReturning
@@ -2999,10 +2986,12 @@ export default function AtlasMap({
   const shouldAllowPhoneLandscapeNativeScroll =
     isPhoneLandscape && isMapAtMinimumZoom;
   const mobileAmbientMapScale = 1;
-  const mobileAmbientMapLift = shouldShowMobileAmbientAtlas ? -22 : 0;
-  const mobileLandingMapLowering = shouldShowMobileAmbientAtlas
-    ? MOBILE_LANDING_MAP_LOWERING
-    : '0px';
+  const mobileAmbientMapLift =
+    shouldShowMobileAmbientAtlas && !isPhoneLandscape ? -22 : 0;
+  const mobileLandingMapLowering =
+    shouldShowMobileAmbientAtlas && !isPhoneLandscape
+      ? MOBILE_LANDING_MAP_LOWERING
+      : '0px';
   const mapLayerScale =
     (isPhoneLandscape ? 1 : BASE_SCALE) * mapTransform.scale * mobileAmbientMapScale;
   const mapLayerTranslateX =
@@ -3705,7 +3694,7 @@ export default function AtlasMap({
           <div>title computed visibility: {atlasDebugComputedStyles.titleVisibility}</div>
           <div>breadcrumb computed opacity: {atlasDebugComputedStyles.breadcrumbOpacity}</div>
           <div>ambient controls visible: {areMobileAmbientControlsVisible ? 'true' : 'false'}</div>
-          <div>rail layout ready: {isMobileAmbientRailLayoutReady ? 'true' : 'false'}</div>
+          <div>ambient layout ready: {isMobileAmbientLayoutReady ? 'true' : 'false'}</div>
           <div>exact-search return armed: {isExactSearchReturnArmed ? 'true' : 'false'}</div>
           <div>home-controls phase: {homeControlsPhase}</div>
         </div>
@@ -3746,20 +3735,20 @@ export default function AtlasMap({
 
       {!shouldShowCalibration && !isVerificationMode && isDesktop && !hasActiveAskQuery ? (
         <aside
+          className="atlas-desktop-intro"
           style={styles.desktopIntroPanel}
           aria-label="Atlas desktop introduction"
         >
-          <p style={styles.desktopKicker}>Atlas Preview</p>
+          <p style={styles.desktopKicker}>Michigan Atlas</p>
           <h1 style={styles.desktopTitle}>
-            A cinematic entry to Michigan&apos;s celebration atlas.
+            Find a celebration by place, date, or atmosphere.
           </h1>
           <p style={styles.desktopBody}>
-            Explore the map&apos;s pulse on mobile, and use this desktop landing
-            view as a calm overview before diving into each event story.
+            Ask the Atlas below, or select a star to open its event guide.
           </p>
           <p style={styles.desktopHint}>
-            Select a glowing marker, or open a constellation to choose nearby
-            events.
+            The illustrated map is approximate. Event Hubs preserve verified
+            locations, dates, and official sources.
           </p>
         </aside>
       ) : null}
@@ -4245,7 +4234,7 @@ export default function AtlasMap({
                 </svg>
               </button>
             </form>
-            {!isDesktop ? (
+            {!isDesktop && liveUpcomingRailEvents.length > 0 ? (
               <section
                 className={`mobile-live-sheet${areMobileAmbientControlsVisible ? ' mobile-live-sheet--ready' : ''}${isHomeControlsReturning ? ' mobile-live-sheet--returning' : ''}`}
                 style={{
@@ -4254,13 +4243,13 @@ export default function AtlasMap({
                     ? styles.mobileLiveStripReady
                     : styles.mobileLiveStripHidden),
                 }}
-                aria-label="Michigan event rail"
+                aria-label="Live and upcoming Michigan events"
                 aria-hidden={areMobileAmbientControlsVisible ? undefined : true}
                 data-layout-ready={areMobileAmbientControlsVisible ? 'true' : 'false'}
               >
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
-                  {ambientMobileEvents.map((event) => {
-                    const statusBadge = getEventStatusBadge(event);
+                  {liveUpcomingRailEvents.map((event) => {
+                    const statusBadge = getEventRailStatus(event);
                     const eventDate = formatMobileEventDate(event);
 
                     const isActiveRailEvent = event.id === selectedId || event.id === exactEventIntent?.eventId;
@@ -5160,8 +5149,9 @@ const styles: Record<string, CSSProperties> = {
     touchAction: 'none',
   },
   mapFrameDesktop: {
-    inset: '8vh auto 13vh 6vw',
-    width: 'min(62vw, 980px)',
+    inset: '7dvh auto 7dvh 6vw',
+    width: '48.4dvh',
+    height: '86dvh',
     borderRadius: 30,
     border: '1px solid rgba(255, 227, 170, 0.24)',
     boxShadow:
@@ -5905,8 +5895,8 @@ const styles: Record<string, CSSProperties> = {
   searchDockDesktop: {
     left: '6vw',
     right: 'auto',
-    width: 'min(62vw, 980px)',
-    padding: '0 0 2.5vh',
+    width: '48.4dvh',
+    padding: '0 0 2.5dvh',
   },
   searchInputWrap: {
     position: 'relative',
@@ -7109,9 +7099,11 @@ const styles: Record<string, CSSProperties> = {
 
   desktopIntroPanel: {
     position: 'fixed',
-    right: '5.4vw',
-    top: '15vh',
-    width: 'min(31vw, 440px)',
+    left: 'calc(6vw + 48.4dvh + clamp(32px, 4vw, 72px))',
+    right: '6vw',
+    top: '15dvh',
+    width: 'auto',
+    maxWidth: 540,
     padding: '22px 24px',
     borderRadius: 22,
     border: '1px solid rgba(255, 226, 171, 0.26)',

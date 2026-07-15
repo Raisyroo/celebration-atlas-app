@@ -164,83 +164,45 @@ body.event-detail-scroll::-webkit-scrollbar {
   transform: translateZ(0);
 }
 
-/* Homepage phone-landscape fallback: only short, narrow landscape viewports. */
-@media (orientation: landscape) and (max-height: 520px) and (max-width: 932px) {
+/* Homepage phone-landscape fallback: only short, non-desktop landscape viewports. */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
   html.home-phone-landscape-scroll,
   body.home-phone-landscape-scroll {
-    height: auto;
-    min-height: 100dvh;
+    height: 100%;
+    min-height: 100svh;
     overflow-x: hidden !important;
-    overflow-y: auto !important;
-    overscroll-behavior-y: auto;
-    touch-action: auto;
-    -webkit-overflow-scrolling: touch;
-    -ms-overflow-style: auto;
-    scrollbar-width: auto;
+    overflow-y: hidden !important;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   body.home-phone-landscape-scroll::-webkit-scrollbar {
-    display: block;
-  }
-
-  .home-phone-landscape-scroll .atlas-hero {
-    min-height: calc((100vw * 5000 / 2814) + 88px + env(safe-area-inset-bottom)) !important;
-    padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
-    overflow: visible !important;
-    touch-action: auto !important;
-    overscroll-behavior-y: auto !important;
-  }
-
-  .home-phone-landscape-scroll .atlas-map-frame {
-    position: relative !important;
-    inset: auto !important;
-    width: 100vw !important;
-    height: calc(100vw * 5000 / 2814) !important;
-    min-height: 0 !important;
-    border-radius: 0 !important;
-    overflow: visible !important;
-    contain: layout paint !important;
-  }
-
-  .home-phone-landscape-scroll .atlas-map-frame--phone-landscape > div {
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-  }
-
-  .home-phone-landscape-scroll .atlas-map-frame--phone-landscape > div > img {
-    object-fit: contain !important;
-    object-position: center center !important;
+    display: none;
   }
 
   .home-phone-landscape-scroll .atlas-search-dock {
     position: fixed !important;
-    left: max(12px, env(safe-area-inset-left)) !important;
+    left: calc(
+      max(10px, env(safe-area-inset-left)) +
+      var(--atlas-phone-landscape-map-width) +
+      16px
+    ) !important;
     right: max(12px, env(safe-area-inset-right)) !important;
-    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
     width: auto !important;
     padding: 0 !important;
     transform: none !important;
     z-index: 40 !important;
   }
 
-  .home-phone-landscape-scroll .atlas-search-dock button {
-    margin-bottom: 6px !important;
-    padding-block: 4px !important;
-    font-size: 10px !important;
-  }
-
-  .home-phone-landscape-scroll .atlas-search-dock > div {
-    min-height: 42px !important;
-    padding-inline: 12px !important;
-  }
-
   .home-phone-landscape-scroll .atlas-card,
   .home-phone-landscape-scroll .atlas-cluster-panel {
-    position: absolute !important;
+    position: fixed !important;
     left: max(12px, env(safe-area-inset-left)) !important;
     right: max(12px, env(safe-area-inset-right)) !important;
-    bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
     max-height: min(360px, calc(100svh - 112px - env(safe-area-inset-bottom))) !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
@@ -431,7 +393,7 @@ body.atlas-story-card-open {
   }
 }
 
-@media (orientation: landscape) and (max-height: 520px) and (max-width: 932px) {
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
   .home-phone-landscape-scroll .atlas-card,
   .home-phone-landscape-scroll .atlas-cluster-panel {
     position: fixed !important;
@@ -518,28 +480,32 @@ body.atlas-story-card-open {
 }
 
 /* Re-assert phone-landscape map access after the tablet/desktop framing rules above. */
-@media (orientation: landscape) and (max-height: 520px) and (max-width: 932px) {
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
   body.home-phone-landscape-scroll .atlas-hero {
+    --atlas-phone-landscape-map-width: calc(56.28svh - 9px);
+
     display: block !important;
     align-items: initial !important;
     justify-content: initial !important;
-    min-height: calc((100vw * 5000 / 2814) + 88px + env(safe-area-inset-bottom)) !important;
-    padding: 0 0 calc(88px + env(safe-area-inset-bottom)) !important;
-    overflow: visible !important;
+    width: 100vw !important;
+    height: 100svh !important;
+    min-height: 100svh !important;
+    padding: 0 !important;
+    overflow: hidden !important;
   }
 
   body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape {
-    position: relative !important;
-    inset: auto !important;
-    width: 100vw !important;
+    position: absolute !important;
+    inset: 8px auto auto max(10px, env(safe-area-inset-left)) !important;
+    width: var(--atlas-phone-landscape-map-width) !important;
     min-width: 0 !important;
-    height: calc(100vw * 5000 / 2814) !important;
+    height: calc(100svh - 16px) !important;
     min-height: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    overflow: visible !important;
-    contain: layout paint !important;
+    border: 1px solid rgba(255, 227, 170, 0.2) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.5) !important;
+    overflow: hidden !important;
+    contain: layout paint size !important;
   }
 
   body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape > div {
@@ -548,9 +514,49 @@ body.atlas-story-card-open {
     height: 100% !important;
   }
 
-  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape > div > img {
+  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape picture,
+  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape img {
     object-fit: contain !important;
     object-position: center center !important;
+  }
+}
+
+/* Desktop uses the artwork's portrait content box beside, rather than beneath, discovery UI. */
+@media (min-width: 1024px) and (orientation: landscape) {
+  body.home-discovery-scroll .atlas-hero {
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  body.home-discovery-scroll .atlas-map-frame {
+    position: absolute !important;
+    inset: 7dvh auto 7dvh 6vw !important;
+    min-width: 0 !important;
+  }
+
+  body.home-discovery-scroll .atlas-map-frame picture,
+  body.home-discovery-scroll .atlas-map-frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  body.home-discovery-scroll .atlas-map-frame img {
+    object-fit: contain !important;
+    object-position: center center !important;
+  }
+
+  body.home-discovery-scroll .atlas-search-dock {
+    left: 6vw !important;
+    right: auto !important;
+    bottom: 7dvh !important;
+    transform: none !important;
   }
 }
 
