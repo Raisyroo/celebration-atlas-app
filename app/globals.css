@@ -164,8 +164,8 @@ body.event-detail-scroll::-webkit-scrollbar {
   transform: translateZ(0);
 }
 
-/* Homepage phone-landscape fallback: only short, non-desktop landscape viewports. */
-@media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
+/* The shared viewport classifier owns every non-desktop landscape shell. */
+@media (orientation: landscape) {
   html.home-phone-landscape-scroll,
   body.home-phone-landscape-scroll {
     height: 100%;
@@ -182,7 +182,7 @@ body.event-detail-scroll::-webkit-scrollbar {
     display: none;
   }
 
-  .home-phone-landscape-scroll .atlas-search-dock {
+  .atlas-hero[data-viewport-mode="compact-landscape"] .atlas-search-dock {
     position: fixed !important;
     left: calc(
       max(10px, env(safe-area-inset-left)) +
@@ -197,8 +197,8 @@ body.event-detail-scroll::-webkit-scrollbar {
     z-index: 40 !important;
   }
 
-  .home-phone-landscape-scroll .atlas-card,
-  .home-phone-landscape-scroll .atlas-cluster-panel {
+  .atlas-hero[data-viewport-mode="compact-landscape"] .atlas-card,
+  .atlas-hero[data-viewport-mode="compact-landscape"] .atlas-cluster-panel {
     position: fixed !important;
     left: max(12px, env(safe-area-inset-left)) !important;
     right: max(12px, env(safe-area-inset-right)) !important;
@@ -393,9 +393,9 @@ body.atlas-story-card-open {
   }
 }
 
-@media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
-  .home-phone-landscape-scroll .atlas-card,
-  .home-phone-landscape-scroll .atlas-cluster-panel {
+@media (orientation: landscape) {
+  .atlas-hero[data-viewport-mode="compact-landscape"] .atlas-card,
+  .atlas-hero[data-viewport-mode="compact-landscape"] .atlas-cluster-panel {
     position: fixed !important;
     left: max(12px, env(safe-area-inset-left)) !important;
     right: max(12px, env(safe-area-inset-right)) !important;
@@ -408,13 +408,13 @@ body.atlas-story-card-open {
   }
 
   @supports (height: 100dvh) {
-    .home-phone-landscape-scroll .atlas-card,
-    .home-phone-landscape-scroll .atlas-cluster-panel {
+    .atlas-hero[data-viewport-mode="compact-landscape"] .atlas-card,
+    .atlas-hero[data-viewport-mode="compact-landscape"] .atlas-cluster-panel {
       max-height: min(78dvh, calc(100dvh - 22px - env(safe-area-inset-top))) !important;
     }
   }
 
-  .home-phone-landscape-scroll .atlas-hero--card-open .atlas-search-dock {
+  .atlas-hero[data-viewport-mode="compact-landscape"].atlas-hero--card-open .atlas-search-dock {
     opacity: 0.38;
     pointer-events: none;
   }
@@ -479,9 +479,9 @@ body.atlas-story-card-open {
   }
 }
 
-/* Re-assert phone-landscape map access after the tablet/desktop framing rules above. */
-@media (orientation: landscape) and (max-height: 520px) and (max-width: 1023px) {
-  body.home-phone-landscape-scroll .atlas-hero {
+/* Re-assert the classifier's compact shell after the shared landscape framing above. */
+@media (orientation: landscape) {
+  .atlas-hero[data-viewport-mode="compact-landscape"] {
     --atlas-phone-landscape-map-width: calc(56.28svh - 9px);
 
     display: block !important;
@@ -494,7 +494,7 @@ body.atlas-story-card-open {
     overflow: hidden !important;
   }
 
-  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape {
+  .atlas-hero[data-viewport-mode="compact-landscape"] > .atlas-map-frame {
     position: absolute !important;
     inset: 8px auto auto max(10px, env(safe-area-inset-left)) !important;
     width: var(--atlas-phone-landscape-map-width) !important;
@@ -508,56 +508,108 @@ body.atlas-story-card-open {
     contain: layout paint size !important;
   }
 
-  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape > div {
+  .atlas-hero[data-viewport-mode="compact-landscape"] > .atlas-map-frame > div {
     inset: 0 !important;
     width: 100% !important;
     height: 100% !important;
   }
 
-  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape picture,
-  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape img {
+  .atlas-hero[data-viewport-mode="compact-landscape"] > .atlas-map-frame picture,
+  .atlas-hero[data-viewport-mode="compact-landscape"] > .atlas-map-frame img {
     display: block !important;
     width: 100% !important;
     height: 100% !important;
   }
 
-  body.home-phone-landscape-scroll .atlas-map-frame.atlas-map-frame--phone-landscape img {
+  .atlas-hero[data-viewport-mode="compact-landscape"] > .atlas-map-frame img {
     object-fit: contain !important;
     object-position: center center !important;
   }
 }
 
 /* Desktop uses the artwork's portrait content box beside, rather than beneath, discovery UI. */
-@media (min-width: 1024px) and (orientation: landscape) {
-  body.home-discovery-scroll .atlas-hero {
+@media (min-width: 1024px) and (min-height: 600px) and (orientation: landscape) {
+  body.home-discovery-scroll .atlas-hero[data-viewport-mode="desktop"] {
     display: block !important;
     padding: 0 !important;
   }
 
-  body.home-discovery-scroll .atlas-map-frame {
+  body.home-discovery-scroll .atlas-hero[data-viewport-mode="desktop"] > .atlas-map-frame {
     position: absolute !important;
     inset: 7dvh auto 7dvh 6vw !important;
     min-width: 0 !important;
   }
 
-  body.home-discovery-scroll .atlas-map-frame picture,
-  body.home-discovery-scroll .atlas-map-frame img {
+  body.home-discovery-scroll .atlas-hero[data-viewport-mode="desktop"] > .atlas-map-frame picture,
+  body.home-discovery-scroll .atlas-hero[data-viewport-mode="desktop"] > .atlas-map-frame img {
     display: block;
     width: 100%;
     height: 100%;
   }
 
-  body.home-discovery-scroll .atlas-map-frame img {
+  body.home-discovery-scroll .atlas-hero[data-viewport-mode="desktop"] > .atlas-map-frame img {
     object-fit: contain !important;
     object-position: center center !important;
   }
 
-  body.home-discovery-scroll .atlas-search-dock {
+  body.home-discovery-scroll .atlas-hero[data-viewport-mode="desktop"] .atlas-search-dock {
     left: 6vw !important;
     right: auto !important;
     bottom: 7dvh !important;
     transform: none !important;
   }
+}
+
+.atlas-hero[data-viewport-mode="portrait"] .atlas-discovery-panel {
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(246px + env(safe-area-inset-bottom));
+  width: auto !important;
+  max-height: min(38dvh, 360px) !important;
+}
+
+.atlas-hero[data-viewport-mode="portrait"] .mobile-side-controls {
+  bottom: calc(166px + env(safe-area-inset-bottom)) !important;
+}
+
+@media (orientation: landscape) {
+  .atlas-hero[data-viewport-mode="compact-landscape"] .mobile-chrome-controls {
+    right: auto !important;
+    width: var(--atlas-phone-landscape-map-width);
+  }
+
+  .atlas-hero[data-viewport-mode="compact-landscape"] .atlas-discovery-panel {
+    top: max(8px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    bottom: calc(176px + env(safe-area-inset-bottom));
+    left: calc(
+      max(10px, env(safe-area-inset-left)) +
+      var(--atlas-phone-landscape-map-width) +
+      12px
+    );
+    width: auto !important;
+    max-height: none !important;
+  }
+}
+
+@media (min-width: 1024px) and (min-height: 600px) and (orientation: landscape) {
+  .atlas-hero[data-viewport-mode="desktop"] .atlas-discovery-panel {
+    top: 7dvh;
+    right: 6vw;
+    bottom: 7dvh;
+    width: clamp(330px, 30vw, 430px) !important;
+    max-height: none !important;
+  }
+}
+
+.atlas-discovery-panel button:focus-visible,
+.atlas-discovery-panel select:focus-visible,
+#atlas-mobile-filters button:focus-visible,
+#atlas-mobile-filters select:focus-visible,
+.mobile-chrome-button:focus-visible,
+.mobile-tool-button:focus-visible {
+  outline: 2px solid rgba(255, 238, 196, 0.96);
+  outline-offset: 3px;
 }
 
 /* Portrait-canvas lock for cinematic event pages on phones in landscape. */

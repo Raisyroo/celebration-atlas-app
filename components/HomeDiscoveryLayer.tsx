@@ -15,14 +15,14 @@ export type HomeDiscoveryResultRow = {
 };
 
 type HomeDiscoveryLayerProps = {
-  query?: string;
-  resultCount?: number;
+  className?: string;
   statusText?: string;
   shortcuts?: string[];
   shortcutGroups?: DiscoveryShortcutGroup[];
   showShortcutGroups?: boolean;
   results?: HomeDiscoveryResultRow[];
   onShortcutSelect?: (value: string) => void;
+  onEventSelect?: (eventId: string) => void;
 };
 
 const styles = {
@@ -32,6 +32,7 @@ const styles = {
     alignItems: 'center',
     gap: 6,
     margin: '0 auto 8px',
+    minWidth: 0,
     width: '100%',
   },
   status: {
@@ -53,6 +54,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: 4,
+    minWidth: 0,
     width: 'min(100%, 420px)',
     margin: '1px auto 2px',
     padding: '2px 0',
@@ -76,17 +78,23 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: 3,
+    minWidth: 0,
     margin: 0,
     padding: 0,
     listStyle: 'none',
   },
   resultRow: {
+    margin: 0,
+  },
+  resultButton: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
-    minHeight: 28,
-    padding: '5px 9px',
+    minWidth: 0,
+    width: '100%',
+    minHeight: 48,
+    padding: '8px 10px',
     borderRadius: 12,
     border: '1px solid rgba(255, 226, 170, 0.18)',
     background:
@@ -95,10 +103,9 @@ const styles = {
       'inset 0 0 0 1px rgba(255, 245, 218, 0.03), 0 2px 9px rgba(0, 0, 0, 0.12)',
     backdropFilter: 'blur(2px)',
     WebkitBackdropFilter: 'blur(2px)',
-    pointerEvents: 'none',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-    WebkitTouchCallout: 'none',
+    cursor: 'pointer',
+    textAlign: 'left',
+    touchAction: 'manipulation',
   },
   resultIdentity: {
     display: 'flex',
@@ -200,14 +207,14 @@ const styles = {
 } satisfies Record<string, CSSProperties>;
 
 export function HomeDiscoveryLayer({
-  query,
+  className,
   shortcuts,
   shortcutGroups,
   showShortcutGroups = true,
   statusText,
-  resultCount,
   results,
   onShortcutSelect,
+  onEventSelect,
 }: HomeDiscoveryLayerProps) {
   const normalizedShortcutGroups = showShortcutGroups
     ? shortcutGroups?.length
@@ -219,7 +226,7 @@ export function HomeDiscoveryLayer({
   const hasShortcuts = Boolean(
     normalizedShortcutGroups.length && onShortcutSelect,
   );
-  const hasResults = Boolean(query?.trim() && resultCount && results?.length);
+  const hasResults = Boolean(results?.length);
 
   if (!statusText && !hasShortcuts && !hasResults) return null;
 
@@ -237,14 +244,14 @@ export function HomeDiscoveryLayer({
 
   return (
     // Future scalable discovery layer for filters, summaries, chips, and event lists.
-    <section style={styles.shell}>
+    <section className={className} style={styles.shell}>
       {statusText ? (
-        <p style={styles.status} aria-live="polite">
+        <p style={styles.status} role="status" aria-live="polite">
           {statusText}
         </p>
       ) : null}
       {hasResults ? (
-        <div style={styles.results} aria-label="Matching Discoveries">
+        <div style={styles.results} aria-label="Matching Discoveries" data-testid="discovery-results">
           <p style={styles.resultLabel}>Matching Discoveries</p>
           <ol style={styles.resultList}>
             {results?.map((result) => {
@@ -252,11 +259,19 @@ export function HomeDiscoveryLayer({
 
               return (
                 <li key={result.id} style={styles.resultRow}>
-                  <span style={styles.resultIdentity}>
-                    <span style={styles.resultName}>{result.name}</span>
-                    <span style={styles.resultLocation}>{result.location}</span>
-                  </span>
-                  {meta ? <span style={styles.resultMeta}>{meta}</span> : null}
+                  <button
+                    type="button"
+                    style={styles.resultButton}
+                    onClick={() => onEventSelect?.(result.id)}
+                    aria-label={`Open ${result.name} in ${result.location}`}
+                    data-search-event-id={result.id}
+                  >
+                    <span style={styles.resultIdentity}>
+                      <span style={styles.resultName}>{result.name}</span>
+                      <span style={styles.resultLocation}>{result.location}</span>
+                    </span>
+                    {meta ? <span style={styles.resultMeta}>{meta}</span> : null}
+                  </button>
                 </li>
               );
             })}

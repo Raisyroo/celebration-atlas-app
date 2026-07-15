@@ -15,6 +15,16 @@ const homepageUrl = new URL('/', baseUrl).toString();
 const atlasControlUrl = new URL('/atlas-control', baseUrl).toString();
 const npmExecPath = process.env.npm_execpath;
 const visualSmokeTime = new Date('2026-07-15T16:00:00Z');
+const atlasRootSelector =
+  '[data-state-slug="michigan"][data-presentation-profile="michigan-illustrated-map-v1"]';
+const atlasViewportFixtures = Object.freeze([
+  { label: 'phone portrait', width: 390, height: 844, mode: 'portrait', artworkVariant: 'mobile' },
+  { label: 'phone landscape', width: 844, height: 390, mode: 'compact-landscape', artworkVariant: 'desktop' },
+  { label: 'short desktop landscape', width: 1024, height: 390, mode: 'compact-landscape', artworkVariant: 'desktop' },
+  { label: 'tablet portrait', width: 768, height: 1024, mode: 'portrait', artworkVariant: 'mobile' },
+  { label: 'desktop boundary', width: 1024, height: 768, mode: 'desktop', artworkVariant: 'desktop' },
+  { label: 'wide desktop', width: 1440, height: 900, mode: 'desktop', artworkVariant: 'desktop' },
+]);
 
 let server;
 let browser;
@@ -145,6 +155,196 @@ async function waitForHomepageRailReady(page, timeoutMs = 45_000) {
   }
 }
 
+async function waitForViewportContract(page, fixture, timeoutMs = 45_000) {
+  const selector = `${atlasRootSelector}[data-viewport-mode="${fixture.mode}"][data-artwork-variant="${fixture.artworkVariant}"]`;
+  const atlasRoot = page.locator(selector);
+  await atlasRoot.waitFor({ state: 'visible', timeout: timeoutMs });
+  return atlasRoot;
+}
+
+async function assertEssentialHomepageControls(page, fixture) {
+  await page.getByLabel('Ask Celebration Atlas').waitFor({ state: 'visible', timeout: 45_000 });
+  await page.getByRole('button', { name: 'Submit Atlas question' }).waitFor({ state: 'visible', timeout: 45_000 });
+
+  if (fixture.mode === 'desktop') {
+    for (const field of ['date', 'category', 'region', 'city']) {
+      await page.locator(`#desktop-atlas-filter-${field}`).waitFor({ state: 'visible', timeout: 45_000 });
+    }
+    return;
+  }
+
+  await page
+    .getByRole('button', { name: /^Open Michigan atlas menu$/ })
+    .waitFor({ state: 'visible', timeout: 45_000 });
+  await page
+    .getByRole('button', { name: /^Open atlas filters/ })
+    .waitFor({ state: 'visible', timeout: 45_000 });
+}
+
+async function assertNoHorizontalOverflow(page, label) {
+  try {
+    await page.waitForFunction(
+      () => {
+        const documentWidth = Math.max(
+          document.documentElement.scrollWidth,
+          document.body?.scrollWidth ?? 0,
+        );
+        return documentWidth <= document.documentElement.clientWidth + 1;
+      },
+      undefined,
+      { timeout: 10_000 },
+    );
+  } catch (error) {
+    const dimensions = await page.evaluate(() => ({
+      bodyScrollWidth: document.body?.scrollWidth ?? 0,
+      clientWidth: document.documentElement.clientWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    }));
+    throw new Error(
+      `${label} has horizontal page overflow: ${JSON.stringify(dimensions)}. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+}
+
+async function assertLiveUpcomingRail(page, label) {
+  await waitForHomepageRailReady(page);
+  const railSnapshot = await page
+    .locator('[data-testid="event-rail"] .mobile-live-card')
+    .evaluateAll((cards) =>
+      cards.map((card) => {
+        const status = Array.from(card.querySelectorAll('span'))
+          .map((element) => element.textContent?.trim())
+          .find((text) => text === 'LIVE' || text === 'UPCOMING');
+        return {
+          label: card.getAttribute('aria-label'),
+          status: status ?? null,
+        };
+      }),
+    );
+
+  if (railSnapshot.length === 0) {
+    throw new Error(`${label} should expose at least one live or upcoming event card.`);
+  }
+
+  const invalidCards = railSnapshot.filter(
+    (card) => card.status !== 'LIVE' && card.status !== 'UPCOMING',
+  );
+  if (invalidCards.length > 0) {
+    throw new Error(
+      `${label} rail contains cards without an exact LIVE or UPCOMING badge: ${JSON.stringify(invalidCards)}.`,
+    );
+  }
+
+  return railSnapshot;
+}
+
+async function assertHomepageViewport(page, fixture, { checkRail = true } = {}) {
+  await waitForViewportContract(page, fixture);
+  await page.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
+  await page.locator('img.atlas-map-image[alt="Michigan Atlas"]').waitFor({ state: 'visible', timeout: 45_000 });
+  await waitForLoadedImage(page, 'img.atlas-map-image[alt="Michigan Atlas"]');
+  await assertEssentialHomepageControls(page, fixture);
+  await assertNoHorizontalOverflow(page, `${fixture.width}x${fixture.height} ${fixture.label}`);
+
+  if (checkRail && fixture.mode !== 'desktop') {
+    await assertLiveUpcomingRail(page, `${fixture.width}x${fixture.height} ${fixture.label}`);
+  }
+
+  console.log(
+    `Homepage viewport contract passed at ${fixture.width}x${fixture.height}: ${fixture.mode}/${fixture.artworkVariant}.`,
+  );
+}
+
+async function openMobileFilters(page) {
+  const trigger = page.getByRole('button', { name: /^Open atlas filters/ });
+  await trigger.click();
+  const dialog = page.getByRole('dialog', { name: 'Filters' });
+  await dialog.waitFor({ state: 'visible', timeout: 45_000 });
+
+  for (const field of ['date', 'category', 'region', 'city']) {
+    await dialog.locator(`#mobile-atlas-filter-${field}`).waitFor({ state: 'visible', timeout: 45_000 });
+  }
+
+  return { dialog, trigger };
+}
+
+async function assertFilterOnlyDiscovery(page) {
+  const initialRail = await assertLiveUpcomingRail(page, 'portrait filter flow');
+  const { dialog, trigger } = await openMobileFilters(page);
+  const categorySelect = dialog.locator('#mobile-atlas-filter-category');
+  const categoryValue = await categorySelect.evaluate((select) => {
+    if (!(select instanceof HTMLSelectElement)) return null;
+    return Array.from(select.options).find((option) => option.value && !option.disabled)?.value ?? null;
+  });
+
+  if (!categoryValue) {
+    throw new Error('Expected at least one enabled reviewed category filter option.');
+  }
+
+  await categorySelect.selectOption(categoryValue);
+  const resultList = page.locator('[data-testid="discovery-results"]');
+  await resultList.waitFor({ state: 'visible', timeout: 45_000 });
+  const filterOnlyResultCount = await resultList.locator('[data-search-event-id]').count();
+  if (filterOnlyResultCount < 1) {
+    throw new Error(`Expected filter-only discovery results, received ${filterOnlyResultCount}.`);
+  }
+
+  const rootSearchMode = await page.locator(atlasRootSelector).getAttribute('data-search-mode');
+  const currentPath = new URL(page.url()).pathname;
+  const searchInputValue = await page.getByLabel('Ask Celebration Atlas').inputValue();
+  if (rootSearchMode !== 'results' || currentPath !== '/' || searchInputValue !== '') {
+    throw new Error(
+      `Filter-only discovery must remain a query-free homepage result interaction; received mode=${rootSearchMode}, path=${currentPath}, query=${JSON.stringify(searchInputValue)}.`,
+    );
+  }
+
+  const filteredRail = await assertLiveUpcomingRail(page, 'filtered portrait flow');
+  if (JSON.stringify(filteredRail) !== JSON.stringify(initialRail)) {
+    throw new Error('Structured discovery filters must not repurpose or mutate the live/upcoming event rail.');
+  }
+
+  await dialog.getByRole('button', { name: 'Clear filters' }).click();
+  await page.waitForFunction(() => !document.querySelector('[data-testid="discovery-results"]'), undefined, {
+    timeout: 45_000,
+  });
+  await page.keyboard.press('Escape');
+  await dialog.waitFor({ state: 'detached', timeout: 45_000 });
+  await page.waitForFunction(
+    () => document.activeElement?.getAttribute('aria-label')?.startsWith('Open atlas filters') === true,
+    undefined,
+    { timeout: 45_000 },
+  );
+  if (!(await trigger.isVisible())) {
+    throw new Error('Filter trigger did not remain visible after the filter-only flow closed.');
+  }
+
+  console.log(`Filter-only discovery returned ${filterOnlyResultCount} reviewed result(s) without changing the event rail.`);
+}
+
+async function assertSamePageRotation(page) {
+  const portrait = atlasViewportFixtures[0];
+  const compactLandscape = atlasViewportFixtures[1];
+
+  await page.setViewportSize({ width: compactLandscape.width, height: compactLandscape.height });
+  await waitForViewportContract(page, compactLandscape);
+  await assertEssentialHomepageControls(page, compactLandscape);
+  await assertNoHorizontalOverflow(page, 'same-page portrait-to-landscape rotation');
+
+  const { dialog } = await openMobileFilters(page);
+  await page.keyboard.press('Escape');
+  await dialog.waitFor({ state: 'detached', timeout: 45_000 });
+
+  await page.setViewportSize({ width: portrait.width, height: portrait.height });
+  await waitForViewportContract(page, portrait);
+  await assertEssentialHomepageControls(page, portrait);
+  await assertNoHorizontalOverflow(page, 'same-page landscape-to-portrait rotation');
+
+  console.log('Same-page portrait/compact-landscape rotation preserved menu, filters, and search controls.');
+}
+
 function createServerExitPromise(childProcess) {
   return new Promise((resolve) => {
     childProcess.once('close', (code, signal) => resolve({ code, signal }));
@@ -222,7 +422,7 @@ async function main() {
 
   browser = await chromium.launch();
   const desktopContext = await browser.newContext({
-    viewport: { width: 1440, height: 1000 },
+    viewport: { width: 1440, height: 900 },
     colorScheme: 'dark',
     reducedMotion: 'reduce',
   });
@@ -231,14 +431,17 @@ async function main() {
 
   captureBrowserErrors(page, 'desktop');
 
-  await page.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+  for (const [index, fixture] of atlasViewportFixtures.entries()) {
+    await page.setViewportSize({ width: fixture.width, height: fixture.height });
+    await page.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+    await assertHomepageViewport(page, fixture);
 
-  await page.locator('[data-state-slug="michigan"][data-presentation-profile="michigan-illustrated-map-v1"]').waitFor({ state: 'visible', timeout: 45_000 });
-  await page.locator('.atlas-desktop-intro').waitFor({ state: 'visible', timeout: 45_000 });
-  await page.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
-  await page.locator('img.atlas-map-image[alt="Michigan Atlas"]').waitFor({ state: 'visible', timeout: 45_000 });
-  await waitForLoadedImage(page, 'img.atlas-map-image[alt="Michigan Atlas"]');
-  await page.getByLabel('Ask Celebration Atlas').waitFor({ state: 'visible', timeout: 45_000 });
+    if (index === 0) {
+      await assertFilterOnlyDiscovery(page);
+      await assertSamePageRotation(page);
+    }
+  }
+
   await submitAtlasSearch(page, 'music festivals');
   const desktopResultField = page.locator('.atlas-result-text-field[data-search-mode="results"]');
   await desktopResultField.waitFor({ state: 'visible', timeout: 45_000 });
@@ -271,6 +474,7 @@ async function main() {
 
   const mobileContext = await browser.newContext({
     ...devices['iPhone 14'],
+    viewport: { width: 390, height: 844 },
     colorScheme: 'dark',
     reducedMotion: 'reduce',
   });
@@ -278,15 +482,25 @@ async function main() {
   await mobilePage.clock.setFixedTime(visualSmokeTime);
   captureBrowserErrors(mobilePage, 'mobile');
   await mobilePage.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
-  await mobilePage.locator('[data-state-slug="michigan"][data-presentation-profile="michigan-illustrated-map-v1"]').waitFor({ state: 'visible', timeout: 45_000 });
+  await mobilePage.locator(atlasRootSelector).waitFor({ state: 'visible', timeout: 45_000 });
   await mobilePage.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
   await submitAtlasSearch(mobilePage, 'music festivals');
-  await mobilePage.locator('.atlas-result-text-field').waitFor({ state: 'visible', timeout: 45_000 });
+  await mobilePage
+    .locator(`${atlasRootSelector}[data-search-mode="results"]`)
+    .waitFor({ state: 'visible', timeout: 45_000 });
+  const mobileDiscoveryResults = mobilePage.locator(
+    '.atlas-discovery-panel [data-testid="discovery-results"]',
+  );
+  await mobileDiscoveryResults.waitFor({ state: 'visible', timeout: 45_000 });
+  const mobileResultCount = await mobileDiscoveryResults.locator('[data-search-event-id]').count();
+  if (mobileResultCount < 1) {
+    throw new Error(`Expected accessible mobile discovery results, received ${mobileResultCount}.`);
+  }
   await mobilePage.screenshot({ path: resultCloudMobileScreenshotPath, fullPage: true, caret: 'initial' });
   console.log(`Mobile multi-result search screenshot written to ${path.relative(process.cwd(), resultCloudMobileScreenshotPath)}`);
 
   await mobilePage.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
-  await mobilePage.getByLabel('Celebration Atlas Michigan').waitFor({ state: 'visible', timeout: 45_000 });
+  await waitForViewportContract(mobilePage, atlasViewportFixtures[0]);
   await mobilePage.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
   await mobilePage.locator('img.atlas-map-image[alt="Michigan Atlas"]').waitFor({ state: 'visible', timeout: 45_000 });
   await waitForLoadedImage(mobilePage, 'img.atlas-map-image[alt="Michigan Atlas"]');

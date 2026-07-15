@@ -23,10 +23,14 @@ import {
   selectEventRailEvents,
 } from '../data/eventRail';
 import {
+  resolveHomeAtlasDiscovery,
+  type HomeAtlasDiscoveryDateFilter,
+  type HomeAtlasDiscoveryFilters,
+} from '../data/homeAtlasDiscovery';
+import {
   formatResultLabelLocation,
   resolveResultLabelPlacements,
 } from '../data/searchResultTextLayout';
-import type { ResultLabelClusterPlacement } from '../data/searchResultTextLayout';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
 import type { MapPresentationPlan } from '../data/mapPresentationPlan';
 import type { StateAtlasConfig } from '../data/stateAtlasConfig';
@@ -34,13 +38,18 @@ import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
 import { resolveExactMichiganMobileUpperPeninsulaAnchorPosition } from '../data/michiganMobileUpperPeninsulaAnchors';
 import type { MichiganMapAnchor } from '../data/mapCalibration';
 import {
-  MICHIGAN_ARTWORK_MOBILE_MEDIA_QUERY,
   projectLatLngToCalibratedMichiganArtworkPosition,
 } from '../data/michiganArtworkCalibration';
 import type { MichiganArtworkVariant } from '../data/michiganArtworkCalibration';
+import {
+  getAtlasViewportCapabilities,
+  resolveAtlasViewportMode,
+} from '../data/atlasViewportMode';
+import type { AtlasViewportMode } from '../data/atlasViewportMode';
 import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
+import { HomeAtlasFilterControls } from './HomeAtlasFilterControls';
 
 const resultLabelSerif = localFont({
   src: [
@@ -64,35 +73,7 @@ const RESULT_LABEL_SERIF_FONT_STACK = 'var(--font-atlas-result-label), Georgia, 
 const SHOW_RESULT_LABEL_FONT_DIAGNOSTIC =
   process.env.NEXT_PUBLIC_ATLAS_RESULT_LABEL_FONT_DIAGNOSTIC === '1';
 
-const DISCOVERY_SHORTCUTS = [
-  'Fairs',
-  'Fireworks',
-  'Food',
-  'Music',
-  'Parades',
-  'Hidden Gems',
-];
-const REGIONAL_DISCOVERY_SHORTCUTS = [
-  'Detroit Metro',
-  'Thumb',
-  'West Michigan',
-  'Northern Michigan',
-  'Upper Peninsula',
-];
-const HOME_DISCOVERY_SHORTCUT_GROUPS = [
-  { label: 'Guide', shortcuts: DISCOVERY_SHORTCUTS },
-  { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
-];
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
-const MOBILE_MENU_ITEMS = [
-  'Saved Celebrations',
-  'Calendar',
-  'Submit a Celebration',
-  'Settings',
-  'Sign in / Create account',
-] as const;
-const MOBILE_FILTER_FIELDS = ['Date', 'Category', 'Location / nearby'] as const;
-
 // Current interaction policy:
 // - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
 // - This intentionally avoids mobile gesture edge-cases to preserve tap reliability.
@@ -246,11 +227,27 @@ const RESET_SEARCH_COMMANDS = new Set([
 const isResetSearchCommand = (queryText: string) =>
   RESET_SEARCH_COMMANDS.has(queryText.trim().toLowerCase());
 
+const getDateKeyInTimeZone = (date: Date, timeZone: string) => {
+  if (Number.isNaN(date.valueOf())) return null;
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(date);
+    const values = Object.fromEntries(
+      parts.map((part) => [part.type, part.value]),
+    );
+    return `${values.year}-${values.month}-${values.day}`;
+  } catch {
+    return null;
+  }
+};
+
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
 const MARKER_EDGE_INSET_PERCENT = 6;
-const PHONE_LANDSCAPE_QUERY =
-  '(orientation: landscape) and (max-height: 520px) and (max-width: 1023px)';
 const HOME_DISCOVERY_SCROLL_CLASS = 'home-discovery-scroll';
 const HOME_PHONE_LANDSCAPE_SCROLL_CLASS = 'home-phone-landscape-scroll';
 const MOBILE_LANDING_MAP_LOWERING = '3dvh';
@@ -310,6 +307,19 @@ function EventNavigationControl({
         className={className}
         data-active={dataActive}
         style={{ textDecoration: 'none', ...style }}
+        onClick={(clickEvent) => {
+          if (
+            clickEvent.metaKey ||
+            clickEvent.ctrlKey ||
+            clickEvent.shiftKey ||
+            clickEvent.altKey ||
+            clickEvent.button !== 0
+          ) {
+            return;
+          }
+          clickEvent.preventDefault();
+          onLegacyClick();
+        }}
       >
         {children}
       </Link>
@@ -421,12 +431,10 @@ function SearchResultTextField({
   results,
   markerLayouts,
   isDesktop,
-  onEventSelect,
 }: {
   results: readonly AtlasEvent[];
   markerLayouts: readonly AtlasMarkerLayout[];
   isDesktop: boolean;
-  onEventSelect: (eventId: string) => void;
 }) {
   const projectedResults = useMemo(() => {
     const layoutByEventId = new Map(
@@ -445,12 +453,8 @@ function SearchResultTextField({
     () => resolveResultLabelPlacements(projectedResults, isDesktop ? 'desktop' : 'mobile'),
     [isDesktop, projectedResults],
   );
-  const [openClusterId, setOpenClusterId] = useState<string | null>(null);
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const [fontDiagnostic, setFontDiagnostic] = useState<{ family: string; weight: string } | null>(null);
-  const openCluster = placements.find(
-    (placement): placement is ResultLabelClusterPlacement => placement.kind === 'cluster' && placement.id === openClusterId,
-  );
 
   useEffect(() => {
     if (!SHOW_RESULT_LABEL_FONT_DIAGNOSTIC) return;
@@ -473,7 +477,7 @@ function SearchResultTextField({
 
   return (
     <div
-      aria-label="Search result text field"
+      aria-hidden="true"
       ref={fieldRef}
       className={`atlas-result-text-field ${resultLabelSerif.variable}`}
       data-search-mode="results"
@@ -483,13 +487,10 @@ function SearchResultTextField({
       {placements.map((placement) => {
         if (placement.kind === 'cluster') {
           return (
-            <button
+            <span
               key={placement.id}
-              type="button"
-              aria-label={`Open ${placement.label}`}
               className="atlas-result-text-cluster"
               data-search-event-ids={placement.events.map((event) => event.id).join(',')}
-              onClick={() => setOpenClusterId(placement.id)}
               style={{
                 ...styles.resultTextCluster,
                 left: `${placement.x}%`,
@@ -498,17 +499,15 @@ function SearchResultTextField({
               }}
             >
               {placement.label}
-            </button>
+            </span>
           );
         }
 
         const locationLabel = formatResultLabelLocation(placement.event.location);
 
         return (
-          <button
+          <span
             key={placement.event.id}
-            type="button"
-            aria-label={`Open ${placement.event.name}`}
             className={`atlas-result-text-label atlas-result-text-label--${placement.tier}`}
             data-result-label-tier={placement.tier}
             data-result-label-align={placement.align}
@@ -516,7 +515,6 @@ function SearchResultTextField({
             data-result-label-font="atlas-result-label-serif"
             data-result-label-diagnostic={fontDiagnostic === null ? 'sample' : undefined}
             data-search-event-id={placement.event.id}
-            onClick={() => onEventSelect(placement.event.id)}
             style={{
               ...styles.resultTextLabel,
               ...placement.style,
@@ -532,7 +530,7 @@ function SearchResultTextField({
             {locationLabel ? (
               <span style={styles.resultTextLabelLocation}>{locationLabel}</span>
             ) : null}
-          </button>
+          </span>
         );
       })}
       {fontDiagnostic ? (
@@ -543,34 +541,6 @@ function SearchResultTextField({
         >
           Floating label font: {fontDiagnostic.family} · weight {fontDiagnostic.weight}
         </output>
-      ) : null}
-      {openCluster ? (
-        <div style={styles.resultTextClusterBackdrop} role="presentation">
-          <section
-            aria-label={`${openCluster.label} near this map region`}
-            style={{
-              ...styles.resultTextClusterSheet,
-              left: `${openCluster.x}%`,
-              top: `${openCluster.y}%`,
-            }}
-          >
-            <p style={styles.resultTextClusterKicker}>Local event cluster</p>
-            <h2 style={styles.resultTextClusterTitle}>{openCluster.label}</h2>
-            <button type="button" aria-label="Close event cluster" onClick={() => setOpenClusterId(null)} style={styles.resultTextClusterClose}>×</button>
-            <div style={styles.resultTextClusterPanel}>
-              {openCluster.events.map((event) => {
-                const locationLabel = formatResultLabelLocation(event.location);
-
-                return (
-                  <button key={event.id} type="button" data-search-event-id={event.id} onClick={() => onEventSelect(event.id)} style={styles.resultTextClusterEvent}>
-                    <span style={styles.resultTextClusterEventName}>{event.name}</span>
-                    {locationLabel ? <span style={styles.resultTextClusterEventLocation}>{locationLabel}</span> : null}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        </div>
       ) : null}
     </div>
   );
@@ -985,14 +955,17 @@ const getMapPresentationMode = ({
   selectedId,
   exactEventIntent,
   hasSubmittedSearchMatches,
+  isSubmittedSearchActive,
 }: {
   selectedId: string | null;
   exactEventIntent: { eventId: string } | null;
   hasSubmittedSearchMatches: boolean;
+  isSubmittedSearchActive: boolean;
 }): MapPresentationMode => {
   if (selectedId) return 'selected';
   if (exactEventIntent && hasSubmittedSearchMatches) return 'single';
   if (hasSubmittedSearchMatches) return 'results';
+  if (isSubmittedSearchActive) return 'results';
   return 'idle';
 };
 
@@ -1439,14 +1412,19 @@ export default function AtlasMap({
   const titleArtworkSrc = stateConfig.presentation.titleArtworkSrc;
   const askSuggestions = stateConfig.presentation.copy.askSuggestions;
   const [query, setQuery] = useState('');
+  const [discoveryNow, setDiscoveryNow] = useState(() => new Date());
   const [displayedQuery, setDisplayedQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [viewportMode, setViewportMode] =
+    useState<AtlasViewportMode>('portrait');
   const [hasResolvedResponsiveState, setHasResolvedResponsiveState] = useState(false);
-  const [artworkVariant, setArtworkVariant] =
-    useState<MichiganArtworkVariant>('desktop');
+  const viewportCapabilities = getAtlasViewportCapabilities(viewportMode);
+  const isDesktop = viewportCapabilities.usesDesktopPanel;
+  const isPhoneLandscape = viewportMode === 'compact-landscape';
+  const artworkVariant: MichiganArtworkVariant =
+    viewportCapabilities.artworkVariant;
   const [isMapArtworkLoaded, setIsMapArtworkLoaded] = useState(false);
   const [isMapArtworkCelestialFallback, setIsMapArtworkCelestialFallback] =
     useState(false);
@@ -1454,7 +1432,6 @@ export default function AtlasMap({
     mobileArtworkSrc,
   );
   const mapArtworkImageRef = useRef<HTMLImageElement | null>(null);
-  const [isPhoneLandscape, setIsPhoneLandscape] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [parallaxOffset, setParallaxOffset] = useState({ x: 0, y: 0 });
   const [mapTransform, setMapTransform] = useState<MapTransform>({
@@ -1504,9 +1481,20 @@ export default function AtlasMap({
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const [mapViewportSize, setMapViewportSize] = useState<MapViewportSize | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
+  const cardCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const eventFocusReturnRef = useRef<HTMLElement | null>(null);
+  const eventFocusReturnEventIdRef = useRef<string | null>(null);
+  const shouldRestoreEventFocusRef = useRef(false);
   const mobileTitleArtworkRef = useRef<HTMLImageElement | null>(null);
   const mobileMichiganBreadcrumbRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const mobileMenuDialogRef = useRef<HTMLElement | null>(null);
+  const isMobileMenuOpenRef = useRef(false);
+  const filterTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const mobileFilterCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const mobileFilterDialogRef = useRef<HTMLElement | null>(null);
+  const isMobileFilterOpenRef = useRef(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queryFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exactEventOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -1522,6 +1510,8 @@ export default function AtlasMap({
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [discoveryFilters, setDiscoveryFilters] =
+    useState<HomeAtlasDiscoveryFilters>({});
   const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useMobileFavorite(
     stateConfig.identity.slug,
   );
@@ -1572,11 +1562,32 @@ export default function AtlasMap({
       }),
     [eventProfiles, events, searchRules, stateConfig, submittedQuery],
   );
+  const homeAtlasDiscovery = useMemo(
+    () =>
+      resolveHomeAtlasDiscovery({
+        events,
+        profiles: eventProfiles,
+        stateConfig,
+        searchRules,
+        searchResponse: homeAtlasSearch,
+        filters: discoveryFilters,
+        now: discoveryNow,
+      }),
+    [
+      discoveryFilters,
+      discoveryNow,
+      eventProfiles,
+      events,
+      homeAtlasSearch,
+      searchRules,
+      stateConfig,
+    ],
+  );
   const q = homeAtlasSearch.normalizedQuery;
-  const exactEventIntent = homeAtlasSearch.exactMatch;
+  const exactEventIntent = homeAtlasDiscovery.exactMatch;
   const searchHighlightedIds = useMemo(() => {
-    return new Set(homeAtlasSearch.results.map((result) => result.event.id));
-  }, [homeAtlasSearch.results]);
+    return new Set(homeAtlasDiscovery.events.map((event) => event.id));
+  }, [homeAtlasDiscovery.events]);
   const celebrationSearchHighlightedIdSet = useMemo(
     () => new Set(celebrationSearchHighlightedIds),
     [celebrationSearchHighlightedIds],
@@ -1587,28 +1598,29 @@ export default function AtlasMap({
   );
   const isCelebrationSearchHighlightActive =
     celebrationSearchHighlightedIdSet.size > 0;
-  const highlightedIds = q
+  const isAtlasDiscoveryActive = Boolean(
+    q || homeAtlasDiscovery.activeFilterCount > 0,
+  );
+  const highlightedIds = isAtlasDiscoveryActive
     ? searchHighlightedIds
     : isCelebrationSearchHighlightActive
       ? celebrationSearchHighlightedIdSet
       : constellationHighlightedIdSet;
-  const isSubmittedSearchActive = Boolean(q);
+  const isSubmittedSearchActive = isAtlasDiscoveryActive;
   const hasSubmittedSearchMatches =
     isSubmittedSearchActive && highlightedIds.size > 0;
   const hasSubmittedSearchNoResults =
     isSubmittedSearchActive && highlightedIds.size === 0;
-  const submittedSearchMode = !isSubmittedSearchActive
-    ? 'idle'
-    : exactEventIntent
-      ? 'exact'
-      : hasSubmittedSearchMatches
-        ? 'results'
-        : 'none';
+  const submittedSearchMode = homeAtlasDiscovery.mode === 'empty'
+    ? 'none'
+    : homeAtlasDiscovery.mode;
+  const hasCanonicalDiscoveryResults =
+    homeAtlasDiscovery.mode === 'results' || homeAtlasDiscovery.mode === 'empty';
   const rankedSubmittedSearchResults = useMemo(() => {
-    if (exactEventIntent || !q || homeAtlasSearch.results.length === 0) return [];
+    if (exactEventIntent || homeAtlasDiscovery.mode !== 'results') return [];
 
-    return homeAtlasSearch.results.map((result) => result.event);
-  }, [exactEventIntent, homeAtlasSearch.results, q]);
+    return [...homeAtlasDiscovery.events];
+  }, [exactEventIntent, homeAtlasDiscovery.events, homeAtlasDiscovery.mode]);
   const rankedSubmittedSearchResultIds = useMemo(
     () => rankedSubmittedSearchResults.map((event) => event.id),
     [rankedSubmittedSearchResults],
@@ -1633,6 +1645,7 @@ export default function AtlasMap({
     selectedId,
     exactEventIntent,
     hasSubmittedSearchMatches,
+    isSubmittedSearchActive,
   });
   const mapPresentationMode = activePresentationPlan?.mode ?? fallbackMapPresentationMode;
   const mapCalloutPlan = useMemo(() => {
@@ -1686,8 +1699,12 @@ export default function AtlasMap({
     ],
   );
   const liveUpcomingRailEvents = useMemo(
-    () => selectEventRailEvents(events, { timeZone: stateConfig.defaultTimeZone }),
-    [events, stateConfig.defaultTimeZone],
+    () =>
+      selectEventRailEvents(events, {
+        now: discoveryNow,
+        timeZone: stateConfig.defaultTimeZone,
+      }),
+    [discoveryNow, events, stateConfig.defaultTimeZone],
   );
   const isMobileAmbientLayoutReady = Boolean(
     mapViewportSize &&
@@ -1887,8 +1904,19 @@ export default function AtlasMap({
       router.push(`/events/${event.id}`);
       return;
     }
+    const activeElement = document.activeElement;
+    eventFocusReturnRef.current =
+      activeElement instanceof HTMLElement && activeElement !== document.body
+        ? activeElement
+        : searchInputRef.current;
+    eventFocusReturnEventIdRef.current = eventId;
+    shouldRestoreEventFocusRef.current = false;
     selectAtlasEvent(eventId);
   }, [events, router, selectAtlasEvent]);
+  const closeAtlasEvent = useCallback(() => {
+    shouldRestoreEventFocusRef.current = true;
+    selectAtlasEvent(null);
+  }, [selectAtlasEvent]);
   const handleFlyerFavoriteToggle = () => {
     setIsMobileFavoriteSaved((isSaved) => {
       const nextIsSaved = !isSaved;
@@ -2342,7 +2370,7 @@ export default function AtlasMap({
     const target = event.target as Node;
     if (cardRef.current?.contains(target)) return;
     if (mapFrameRef.current?.contains(target)) {
-      selectAtlasEvent(null);
+      closeAtlasEvent();
     }
   };
 
@@ -2399,6 +2427,40 @@ export default function AtlasMap({
       isCurrentSelection = false;
     };
   }, [selected]);
+
+  useEffect(() => {
+    if (!renderedEvent || !isCardVisible) return;
+    const focusFrame = requestAnimationFrame(() => {
+      cardCloseButtonRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(focusFrame);
+  }, [isCardVisible, renderedEvent]);
+
+  useEffect(() => {
+    if (renderedEvent || selectedId || !shouldRestoreEventFocusRef.current) return;
+    const focusFrame = requestAnimationFrame(() => {
+      const previousTarget = eventFocusReturnRef.current;
+      const returnEventId = eventFocusReturnEventIdRef.current;
+      const replacementTarget = returnEventId
+        ? Array.from(
+            document.querySelectorAll<HTMLElement>(
+              '.atlas-discovery-panel button[data-search-event-id]',
+            ),
+          ).find(
+            (element) =>
+              element.getAttribute('data-search-event-id') === returnEventId,
+          )
+        : null;
+      const focusTarget = previousTarget?.isConnected
+        ? previousTarget
+        : replacementTarget ?? searchInputRef.current;
+      focusTarget?.focus();
+      shouldRestoreEventFocusRef.current = false;
+      eventFocusReturnRef.current = null;
+      eventFocusReturnEventIdRef.current = null;
+    });
+    return () => cancelAnimationFrame(focusFrame);
+  }, [renderedEvent, selectedId]);
 
   useEffect(() => {
     const image = largeCardImageRef.current;
@@ -2500,6 +2562,7 @@ export default function AtlasMap({
       }
       selectAtlasEvent(null);
       setDiscoveryStatusText(null);
+      setDiscoveryFilters({});
       setDisplayedQuery('');
       setQuery('');
       setIsSubmittedQueryFading(false);
@@ -2530,12 +2593,7 @@ export default function AtlasMap({
         exactEventOpenTimerRef.current = null;
       }, EXACT_EVENT_CARD_OPEN_DELAY_MS);
     } else {
-      const resultCount = nextSearch.results.length;
-      setDiscoveryStatusText(
-        resultCount > 0
-          ? `Showing ${resultCount} ${resultCount === 1 ? 'discovery' : 'discoveries'} for “${trimmedQuery}”`
-          : `No discoveries found for “${trimmedQuery}”`,
-      );
+      setDiscoveryStatusText(null);
     }
     setQuery(trimmedQuery);
     setDisplayedQuery(trimmedQuery);
@@ -2628,6 +2686,105 @@ export default function AtlasMap({
     runDiscoverySearch(query);
   }, [query, runDiscoverySearch]);
 
+  const updateDiscoveryFilters = useCallback(
+    (updates: Partial<HomeAtlasDiscoveryFilters>) => {
+      onSearchActivate?.();
+      beginMobileExploration();
+      setDiscoveryFilters((currentFilters) => ({
+        ...currentFilters,
+        ...updates,
+      }));
+      setDiscoveryStatusText(null);
+    },
+    [
+      beginMobileExploration,
+      onSearchActivate,
+      setDiscoveryFilters,
+      setDiscoveryStatusText,
+    ],
+  );
+
+  const clearDiscoveryFilters = useCallback(() => {
+    setDiscoveryFilters({});
+    setDiscoveryStatusText(null);
+  }, [setDiscoveryFilters, setDiscoveryStatusText]);
+
+  const clearDiscoveryQuery = useCallback(() => {
+    if (exactEventOpenTimerRef.current) {
+      clearTimeout(exactEventOpenTimerRef.current);
+      exactEventOpenTimerRef.current = null;
+    }
+    setDisplayedQuery('');
+    setSubmittedQuery('');
+    setQuery('');
+    setIsSubmittedQueryFading(false);
+    setDiscoveryStatusText(null);
+    searchInputRef.current?.focus();
+  }, [
+    setDiscoveryStatusText,
+    setDisplayedQuery,
+    setIsSubmittedQueryFading,
+    setQuery,
+    setSubmittedQuery,
+  ]);
+
+  const updateDiscoveryDateFilter = useCallback(
+    (date: HomeAtlasDiscoveryDateFilter) => updateDiscoveryFilters({ date }),
+    [updateDiscoveryFilters],
+  );
+
+  const openMobileMenu = useCallback(() => {
+    beginMobileExploration();
+    isMobileMenuOpenRef.current = true;
+    setIsMobileMenuOpen(true);
+  }, [beginMobileExploration, setIsMobileMenuOpen]);
+
+  const closeMobileMenu = useCallback((restoreFocus = true) => {
+    isMobileMenuOpenRef.current = false;
+    setIsMobileMenuOpen(false);
+    if (!restoreFocus) return;
+    requestAnimationFrame(() => menuTriggerRef.current?.focus());
+  }, [setIsMobileMenuOpen]);
+
+  const openMobileFilters = useCallback(() => {
+    beginMobileExploration();
+    isMobileFilterOpenRef.current = true;
+    setIsMobileFilterOpen(true);
+  }, [beginMobileExploration, setIsMobileFilterOpen]);
+
+  const closeMobileFilters = useCallback((restoreFocus = true) => {
+    isMobileFilterOpenRef.current = false;
+    setIsMobileFilterOpen(false);
+    if (!restoreFocus) return;
+    requestAnimationFrame(() => filterTriggerRef.current?.focus());
+  }, []);
+
+  const resetAtlasExploration = useCallback(() => {
+    if (exactEventOpenTimerRef.current) {
+      clearTimeout(exactEventOpenTimerRef.current);
+      exactEventOpenTimerRef.current = null;
+    }
+    selectAtlasEvent(null);
+    setDiscoveryFilters({});
+    setDiscoveryStatusText(null);
+    setDisplayedQuery('');
+    setSubmittedQuery('');
+    setQuery('');
+    setIsSubmittedQueryFading(false);
+    isMobileMenuOpenRef.current = false;
+    setIsMobileMenuOpen(false);
+    searchInputRef.current?.focus();
+  }, [
+    selectAtlasEvent,
+    setDiscoveryFilters,
+    setDiscoveryStatusText,
+    setDisplayedQuery,
+    setIsMobileMenuOpen,
+    setIsSubmittedQueryFading,
+    setQuery,
+    setSubmittedQuery,
+  ]);
+
   useEffect(() => {
     if (initialEventParamHandledRef.current) return;
     const requestedEventId = searchParams.get('event');
@@ -2654,43 +2811,172 @@ export default function AtlasMap({
   }, [askSuggestions, isSearchFocused, query]);
 
   useEffect(() => {
-    const desktopQuery = window.matchMedia('(min-width: 1024px)');
-    const syncDesktopState = () => {
-      setIsDesktop(desktopQuery.matches);
-      setHasResolvedResponsiveState(true);
+    const refreshDiscoveryDay = () => {
+      const nextNow = new Date();
+      setDiscoveryNow((currentNow) => {
+        const currentDateKey = getDateKeyInTimeZone(
+          currentNow,
+          stateConfig.defaultTimeZone,
+        );
+        const nextDateKey = getDateKeyInTimeZone(
+          nextNow,
+          stateConfig.defaultTimeZone,
+        );
+        return currentDateKey === nextDateKey ? currentNow : nextNow;
+      });
     };
-    syncDesktopState();
-    desktopQuery.addEventListener('change', syncDesktopState);
+    const clockId = window.setInterval(refreshDiscoveryDay, 60_000);
+    document.addEventListener('visibilitychange', refreshDiscoveryDay);
+    window.addEventListener('focus', refreshDiscoveryDay);
+    return () => {
+      window.clearInterval(clockId);
+      document.removeEventListener('visibilitychange', refreshDiscoveryDay);
+      window.removeEventListener('focus', refreshDiscoveryDay);
+    };
+  }, [setDiscoveryNow, stateConfig.defaultTimeZone]);
+
+  useEffect(() => {
+    let frameId: number | null = null;
+    const syncViewportMode = () => {
+      if (frameId !== null) cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+        const nextMode = resolveAtlasViewportMode({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+        setViewportMode((currentMode) =>
+          currentMode === nextMode ? currentMode : nextMode,
+        );
+        if (nextMode === 'desktop') {
+          const shouldMoveFilterFocus = isMobileFilterOpenRef.current;
+          const shouldMoveMenuFocus = isMobileMenuOpenRef.current;
+          isMobileFilterOpenRef.current = false;
+          isMobileMenuOpenRef.current = false;
+          setIsMobileFilterOpen(false);
+          setIsMobileMenuOpen(false);
+          if (shouldMoveFilterFocus) {
+            requestAnimationFrame(() => {
+              document.getElementById('desktop-atlas-filter-date')?.focus();
+            });
+          } else if (shouldMoveMenuFocus) {
+            requestAnimationFrame(() => searchInputRef.current?.focus());
+          }
+        }
+        setHasResolvedResponsiveState(true);
+      });
+    };
+
+    syncViewportMode();
+    window.addEventListener('resize', syncViewportMode);
+    window.addEventListener('orientationchange', syncViewportMode);
+    window.visualViewport?.addEventListener('resize', syncViewportMode);
 
     return () => {
-      desktopQuery.removeEventListener('change', syncDesktopState);
+      if (frameId !== null) cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', syncViewportMode);
+      window.removeEventListener('orientationchange', syncViewportMode);
+      window.visualViewport?.removeEventListener('resize', syncViewportMode);
     };
   }, []);
 
   useEffect(() => {
-    const mobileArtworkQuery = window.matchMedia(
-      MICHIGAN_ARTWORK_MOBILE_MEDIA_QUERY,
-    );
-    const syncArtworkVariant = () => {
-      setArtworkVariant(mobileArtworkQuery.matches ? 'mobile' : 'desktop');
+    if (!isMobileMenuOpen || !viewportCapabilities.showsMobileChrome) return;
+
+    const focusFrame = requestAnimationFrame(() => {
+      mobileMenuDialogRef.current
+        ?.querySelector<HTMLElement>('button, [href]')
+        ?.focus();
+    });
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeMobileMenu();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusableElements = Array.from(
+        mobileMenuDialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((element) => element.getClientRects().length > 0);
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements.at(-1);
+      if (!firstElement || !lastElement) return;
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+    document.addEventListener('keydown', handleDialogKeyDown);
+    return () => {
+      cancelAnimationFrame(focusFrame);
+      document.removeEventListener('keydown', handleDialogKeyDown);
+    };
+  }, [closeMobileMenu, isMobileMenuOpen, viewportCapabilities.showsMobileChrome]);
+
+  useEffect(() => {
+    if (!isMobileFilterOpen || !viewportCapabilities.showsMobileChrome) return;
+
+    const focusFrame = requestAnimationFrame(() => {
+      mobileFilterCloseButtonRef.current?.focus();
+    });
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeMobileFilters();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusableElements = Array.from(
+        mobileFilterDialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((element) => element.getClientRects().length > 0);
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements.at(-1);
+      if (!firstElement || !lastElement) return;
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+    document.addEventListener('keydown', handleDialogKeyDown);
+
+    return () => {
+      cancelAnimationFrame(focusFrame);
+      document.removeEventListener('keydown', handleDialogKeyDown);
+    };
+  }, [closeMobileFilters, isMobileFilterOpen, viewportCapabilities.showsMobileChrome]);
+
+  useEffect(() => {
+    let shouldResetArtwork = true;
+    queueMicrotask(() => {
+      if (!shouldResetArtwork) return;
       setIsMapArtworkLoaded(false);
       setIsMapArtworkCelestialFallback(false);
       setMobileMapArtworkSrc(mobileArtworkSrc);
-    };
-    syncArtworkVariant();
-    mobileArtworkQuery.addEventListener('change', syncArtworkVariant);
+    });
 
     return () => {
-      mobileArtworkQuery.removeEventListener('change', syncArtworkVariant);
+      shouldResetArtwork = false;
     };
-  }, [mobileArtworkSrc]);
+  }, [artworkVariant, desktopArtworkSrc, mobileArtworkSrc]);
 
   useEffect(() => {
     const image = mapArtworkImageRef.current;
     if (!image || !image.complete || image.naturalWidth <= 0) return;
     setIsMapArtworkLoaded(true);
     setIsMapArtworkCelestialFallback(false);
-  }, [artworkVariant, mobileMapArtworkSrc]);
+  }, [artworkVariant, desktopArtworkSrc, mobileMapArtworkSrc]);
 
   const handleMapArtworkLoad = useCallback(
     (event: SyntheticEvent<HTMLImageElement>) => {
@@ -2715,21 +3001,6 @@ export default function AtlasMap({
 
     setIsMapArtworkCelestialFallback(true);
   }, [artworkVariant, desktopArtworkSrc, mobileMapArtworkSrc]);
-
-  useEffect(() => {
-    const phoneLandscapeQuery = window.matchMedia(PHONE_LANDSCAPE_QUERY);
-    const syncPhoneLandscapeState = () =>
-      setIsPhoneLandscape(phoneLandscapeQuery.matches);
-    syncPhoneLandscapeState();
-    phoneLandscapeQuery.addEventListener('change', syncPhoneLandscapeState);
-
-    return () => {
-      phoneLandscapeQuery.removeEventListener(
-        'change',
-        syncPhoneLandscapeState,
-      );
-    };
-  }, []);
 
   useEffect(() => {
     document.documentElement.classList.add(HOME_DISCOVERY_SCROLL_CLASS);
@@ -2794,6 +3065,9 @@ export default function AtlasMap({
   );
   const isAskBarInitialStateResolved = !displayedQuery && !isSubmittedQueryFading;
   const isMapArtworkReady = isMapArtworkLoaded || isMapArtworkCelestialFallback;
+  const shouldShowEssentialHomepageUi = Boolean(
+    hasResolvedResponsiveState || isVerificationMode,
+  );
   const hasActiveAskQuery = Boolean(query.trim() || submittedQuery.trim() || displayedQuery.trim());
   const shouldBypassAskBarInitialGate = Boolean(
     isMobileExploring || hasActiveAskQuery || selectedId || renderedEvent || isCardVisible,
@@ -2808,13 +3082,15 @@ export default function AtlasMap({
   const shouldShowPolishedHomepageUi =
     !shouldGateMobileHomepageFirstPaint || isMobileHomepageReady;
   const shouldShowMobileChromeControls =
-    shouldShowPolishedHomepageUi &&
-    !isDesktop && !exactEventIntent && !isAtlasPanelOpen;
+    shouldShowEssentialHomepageUi &&
+    viewportCapabilities.showsMobileChrome &&
+    !exactEventIntent &&
+    !isAtlasPanelOpen;
   // Keep exact-search state separate from selected-card state so the mobile
   // Ask bar and rail stay mounted through exact lookup, flyer opening, and close.
   const shouldShowMobileAmbientAtlas =
-    shouldShowPolishedHomepageUi &&
-    !isDesktop &&
+    shouldShowEssentialHomepageUi &&
+    viewportCapabilities.showsMobileChrome &&
     (!isAtlasPanelOpen || exactEventIntent) &&
     (!hasSelectedEventCardOpen || exactEventIntent);
   const hasActiveSearchResult = Boolean(
@@ -2861,7 +3137,7 @@ export default function AtlasMap({
   const mobileLandingTitleState = isMobileLandingIdle ? 'idle' : 'exploring';
   const shouldShowMobileMichiganBreadcrumb = shouldShowMobileLandingTitle;
   const areMobileAmbientControlsVisible = Boolean(
-    shouldShowMobileAmbientAtlas && isMobileAmbientLayoutReady,
+    shouldShowMobileAmbientAtlas && hasResolvedResponsiveState,
   );
   const homeControlsPhase = areMobileAmbientControlsVisible
     ? isHomeControlsReturning
@@ -2938,6 +3214,16 @@ export default function AtlasMap({
     (prefersReducedMotion ? 0 : parallaxOffset.y * 0.55) +
     mobileAmbientMapLift;
   const mapLayerTransform = `translate3d(${mapLayerTranslateX}px, calc(${mapLayerTranslateY}px + ${mobileLandingMapLowering}), 0) scale(${mapLayerScale})`;
+  const shouldShowDiscoveryPanel = Boolean(
+    !shouldShowCalibration &&
+      !isVerificationMode &&
+      !isAtlasPanelOpen &&
+      (isDesktop ||
+        homeAtlasDiscovery.mode === 'results' ||
+        homeAtlasDiscovery.mode === 'empty' ||
+        discoveryStatusText),
+  );
+  const isMobileModalOpen = isMobileFilterOpen || isMobileMenuOpen;
 
   return (
     <section
@@ -2955,14 +3241,17 @@ export default function AtlasMap({
         .join(' ')}
       data-state-slug={stateConfig.identity.slug}
       data-presentation-profile={stateConfig.presentation.profileId}
+      data-viewport-mode={viewportMode}
+      data-artwork-variant={artworkVariant}
       data-search-mode={submittedSearchMode}
-      data-search-result-count={isSubmittedSearchActive ? homeAtlasSearch.results.length : 0}
+      data-search-result-count={isSubmittedSearchActive ? homeAtlasDiscovery.events.length : 0}
       data-search-event-id={exactEventIntent?.eventId}
       style={styles.hero}
       onPointerDown={handleBackdropPointerDown}
     >
       <div
         ref={mapFrameRef}
+        inert={isMobileModalOpen ? true : undefined}
         className={`atlas-map-frame ${
           isPhoneLandscape ? 'atlas-map-frame--phone-landscape' : ''
         }`}
@@ -2992,23 +3281,18 @@ export default function AtlasMap({
             transform: mapLayerTransform,
           }}
         >
-          <picture>
-            <source
-              media="(max-width: 767px)"
-              srcSet={mobileMapArtworkSrc}
-            />
-            <img
-              className="atlas-map-image atlas-map-image--atmosphere"
-              src={desktopArtworkSrc}
-              alt=""
-              aria-hidden
-              draggable={false}
-              style={{
-                ...styles.atmosphereMapImage,
-                opacity: isMapArtworkCelestialFallback ? 0 : 1,
-              }}
-            />
-          </picture>
+          {/* eslint-disable-next-line @next/next/no-img-element -- The state artwork source is selected by the shared viewport model. */}
+          <img
+            className="atlas-map-image atlas-map-image--atmosphere"
+            src={artworkVariant === 'mobile' ? mobileMapArtworkSrc : desktopArtworkSrc}
+            alt=""
+            aria-hidden
+            draggable={false}
+            style={{
+              ...styles.atmosphereMapImage,
+              opacity: isMapArtworkCelestialFallback ? 0 : 1,
+            }}
+          />
         </div>
 
         <div
@@ -3018,25 +3302,20 @@ export default function AtlasMap({
             transform: mapLayerTransform,
           }}
         >
-          <picture>
-            <source
-              media="(max-width: 767px)"
-              srcSet={mobileMapArtworkSrc}
-            />
-            <img
-              className="atlas-map-image"
-              src={desktopArtworkSrc}
-              ref={mapArtworkImageRef}
-              alt={`${stateName} Atlas`}
-              draggable={false}
-              style={{
-                ...styles.mapImage,
-                opacity: isMapArtworkCelestialFallback ? 0 : 1,
-              }}
-              onLoad={handleMapArtworkLoad}
-              onError={handleMapArtworkError}
-            />
-          </picture>
+          {/* eslint-disable-next-line @next/next/no-img-element -- The state artwork source is selected by the shared viewport model. */}
+          <img
+            className="atlas-map-image"
+            src={artworkVariant === 'mobile' ? mobileMapArtworkSrc : desktopArtworkSrc}
+            ref={mapArtworkImageRef}
+            alt={`${stateName} Atlas`}
+            draggable={false}
+            style={{
+              ...styles.mapImage,
+              opacity: isMapArtworkCelestialFallback ? 0 : 1,
+            }}
+            onLoad={handleMapArtworkLoad}
+            onError={handleMapArtworkError}
+          />
 
           <div
             style={{
@@ -3101,7 +3380,7 @@ export default function AtlasMap({
               transform: mapLayerTransform,
             }}
           >
-            {isDesktop && mobileSearchConnectors.length > 0 && mapViewportSize && rankedSubmittedSearchResults.length === 0 ? (
+            {viewportCapabilities.supportsRemoteCalloutConnectors && mobileSearchConnectors.length > 0 && mapViewportSize && rankedSubmittedSearchResults.length === 0 ? (
               <svg
                 aria-hidden="true"
                 style={styles.mobileCalloutConnectorLayer}
@@ -3226,7 +3505,8 @@ export default function AtlasMap({
                   shouldShowMarkerLabel && mobileTagPlacement && !isDesktop,
                 );
                 const shouldEnableMarkerTapTarget = Boolean(
-                  isDesktop || shouldShowMarkerLabel,
+                  !hasCanonicalDiscoveryResults &&
+                    (isDesktop || shouldShowMarkerLabel),
                 );
                 const mobileTagDx = mobileTagPlacement?.dx ?? 0;
                 const mobileTagDy = mobileTagPlacement?.dy ?? 0;
@@ -3435,6 +3715,7 @@ export default function AtlasMap({
                             </span>
                             ) : null}
                           </EventNavigationControl>
+                          {shouldShowMarkerLabel ? (
                           <EventNavigationControl
                             event={navigationEvent}
                             ariaLabel={
@@ -3482,6 +3763,7 @@ export default function AtlasMap({
                               `${events.length} celebrations`
                             )}
                           </EventNavigationControl>
+                          ) : null}
                         </>
                       )}
                     </div>
@@ -3493,14 +3775,12 @@ export default function AtlasMap({
                 results={rankedSubmittedSearchResults}
                 markerLayouts={displayMarkerLayouts}
                 isDesktop={isDesktop}
-                onEventSelect={openAtlasEvent}
               />
             ) : null}
             {isDesktop ? mapCalloutPlan.clusterIndicators.map((cluster) => (
-              <button
+              <span
                 key={cluster.id}
-                type="button"
-                aria-label={`Show ${cluster.hiddenCount} more nearby celebrations`}
+                aria-hidden="true"
                 style={{
                   ...styles.calloutClusterIndicator,
                   left: `${cluster.position.x}%`,
@@ -3509,7 +3789,7 @@ export default function AtlasMap({
                 data-cluster-event-ids={cluster.eventIds.join(',')}
               >
                 +{cluster.hiddenCount}
-              </button>
+              </span>
             )) : null}
           </div>
         ) : null}
@@ -3526,20 +3806,35 @@ export default function AtlasMap({
 
       {shouldShowMobileChromeControls ? (
         <>
-          <div style={styles.mobileChromeControls} aria-label="Mobile atlas controls">
-            <button type="button" aria-label={`Open ${stateName} atlas menu`} aria-expanded={isMobileMenuOpen} className="mobile-chrome-button" style={styles.mobileChromeButton} onClick={() => { beginMobileExploration(); setIsMobileMenuOpen(true); }}>
-              <span aria-hidden="true" style={styles.mobileHamburgerIcon}>☰</span>
+          <div className="mobile-chrome-controls" style={styles.mobileChromeControls} aria-label="Mobile atlas controls" inert={isMobileModalOpen ? true : undefined}>
+            <button ref={menuTriggerRef} type="button" aria-label={`Open ${stateName} atlas menu`} aria-controls="atlas-mobile-menu" aria-expanded={isMobileMenuOpen} className="mobile-chrome-button" style={styles.mobileChromeButton} onClick={openMobileMenu}>
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false" style={styles.mobileHamburgerIcon}>
+                <path d="M4 6.5h16M4 12h16M4 17.5h16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
             </button>
             <button type="button" aria-label={isMobileFavoriteSaved ? `Remove ${stateName} from favorites` : `Save ${stateName} to favorites`} aria-pressed={isMobileFavoriteSaved} className="mobile-chrome-button" style={{ ...styles.mobileChromeButton, ...styles.mobileFavoriteButton, ...(isMobileFavoriteSaved ? styles.mobileFavoriteButtonActive : null) }} onClick={() => setIsMobileFavoriteSaved((isSaved) => !isSaved)}>
               <span aria-hidden="true">{isMobileFavoriteSaved ? '♥' : '♡'}</span>
             </button>
           </div>
-          <div style={styles.mobileSideControls} aria-label="Mobile map tools">
-            <button type="button" aria-label="Open atlas filters" aria-expanded={isMobileFilterOpen} className="mobile-tool-button" style={styles.mobileToolButton} onClick={() => { beginMobileExploration(); setIsMobileFilterOpen(true); }}>
+          {!shouldShowDiscoveryPanel ? (
+          <div className="mobile-side-controls" style={styles.mobileSideControls} aria-label="Mobile map tools" inert={isMobileModalOpen ? true : undefined}>
+            <button
+              ref={filterTriggerRef}
+              type="button"
+              aria-label={`Open atlas filters${homeAtlasDiscovery.activeFilterCount > 0 ? `, ${homeAtlasDiscovery.activeFilterCount} active` : ''}`}
+              aria-controls="atlas-mobile-filters"
+              aria-expanded={isMobileFilterOpen}
+              className="mobile-tool-button"
+              style={styles.mobileToolButton}
+              onClick={openMobileFilters}
+            >
               <span aria-hidden="true">☷</span>
-              <span style={styles.mobileToolLabel}>Filters</span>
+              <span style={styles.mobileToolLabel}>
+                Filters{homeAtlasDiscovery.activeFilterCount > 0 ? ` (${homeAtlasDiscovery.activeFilterCount})` : ''}
+              </span>
             </button>
           </div>
+          ) : null}
         </>
       ) : null}
 
@@ -3617,6 +3912,11 @@ export default function AtlasMap({
         </div>
       ) : null}
 
+      {!isDesktop && homeAtlasDiscovery.mode === 'exact' && homeAtlasDiscovery.statusText ? (
+        <p role="status" aria-live="polite" style={styles.visuallyHiddenStatus}>
+          {homeAtlasDiscovery.statusText}
+        </p>
+      ) : null}
 
 
       {isAtlasDebugMode ? (
@@ -3643,54 +3943,159 @@ export default function AtlasMap({
       ) : null}
 
       {shouldShowMobileChromeControls && isMobileMenuOpen ? (
-        <div style={styles.mobileSheetOverlay} onClick={() => setIsMobileMenuOpen(false)}>
-          <nav aria-label={`${stateName} atlas menu`} style={styles.mobileMenuSheet} onClick={(event) => event.stopPropagation()}>
+        <div style={styles.mobileSheetOverlay} onClick={() => closeMobileMenu()}>
+          <nav
+            ref={mobileMenuDialogRef}
+            id="atlas-mobile-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="atlas-mobile-menu-title"
+            style={styles.mobileMenuSheet}
+            onClick={(event) => event.stopPropagation()}
+          >
             <div style={styles.mobileSheetHandle} />
-            <p style={styles.mobileSheetKicker}>Celebration Atlas</p>
-            {[`Explore ${stateName}`, ...MOBILE_MENU_ITEMS].map((item) => (
-              <button key={item} type="button" style={styles.mobileMenuItem} onClick={() => setIsMobileMenuOpen(false)}>{item}</button>
-            ))}
+            <p id="atlas-mobile-menu-title" style={styles.mobileSheetKicker}>Celebration Atlas</p>
+            <button type="button" style={styles.mobileMenuItem} onClick={resetAtlasExploration}>
+              Explore all {stateName} celebrations
+            </button>
+            <Link
+              href="/atlas-login"
+              style={{ ...styles.mobileMenuItem, ...styles.mobileMenuItemLink }}
+              onClick={() => closeMobileMenu(false)}
+            >
+              Atlas sign in
+            </Link>
           </nav>
         </div>
       ) : null}
 
       {shouldShowMobileChromeControls && isMobileFilterOpen ? (
-        <div style={styles.mobileSheetOverlay} onClick={() => setIsMobileFilterOpen(false)}>
-          <section aria-label={`${stateName} atlas filters`} style={styles.mobileFilterSheet} onClick={(event) => event.stopPropagation()}>
+        <div style={styles.mobileSheetOverlay} onClick={() => closeMobileFilters()}>
+          <section
+            ref={mobileFilterDialogRef}
+            id="atlas-mobile-filters"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="atlas-mobile-filter-title"
+            style={styles.mobileFilterSheet}
+            onClick={(event) => event.stopPropagation()}
+          >
             <div style={styles.mobileSheetHandle} />
             <div style={styles.mobileFilterHeader}>
               <div>
                 <p style={styles.mobileSheetKicker}>Refine {stateName}</p>
-                <h2 style={styles.mobileSheetTitle}>Filters</h2>
+                <h2 id="atlas-mobile-filter-title" style={styles.mobileSheetTitle}>Filters</h2>
               </div>
-              <button type="button" style={styles.mobileSheetCloseButton} onClick={() => setIsMobileFilterOpen(false)} aria-label="Close filters">×</button>
-            </div>
-            {MOBILE_FILTER_FIELDS.map((field) => (
-              <button key={field} type="button" style={styles.mobileFilterRow}>
-                <span>{field}</span>
-                <span style={styles.mobileFilterRowMeta}>Coming soon</span>
+              <button
+                ref={mobileFilterCloseButtonRef}
+                type="button"
+                style={styles.mobileSheetCloseButton}
+                onClick={() => closeMobileFilters()}
+                aria-label="Close filters"
+              >
+                ×
               </button>
-            ))}
+            </div>
+            <HomeAtlasFilterControls
+              idPrefix="mobile-atlas-filter"
+              stateName={stateName}
+              facets={homeAtlasDiscovery.facets}
+              filters={homeAtlasDiscovery.filters}
+              activeFilterCount={homeAtlasDiscovery.activeFilterCount}
+              onCategoryChange={(category) => updateDiscoveryFilters({ category })}
+              onRegionChange={(regionRuleId) => updateDiscoveryFilters({ regionRuleId })}
+              onCityChange={(city) => updateDiscoveryFilters({ city })}
+              onDateChange={updateDiscoveryDateFilter}
+              onClear={clearDiscoveryFilters}
+            />
           </section>
         </div>
       ) : null}
 
-      {!shouldShowCalibration && !isVerificationMode && isDesktop && !hasActiveAskQuery ? (
+      {shouldShowDiscoveryPanel ? (
         <aside
-          className="atlas-desktop-intro"
-          style={styles.desktopIntroPanel}
-          aria-label="Atlas desktop introduction"
+          id="atlas-discovery-results"
+          className="atlas-discovery-panel"
+          style={styles.discoveryPanel}
+          aria-label={`${stateName} celebration discovery`}
+          inert={isMobileModalOpen ? true : undefined}
         >
-          <p style={styles.desktopKicker}>{stateConfig.presentation.copy.desktopKicker}</p>
-          <h1 style={styles.desktopTitle}>
-            {stateConfig.presentation.copy.desktopTitle}
-          </h1>
-          <p style={styles.desktopBody}>
-            {stateConfig.presentation.copy.desktopBody}
-          </p>
-          <p style={styles.desktopHint}>
-            {stateConfig.presentation.copy.desktopHint}
-          </p>
+          <div style={styles.discoveryPanelHeader}>
+            <div>
+              <p style={styles.desktopKicker}>
+                {homeAtlasDiscovery.mode === 'idle'
+                  ? stateConfig.presentation.copy.desktopKicker
+                  : 'Celebration discovery'}
+              </p>
+              <h1 style={styles.discoveryPanelTitle}>
+                {homeAtlasDiscovery.mode === 'idle'
+                  ? stateConfig.presentation.copy.desktopTitle
+                  : `Explore ${stateName}`}
+              </h1>
+            </div>
+            {isDesktop && homeAtlasDiscovery.mode === 'results' ? (
+              <span style={styles.discoveryCountBadge}>
+                {homeAtlasDiscovery.events.length}
+              </span>
+            ) : !isDesktop ? (
+              <button
+                ref={filterTriggerRef}
+                type="button"
+                aria-label={`Open atlas filters${homeAtlasDiscovery.activeFilterCount > 0 ? `, ${homeAtlasDiscovery.activeFilterCount} active` : ''}`}
+                aria-controls="atlas-mobile-filters"
+                aria-expanded={isMobileFilterOpen}
+                style={styles.discoveryFilterButton}
+                onClick={openMobileFilters}
+              >
+                Filters{homeAtlasDiscovery.activeFilterCount > 0 ? ` (${homeAtlasDiscovery.activeFilterCount})` : ''}
+              </button>
+            ) : null}
+          </div>
+
+          {submittedQuery ? (
+            <div style={styles.discoveryQueryRow}>
+              <p style={styles.discoveryQueryText}>
+                Results for “{submittedQuery}”
+              </p>
+              <button
+                type="button"
+                style={styles.discoveryClearQueryButton}
+                onClick={clearDiscoveryQuery}
+              >
+                {homeAtlasDiscovery.activeFilterCount > 0
+                  ? 'Clear search'
+                  : 'Show all'}
+              </button>
+            </div>
+          ) : null}
+
+          {isDesktop ? (
+            <>
+              {homeAtlasDiscovery.mode === 'idle' ? (
+                <p style={styles.desktopBody}>
+                  {stateConfig.presentation.copy.desktopBody}
+                </p>
+              ) : null}
+              <HomeAtlasFilterControls
+                idPrefix="desktop-atlas-filter"
+                stateName={stateName}
+                facets={homeAtlasDiscovery.facets}
+                filters={homeAtlasDiscovery.filters}
+                activeFilterCount={homeAtlasDiscovery.activeFilterCount}
+                onCategoryChange={(category) => updateDiscoveryFilters({ category })}
+                onRegionChange={(regionRuleId) => updateDiscoveryFilters({ regionRuleId })}
+                onCityChange={(city) => updateDiscoveryFilters({ city })}
+                onDateChange={updateDiscoveryDateFilter}
+                onClear={clearDiscoveryFilters}
+              />
+            </>
+          ) : null}
+
+          <HomeDiscoveryLayer
+            statusText={homeAtlasDiscovery.statusText ?? discoveryStatusText ?? undefined}
+            results={discoveryResultRows}
+            onEventSelect={openAtlasEvent}
+          />
         </aside>
       ) : null}
 
@@ -3722,9 +4127,10 @@ export default function AtlasMap({
           }}
         >
           <button
+            ref={cardCloseButtonRef}
             type="button"
             aria-label="Close event card"
-            onClick={() => selectAtlasEvent(null)}
+            onClick={closeAtlasEvent}
             style={styles.closeButton}
           >
             ×
@@ -4011,10 +4417,11 @@ export default function AtlasMap({
 
       {!shouldShowCalibration &&
       !isVerificationMode &&
-      shouldShowPolishedHomepageUi ? (
+      shouldShowEssentialHomepageUi ? (
         <>
           <div
             className={`atlas-search-dock${isHomeControlsReturning ? ' atlas-search-dock--returning' : ''}`}
+            inert={isMobileModalOpen ? true : undefined}
             style={{
               ...styles.searchDock,
               ...(isDesktop ? styles.searchDockDesktop : null),
@@ -4028,20 +4435,6 @@ export default function AtlasMap({
               setIsHomeControlsReturning(false);
             }}
           >
-            <HomeDiscoveryLayer
-              query={hasSubmittedSearchMatches ? '' : submittedQuery}
-              resultCount={hasSubmittedSearchMatches ? 0 : highlightedIds.size}
-              statusText={
-                hasSubmittedSearchMatches
-                  ? undefined
-                  : hasSubmittedSearchNoResults
-                    ? 'No matching celebrations found.'
-                    : discoveryStatusText ?? undefined
-              }
-              results={hasSubmittedSearchMatches ? [] : discoveryResultRows}
-              shortcutGroups={HOME_DISCOVERY_SHORTCUT_GROUPS}
-              showShortcutGroups={false}
-            />
             <form
               className={`atlas-search-form ${
                 isSearchFocused || query.trim() || displayedQuery
@@ -4192,6 +4585,7 @@ export default function AtlasMap({
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
                   {liveUpcomingRailEvents.map((event) => {
                     const statusBadge = getEventRailStatus(event, {
+                      now: discoveryNow,
                       timeZone: stateConfig.defaultTimeZone,
                     });
                     const eventDate = formatMobileEventDate(event);
@@ -6609,10 +7003,10 @@ const styles: Record<string, CSSProperties> = {
 
   mobileChromeControls: { position: 'absolute', top: 'calc(14px + env(safe-area-inset-top))', left: 'max(6px, env(safe-area-inset-left))', right: 'max(6px, env(safe-area-inset-right))', zIndex: Z_INDEX.searchDock + 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', pointerEvents: 'none' },
   mobileChromeButton: { width: 44, height: 44, borderRadius: 0, border: 0, background: 'transparent', color: 'rgba(255, 224, 158, 0.94)', boxShadow: 'none', display: 'grid', placeItems: 'center', padding: 0, fontSize: 18, lineHeight: 1, textShadow: '0 1px 7px rgba(0, 0, 0, 0.72)', cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto', appearance: 'none', WebkitAppearance: 'none' },
-  mobileHamburgerIcon: { transform: 'translateY(-1px)' },
+  mobileHamburgerIcon: { width: 23, height: 23, transform: 'translateY(-1px)' },
   mobileFavoriteButton: { fontSize: 22 },
   mobileFavoriteButtonActive: { color: 'rgba(255, 244, 214, 0.98)', textShadow: '0 1px 8px rgba(0, 0, 0, 0.78), 0 0 10px rgba(255, 193, 88, 0.24)' },
-  mobileSideControls: { position: 'absolute', right: 'max(6px, env(safe-area-inset-right))', bottom: 'calc(212px + env(safe-area-inset-bottom))', zIndex: Z_INDEX.searchDock + 1, display: 'grid', gap: 6, justifyItems: 'center', pointerEvents: 'none' },
+  mobileSideControls: { position: 'absolute', right: 'max(6px, env(safe-area-inset-right))', bottom: 'calc(212px + env(safe-area-inset-bottom))', zIndex: Z_INDEX.searchDock + 3, display: 'grid', gap: 6, justifyItems: 'center', pointerEvents: 'none' },
   mobileToolButton: { position: 'relative', width: 46, minHeight: 46, height: 46, borderRadius: 0, border: 0, background: 'transparent', color: 'rgba(255, 232, 184, 0.9)', boxShadow: 'none', display: 'grid', placeItems: 'center', gap: 2, padding: 0, fontSize: 17, textShadow: '0 1px 7px rgba(0, 0, 0, 0.76)', cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto', appearance: 'none', WebkitAppearance: 'none' },
   mobileToolLabel: { position: 'absolute', top: 'calc(100% - 5px)', left: '50%', transform: 'translateX(-50%)', width: 'max-content', marginTop: 0, color: 'rgba(255, 244, 221, 0.78)', fontSize: 9, fontWeight: 700, textShadow: '0 1px 6px rgba(0, 0, 0, 0.86)' },
   mobileSheetOverlay: { position: 'fixed', inset: 0, zIndex: Z_INDEX.searchDock + 10, background: 'rgba(0, 0, 0, 0.22)', display: 'grid', alignItems: 'end' },
@@ -6620,12 +7014,11 @@ const styles: Record<string, CSSProperties> = {
   mobileSheetHandle: { width: 38, height: 4, margin: '0 auto 12px', borderRadius: 999, background: 'rgba(255, 226, 170, 0.34)' },
   mobileSheetKicker: { margin: '0 0 10px', color: 'rgba(255, 211, 134, 0.78)', fontSize: 11, fontWeight: 850, letterSpacing: 1.5, textTransform: 'uppercase' },
   mobileMenuItem: { width: '100%', padding: '12px 10px', border: 0, borderTop: '1px solid rgba(255, 226, 170, 0.1)', background: 'transparent', color: 'rgba(255, 242, 216, 0.94)', fontSize: 15, fontWeight: 700, textAlign: 'left' },
-  mobileFilterSheet: { margin: '0 12px calc(12px + env(safe-area-inset-bottom))', padding: '10px 14px 14px', borderRadius: 24, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.95), rgba(5, 9, 15, 0.93))' },
+  mobileMenuItemLink: { display: 'flex', alignItems: 'center', minHeight: 44, textDecoration: 'none' },
+  mobileFilterSheet: { maxHeight: 'calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))', margin: '0 12px calc(12px + env(safe-area-inset-bottom))', padding: '10px 14px 14px', borderRadius: 24, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.95), rgba(5, 9, 15, 0.93))', boxShadow: '0 22px 70px rgba(0,0,0,.56), inset 0 0 0 1px rgba(255, 245, 214, 0.05)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', overflowY: 'auto' },
   mobileFilterHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   mobileSheetTitle: { margin: '0 0 12px', color: 'rgba(255, 246, 226, 0.98)', fontSize: 22 },
   mobileSheetCloseButton: { position: 'static', width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,225,160,.45)', background: 'rgba(22,26,35,.95)', color: '#ffebb9', fontSize: 22, lineHeight: 1, display: 'grid', placeItems: 'center' },
-  mobileFilterRow: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', border: 0, borderTop: '1px solid rgba(255, 226, 170, 0.12)', background: 'transparent', color: 'rgba(255, 242, 216, 0.94)', fontSize: 14, fontWeight: 750 },
-  mobileFilterRowMeta: { color: 'rgba(255, 211, 134, 0.62)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 },
 
   mobileAtlasIdentity: {
     position: 'absolute',
@@ -6696,6 +7089,18 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     textShadow: '0 1px 6px rgba(0, 0, 0, 0.72)',
     whiteSpace: 'nowrap',
+  },
+
+  visuallyHiddenStatus: {
+    position: 'fixed',
+    width: 1,
+    height: 1,
+    margin: -1,
+    padding: 0,
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+    border: 0,
   },
 
   atlasDebugOverlay: {
@@ -7041,22 +7446,97 @@ const styles: Record<string, CSSProperties> = {
     textShadow: '0 1px 4px rgba(0, 0, 0, 0.92)',
   },
 
-  desktopIntroPanel: {
+  discoveryPanel: {
     position: 'fixed',
-    left: 'calc(6vw + 48.4dvh + clamp(32px, 4vw, 72px))',
-    right: '6vw',
-    top: '15dvh',
-    width: 'auto',
-    maxWidth: 540,
-    padding: '22px 24px',
+    zIndex: Z_INDEX.searchDock + 1,
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr)',
+    gap: 14,
+    minWidth: 0,
+    width: 'min(390px, calc(100vw - 24px))',
+    maxHeight: 'min(68dvh, 620px)',
+    padding: '18px',
     borderRadius: 22,
     border: '1px solid rgba(255, 226, 171, 0.26)',
     background:
-      'linear-gradient(160deg, rgba(18, 24, 34, 0.62), rgba(10, 14, 20, 0.32))',
-    boxShadow: '0 20px 48px rgba(0,0,0,.36)',
-    backdropFilter: 'blur(4px)',
-    WebkitBackdropFilter: 'blur(4px)',
-    zIndex: 14,
+      'linear-gradient(160deg, rgba(18, 24, 34, 0.94), rgba(7, 11, 17, 0.88))',
+    boxShadow: '0 20px 58px rgba(0,0,0,.48), inset 0 0 0 1px rgba(255,245,218,.035)',
+    backdropFilter: 'blur(14px)',
+    WebkitBackdropFilter: 'blur(14px)',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+  },
+  discoveryPanelHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 14,
+    minWidth: 0,
+  },
+  discoveryQueryRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    minWidth: 0,
+  },
+  discoveryQueryText: {
+    minWidth: 0,
+    margin: 0,
+    overflow: 'hidden',
+    color: 'rgba(255, 226, 174, 0.72)',
+    fontSize: 12,
+    lineHeight: 1.3,
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  discoveryClearQueryButton: {
+    flex: '0 0 auto',
+    minHeight: 44,
+    padding: '0 13px',
+    borderRadius: 999,
+    border: '1px solid rgba(255, 226, 170, 0.24)',
+    background: 'rgba(255, 226, 170, 0.05)',
+    color: 'rgba(255, 238, 206, 0.86)',
+    fontSize: 10,
+    fontWeight: 820,
+    letterSpacing: 0.65,
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+  },
+  discoveryPanelTitle: {
+    margin: 0,
+    color: '#ffebb9',
+    fontSize: 26,
+    lineHeight: 1.12,
+  },
+  discoveryCountBadge: {
+    display: 'grid',
+    flex: '0 0 auto',
+    minWidth: 36,
+    height: 36,
+    padding: '0 10px',
+    placeItems: 'center',
+    borderRadius: 999,
+    border: '1px solid rgba(255, 226, 170, 0.32)',
+    background: 'rgba(255, 226, 170, 0.08)',
+    color: 'rgba(255, 240, 210, 0.94)',
+    fontSize: 12,
+    fontWeight: 850,
+  },
+  discoveryFilterButton: {
+    flex: '0 0 auto',
+    minHeight: 44,
+    padding: '0 12px',
+    borderRadius: 999,
+    border: '1px solid rgba(255, 226, 170, 0.32)',
+    background: 'rgba(255, 226, 170, 0.08)',
+    color: 'rgba(255, 240, 210, 0.94)',
+    fontSize: 11,
+    fontWeight: 850,
+    letterSpacing: 0.5,
+    cursor: 'pointer',
   },
   desktopKicker: {
     margin: '0 0 10px',

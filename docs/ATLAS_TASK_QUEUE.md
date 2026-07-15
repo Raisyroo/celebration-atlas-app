@@ -222,11 +222,20 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 26. Unify homepage viewport behavior and activate discovery filters
 
 - **Type:** architecture + implementation
-- **Status:** next
+- **Status:** complete
 - **Scope:** Michigan homepage responsive shell, discovery result surface, and filter control behavior
 - **Protected files/areas:** Event Hub publication state, verified event coordinates, illustrated-map calibration values, universal Scout runtime
-- **Notes:** Replace overlapping independent media-query states with one viewport-mode model for portrait, short landscape, and desktop. Keep all primary controls reachable in every supported orientation, make the Filters control expose real structured refinements, and keep one accessible successful-search result surface rather than an inert duplicate layer.
+- **Notes:** One viewport classifier now owns portrait, compact landscape, and desktop artwork/layout behavior. Essential controls survive rotation independently of image readiness. Filters expose only reviewed category, curated region, city, month, and live/upcoming facts; broad and filter-only discovery share one accessible ranked result list without changing the dated rail.
 - **Verification:** `npm run lint`, `npm run build`, `npm run test:visual-smoke`, 390×844 portrait, 844×390 landscape, 1440×900 desktop, keyboard/touch filter use, no overflow, no browser errors
+
+### 27. Build the versioned illustrated-map position and coded-star resolver
+
+- **Type:** architecture + implementation
+- **Status:** next
+- **Scope:** reusable state map presentation profile, artwork-fit transform, Michigan calibration compatibility, and one accessible marker control per event
+- **Protected files/areas:** verified event coordinates, Event Hub publication state, approved artwork assets, universal Scout runtime
+- **Notes:** Preserve real coordinates as source truth. Resolve one reviewed artwork-relative layout for markers, labels, atmosphere, constellation lines, and audits; account for object-fit crop; keep Michigan peninsulas in separate calibration regions; introduce compatibility v1 before reviewed v2; and render reachable 44px coded stars on every supported viewport without hidden duplicate controls.
+- **Verification:** `npm run lint`, `npm run build`, `npm run test:visual-smoke`, frozen marker outputs and screenshots across portrait/compact/desktop, collision and keyboard audits, no overflow, no browser errors
 
 ## Completed Tasks
 
@@ -234,6 +243,8 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - Task 22: Grand Haven Coast Guard Festival completed the Event Factory and was published after Ray's Atlas Control approval.
 - Task 23: Michigan homepage rail and responsive baseline completed with a durable multi-state audit.
 - Task 24: State-scoped homepage configuration, catalog resolution, date/timezone provenance, and build validation completed.
+- Task 25: Deterministic state-owned exact and broad homepage search completed.
+- Task 26: Shared viewport modes and functional fact-based discovery filters completed.
 
 ## Paused / Needs Human Review
 
