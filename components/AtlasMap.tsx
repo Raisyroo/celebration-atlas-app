@@ -30,6 +30,7 @@ import {
 import {
   formatResultLabelLocation,
   resolveResultLabelPlacements,
+  type ResultLabelClusterPlacement,
 } from '../data/searchResultTextLayout';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
 import type { MapPresentationPlan } from '../data/mapPresentationPlan';
@@ -431,10 +432,12 @@ function SearchResultTextField({
   results,
   markerLayouts,
   isDesktop,
+  onEventSelect,
 }: {
   results: readonly AtlasEvent[];
   markerLayouts: readonly AtlasMarkerLayout[];
   isDesktop: boolean;
+  onEventSelect: (eventId: string) => void;
 }) {
   const projectedResults = useMemo(() => {
     const layoutByEventId = new Map(
@@ -453,8 +456,13 @@ function SearchResultTextField({
     () => resolveResultLabelPlacements(projectedResults, isDesktop ? 'desktop' : 'mobile'),
     [isDesktop, projectedResults],
   );
+  const [openClusterId, setOpenClusterId] = useState<string | null>(null);
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const [fontDiagnostic, setFontDiagnostic] = useState<{ family: string; weight: string } | null>(null);
+  const openCluster = placements.find(
+    (placement): placement is ResultLabelClusterPlacement =>
+      placement.kind === 'cluster' && placement.id === openClusterId,
+  );
 
   useEffect(() => {
     if (!SHOW_RESULT_LABEL_FONT_DIAGNOSTIC) return;
@@ -477,7 +485,7 @@ function SearchResultTextField({
 
   return (
     <div
-      aria-hidden="true"
+      aria-label="Search result title tags"
       ref={fieldRef}
       className={`atlas-result-text-field ${resultLabelSerif.variable}`}
       data-search-mode="results"
@@ -487,10 +495,13 @@ function SearchResultTextField({
       {placements.map((placement) => {
         if (placement.kind === 'cluster') {
           return (
-            <span
+            <button
               key={placement.id}
+              type="button"
+              aria-label={`Open ${placement.label}`}
               className="atlas-result-text-cluster"
               data-search-event-ids={placement.events.map((event) => event.id).join(',')}
+              onClick={() => setOpenClusterId(placement.id)}
               style={{
                 ...styles.resultTextCluster,
                 left: `${placement.x}%`,
@@ -499,15 +510,17 @@ function SearchResultTextField({
               }}
             >
               {placement.label}
-            </span>
+            </button>
           );
         }
 
         const locationLabel = formatResultLabelLocation(placement.event.location);
 
         return (
-          <span
+          <button
             key={placement.event.id}
+            type="button"
+            aria-label={`Open ${placement.event.name}`}
             className={`atlas-result-text-label atlas-result-text-label--${placement.tier}`}
             data-result-label-tier={placement.tier}
             data-result-label-align={placement.align}
@@ -515,6 +528,7 @@ function SearchResultTextField({
             data-result-label-font="atlas-result-label-serif"
             data-result-label-diagnostic={fontDiagnostic === null ? 'sample' : undefined}
             data-search-event-id={placement.event.id}
+            onClick={() => onEventSelect(placement.event.id)}
             style={{
               ...styles.resultTextLabel,
               ...placement.style,
@@ -530,7 +544,7 @@ function SearchResultTextField({
             {locationLabel ? (
               <span style={styles.resultTextLabelLocation}>{locationLabel}</span>
             ) : null}
-          </span>
+          </button>
         );
       })}
       {fontDiagnostic ? (
@@ -541,6 +555,49 @@ function SearchResultTextField({
         >
           Floating label font: {fontDiagnostic.family} · weight {fontDiagnostic.weight}
         </output>
+      ) : null}
+      {openCluster ? (
+        <div style={styles.resultTextClusterBackdrop} role="presentation">
+          <section
+            aria-label={`${openCluster.label} near this map region`}
+            style={{
+              ...styles.resultTextClusterSheet,
+              left: `${openCluster.x}%`,
+              top: `${openCluster.y}%`,
+            }}
+          >
+            <p style={styles.resultTextClusterKicker}>Local event cluster</p>
+            <h2 style={styles.resultTextClusterTitle}>{openCluster.label}</h2>
+            <button
+              type="button"
+              aria-label="Close event cluster"
+              onClick={() => setOpenClusterId(null)}
+              style={styles.resultTextClusterClose}
+            >
+              ×
+            </button>
+            <div style={styles.resultTextClusterPanel}>
+              {openCluster.events.map((event) => {
+                const locationLabel = formatResultLabelLocation(event.location);
+
+                return (
+                  <button
+                    key={event.id}
+                    type="button"
+                    data-search-event-id={event.id}
+                    onClick={() => onEventSelect(event.id)}
+                    style={styles.resultTextClusterEvent}
+                  >
+                    <span style={styles.resultTextClusterEventName}>{event.name}</span>
+                    {locationLabel ? (
+                      <span style={styles.resultTextClusterEventLocation}>{locationLabel}</span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        </div>
       ) : null}
     </div>
   );
@@ -1614,19 +1671,29 @@ export default function AtlasMap({
   const submittedSearchMode = homeAtlasDiscovery.mode === 'empty'
     ? 'none'
     : homeAtlasDiscovery.mode;
+  const isQueryOnlyDiscovery = Boolean(
+    q && homeAtlasDiscovery.activeFilterCount === 0,
+  );
+  const shouldUseMapSearchTitleTags = Boolean(
+    isQueryOnlyDiscovery && homeAtlasDiscovery.mode === 'results',
+  );
   const hasCanonicalDiscoveryResults =
     homeAtlasDiscovery.mode === 'results' || homeAtlasDiscovery.mode === 'empty';
   const rankedSubmittedSearchResults = useMemo(() => {
-    if (exactEventIntent || homeAtlasDiscovery.mode !== 'results') return [];
+    if (exactEventIntent || !shouldUseMapSearchTitleTags) return [];
 
     return [...homeAtlasDiscovery.events];
-  }, [exactEventIntent, homeAtlasDiscovery.events, homeAtlasDiscovery.mode]);
+  }, [exactEventIntent, homeAtlasDiscovery.events, shouldUseMapSearchTitleTags]);
   const rankedSubmittedSearchResultIds = useMemo(
     () => rankedSubmittedSearchResults.map((event) => event.id),
     [rankedSubmittedSearchResults],
   );
   const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
-    return rankedSubmittedSearchResults.map((event) => ({
+    if (homeAtlasDiscovery.mode !== 'results' || shouldUseMapSearchTitleTags) {
+      return [];
+    }
+
+    return homeAtlasDiscovery.events.map((event) => ({
       id: event.id,
       name: event.name,
       location: event.location,
@@ -1634,7 +1701,7 @@ export default function AtlasMap({
       atmosphereLabel: event.atmosphereLabel,
       blurb: event.blurb,
     }));
-  }, [rankedSubmittedSearchResults]);
+  }, [homeAtlasDiscovery.events, homeAtlasDiscovery.mode, shouldUseMapSearchTitleTags]);
   const markerLayouts = useMemo(
     () => resolveAtlasMarkerLayouts(events, artworkVariant),
     [artworkVariant, events],
@@ -2444,7 +2511,7 @@ export default function AtlasMap({
       const replacementTarget = returnEventId
         ? Array.from(
             document.querySelectorAll<HTMLElement>(
-              '.atlas-discovery-panel button[data-search-event-id]',
+              '.atlas-result-text-field button[data-search-event-id], .atlas-discovery-panel button[data-search-event-id]',
             ),
           ).find(
             (element) =>
@@ -3219,9 +3286,10 @@ export default function AtlasMap({
       !isVerificationMode &&
       !isAtlasPanelOpen &&
       (isDesktop ||
-        homeAtlasDiscovery.mode === 'results' ||
-        homeAtlasDiscovery.mode === 'empty' ||
-        discoveryStatusText),
+        (!isQueryOnlyDiscovery &&
+          (homeAtlasDiscovery.mode === 'results' ||
+            homeAtlasDiscovery.mode === 'empty' ||
+            discoveryStatusText))),
   );
   const isMobileModalOpen = isMobileFilterOpen || isMobileMenuOpen;
 
@@ -3245,6 +3313,15 @@ export default function AtlasMap({
       data-artwork-variant={artworkVariant}
       data-search-mode={submittedSearchMode}
       data-search-result-count={isSubmittedSearchActive ? homeAtlasDiscovery.events.length : 0}
+      data-search-presentation={
+        shouldUseMapSearchTitleTags
+          ? 'title-tags'
+          : isQueryOnlyDiscovery
+            ? 'query-status'
+            : homeAtlasDiscovery.activeFilterCount > 0
+              ? 'filtered-list'
+              : 'idle'
+      }
       data-search-event-id={exactEventIntent?.eventId}
       style={styles.hero}
       onPointerDown={handleBackdropPointerDown}
@@ -3775,6 +3852,7 @@ export default function AtlasMap({
                 results={rankedSubmittedSearchResults}
                 markerLayouts={displayMarkerLayouts}
                 isDesktop={isDesktop}
+                onEventSelect={openAtlasEvent}
               />
             ) : null}
             {isDesktop ? mapCalloutPlan.clusterIndicators.map((cluster) => (
@@ -3791,6 +3869,24 @@ export default function AtlasMap({
                 +{cluster.hiddenCount}
               </span>
             )) : null}
+          </div>
+        ) : null}
+        {!shouldShowCalibration &&
+        !shouldShowPolishedHomepageUi &&
+        rankedSubmittedSearchResults.length > 0 ? (
+          <div
+            style={{
+              ...styles.markerOverlayLayer,
+              touchAction: shouldAllowPhoneLandscapeNativeScroll ? 'pan-y' : 'none',
+              transform: mapLayerTransform,
+            }}
+          >
+            <SearchResultTextField
+              results={rankedSubmittedSearchResults}
+              markerLayouts={displayMarkerLayouts}
+              isDesktop={isDesktop}
+              onEventSelect={openAtlasEvent}
+            />
           </div>
         ) : null}
       </div>
@@ -3912,7 +4008,7 @@ export default function AtlasMap({
         </div>
       ) : null}
 
-      {!isDesktop && homeAtlasDiscovery.mode === 'exact' && homeAtlasDiscovery.statusText ? (
+      {!isDesktop && homeAtlasDiscovery.statusText ? (
         <p role="status" aria-live="polite" style={styles.visuallyHiddenStatus}>
           {homeAtlasDiscovery.statusText}
         </p>

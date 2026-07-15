@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run validate:flyers && npm run validate:event-pages && npm run validate:event-source-inspection && npm run validate:event-source-synthesis && npm run validate:state-atlas-data && npm run validate:atlas-viewport-mode && npm run validate:home-atlas-search && npm run validate:home-atlas-discovery && npm run validate:atlas-control && next build",
+    "build": "npm run validate:flyers && npm run validate:event-pages && npm run validate:event-source-inspection && npm run validate:event-source-synthesis && npm run validate:state-atlas-data && npm run validate:atlas-viewport-mode && npm run validate:home-atlas-search && npm run validate:home-atlas-discovery && npm run validate:result-label-layout && npm run validate:atlas-control-css-scope && npm run validate:atlas-control && next build",
     "start": "next start",
     "lint": "eslint",
     "atlas:check": "npm run lint && npm run build",
@@ -29,6 +29,7 @@
     "test:visual-install": "playwright install chromium",
     "test:visual-smoke": "node scripts/visual-smoke.mjs",
     "validate:atlas-control": "node scripts/validate-atlas-control.mjs",
+    "validate:atlas-control-css-scope": "node scripts/validate-atlas-control-css-scope.mjs",
     "validate:state-atlas-data": "node --experimental-strip-types scripts/validate-state-atlas-data.ts",
     "validate:atlas-viewport-mode": "node --experimental-strip-types scripts/validate-atlas-viewport-mode.ts",
     "validate:home-atlas-search": "node --experimental-strip-types scripts/validate-home-atlas-search.ts",
@@ -56,6 +57,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "playwright": "^1.61.1",
+    "postcss": "^8.5.19",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
