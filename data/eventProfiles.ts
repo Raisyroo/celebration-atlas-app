@@ -1,8 +1,12 @@
 import { toEventProfiles } from './eventProfileAdapter';
 import type { EventProfile } from './eventProfileTypes';
 import { ATLAS_EVENTS } from './events';
+import { MICHIGAN_STATE_ATLAS_CONFIG } from './stateAtlasConfig';
 
-export const EVENT_PROFILES: EventProfile[] = toEventProfiles(ATLAS_EVENTS);
+export const EVENT_PROFILES: EventProfile[] = toEventProfiles(
+  ATLAS_EVENTS,
+  MICHIGAN_STATE_ATLAS_CONFIG,
+);
 
 type SearchableProfileShape = EventProfile & {
   geography?: {

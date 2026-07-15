@@ -113,11 +113,15 @@ Never place Supabase or Vercel credentials in documentation, source code, prompt
 
 The Michigan Atlas homepage completed a rail and responsive-layout baseline on July 15, 2026.
 
+- The homepage now receives an explicit serializable Michigan state configuration and state-local event catalog; `AtlasMap` no longer owns a silent global Michigan fallback.
+- Published database overlays are scoped to canonical `MI`/`Michigan` events before published packages are loaded, so another state cannot leak into or replace a Michigan fallback event by name.
 - The bottom rail now contains only exact-dated live or upcoming public events, evaluated in the Michigan time zone and sorted live-first then chronologically.
+- Published package dates retain their reviewed event timezone. Rail eligibility evaluates each event in its own valid timezone and falls back safely to the state timezone when needed.
 - Completed, undated, TBA, estimated, and recurrence-only events remain eligible for general map/search discovery when otherwise public, but do not appear in the time-sensitive rail.
 - Ask Celebration Atlas remains visible when no rail event qualifies.
 - Short non-desktop landscape viewports retain menu, favorite, filter, Ask Atlas, and dated event access beside a bounded full-art map.
 - Desktop preserves the portrait artwork content box beside a non-overlapping introduction/discovery panel instead of cropping the state art into a wide phone-like frame.
+- Versioned artwork identity, dimensions, and SHA-256 values are retained in the state configuration and checked by `validate:state-atlas-data` during every full build.
 - The illustrated map remains approximate. A unified coded-star and presentation-position resolver is not implemented yet.
 
 The durable audit and multi-state recommendations are in `docs/MICHIGAN_HOMEPAGE_AUDIT.md`.
@@ -142,9 +146,9 @@ Published package v4 incorporates Ray's editorial feedback: the 1924 picnic and 
 
 ## Current Next Milestone
 
-The Michigan homepage audit and safe responsive baseline are complete. The recommended next map milestone is a diagnostic definition of the shared `StateMapPresentationProfile` and one position resolver for stars, labels, atmosphere, constellation lines, and audits. That work should preserve verified coordinates as source truth and treat illustrated offsets as versioned presentation data.
+Ray selected the remaining Michigan homepage improvements for implementation. The state-scoped catalog/configuration foundation is the first checkpoint. The next focused checkpoint is one deterministic homepage search resolver that removes the current false-positive rules, uses only the supplied state catalog, and produces stable ranked results from verified structured fields.
 
-No follow-up implementation task is selected. Promote one future queue item to `next` only when Ray chooses the next milestone.
+After search, continue with one shared viewport model and functional discovery/filter surfaces, then define the shared `StateMapPresentationProfile` and one versioned position resolver for stars, labels, atmosphere, constellation lines, and audits. Preserve verified coordinates as source truth and treat illustrated offsets as presentation data.
 
 ## Required Verification
 

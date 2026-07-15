@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { useMobileFavorite } from './mobileFavorite';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, ReactNode, RefObject, SyntheticEvent } from 'react';
-import { ATLAS_EVENTS, type AtlasEvent } from '../data/events';
+import type { AtlasEvent } from '../data/events';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
 import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes';
 import { getFlyerEventPresentation } from '../data/flyerEventPresentation';
@@ -30,6 +30,7 @@ import {
 import type { ResultLabelClusterPlacement } from '../data/searchResultTextLayout';
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
 import type { MapPresentationPlan } from '../data/mapPresentationPlan';
+import type { StateAtlasConfig } from '../data/stateAtlasConfig';
 import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
 import { resolveExactMichiganMobileUpperPeninsulaAnchorPosition } from '../data/michiganMobileUpperPeninsulaAnchors';
 import type { MichiganMapAnchor } from '../data/mapCalibration';
@@ -61,12 +62,9 @@ const resultLabelSerif = localFont({
 });
 
 const RESULT_LABEL_SERIF_FONT_STACK = 'var(--font-atlas-result-label), Georgia, serif';
-const SHOW_RESULT_LABEL_FONT_DIAGNOSTIC = process.env.NODE_ENV !== 'production';
+const SHOW_RESULT_LABEL_FONT_DIAGNOSTIC =
+  process.env.NEXT_PUBLIC_ATLAS_RESULT_LABEL_FONT_DIAGNOSTIC === '1';
 
-const ATMOSPHERIC_SUGGESTIONS = [
-  'Ask for festivals, fireworks, fairs, or Romeo Peach Festival',
-];
-const MOBILE_ATLAS_COMMAND_PLACEHOLDER = 'Ask about Michigan celebrations';
 const DISCOVERY_SHORTCUTS = [
   'Fairs',
   'Fireworks',
@@ -87,12 +85,7 @@ const HOME_DISCOVERY_SHORTCUT_GROUPS = [
   { label: 'Regions', shortcuts: REGIONAL_DISCOVERY_SHORTCUTS },
 ];
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
-const MICHIGAN_TITLE_ARTWORK_SRC = '/brand/michigan-landing-lockup.png';
-const MICHIGAN_DESKTOP_ARTWORK_SRC = '/maps/michigan-atlas-base.webp';
-const MICHIGAN_MOBILE_ARTWORK_SRC = '/maps/michigan-atlas-base-tall.webp';
-const MICHIGAN_SAFE_FALLBACK_ARTWORK_SRC = MICHIGAN_DESKTOP_ARTWORK_SRC;
 const MOBILE_MENU_ITEMS = [
-  'Explore Michigan',
   'Saved Celebrations',
   'Calendar',
   'Submit a Celebration',
@@ -663,7 +656,7 @@ function SearchResultTextField({
       {openCluster ? (
         <div style={styles.resultTextClusterBackdrop} role="presentation">
           <section
-            aria-label={`${openCluster.label} near this Michigan region`}
+            aria-label={`${openCluster.label} near this map region`}
             style={{
               ...styles.resultTextClusterSheet,
               left: `${openCluster.x}%`,
@@ -796,13 +789,11 @@ function MapEventCallout({
 }: {
   event: AtlasEvent;
 }) {
-  const city = event.location.split(',')[0]?.trim() || event.location;
-
   return (
     <>
       <span style={styles.mapCalloutCopy}>
         <span style={styles.mapCalloutName}>{event.name}</span>
-        <span style={styles.mapCalloutCity}>{city}, MI</span>
+        <span style={styles.mapCalloutCity}>{event.location}</span>
       </span>
     </>
   );
@@ -1194,7 +1185,8 @@ type FlyerMediaDebugSnapshot = {
 };
 
 type AtlasMapProps = {
-  events?: readonly AtlasEvent[];
+  stateConfig: StateAtlasConfig;
+  events: readonly AtlasEvent[];
   constellationHighlightedIds?: readonly string[];
   celebrationSearchHighlightedIds?: readonly string[];
   activeConstellationTitle?: string | null;
@@ -1525,7 +1517,8 @@ function AtlasCalibrationPanel({
 }
 
 export default function AtlasMap({
-  events = ATLAS_EVENTS,
+  stateConfig,
+  events,
   constellationHighlightedIds = [],
   celebrationSearchHighlightedIds = [],
   activeConstellationTitle = null,
@@ -1535,6 +1528,11 @@ export default function AtlasMap({
   enableAtlasDebug = false,
 }: AtlasMapProps) {
   const router = useRouter();
+  const stateName = stateConfig.identity.name;
+  const desktopArtworkSrc = stateConfig.presentation.desktopArtwork.src;
+  const mobileArtworkSrc = stateConfig.presentation.mobileArtwork.src;
+  const titleArtworkSrc = stateConfig.presentation.titleArtworkSrc;
+  const askSuggestions = stateConfig.presentation.copy.askSuggestions;
   const [query, setQuery] = useState('');
   const [displayedQuery, setDisplayedQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
@@ -1548,7 +1546,7 @@ export default function AtlasMap({
   const [isMapArtworkCelestialFallback, setIsMapArtworkCelestialFallback] =
     useState(false);
   const [mobileMapArtworkSrc, setMobileMapArtworkSrc] = useState(
-    MICHIGAN_MOBILE_ARTWORK_SRC,
+    mobileArtworkSrc,
   );
   const mapArtworkImageRef = useRef<HTMLImageElement | null>(null);
   const [isPhoneLandscape, setIsPhoneLandscape] = useState(false);
@@ -1619,7 +1617,9 @@ export default function AtlasMap({
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useMobileFavorite();
+  const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useMobileFavorite(
+    stateConfig.identity.slug,
+  );
   const [flyerFavoriteConfirmation, setFlyerFavoriteConfirmation] = useState<string | null>(null);
   const [activeFlyerDeckIndex, setActiveFlyerDeckIndex] = useState(0);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -1648,7 +1648,10 @@ export default function AtlasMap({
   const calibrationCopyStatusTimerRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
-  const eventProfiles = useMemo(() => toEventProfiles([...events]), [events]);
+  const eventProfiles = useMemo(
+    () => toEventProfiles(events, stateConfig),
+    [events, stateConfig],
+  );
   const eventProfileById = useMemo(
     () => new Map(eventProfiles.map((profile) => [profile.id, profile])),
     [eventProfiles],
@@ -1759,8 +1762,8 @@ export default function AtlasMap({
     ],
   );
   const liveUpcomingRailEvents = useMemo(
-    () => selectEventRailEvents(events),
-    [events],
+    () => selectEventRailEvents(events, { timeZone: stateConfig.defaultTimeZone }),
+    [events, stateConfig.defaultTimeZone],
   );
   const isMobileAmbientLayoutReady = Boolean(
     mapViewportSize &&
@@ -2709,12 +2712,13 @@ export default function AtlasMap({
   }, [events, openAtlasEvent, searchParams]);
 
   useEffect(() => {
+    if (askSuggestions.length <= 1) return;
     const rotateId = setInterval(() => {
       if (isSearchFocused || query.trim()) return;
-      setSuggestionIndex((prev) => (prev + 1) % ATMOSPHERIC_SUGGESTIONS.length);
+      setSuggestionIndex((prev) => (prev + 1) % askSuggestions.length);
     }, 5400);
     return () => clearInterval(rotateId);
-  }, [isSearchFocused, query]);
+  }, [askSuggestions, isSearchFocused, query]);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia('(min-width: 1024px)');
@@ -2738,7 +2742,7 @@ export default function AtlasMap({
       setArtworkVariant(mobileArtworkQuery.matches ? 'mobile' : 'desktop');
       setIsMapArtworkLoaded(false);
       setIsMapArtworkCelestialFallback(false);
-      setMobileMapArtworkSrc(MICHIGAN_MOBILE_ARTWORK_SRC);
+      setMobileMapArtworkSrc(mobileArtworkSrc);
     };
     syncArtworkVariant();
     mobileArtworkQuery.addEventListener('change', syncArtworkVariant);
@@ -2746,7 +2750,7 @@ export default function AtlasMap({
     return () => {
       mobileArtworkQuery.removeEventListener('change', syncArtworkVariant);
     };
-  }, []);
+  }, [mobileArtworkSrc]);
 
   useEffect(() => {
     const image = mapArtworkImageRef.current;
@@ -2769,15 +2773,15 @@ export default function AtlasMap({
 
     if (
       artworkVariant === 'mobile' &&
-      mobileMapArtworkSrc !== MICHIGAN_SAFE_FALLBACK_ARTWORK_SRC
+      mobileMapArtworkSrc !== desktopArtworkSrc
     ) {
       setIsMapArtworkCelestialFallback(false);
-      setMobileMapArtworkSrc(MICHIGAN_SAFE_FALLBACK_ARTWORK_SRC);
+      setMobileMapArtworkSrc(desktopArtworkSrc);
       return;
     }
 
     setIsMapArtworkCelestialFallback(true);
-  }, [artworkVariant, mobileMapArtworkSrc]);
+  }, [artworkVariant, desktopArtworkSrc, mobileMapArtworkSrc]);
 
   useEffect(() => {
     const phoneLandscapeQuery = window.matchMedia(PHONE_LANDSCAPE_QUERY);
@@ -3016,6 +3020,8 @@ export default function AtlasMap({
       ]
         .filter(Boolean)
         .join(' ')}
+      data-state-slug={stateConfig.identity.slug}
+      data-presentation-profile={stateConfig.presentation.profileId}
       style={styles.hero}
       onPointerDown={handleBackdropPointerDown}
     >
@@ -3057,7 +3063,7 @@ export default function AtlasMap({
             />
             <img
               className="atlas-map-image atlas-map-image--atmosphere"
-              src={MICHIGAN_DESKTOP_ARTWORK_SRC}
+              src={desktopArtworkSrc}
               alt=""
               aria-hidden
               draggable={false}
@@ -3083,9 +3089,9 @@ export default function AtlasMap({
             />
             <img
               className="atlas-map-image"
-              src={MICHIGAN_DESKTOP_ARTWORK_SRC}
+              src={desktopArtworkSrc}
               ref={mapArtworkImageRef}
-              alt="Michigan Atlas"
+              alt={`${stateName} Atlas`}
               draggable={false}
               style={{
                 ...styles.mapImage,
@@ -3585,10 +3591,10 @@ export default function AtlasMap({
       {shouldShowMobileChromeControls ? (
         <>
           <div style={styles.mobileChromeControls} aria-label="Mobile atlas controls">
-            <button type="button" aria-label="Open Michigan atlas menu" aria-expanded={isMobileMenuOpen} className="mobile-chrome-button" style={styles.mobileChromeButton} onClick={() => { beginMobileExploration(); setIsMobileMenuOpen(true); }}>
+            <button type="button" aria-label={`Open ${stateName} atlas menu`} aria-expanded={isMobileMenuOpen} className="mobile-chrome-button" style={styles.mobileChromeButton} onClick={() => { beginMobileExploration(); setIsMobileMenuOpen(true); }}>
               <span aria-hidden="true" style={styles.mobileHamburgerIcon}>☰</span>
             </button>
-            <button type="button" aria-label={isMobileFavoriteSaved ? 'Remove Michigan from favorites' : 'Save Michigan to favorites'} aria-pressed={isMobileFavoriteSaved} className="mobile-chrome-button" style={{ ...styles.mobileChromeButton, ...styles.mobileFavoriteButton, ...(isMobileFavoriteSaved ? styles.mobileFavoriteButtonActive : null) }} onClick={() => setIsMobileFavoriteSaved((isSaved) => !isSaved)}>
+            <button type="button" aria-label={isMobileFavoriteSaved ? `Remove ${stateName} from favorites` : `Save ${stateName} to favorites`} aria-pressed={isMobileFavoriteSaved} className="mobile-chrome-button" style={{ ...styles.mobileChromeButton, ...styles.mobileFavoriteButton, ...(isMobileFavoriteSaved ? styles.mobileFavoriteButtonActive : null) }} onClick={() => setIsMobileFavoriteSaved((isSaved) => !isSaved)}>
               <span aria-hidden="true">{isMobileFavoriteSaved ? '♥' : '♡'}</span>
             </button>
           </div>
@@ -3605,7 +3611,7 @@ export default function AtlasMap({
         <header
           className={`mobile-atlas-identity mobile-atlas-identity--${mobileLandingTitleState}`}
           style={styles.mobileAtlasIdentity}
-          aria-label="Celebration Atlas Michigan"
+          aria-label={`Celebration Atlas ${stateName}`}
           aria-hidden={isMobileExploring ? true : undefined}
           data-mobile-title-state={mobileLandingTitleState}
           data-mobile-exploring={isMobileExploring ? 'true' : 'false'}
@@ -3628,8 +3634,8 @@ export default function AtlasMap({
           <img
             ref={mobileTitleArtworkRef}
             className="mobile-atlas-title-artwork"
-            src={MICHIGAN_TITLE_ARTWORK_SRC}
-            alt="Celebration Atlas Michigan"
+            src={titleArtworkSrc}
+            alt={`Celebration Atlas ${stateName}`}
             draggable={false}
             style={{
               ...styles.mobileAtlasTitleArtwork,
@@ -3670,7 +3676,7 @@ export default function AtlasMap({
             className="mobile-michigan-breadcrumb-text"
             style={styles.mobileMichiganBreadcrumbText}
           >
-            MICHIGAN
+            {stateName.toUpperCase()}
           </span>
         </div>
       ) : null}
@@ -3702,10 +3708,10 @@ export default function AtlasMap({
 
       {shouldShowMobileChromeControls && isMobileMenuOpen ? (
         <div style={styles.mobileSheetOverlay} onClick={() => setIsMobileMenuOpen(false)}>
-          <nav aria-label="Michigan atlas menu" style={styles.mobileMenuSheet} onClick={(event) => event.stopPropagation()}>
+          <nav aria-label={`${stateName} atlas menu`} style={styles.mobileMenuSheet} onClick={(event) => event.stopPropagation()}>
             <div style={styles.mobileSheetHandle} />
             <p style={styles.mobileSheetKicker}>Celebration Atlas</p>
-            {MOBILE_MENU_ITEMS.map((item) => (
+            {[`Explore ${stateName}`, ...MOBILE_MENU_ITEMS].map((item) => (
               <button key={item} type="button" style={styles.mobileMenuItem} onClick={() => setIsMobileMenuOpen(false)}>{item}</button>
             ))}
           </nav>
@@ -3714,11 +3720,11 @@ export default function AtlasMap({
 
       {shouldShowMobileChromeControls && isMobileFilterOpen ? (
         <div style={styles.mobileSheetOverlay} onClick={() => setIsMobileFilterOpen(false)}>
-          <section aria-label="Michigan atlas filters" style={styles.mobileFilterSheet} onClick={(event) => event.stopPropagation()}>
+          <section aria-label={`${stateName} atlas filters`} style={styles.mobileFilterSheet} onClick={(event) => event.stopPropagation()}>
             <div style={styles.mobileSheetHandle} />
             <div style={styles.mobileFilterHeader}>
               <div>
-                <p style={styles.mobileSheetKicker}>Refine Michigan</p>
+                <p style={styles.mobileSheetKicker}>Refine {stateName}</p>
                 <h2 style={styles.mobileSheetTitle}>Filters</h2>
               </div>
               <button type="button" style={styles.mobileSheetCloseButton} onClick={() => setIsMobileFilterOpen(false)} aria-label="Close filters">×</button>
@@ -3739,16 +3745,15 @@ export default function AtlasMap({
           style={styles.desktopIntroPanel}
           aria-label="Atlas desktop introduction"
         >
-          <p style={styles.desktopKicker}>Michigan Atlas</p>
+          <p style={styles.desktopKicker}>{stateConfig.presentation.copy.desktopKicker}</p>
           <h1 style={styles.desktopTitle}>
-            Find a celebration by place, date, or atmosphere.
+            {stateConfig.presentation.copy.desktopTitle}
           </h1>
           <p style={styles.desktopBody}>
-            Ask the Atlas below, or select a star to open its event guide.
+            {stateConfig.presentation.copy.desktopBody}
           </p>
           <p style={styles.desktopHint}>
-            The illustrated map is approximate. Event Hubs preserve verified
-            locations, dates, and official sources.
+            {stateConfig.presentation.copy.desktopHint}
           </p>
         </aside>
       ) : null}
@@ -4169,8 +4174,8 @@ export default function AtlasMap({
                 placeholder={
                   !query.trim() && !displayedQuery && !isSearchFocused
                     ? isDesktop
-                      ? ATMOSPHERIC_SUGGESTIONS[suggestionIndex]
-                      : MOBILE_ATLAS_COMMAND_PLACEHOLDER
+                      ? askSuggestions[suggestionIndex] ?? stateConfig.presentation.copy.askPlaceholder
+                      : stateConfig.presentation.copy.askPlaceholder
                     : ''
                 }
                 onChange={(event) => {
@@ -4243,14 +4248,16 @@ export default function AtlasMap({
                     ? styles.mobileLiveStripReady
                     : styles.mobileLiveStripHidden),
                 }}
-                aria-label="Live and upcoming Michigan events"
+                aria-label={`Live and upcoming ${stateName} events`}
                 aria-hidden={areMobileAmbientControlsVisible ? undefined : true}
                 data-layout-ready={areMobileAmbientControlsVisible ? 'true' : 'false'}
                 data-testid="event-rail"
               >
                 <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
                   {liveUpcomingRailEvents.map((event) => {
-                    const statusBadge = getEventRailStatus(event);
+                    const statusBadge = getEventRailStatus(event, {
+                      timeZone: stateConfig.defaultTimeZone,
+                    });
                     const eventDate = formatMobileEventDate(event);
 
                     const isActiveRailEvent = event.id === selectedId || event.id === exactEventIntent?.eventId;

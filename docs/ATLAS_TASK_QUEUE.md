@@ -201,11 +201,30 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - **Notes:** The rail now includes only exact-dated live/upcoming public events in chronological order. Phone landscape retains its controls beside a bounded full-art map, desktop preserves the artwork content box without panel overlap, and `docs/MICHIGAN_HOMEPAGE_AUDIT.md` records the remaining star/presentation and multi-state work.
 - **Verification:** `npm run lint`, `npm run build`, 390×844 portrait, 844×390 and 960×432 landscape, 1024×768 and 1440×900 desktop, no horizontal overflow, Event Hub rail navigation, no browser errors
 
+### 24. Establish the state-scoped Atlas data foundation
+
+- **Type:** architecture + implementation
+- **Status:** complete
+- **Scope:** explicit state configuration, state-local public event resolution, reviewed date/timezone propagation, and reusable build guardrails
+- **Protected files/areas:** verified event coordinates, Event Hub publication state, illustrated-map calibration values, universal Scout runtime
+- **Notes:** The Michigan homepage now receives a serializable state configuration and explicit state-local catalog. Database packages are loaded only after canonical events are filtered to `MI`/`Michigan`; published dates retain reviewed timezones; only explicitly non-estimated dates qualify for the live/upcoming rail; artwork identity and hashes are build-validated.
+- **Verification:** `npm run lint`, `npm run build`, `npm run test:visual-smoke`, 390×844 portrait, 844×390 landscape, 1440×900 desktop, no overflow, no browser errors
+
+### 25. Replace homepage search with one deterministic state resolver
+
+- **Type:** architecture + implementation
+- **Status:** next
+- **Scope:** Michigan homepage exact-event and broad discovery search only
+- **Protected files/areas:** Event Hub publication state, verified event coordinates, illustrated-map calibration values, universal Scout runtime
+- **Notes:** Remove the cherry/lilac/tulip-to-Romeo false-positive rule and any-token profile matching. Resolve exact identity, category, city, region, month, and season intent from structured state-scoped fields with stable scoring and ordering. Do not introduce unsourced current-event claims.
+- **Verification:** `npm run lint`, `npm run build`, deterministic search regression fixtures, exact Event Hub navigation, mobile and desktop result rendering, no browser errors
+
 ## Completed Tasks
 
 - Define Celebration Search command model — completed in current queue item 6 as a data/model architecture step.
 - Task 22: Grand Haven Coast Guard Festival completed the Event Factory and was published after Ray's Atlas Control approval.
 - Task 23: Michigan homepage rail and responsive baseline completed with a durable multi-state audit.
+- Task 24: State-scoped homepage configuration, catalog resolution, date/timezone provenance, and build validation completed.
 
 ## Paused / Needs Human Review
 

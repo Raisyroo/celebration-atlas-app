@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 
-export const MOBILE_FAVORITE_STORAGE_KEY = 'celebration-atlas:michigan:favorite';
+export function getMobileFavoriteStorageKey(storageScope: string): string {
+  return `celebration-atlas:${storageScope}:favorite`;
+}
 
-export function useMobileFavorite(): [boolean, Dispatch<SetStateAction<boolean>>] {
+export function useMobileFavorite(
+  storageScope = 'michigan',
+): [boolean, Dispatch<SetStateAction<boolean>>] {
+  const storageKey = getMobileFavoriteStorageKey(storageScope);
   const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useState(false);
   const hasLoadedMobileFavoriteRef = useRef(false);
 
   useEffect(() => {
+    hasLoadedMobileFavoriteRef.current = false;
     const favoriteLoadTimer = window.setTimeout(() => {
       try {
         setIsMobileFavoriteSaved(
-          window.localStorage.getItem(MOBILE_FAVORITE_STORAGE_KEY) === 'true',
+          window.localStorage.getItem(storageKey) === 'true',
         );
       } catch {
         setIsMobileFavoriteSaved(false);
@@ -20,19 +26,19 @@ export function useMobileFavorite(): [boolean, Dispatch<SetStateAction<boolean>>
     }, 0);
 
     return () => window.clearTimeout(favoriteLoadTimer);
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!hasLoadedMobileFavoriteRef.current) return;
     try {
       window.localStorage.setItem(
-        MOBILE_FAVORITE_STORAGE_KEY,
+        storageKey,
         isMobileFavoriteSaved ? 'true' : 'false',
       );
     } catch {
       // Favorites still provide a polished visual toggle if storage is unavailable.
     }
-  }, [isMobileFavoriteSaved]);
+  }, [isMobileFavoriteSaved, storageKey]);
 
   return [isMobileFavoriteSaved, setIsMobileFavoriteSaved];
 }

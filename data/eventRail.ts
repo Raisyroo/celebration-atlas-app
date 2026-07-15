@@ -39,6 +39,8 @@ function parseDateOnly(value: string | undefined): string | null {
 }
 
 function getValidDateRange(event: Pick<AtlasEvent, 'dateRange'>): ValidDateRange | null {
+  if (event.dateRange?.isEstimated !== false) return null;
+
   const startDate = parseDateOnly(event.dateRange?.startDate);
   if (!startDate) return null;
 
@@ -68,6 +70,26 @@ function getDateKeyInTimeZone(now: Date, timeZone: string): string | null {
   }
 }
 
+function getEventDateKey(
+  event: Pick<AtlasEvent, 'dateRange'>,
+  options: EventRailTimingOptions,
+): string | null {
+  const timeZones = [
+    event.dateRange?.timeZone,
+    options.timeZone,
+    DEFAULT_EVENT_RAIL_TIME_ZONE,
+  ].filter((timeZone, index, values): timeZone is string => (
+    Boolean(timeZone) && values.indexOf(timeZone) === index
+  ));
+
+  for (const timeZone of timeZones) {
+    const dateKey = getDateKeyInTimeZone(options.now ?? new Date(), timeZone);
+    if (dateKey) return dateKey;
+  }
+
+  return null;
+}
+
 function classifyEventForDate(
   event: Pick<AtlasEvent, 'dateRange'>,
   today: string,
@@ -85,10 +107,7 @@ export function getEventRailStatus(
   event: Pick<AtlasEvent, 'dateRange'>,
   options: EventRailTimingOptions = {},
 ): EventRailStatus | null {
-  const today = getDateKeyInTimeZone(
-    options.now ?? new Date(),
-    options.timeZone ?? DEFAULT_EVENT_RAIL_TIME_ZONE,
-  );
+  const today = getEventDateKey(event, options);
   if (!today) return null;
 
   return classifyEventForDate(event, today)?.status ?? null;
@@ -98,13 +117,9 @@ export function selectEventRailEvents<T extends EventRailCandidate>(
   events: readonly T[],
   options: EventRailTimingOptions = {},
 ): T[] {
-  const today = getDateKeyInTimeZone(
-    options.now ?? new Date(),
-    options.timeZone ?? DEFAULT_EVENT_RAIL_TIME_ZONE,
-  );
-  if (!today) return [];
-
   const eligibleEvents = events.flatMap((event) => {
+    const today = getEventDateKey(event, options);
+    if (!today) return [];
     const timing = classifyEventForDate(event, today);
     return timing ? [{ event, ...timing }] : [];
   });
