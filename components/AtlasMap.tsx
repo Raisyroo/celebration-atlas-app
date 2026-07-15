@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import localFont from 'next/font/local';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import { useMobileFavorite } from './mobileFavorite';
 import { useRouter } from 'next/navigation';
@@ -585,6 +586,10 @@ function SearchResultTextField({
   const openCluster = placements.find(
     (placement): placement is ResultLabelClusterPlacement => placement.kind === 'cluster' && placement.id === openClusterId,
   );
+  const handleClusterEventSelect = useCallback((eventId: string) => {
+    setOpenClusterId(null);
+    onEventSelect(eventId);
+  }, [onEventSelect]);
 
   useEffect(() => {
     if (!SHOW_RESULT_LABEL_FONT_DIAGNOSTIC) return;
@@ -602,6 +607,39 @@ function SearchResultTextField({
       weight: computedStyle.fontWeight,
     });
   }, [placements]);
+
+  const openClusterOverlay = openCluster ? (
+    <div style={styles.resultTextClusterBackdrop} role="presentation">
+      <section
+        aria-label={`${openCluster.label} near this Michigan region`}
+        style={{
+          ...styles.resultTextClusterSheet,
+          ...(isDesktop
+            ? {
+                left: `${openCluster.x}%`,
+                top: `${openCluster.y}%`,
+              }
+            : styles.resultTextClusterSheetMobile),
+        }}
+      >
+        <p style={styles.resultTextClusterKicker}>Local event cluster</p>
+        <h2 style={styles.resultTextClusterTitle}>{openCluster.label}</h2>
+        <button type="button" aria-label="Close event cluster" onClick={() => setOpenClusterId(null)} style={styles.resultTextClusterClose}>×</button>
+        <div style={styles.resultTextClusterPanel}>
+          {openCluster.events.map((event) => {
+            const locationLabel = formatResultLabelLocation(event.location);
+
+            return (
+              <button key={event.id} type="button" onClick={() => handleClusterEventSelect(event.id)} style={styles.resultTextClusterEvent}>
+                <span style={styles.resultTextClusterEventName}>{event.name}</span>
+                {locationLabel ? <span style={styles.resultTextClusterEventLocation}>{locationLabel}</span> : null}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  ) : null;
 
   if (placements.length === 0) return null;
 
@@ -674,34 +712,7 @@ function SearchResultTextField({
           Floating label font: {fontDiagnostic.family} · weight {fontDiagnostic.weight}
         </output>
       ) : null}
-      {openCluster ? (
-        <div style={styles.resultTextClusterBackdrop} role="presentation">
-          <section
-            aria-label={`${openCluster.label} near this Michigan region`}
-            style={{
-              ...styles.resultTextClusterSheet,
-              left: `${openCluster.x}%`,
-              top: `${openCluster.y}%`,
-            }}
-          >
-            <p style={styles.resultTextClusterKicker}>Local event cluster</p>
-            <h2 style={styles.resultTextClusterTitle}>{openCluster.label}</h2>
-            <button type="button" aria-label="Close event cluster" onClick={() => setOpenClusterId(null)} style={styles.resultTextClusterClose}>×</button>
-            <div style={styles.resultTextClusterPanel}>
-              {openCluster.events.map((event) => {
-                const locationLabel = formatResultLabelLocation(event.location);
-
-                return (
-                  <button key={event.id} type="button" onClick={() => onEventSelect(event.id)} style={styles.resultTextClusterEvent}>
-                    <span style={styles.resultTextClusterEventName}>{event.name}</span>
-                    {locationLabel ? <span style={styles.resultTextClusterEventLocation}>{locationLabel}</span> : null}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-      ) : null}
+      {typeof document !== 'undefined' && openClusterOverlay ? createPortal(openClusterOverlay, document.body) : null}
     </div>
   );
 }
@@ -5689,6 +5700,17 @@ const styles: Record<string, CSSProperties> = {
     background: 'linear-gradient(160deg, rgba(16, 21, 30, 0.76), rgba(9, 12, 18, 0.62))',
     boxShadow: '0 24px 60px rgba(0, 0, 0, 0.46), inset 0 0 0 1px rgba(255, 241, 203, 0.08)',
     fontFamily: RESULT_LABEL_SERIF_FONT_STACK,
+  },
+  resultTextClusterSheetMobile: {
+    position: 'fixed',
+    left: '50%',
+    top: 'calc(max(112px, env(safe-area-inset-top, 0px) + 96px))',
+    transform: 'translateX(-50%)',
+    width: 'min(90vw, 380px)',
+    maxHeight: 'min(48svh, calc(100svh - max(112px, env(safe-area-inset-top, 0px) + 96px) - 310px))',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch',
   },
   resultTextClusterKicker: {
     margin: '0 36px 4px 0',
