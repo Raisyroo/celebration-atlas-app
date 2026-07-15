@@ -42,6 +42,14 @@ Current public Event Hub coverage:
 
 The five factory-published packages are at 100 percent readiness. Existing package and manifest fallbacks must remain valid while the generalized pipeline expands.
 
+Private review queue:
+
+| Event | Package | Status | Authenticated preview |
+| --- | --- | --- | --- |
+| Grand Haven Coast Guard Festival | `26dde20f-d707-4321-947c-49a45d507d13` | `ready_for_review`, 100% readiness | `https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13` |
+
+The Coast Guard package is not approved or published and is not a new public Event Hub release. Its approved visual workflow, accepted synthesis, verified evidence case, and package may be reviewed without crossing the publication boundary.
+
 ## Event Factory
 
 The operating loop is:
@@ -100,6 +108,7 @@ Do not build one-off deep-question logic into individual event pages. The future
 - The Control Desk supports source inspection, bundle collection, synthesis, verification, package review, publication, and visual workflow approval.
 - Production authentication remains required. An existing signed-in browser session reaches `/atlas-control`; unauthenticated requests redirect to `/atlas-login`.
 - Migration `014` creates the public media bucket and service-only visual workflow tables and RPCs.
+- The first migration-014 visual workflow is approved for the Coast Guard Festival private package. Its supplied 1024x1536 hero is stored in `celebration-atlas-media`; package approval remains separate.
 
 Never place Supabase or Vercel credentials in documentation, source code, prompts, or commits.
 
@@ -113,9 +122,13 @@ Never place Supabase or Vercel credentials in documentation, source code, prompt
 
 ## Current Next Milestone
 
-Build the Grand Haven Coast Guard Festival as the first clean end-to-end event using the Hero Image Factory added in migration 014.
+Ray should review the authenticated Grand Haven Coast Guard Festival package at:
 
-Read `docs/COAST_GUARD_FESTIVAL_BRIEF.md`. The task should perform fresh official-source research, retain annual/current facts, assemble a rich private Event Hub package, register the supplied hero through the visual workflow, and complete mobile review. Do not publish the package until Ray reviews the private preview.
+`https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13`
+
+The package retains 11 source snapshots, 40 current official schedule rows, the distinct organizer/program/City date windows, an approved visual-signature workflow, Census-geocoded waterfront venue provenance, four visitor-planning links, and a source-backed maritime traditions module. The optional AI Gateway prose request was unavailable in the local environment, so the exact accepted child uses the existing evidence-bound editorial API with operator-reviewed copy and immutable facts locked.
+
+Do not approve or publish package `26dde20f-d707-4321-947c-49a45d507d13` until Ray explicitly approves the preview. No unrelated next implementation task is selected while this human review is pending.
 
 ## Required Verification
 

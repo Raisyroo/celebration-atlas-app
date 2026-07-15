@@ -66,6 +66,9 @@ const TRADITION_TOPICS: Array<{
   { id: 'harvest-crafts', kind: 'harvest', title: 'Harvest and agricultural heritage', pattern: /orchards?|prized crop|peach crop|thriving cherry industry|showcase.{0,45}cherry industry|cherry farm market|agricultural heritage|harvest|craft shows?/i },
   { id: 'festival-programs', kind: 'community', title: 'Festival programs and honors', pattern: /marching band|fine art competition|student art competition|pin program|very cherry awards/i },
   { id: 'personalities', kind: 'heritage', title: 'Festival personalities', pattern: /grand marshal|honored citizen|lil.? miss|peachy king|festival personalities/i },
+  { id: 'maritime-origins', kind: 'heritage', title: 'From service picnic to waterfront festival', pattern: /coast guard personnel.{0,30}picnic|first picnic in 19\d{2}|first festival in 19\d{2}/i },
+  { id: 'service-memorial', kind: 'heritage', title: 'The Coast Guard Memorial Service', pattern: /national coast guard memorial service|memorial service honoring.{0,80}coast guard/i },
+  { id: 'ships-in-channel', kind: 'community', title: 'Ships in the channel', pattern: /ship arrivals?|parade of ships|cutters?.{0,100}(?:channel|waterfront|glide)|sail into (?:port|the harbor)/i },
 ];
 
 const HIGHLIGHT_TOPICS: Array<{

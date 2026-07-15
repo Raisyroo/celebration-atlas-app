@@ -212,6 +212,15 @@ function contentDateRange(segments: EventSourceContentSegment[]) {
     : { startDate: '', endDate: '' };
 }
 
+function labeledEventDateRange(segments: EventSourceContentSegment[]) {
+  for (const segment of segments) {
+    if (!/\b(?:festival|event)\s+dates?\b/i.test(segment.text)) continue;
+    const range = naturalDateRange(segment.text);
+    if (range.startDate && range.endDate) return range;
+  }
+  return { startDate: '', endDate: '' };
+}
+
 function contentMichiganAddress(segments: EventSourceContentSegment[]) {
   for (let index = 0; index < segments.length; index += 1) {
     const segment = segments[index];
@@ -224,6 +233,7 @@ function contentMichiganAddress(segments: EventSourceContentSegment[]) {
       .find((candidate) => (
         candidate.kind === 'heading'
         && !/^(?:location|location information|event detail|hotel|lodging)$/i.test(candidate.text)
+        && /\b(?:stadium|center|hall|park|fairgrounds?|plaza|arena|theat(?:er|re)|museum|pavilion|grounds)\b/i.test(candidate.text)
       ));
     return {
       locationName: priorHeading?.text ?? '',
@@ -234,6 +244,16 @@ function contentMichiganAddress(segments: EventSourceContentSegment[]) {
     };
   }
   return { locationName: '', street: '', city: '', state: '', postalCode: '' };
+}
+
+function contentVenueName(segments: EventSourceContentSegment[]) {
+  for (const segment of segments) {
+    const match = cleanWhitespace(segment.text).match(
+      /^(?:at|venue:)\s+(?:the\s+)?(.{2,100}\b(?:stadium|center|hall|park|fairgrounds?|plaza|arena|theat(?:er|re)|museum|pavilion|grounds))\.?$/i,
+    );
+    if (match) return cleanWhitespace(match[1]);
+  }
+  return '';
 }
 
 function normalizeState(value: string) {
@@ -278,7 +298,7 @@ function collectSponsorNames(objects: JsonObject[]) {
   return [...names];
 }
 
-const GENERIC_PAGE_LABEL = /^(?:home|welcome|event detail|events?|calendar)$/i;
+const GENERIC_PAGE_LABEL = /^(?:home|welcome|event detail|events?|all events|calendar|waterfront mainstage events)$/i;
 
 function repeatedEventLogoIdentity($: cheerio.CheerioAPI) {
   const counts = new Map<string, { value: string; count: number }>();
@@ -474,8 +494,13 @@ function contentSegments(
   $: cheerio.CheerioAPI,
   sponsorNames: string[],
 ): EventSourceContentSegment[] {
-  const rootCandidates = $('main, article, [role="main"]');
-  const scope = rootCandidates.length ? rootCandidates : $('body');
+  const primaryRoot = $('main, [role="main"]').first();
+  const articleRoots = $('article');
+  const scope = primaryRoot.length
+    ? primaryRoot
+    : articleRoots.length === 1
+      ? articleRoots.first()
+      : $('body');
   const segments: EventSourceContentSegment[] = [];
   const seenCounts = new Map<string, number>();
   let characterCount = 0;
@@ -587,7 +612,7 @@ export function parseOfficialEventSourceHtml(args: {
   const evidence: EventSourceEvidence[] = [];
   const jsonName = scrubSponsorReferences(plainString(primaryEvent?.name), sponsorNames, 180);
   const usefulHeading = GENERIC_PAGE_LABEL.test(heading) ? '' : heading;
-  const rawTitleName = title.split(/\s+[|]\s+/)[0].trim();
+  const rawTitleName = title.split(/\s+[|\u2013\u2014]\s+/)[0].trim();
   const titleName = GENERIC_PAGE_LABEL.test(rawTitleName) ? '' : rawTitleName;
   const name = jsonName || usefulHeading || logoIdentity || titleName;
   pushEvidence(evidence, 'name', name, jsonName ? 'jsonLd' : usefulHeading || logoIdentity ? 'html' : 'metadata');
@@ -598,6 +623,7 @@ export function parseOfficialEventSourceHtml(args: {
     'meta[name="twitter:description"]',
   ]);
   const naturalDates = naturalDateRange(metadataDescription);
+  const labeledDates = labeledEventDateRange(extractedContent);
   const boundedContentDates = contentDateRange(extractedContent);
   const jsonStart = normalizeDate(primaryEvent?.startDate);
   const metadataStart = normalizeDate(metaContent($, [
@@ -605,12 +631,16 @@ export function parseOfficialEventSourceHtml(args: {
     'meta[property="og:event:start_time"]',
     'meta[itemprop="startDate"]',
   ]));
-  const startDate = jsonStart || metadataStart || naturalDates.startDate || boundedContentDates.startDate;
+  const startDate = jsonStart || metadataStart || labeledDates.startDate || naturalDates.startDate || boundedContentDates.startDate;
   pushEvidence(
     evidence,
     'startDate',
     startDate,
-    jsonStart ? 'jsonLd' : boundedContentDates.startDate && !metadataStart && !naturalDates.startDate ? 'html' : 'metadata',
+    jsonStart
+      ? 'jsonLd'
+      : (!metadataStart && (labeledDates.startDate || (boundedContentDates.startDate && !naturalDates.startDate)))
+        ? 'html'
+        : 'metadata',
   );
 
   const jsonEnd = normalizeDate(primaryEvent?.endDate);
@@ -619,17 +649,23 @@ export function parseOfficialEventSourceHtml(args: {
     'meta[property="og:event:end_time"]',
     'meta[itemprop="endDate"]',
   ]));
-  const endDate = jsonEnd || metadataEnd || naturalDates.endDate || boundedContentDates.endDate;
+  const endDate = jsonEnd || metadataEnd || labeledDates.endDate || naturalDates.endDate || boundedContentDates.endDate;
   pushEvidence(
     evidence,
     'endDate',
     endDate,
-    jsonEnd ? 'jsonLd' : boundedContentDates.endDate && !metadataEnd && !naturalDates.endDate ? 'html' : 'metadata',
+    jsonEnd
+      ? 'jsonLd'
+      : (!metadataEnd && (labeledDates.endDate || (boundedContentDates.endDate && !naturalDates.endDate)))
+        ? 'html'
+        : 'metadata',
   );
 
   const location = locationFromJsonLd(primaryEvent?.location);
   const contentAddress = contentMichiganAddress(extractedContent);
+  const contentVenue = contentVenueName(extractedContent);
   if (!location.locationName && contentAddress.locationName) location.locationName = contentAddress.locationName;
+  if (!location.locationName && contentVenue) location.locationName = contentVenue;
   if (!location.street && contentAddress.street) location.street = contentAddress.street;
   if (!location.city && contentAddress.city) location.city = contentAddress.city;
   if (!location.state && contentAddress.state) location.state = contentAddress.state;
@@ -642,7 +678,7 @@ export function parseOfficialEventSourceHtml(args: {
     evidence,
     'location',
     locationText,
-    primaryEvent?.location ? 'jsonLd' : contentAddress.city ? 'html' : 'metadata',
+    primaryEvent?.location ? 'jsonLd' : contentAddress.city || contentVenue ? 'html' : 'metadata',
   );
 
   const jsonDescription = scrubSponsorReferences(plainString(primaryEvent?.description), sponsorNames, 1_200);

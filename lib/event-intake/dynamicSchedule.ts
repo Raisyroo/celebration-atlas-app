@@ -423,6 +423,115 @@ export function scheduleItemsFromStaticSegments(
   return output;
 }
 
+const FOOEVENTS_MONTH_NUMBER: Record<string, number> = {
+  jan: 1,
+  feb: 2,
+  mar: 3,
+  apr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  aug: 8,
+  sep: 9,
+  oct: 10,
+  nov: 11,
+  dec: 12,
+};
+
+function fooEventsClock(value: string) {
+  const normalized = text(value)
+    .replace(/\b([ap])\.?\s*m\.?/gi, (_, letter: string) => `${letter.toUpperCase()}M`)
+    .replace(/\s+/g, ' ');
+  const match = normalized.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)(?:\s*[-\u2013\u2014]\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM))?/i);
+  if (!match) return null;
+  const startValue = clockValue(match[1], match[2], match[3]);
+  const endValue = match[4] && match[6] ? clockValue(match[4], match[5], match[6]) : null;
+  if (startValue === null) return null;
+  return {
+    startValue,
+    endValue,
+    endNextDay: endValue !== null && endValue < startValue,
+    timeText: normalized,
+  };
+}
+
+export function scheduleItemsFromFooEventsListing(
+  html: string,
+  inspection: OfficialEventSourceInspection,
+  timeZone = 'America/Detroit',
+) {
+  const $ = cheerio.load(html);
+  const candidateYear = Number(
+    inspection.candidate.startDate.match(/^(20\d{2})/)?.[1]
+      ?? inspection.candidate.endDate.match(/^(20\d{2})/)?.[1]
+      ?? $('th').text().match(/\b(20\d{2})\b/)?.[1]
+      ?? '',
+  );
+  if (!candidateYear) return [];
+
+  const output: EventScheduleCandidatePayload[] = [];
+  $('.fooevents-event-listing-single').each((index, element) => {
+    if (output.length >= MAX_SCHEDULE_ITEMS) return false;
+    const row = $(element);
+    const month = FOOEVENTS_MONTH_NUMBER[text(row.find('.fooevents-event-listing-date-month').first().text()).slice(0, 3).toLowerCase()];
+    const day = Number(text(row.find('.fooevents-event-listing-date-day').first().text()));
+    if (!month || !Number.isInteger(day) || day < 1 || day > 31) return;
+
+    const link = row.find('h3 a[href]').first();
+    const cleanedTitle = cleanScheduleTitle(link.text() || row.find('h3').first().text(), '');
+    if (!cleanedTitle.title) return;
+    const parsedTime = fooEventsClock(row.find('.event-time').first().text());
+    if (!parsedTime) return;
+
+    const dateText = `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${candidateYear}`;
+    const startsAt = zonedDateTime(localDateParts(dateText, parsedTime.startValue), timeZone);
+    const endsAt = parsedTime.endValue === null
+      ? null
+      : zonedDateTime(
+        localDateParts(parsedTime.endNextDay ? addDay(dateText) : dateText, parsedTime.endValue),
+        timeZone,
+      );
+    if (!startsAt) return;
+
+    const venue = cleanVenue(
+      row.find('.fooevents-event-listing-compact-location strong').first().text(),
+      cleanedTitle.blockedTerms,
+    );
+    const href = text(link.attr('href'));
+    let detailUrl: string | null = null;
+    try {
+      detailUrl = href ? new URL(href, inspection.finalUrl).toString() : null;
+    } catch {
+      detailUrl = null;
+    }
+    const dedupeKey = createHash('sha256')
+      .update(JSON.stringify([cleanedTitle.title.toLowerCase(), startsAt, endsAt, venue?.toLowerCase() ?? '']))
+      .digest('hex');
+    output.push({
+      dedupeKey,
+      title: cleanedTitle.title,
+      startsAt,
+      endsAt,
+      dateText,
+      timezone: timeZone,
+      venue,
+      category: staticScheduleCategory(cleanedTitle.title),
+      tags: [],
+      details: null,
+      confidence: 'verified',
+      confidenceScore: 0.98,
+      sourceLocator: {
+        adapter: 'fooevents-listing-v1',
+        rowIndex: index,
+        detailUrl,
+        date: dateText,
+        time: parsedTime.timeText,
+      },
+    });
+  });
+  return output;
+}
+
 export function scheduleItemsFromSaffireResponse(
   response: unknown,
   categories: Map<number, string>,
@@ -497,6 +606,13 @@ export async function collectDynamicSchedule(args: {
   timezone?: string;
 }): Promise<EventScheduleCandidatePayload[]> {
   if (args.sourceKind !== 'schedule') return [];
+  if (/fooevents-event-listing-single/i.test(args.rawHtml)) {
+    return scheduleItemsFromFooEventsListing(
+      args.rawHtml,
+      args.inspection,
+      args.timezone ?? 'America/Detroit',
+    );
+  }
   if (!/Events\/JS\/EventSchedule\.js|services\/eventsservice\.asmx/i.test(args.rawHtml)) {
     return scheduleItemsFromStaticSegments(args.inspection, args.timezone ?? 'America/Detroit');
   }

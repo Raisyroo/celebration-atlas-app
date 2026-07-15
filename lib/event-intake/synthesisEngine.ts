@@ -391,20 +391,23 @@ function sourceTitle(snapshot: SynthesisSourceSnapshot) {
 
 function planLinkLabel(snapshot: SynthesisSourceSnapshot) {
   const signal = `${snapshot.pageTitle ?? ''} ${snapshot.canonicalUrl}`.toLowerCase();
+  if (snapshot.sourceKind === 'rules') return 'Festival rules';
   if (snapshot.sourceKind === 'tickets') return /admission|gate|pass/.test(signal) ? 'Admission' : 'Tickets';
   if (snapshot.sourceKind === 'registration') {
     if (/fair[ -]?book/.test(signal)) return 'Fair Book & entries';
     return /livestock|exhibit|entry|entries/.test(signal) ? 'Entries & registration' : 'Registration';
   }
+  if (/\b(?:transit|shuttle)\b/.test(signal)) return 'Transit & shuttles';
   if (/carnival|midway|rides?/.test(signal)) return 'Carnival information';
-  if (/admission|gate|parking/.test(signal)) return 'Admission & parking';
+  if (/parking|park[ -]?and[ -]?ride|park[ -]?&[ -]?ride/.test(signal)) return 'Parking & shuttles';
+  if (/admission|gate/.test(signal)) return 'Admission & parking';
   return 'Visitor information';
 }
 
 function planLinks(snapshots: SynthesisSourceSnapshot[]) {
   const seen = new Set<string>();
   return snapshots
-    .filter((snapshot) => ['plan', 'tickets', 'registration'].includes(snapshot.sourceKind))
+    .filter((snapshot) => ['plan', 'rules', 'tickets', 'registration'].includes(snapshot.sourceKind))
     .filter((snapshot) => {
       const key = snapshot.canonicalUrl.toLowerCase();
       if (seen.has(key)) return false;

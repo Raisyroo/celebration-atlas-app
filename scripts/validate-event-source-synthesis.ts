@@ -349,6 +349,39 @@ const cherryTraditionsInput: EventSourceSynthesisInput = {
 const cherryPlan = buildEditorialPlan(cherryTraditionsInput, editorialReconciled.profile.values);
 assert(cherryPlan.traditions.length >= 4, 'General festival evidence should create royalty, parade, harvest, and program traditions.');
 assert(cherryPlan.recommendedTabs.includes('traditions'), 'A tradition-rich festival should receive a dedicated navigation tab.');
+
+const maritimeTraditionsPlan = buildEditorialPlan({
+  ...cherryTraditionsInput,
+  snapshots: [
+    {
+      id: 'maritime-about',
+      sequenceNumber: 1,
+      sourceKind: 'other',
+      canonicalUrl: 'https://maritime.example/about-history',
+      pageTitle: 'Festival History',
+      contentHash: 'a'.repeat(64),
+      fetchedAt: '2026-07-14T12:00:00.000Z',
+      contentSegments: [
+        { kind: 'paragraph', text: 'The celebration began as a Coast Guard personnel-only picnic, with the first picnic in 1924 and the first festival in 1937.' },
+        { kind: 'paragraph', text: 'The National Coast Guard Memorial Service honors those who sacrificed their lives in service.' },
+      ],
+    },
+    {
+      id: 'maritime-ships',
+      sequenceNumber: 2,
+      sourceKind: 'schedule',
+      canonicalUrl: 'https://maritime.example/ship-arrivals',
+      pageTitle: 'Ship Arrivals',
+      contentHash: 'b'.repeat(64),
+      fetchedAt: '2026-07-14T12:00:00.000Z',
+      contentSegments: [
+        { kind: 'paragraph', text: 'Coast Guard cutters glide into the channel while crowds gather along the waterfront.' },
+      ],
+    },
+  ],
+}, editorialReconciled.profile.values);
+assert(maritimeTraditionsPlan.traditions.length === 3, 'Maritime festival evidence should create origin, memorial, and ship-arrival traditions.');
+assert(maritimeTraditionsPlan.recommendedTabs.includes('traditions'), 'A source-rich maritime festival should receive a traditions tab.');
 const cherrySynthesis = synthesizeEventSourceBundle(cherryTraditionsInput);
 assert.equal(
   (cherrySynthesis.manifestProposal as EventPageManifest).hero.imageSrc,
@@ -388,6 +421,15 @@ const cherryPlanLinksInput: EventSourceSynthesisInput = {
       contentHash: '7'.repeat(64),
       fetchedAt: '2026-07-13T12:00:00.000Z',
     },
+    {
+      id: 'cherry-rules',
+      sequenceNumber: 8,
+      sourceKind: 'rules',
+      canonicalUrl: 'https://cherry.example/festival-rules',
+      pageTitle: 'Festival Rules',
+      contentHash: '8'.repeat(64),
+      fetchedAt: '2026-07-13T12:00:00.000Z',
+    },
   ],
 };
 const cherryPlanLinks = (synthesizeEventSourceBundle(cherryPlanLinksInput).manifestProposal as EventPageManifest).modules
@@ -395,8 +437,41 @@ const cherryPlanLinks = (synthesizeEventSourceBundle(cherryPlanLinksInput).manif
 assert(cherryPlanLinks?.type === 'planVisit');
 assert.deepEqual(
   cherryPlanLinks.links.map((link) => link.label),
-  ['Admission', 'Fair Book & entries', 'Carnival information'],
+  ['Admission', 'Fair Book & entries', 'Carnival information', 'Festival rules'],
   'Generated Event Hubs should retain distinct, useful planning links.',
+);
+
+const transportPlanLinksInput: EventSourceSynthesisInput = {
+  ...cherryTraditionsInput,
+  snapshots: [
+    ...cherryTraditionsInput.snapshots,
+    {
+      id: 'visitor-parking',
+      sequenceNumber: 9,
+      sourceKind: 'plan',
+      canonicalUrl: 'https://festival.example/parking-information',
+      pageTitle: 'Parking Information',
+      contentHash: '9'.repeat(64),
+      fetchedAt: '2026-07-13T12:00:00.000Z',
+    },
+    {
+      id: 'visitor-transit',
+      sequenceNumber: 10,
+      sourceKind: 'plan',
+      canonicalUrl: 'https://transit.example/festival-shuttle',
+      pageTitle: 'Festival Transit',
+      contentHash: 'a'.repeat(64),
+      fetchedAt: '2026-07-13T12:00:00.000Z',
+    },
+  ],
+};
+const transportPlanLinks = (synthesizeEventSourceBundle(transportPlanLinksInput).manifestProposal as EventPageManifest).modules
+  .find((module) => module.type === 'planVisit');
+assert(transportPlanLinks?.type === 'planVisit');
+assert.deepEqual(
+  transportPlanLinks.links.map((link) => link.label),
+  ['Parking & shuttles', 'Transit & shuttles'],
+  'Parking and transit sources should receive accurate visitor-facing labels.',
 );
 
 const countyFairInput: EventSourceSynthesisInput = {

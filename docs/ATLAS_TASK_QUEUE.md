@@ -186,10 +186,10 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 22. Build Coast Guard Festival through the Event Factory
 
 - **Type:** implementation
-- **Status:** next
+- **Status:** needs human review
 - **Scope:** Coast Guard Festival source intake, evidence bundle, synthesis, visual workflow, private package, and mobile preview
 - **Protected files/areas:** existing published Event Hub packages, homepage map geometry, illustrated-map calibration, universal Scout AI runtime, production publication before human review, sponsor listings
-- **Notes:** Read `docs/PROJECT_STATE.md` and `docs/COAST_GUARD_FESTIVAL_BRIEF.md`. Use fresh official-source research and the supplied repository hero. Build an elegant, source-complete private Event Hub package with the Hero Image Factory. Do not publish it until Ray reviews the exact mobile preview.
+- **Notes:** Private package `26dde20f-d707-4321-947c-49a45d507d13` is at 100% readiness with an approved migration-014 hero workflow and authenticated mobile preview at `https://celebration-atlas-app.vercel.app/atlas-control/event-preview/26dde20f-d707-4321-947c-49a45d507d13`. It remains unpublished. Resume only after Ray explicitly approves or requests revisions.
 - **Verification:** `npm run build`, Atlas Control readiness, migration parity, private package mobile review, no horizontal overflow, no browser errors, existing public Event Hub smoke check
 
 ## Completed Tasks
@@ -198,7 +198,7 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 
 ## Paused / Needs Human Review
 
-No tasks are currently paused for human review.
+- Task 22: Grand Haven Coast Guard Festival package `26dde20f-d707-4321-947c-49a45d507d13` is ready for Ray's authenticated mobile review. Do not publish without explicit approval.
 
 ## Task Template
 

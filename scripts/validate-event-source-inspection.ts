@@ -9,6 +9,7 @@ import {
 } from '../lib/event-intake/sourceBundlePayload.ts';
 import { selectBoundedOfficialSourceLinks } from '../lib/event-intake/sourceCollection.ts';
 import {
+  scheduleItemsFromFooEventsListing,
   scheduleItemsFromSaffireResponse,
   scheduleItemsFromStaticSegments,
 } from '../lib/event-intake/dynamicSchedule.ts';
@@ -111,6 +112,16 @@ const genericHomeFixture = parseOfficialEventSourceHtml({
 assert(genericHomeFixture.candidate.name === 'St Clair County 4-H & Youth Fair', 'A generic home-page title did not inherit the repeated event logo identity.');
 assert(genericHomeFixture.candidate.sourceName === 'St Clair County 4-H & Youth Fair', 'The generic source label did not inherit the repeated event logo identity.');
 
+const multiArticleHomeFixture = parseOfficialEventSourceHtml({
+  html: `<!doctype html><html><head><title>Grand Haven Coast Guard Festival – Official Site</title></head><body><h1>Waterfront Mainstage Events</h1><p>At the Lynne Sherwood Waterfront Stadium</p><h2>Festival dates: July 24- August 2, 2026</h2><article><h3>Friday concert</h3></article><article><h3>Saturday concert</h3></article></body></html>`,
+  requestedUrl: 'https://coastguard.example/',
+  finalUrl: 'https://coastguard.example/',
+  fetchedAt: '2026-07-14T12:00:00.000Z',
+});
+assert(multiArticleHomeFixture.candidate.name === 'Grand Haven Coast Guard Festival', 'A generic rotating homepage heading overrode the event identity in the page title.');
+assert(multiArticleHomeFixture.candidate.startDate === '2026-07-24' && multiArticleHomeFixture.candidate.endDate === '2026-08-02', 'A labeled festival date range outside multiple article cards was not retained.');
+assert(multiArticleHomeFixture.candidate.locationName === 'Lynne Sherwood Waterfront Stadium', 'A clearly labeled event venue was not retained from homepage content.');
+
 const listingFixture = parseOfficialEventSourceHtml({
   html: `<!doctype html><html><head><title>Event Detail</title></head><body><h1>Event Detail</h1><p>Book An Overnight!</p><p>Family fair at the county fairgrounds, with livestock exhibits, a carnival, and youth projects.</p><p>Fair Entry Deadline is July 1.</p></body></html>`,
   requestedUrl: 'https://tourism.example/event-detail/county-fair/',
@@ -188,6 +199,13 @@ assert(staticScheduleItems.length === 3, 'Static weekday schedule parsing did no
 assert(staticScheduleItems[0]?.startsAt === '2026-07-20T16:00:00.000Z' && staticScheduleItems[0]?.endsAt === '2026-07-20T22:00:00.000Z', 'Static time ranges were not converted from Michigan local time.');
 assert(staticScheduleItems[1]?.venue === 'Rimrock Crater', 'Static schedule venue text was not separated from its title.');
 assert(staticScheduleItems[2]?.endsAt === null, 'A closing-time placeholder was incorrectly converted into an invented time.');
+
+const fooEventsItems = scheduleItemsFromFooEventsListing(`<!doctype html><html><body><table><tr><th colspan="3">July 2026</th></tr><tr class="fooevents-event-listing-single"><td><div class="fooevents-event-listing-date-month">Jul</div><div class="fooevents-event-listing-date-day">23</div></td><td><h3><a href="/product/quilt-show/">Quilt Show</a></h3><p class="fooevents-event-listing-compact-location"><strong>Central Park Place</strong></p><span class="event-time">09:00 a.m. – 07:00 p.m.</span></td></tr><tr class="fooevents-event-listing-single"><td><div class="fooevents-event-listing-date-month">Jul</div><div class="fooevents-event-listing-date-day">25</div></td><td><h3><a href="/product/coast-guard-city-usa-run/">Coast Guard City USA Run</a></h3><span class="event-time">07:30 a.m. – 00:00</span></td></tr></table></body></html>`, multiArticleHomeFixture);
+assert(fooEventsItems.length === 2, 'FooEvents compact listings did not produce one candidate per timed event row.');
+assert(fooEventsItems[0]?.startsAt === '2026-07-23T13:00:00.000Z' && fooEventsItems[0]?.endsAt === '2026-07-23T23:00:00.000Z', 'FooEvents local times were not converted with the event timezone.');
+assert(fooEventsItems[0]?.venue === 'Central Park Place', 'FooEvents venue text was not retained.');
+assert(fooEventsItems[1]?.endsAt === null, 'A FooEvents zero-time placeholder was incorrectly treated as midnight.');
+assert(fooEventsItems[0]?.sourceLocator.detailUrl === 'https://coastguard.example/product/quilt-show/', 'FooEvents detail-page provenance was not retained.');
 
 const boundedLinks = selectBoundedOfficialSourceLinks({
   ...inspection,
