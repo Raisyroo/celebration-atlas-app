@@ -371,6 +371,9 @@
   padding: 8px 4px 7px;
   border: 0;
   border-bottom: 3px solid transparent;
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
   background: transparent;
   color: rgba(255, 240, 210, 0.6);
   font-size: 0.72rem;

@@ -128,8 +128,9 @@ The Michigan Atlas homepage completed its rail, deterministic discovery, and sha
 - One classifier now owns portrait, compact-landscape, and desktop behavior. `1024×390` remains compact rather than entering a broken desktop hybrid, while desktop requires at least `1024×600` in landscape.
 - Essential menu, filter, Ask Atlas, and dated-rail controls no longer wait for artwork loading or map measurement after rotation. The selected artwork variant and viewport mode are exposed as root data contracts and covered by visual smoke tests.
 - Homepage filters are functional and limited to reviewed facts: exact category, explicitly curated state region IDs, exact city, reviewed month, and the same live/upcoming eligibility used by the rail. Artistic atmosphere labels never become geographic regions.
-- Broad search and filter-only discovery share one ranked resolver and one accessible result list. Active-empty discovery hides contradictory map markers, exact identity still bypasses filters, and filter changes never mutate rail membership.
-- Mobile filter and menu sheets now have real actions, Escape/focus containment, focus restoration, and background inerting. Decorative map result labels and overflow indicators are no longer duplicate keyboard targets.
+- Query-only broad search uses accessible, clickable title tags on the illustrated map. The discovery panel/list belongs to filter-only and query-plus-filter workflows, so ordinary search never replaces the map with a filter results screen. Exact identity still navigates directly, active-empty discovery hides contradictory markers, and filter changes never mutate rail membership.
+- Mobile filter and menu sheets now have real actions, Escape/focus containment, focus restoration, and background inerting. Query result title tags are keyboard targets; decorative labels and overflow indicators are not duplicate targets.
+- Atlas Control styles are scoped beneath `.control-shell`. A build validator and route-order visual smoke test protect public Event Hub controls from admin/login CSS that remains loaded after client navigation.
 - The illustrated map remains approximate. A unified coded-star and presentation-position resolver is not implemented yet.
 
 The durable audit and multi-state recommendations are in `docs/MICHIGAN_HOMEPAGE_AUDIT.md`.
@@ -174,10 +175,11 @@ For Event Factory work, also confirm:
 - The private Event Hub preview works at a phone viewport without horizontal overflow.
 - Browser console contains no application errors.
 - Existing published Event Hub pages and the homepage still resolve.
+- Mobile smoke coverage preserves query-only map title tags and verifies Event Hub tab geometry both directly and after Atlas Login -> homepage -> Event Hub client navigation.
 
 ## Handoff Convention
 
-Use a fresh Codex task for each distinct milestone, opened in this same local project. The working tree and committed documentation carry the durable state; each task keeps its own transcript.
+Use a fresh Codex task for each distinct milestone, opened in this same local project. The working tree, committed documentation, and automated cross-surface contracts carry the durable state; each task keeps its own transcript. Keep one task open through diagnosis, implementation, verification, and publication of its milestone, and start every new task from current `origin/main`.
 
 At milestone completion:
 

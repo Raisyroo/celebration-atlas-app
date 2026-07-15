@@ -8,10 +8,12 @@ const homepageScreenshotPath = path.join(outputDir, 'homepage-mobile.png');
 const resultCloudScreenshotPath = path.join(outputDir, 'map-search-result-text-cloud-desktop.png');
 const exactEventScreenshotPath = path.join(outputDir, 'exact-event-hub-desktop.png');
 const resultCloudMobileScreenshotPath = path.join(outputDir, 'map-search-result-text-cloud-mobile.png');
+const eventHubMobileTabsScreenshotPath = path.join(outputDir, 'event-hub-mobile-tabs.png');
 const atlasControlScreenshotPath = path.join(outputDir, 'atlas-control-unauthenticated.png');
 const baseUrl = process.env.VISUAL_SMOKE_BASE_URL || 'http://127.0.0.1:3000';
 const shouldStartServer = !process.env.VISUAL_SMOKE_BASE_URL;
 const homepageUrl = new URL('/', baseUrl).toString();
+const atlasLoginUrl = new URL('/atlas-login', baseUrl).toString();
 const atlasControlUrl = new URL('/atlas-control', baseUrl).toString();
 const npmExecPath = process.env.npm_execpath;
 const visualSmokeTime = new Date('2026-07-15T16:00:00Z');
@@ -324,6 +326,69 @@ async function assertFilterOnlyDiscovery(page) {
   console.log(`Filter-only discovery returned ${filterOnlyResultCount} reviewed result(s) without changing the event rail.`);
 }
 
+async function assertEventHubTabContract(page, label) {
+  const tablist = page.getByRole('tablist', { name: 'Event sections' });
+  await tablist.waitFor({ state: 'visible', timeout: 45_000 });
+
+  const assertSelectedTab = async (expectedName) => {
+    const selectedTabs = tablist.locator('[role="tab"][aria-selected="true"]');
+    const selectedCount = await selectedTabs.count();
+    if (selectedCount !== 1) {
+      throw new Error(`${label}: expected one selected Event Hub tab, received ${selectedCount}.`);
+    }
+
+    const selectedTab = tablist.getByRole('tab', { name: expectedName, exact: true });
+    if ((await selectedTab.getAttribute('aria-selected')) !== 'true') {
+      throw new Error(`${label}: ${expectedName} did not become the selected Event Hub tab.`);
+    }
+
+    const contract = await selectedTab.evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      const panelId = element.getAttribute('aria-controls');
+      const panel = panelId ? document.getElementById(panelId) : null;
+
+      return {
+        borderRadius: style.borderRadius,
+        borderTopWidth: style.borderTopWidth,
+        borderRightWidth: style.borderRightWidth,
+        borderBottomWidth: style.borderBottomWidth,
+        borderBottomColor: style.borderBottomColor,
+        borderLeftWidth: style.borderLeftWidth,
+        panelLabelledBy: panel?.getAttribute('aria-labelledby') ?? null,
+        tabId: element.id,
+      };
+    });
+
+    if (
+      contract.borderRadius !== '0px' ||
+      contract.borderTopWidth !== '0px' ||
+      contract.borderRightWidth !== '0px' ||
+      contract.borderBottomWidth !== '3px' ||
+      contract.borderLeftWidth !== '0px' ||
+      contract.borderBottomColor === 'rgba(0, 0, 0, 0)' ||
+      contract.borderBottomColor === 'transparent' ||
+      contract.panelLabelledBy !== contract.tabId
+    ) {
+      throw new Error(`${label}: Event Hub tab contract failed: ${JSON.stringify(contract)}.`);
+    }
+  };
+
+  await assertSelectedTab('Why Go');
+  const scheduleTab = tablist.getByRole('tab', { name: 'Schedule', exact: true });
+  await scheduleTab.click();
+  await assertSelectedTab('Schedule');
+  const whyGoTab = tablist.getByRole('tab', { name: 'Why Go', exact: true });
+  await whyGoTab.click();
+  await assertSelectedTab('Why Go');
+
+  const leakedHomepageClasses = await page.evaluate(() =>
+    Array.from(document.body.classList).filter((className) => className.startsWith('home-')),
+  );
+  if (leakedHomepageClasses.length > 0) {
+    throw new Error(`${label}: homepage body classes leaked into Event Hub: ${leakedHomepageClasses.join(', ')}.`);
+  }
+}
+
 async function assertSamePageRotation(page) {
   const portrait = atlasViewportFixtures[0];
   const compactLandscape = atlasViewportFixtures[1];
@@ -449,6 +514,13 @@ async function main() {
   if (!Number.isFinite(desktopResultCount) || desktopResultCount < 1) {
     throw new Error(`Expected deterministic desktop search results, received ${desktopResultCount}.`);
   }
+  const desktopTitleTagCount = await desktopResultField.locator('button[data-search-event-id]').count();
+  if (desktopTitleTagCount < 1) {
+    throw new Error('Expected desktop search results to remain interactive map title tags.');
+  }
+  if (await page.locator('.atlas-discovery-panel [data-testid="discovery-results"]').count()) {
+    throw new Error('Query-only desktop search must not duplicate map title tags in a result list.');
+  }
   await page.screenshot({ path: resultCloudScreenshotPath, fullPage: true, caret: 'initial' });
   console.log(`Desktop multi-result search screenshot written to ${path.relative(process.cwd(), resultCloudScreenshotPath)}`);
 
@@ -484,20 +556,65 @@ async function main() {
   await mobilePage.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
   await mobilePage.locator(atlasRootSelector).waitFor({ state: 'visible', timeout: 45_000 });
   await mobilePage.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
+  await mobilePage.locator('img.atlas-map-image[alt="Michigan Atlas"]').waitFor({ state: 'visible', timeout: 45_000 });
+  await waitForLoadedImage(mobilePage, 'img.atlas-map-image[alt="Michigan Atlas"]');
   await submitAtlasSearch(mobilePage, 'music festivals');
   await mobilePage
     .locator(`${atlasRootSelector}[data-search-mode="results"]`)
     .waitFor({ state: 'visible', timeout: 45_000 });
-  const mobileDiscoveryResults = mobilePage.locator(
-    '.atlas-discovery-panel [data-testid="discovery-results"]',
+  await mobilePage.waitForFunction(
+    (selector) =>
+      document.querySelector(selector)?.getAttribute('data-search-presentation') === 'title-tags',
+    atlasRootSelector,
+    { timeout: 45_000 },
   );
-  await mobileDiscoveryResults.waitFor({ state: 'visible', timeout: 45_000 });
-  const mobileResultCount = await mobileDiscoveryResults.locator('[data-search-event-id]').count();
+  const mobileResultField = mobilePage.locator(
+    '.atlas-result-text-field[data-search-mode="results"]',
+  );
+  await mobileResultField.waitFor({ state: 'visible', timeout: 45_000 });
+  const mobileResultCount = await mobileResultField.locator('button[data-search-event-id]').count();
   if (mobileResultCount < 1) {
-    throw new Error(`Expected accessible mobile discovery results, received ${mobileResultCount}.`);
+    throw new Error(`Expected interactive mobile map title tags, received ${mobileResultCount}.`);
+  }
+  if (await mobilePage.locator('.atlas-discovery-panel').count()) {
+    throw new Error('Query-only mobile search opened the discovery/filter panel over the map.');
   }
   await mobilePage.screenshot({ path: resultCloudMobileScreenshotPath, fullPage: true, caret: 'initial' });
   console.log(`Mobile multi-result search screenshot written to ${path.relative(process.cwd(), resultCloudMobileScreenshotPath)}`);
+
+  const detroitJazzTitleTag = mobileResultField.locator(
+    'button[data-search-event-id="detroit-jazz"]',
+  );
+  await detroitJazzTitleTag.waitFor({ state: 'visible', timeout: 45_000 });
+  await Promise.all([
+    mobilePage.waitForURL('**/events/detroit-jazz', { timeout: 45_000 }),
+    detroitJazzTitleTag.click(),
+  ]);
+  await assertEventHubTabContract(mobilePage, 'homepage title-tag navigation');
+
+  await mobilePage.goto(atlasLoginUrl, { waitUntil: 'domcontentloaded' });
+  const returnToAtlasLink = mobilePage.locator('.control-shell a[href="/"]').first();
+  await returnToAtlasLink.waitFor({ state: 'visible', timeout: 45_000 });
+  await Promise.all([
+    mobilePage.waitForURL(homepageUrl, { timeout: 45_000 }),
+    returnToAtlasLink.click(),
+  ]);
+  await waitForHomepageRailReady(mobilePage);
+  const brownTroutRailLink = mobilePage.getByRole('link', {
+    name: 'Open Brown Trout Festival',
+    exact: true,
+  });
+  await brownTroutRailLink.waitFor({ state: 'visible', timeout: 45_000 });
+  await Promise.all([
+    mobilePage.waitForURL('**/events/alpena-brown-trout', { timeout: 45_000 }),
+    brownTroutRailLink.click(),
+  ]);
+  await assertEventHubTabContract(mobilePage, 'Atlas Control route-order navigation');
+  await mobilePage.getByRole('tablist', { name: 'Event sections' }).screenshot({
+    path: eventHubMobileTabsScreenshotPath,
+    caret: 'initial',
+  });
+  console.log(`Mobile Event Hub tab contract screenshot written to ${path.relative(process.cwd(), eventHubMobileTabsScreenshotPath)}`);
 
   await mobilePage.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
   await waitForViewportContract(mobilePage, atlasViewportFixtures[0]);
