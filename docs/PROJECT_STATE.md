@@ -122,6 +122,9 @@ The Michigan Atlas homepage completed a rail and responsive-layout baseline on J
 - Short non-desktop landscape viewports retain menu, favorite, filter, Ask Atlas, and dated event access beside a bounded full-art map.
 - Desktop preserves the portrait artwork content box beside a non-overlapping introduction/discovery panel instead of cropping the state art into a wide phone-like frame.
 - Versioned artwork identity, dimensions, and SHA-256 values are retained in the state configuration and checked by `validate:state-atlas-data` during every full build.
+- Homepage search now runs through one deterministic resolver with explicit state rules, catalog, profiles, and configuration. Exact identities remain unique, broad results are stably ranked, and only structured identity, place, category, region, reviewed date, season, or curated state rules participate.
+- The legacy any-token matcher and the rule that incorrectly linked cherry, lilac, and tulip searches to Romeo Peach Festival were removed. Exact navigation, map labels, result callouts, and the geospatial development route now share the same resolver semantics.
+- Search label locations preserve the supplied state instead of appending `MI`, and the full build includes deterministic regression coverage for ambiguity, category leakage, reviewed dates, state curation, and catalog-order independence.
 - The illustrated map remains approximate. A unified coded-star and presentation-position resolver is not implemented yet.
 
 The durable audit and multi-state recommendations are in `docs/MICHIGAN_HOMEPAGE_AUDIT.md`.
@@ -146,9 +149,9 @@ Published package v4 incorporates Ray's editorial feedback: the 1924 picnic and 
 
 ## Current Next Milestone
 
-Ray selected the remaining Michigan homepage improvements for implementation. The state-scoped catalog/configuration foundation is the first checkpoint. The next focused checkpoint is one deterministic homepage search resolver that removes the current false-positive rules, uses only the supplied state catalog, and produces stable ranked results from verified structured fields.
+Ray selected the remaining Michigan homepage improvements for implementation. The state-scoped catalog/configuration foundation and deterministic state-owned search resolver are complete checkpoints.
 
-After search, continue with one shared viewport model and functional discovery/filter surfaces, then define the shared `StateMapPresentationProfile` and one versioned position resolver for stars, labels, atmosphere, constellation lines, and audits. Preserve verified coordinates as source truth and treat illustrated offsets as presentation data.
+The next focused checkpoint is one shared viewport model with functional discovery/filter surfaces across portrait, short landscape, and desktop. Then define the shared `StateMapPresentationProfile` and one versioned position resolver for stars, labels, atmosphere, constellation lines, and audits. Preserve verified coordinates as source truth and treat illustrated offsets as presentation data.
 
 ## Required Verification
 

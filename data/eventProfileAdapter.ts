@@ -2,7 +2,11 @@ import type { AtlasEvent } from './events';
 import type { StateAtlasConfig } from './stateAtlasConfig';
 import { EVENT_TIMING_METADATA } from './eventTimingMetadata';
 import { resolveEventThumbnail } from './eventThumbnail';
-import { resolveAtlasEventProfileDateRange } from './stateAtlasEventProfile';
+import {
+  resolveAtlasEventProfileDateRange,
+  resolveReviewedAtlasEventSeason,
+  resolveReviewedAtlasEventTiming,
+} from './stateAtlasEventProfile';
 import type {
   EventCoverageLevel,
   EventIndoorOutdoor,
@@ -86,6 +90,9 @@ function mapCoverageLevel(event: AtlasEvent): EventCoverageLevel {
 }
 
 function mapSeason(event: AtlasEvent): EventSeason | undefined {
+  const reviewedSeason = resolveReviewedAtlasEventSeason(event.dateRange);
+  if (reviewedSeason) return reviewedSeason;
+
   const monthHint = event.detailPage?.eventSnapshot?.typicalMonth?.toLowerCase();
 
   if (!monthHint) {
@@ -282,7 +289,12 @@ export function toEventProfile(
   const categories = uniqueStrings([event.category, event.cardTag]);
   const eventTypes = uniqueStrings([event.category, event.iconType]);
   const snapshot = event.detailPage?.eventSnapshot;
-  const timing = EVENT_TIMING_METADATA[event.id];
+  const timing =
+    resolveReviewedAtlasEventTiming(
+      event.dateRange,
+      stateConfig?.defaultTimeZone ??
+        (location.stateSlug === 'michigan' ? 'America/Detroit' : undefined),
+    ) ?? EVENT_TIMING_METADATA[event.id];
   const exactDateRange = resolveAtlasEventProfileDateRange(
     event.dateRange,
     stateConfig?.defaultTimeZone ??

@@ -6,9 +6,11 @@ import Link from 'next/link';
 import maplibregl, { type GeoJSONSource } from 'maplibre-gl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ATLAS_EVENTS, type AtlasEvent } from '../../../data/events';
-import { searchEventProfiles } from '../../../data/eventProfiles';
-import { resolveExactEventIntent } from '../../../data/exactEventIntent';
+import { toEventProfiles } from '../../../data/eventProfileAdapter';
+import { searchHomeAtlas } from '../../../data/homeAtlasSearch';
 import { deriveSafeAtlasEventCard } from '../../../data/safeEventCard';
+import { MICHIGAN_HOME_ATLAS_SEARCH_RULES } from '../../../data/stateAtlasSearchRules';
+import { MICHIGAN_STATE_ATLAS_CONFIG } from '../../../data/stateAtlasConfig';
 
 type EventFeatureProperties = {
   eventId: string;
@@ -65,6 +67,7 @@ const INITIAL_ZOOM = 5.55;
 const mapEvents = ATLAS_EVENTS.filter(
   (event) => Number.isFinite(event.latitude) && Number.isFinite(event.longitude),
 );
+const mapEventProfiles = toEventProfiles(mapEvents, MICHIGAN_STATE_ATLAS_CONFIG);
 
 function toEventFeature(event: AtlasEvent): EventFeature {
   return {
@@ -112,18 +115,24 @@ export default function GeospatialMapTest() {
 
   const eventFeatures = useMemo(() => buildEventFeatureCollection(mapEvents), []);
 
+  const searchResponse = useMemo(() => searchHomeAtlas({
+    query,
+    events: mapEvents,
+    profiles: mapEventProfiles,
+    stateConfig: MICHIGAN_STATE_ATLAS_CONFIG,
+    rules: MICHIGAN_HOME_ATLAS_SEARCH_RULES,
+  }), [query]);
+
   const highlightedIds = useMemo(() => {
-    const trimmedQuery = query.trim();
-    if (!trimmedQuery) return new Set<string>();
-    const exactIntent = resolveExactEventIntent(trimmedQuery);
-    if (exactIntent) return new Set([exactIntent.eventId]);
-    return new Set(searchEventProfiles(trimmedQuery).map((profile) => profile.id));
-  }, [query]);
+    return new Set(searchResponse.results.map((result) => result.event.id));
+  }, [searchResponse.results]);
 
   const exactHighlightedId = useMemo(() => {
-    const exactIntent = resolveExactEventIntent(query);
-    return exactIntent && mapEvents.some((event) => event.id === exactIntent.eventId) ? exactIntent.eventId : null;
-  }, [query]);
+    const exactEventId = searchResponse.exactMatch?.eventId;
+    return exactEventId && mapEvents.some((event) => event.id === exactEventId)
+      ? exactEventId
+      : null;
+  }, [searchResponse.exactMatch]);
 
   const selectedEvent = mapEvents.find((event) => event.id === selectedId) ?? null;
   const selectedCard = selectedEvent ? deriveSafeAtlasEventCard(selectedEvent) : null;
@@ -254,7 +263,7 @@ export default function GeospatialMapTest() {
   useEffect(() => { updateFeatureFilters(); }, [updateFeatureFilters]);
 
   const selectExactMatch = () => {
-    const exactIntent = resolveExactEventIntent(query);
+    const exactIntent = searchResponse.exactMatch;
     if (!exactIntent) return;
     const event = mapEvents.find((candidate) => candidate.id === exactIntent.eventId);
     if (!event) return;

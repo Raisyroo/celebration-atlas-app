@@ -213,11 +213,20 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 25. Replace homepage search with one deterministic state resolver
 
 - **Type:** architecture + implementation
-- **Status:** next
+- **Status:** complete
 - **Scope:** Michigan homepage exact-event and broad discovery search only
 - **Protected files/areas:** Event Hub publication state, verified event coordinates, illustrated-map calibration values, universal Scout runtime
-- **Notes:** Remove the cherry/lilac/tulip-to-Romeo false-positive rule and any-token profile matching. Resolve exact identity, category, city, region, month, and season intent from structured state-scoped fields with stable scoring and ordering. Do not introduce unsourced current-event claims.
+- **Notes:** The legacy false-positive and any-token matchers are removed. Exact and broad search now share one resolver with explicit per-state rules/catalog/configuration, unique exact identity, reviewed-date gating, semantic category matching, state curation, and stable score/name/id ordering. Ranked results drive labels and callout priority; deterministic browser selectors guard Cherry versus Romeo behavior.
 - **Verification:** `npm run lint`, `npm run build`, deterministic search regression fixtures, exact Event Hub navigation, mobile and desktop result rendering, no browser errors
+
+### 26. Unify homepage viewport behavior and activate discovery filters
+
+- **Type:** architecture + implementation
+- **Status:** next
+- **Scope:** Michigan homepage responsive shell, discovery result surface, and filter control behavior
+- **Protected files/areas:** Event Hub publication state, verified event coordinates, illustrated-map calibration values, universal Scout runtime
+- **Notes:** Replace overlapping independent media-query states with one viewport-mode model for portrait, short landscape, and desktop. Keep all primary controls reachable in every supported orientation, make the Filters control expose real structured refinements, and keep one accessible successful-search result surface rather than an inert duplicate layer.
+- **Verification:** `npm run lint`, `npm run build`, `npm run test:visual-smoke`, 390×844 portrait, 844×390 landscape, 1440×900 desktop, keyboard/touch filter use, no overflow, no browser errors
 
 ## Completed Tasks
 

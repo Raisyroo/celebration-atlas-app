@@ -1,6 +1,6 @@
 import type { EventTimingProfile } from './eventProfileTypes';
 
-export const EVENT_TIMING_METADATA: Record<string, EventTimingProfile> = {
+export const EVENT_TIMING_METADATA: Partial<Record<string, EventTimingProfile>> = {
   'romeo-peach': {
     typicalMonth: 9,
     typicalMonthName: 'September',

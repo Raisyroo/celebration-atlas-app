@@ -5,7 +5,12 @@ import { resolve } from 'node:path';
 import { getEventRailStatus, selectEventRailEvents } from '../data/eventRail.ts';
 import type { AtlasEvent } from '../data/events.ts';
 import { groupPublishedAtlasPackagesByEvent } from '../data/publishedAtlasPackageSelection.ts';
-import { resolveAtlasEventProfileDateRange } from '../data/stateAtlasEventProfile.ts';
+import { EVENT_TIMING_METADATA } from '../data/eventTimingMetadata.ts';
+import {
+  resolveAtlasEventProfileDateRange,
+  resolveReviewedAtlasEventSeason,
+  resolveReviewedAtlasEventTiming,
+} from '../data/stateAtlasEventProfile.ts';
 import {
   getStateAtlasEventCatalog,
   reconcileStateAtlasEvents,
@@ -134,6 +139,63 @@ assert.equal(exactProfileDateRange?.startDate, '2026-09-04');
 assert.equal(exactProfileDateRange?.endDate, '2026-09-07');
 assert.equal(exactProfileDateRange?.timezone, 'America/Detroit');
 assert.equal(exactProfileDateRange?.isEstimated, false);
+assert.deepEqual(
+  resolveReviewedAtlasEventTiming(exactEvent.dateRange, config.defaultTimeZone),
+  {
+    dateStart: '2026-09-04',
+    dateEnd: '2026-09-07',
+    timezone: 'America/Detroit',
+  },
+);
+assert.equal(resolveReviewedAtlasEventSeason(exactEvent.dateRange), 'fall');
+assert.equal(
+  resolveReviewedAtlasEventTiming(
+    { startDate: '2026-02-30', isEstimated: false },
+    config.defaultTimeZone,
+  ),
+  null,
+  'an invalid calendar date was projected into exact timing',
+);
+assert.equal(
+  resolveReviewedAtlasEventTiming(
+    { startDate: '2026-09-07', endDate: '2026-09-04', isEstimated: false },
+    config.defaultTimeZone,
+  ),
+  null,
+  'an inverted date range was projected into exact timing',
+);
+assert.equal(
+  resolveReviewedAtlasEventTiming(
+    { startDate: '2026-09-04', isEstimated: true },
+    config.defaultTimeZone,
+  ),
+  null,
+  'an estimated date was projected into exact timing',
+);
+
+const eventFor = (eventId: string) => {
+  const event = michiganCatalog.find((candidate) => candidate.id === eventId);
+  assert(event, `missing Michigan timing fixture: ${eventId}`);
+  return event;
+};
+const detroitJazzEvent = eventFor('detroit-jazz');
+assert.equal(resolveReviewedAtlasEventTiming(detroitJazzEvent.dateRange, config.defaultTimeZone)?.dateStart, '2026-09-04');
+assert.equal(resolveReviewedAtlasEventTiming(detroitJazzEvent.dateRange, config.defaultTimeZone)?.dateEnd, '2026-09-07');
+assert.equal(resolveReviewedAtlasEventTiming(detroitJazzEvent.dateRange, config.defaultTimeZone)?.timezone, config.defaultTimeZone);
+assert.equal(resolveReviewedAtlasEventSeason(detroitJazzEvent.dateRange), 'fall');
+const brownTroutEvent = eventFor('alpena-brown-trout');
+assert.equal(resolveReviewedAtlasEventTiming(brownTroutEvent.dateRange, config.defaultTimeZone)?.dateStart, '2026-07-17');
+assert.equal(resolveReviewedAtlasEventSeason(brownTroutEvent.dateRange), 'summer');
+const romeoPeachEvent = eventFor('romeo-peach');
+const romeoTiming = resolveReviewedAtlasEventTiming(romeoPeachEvent.dateRange, config.defaultTimeZone);
+assert.equal(romeoTiming?.dateStart, '2026-09-03');
+assert.equal(
+  romeoTiming?.timingSourceStatus,
+  undefined,
+  'Romeo exact dates inherited its legacy estimated timing provenance',
+);
+assert.equal(EVENT_TIMING_METADATA['electric-forest']?.typicalMonth, 6);
+assert.equal(EVENT_TIMING_METADATA['electric-forest']?.timingSourceStatus, 'estimated');
 assert.equal(
   resolveAtlasEventProfileDateRange({ startDate: '2026-10-01' }, config.defaultTimeZone)?.isEstimated,
   true,
@@ -191,6 +253,12 @@ assert.deepEqual(
 const publishedResolverSource = readFileSync(
   resolve('lib/events/publishedAtlasEvents.ts'),
   'utf8',
+);
+const profileAdapterSource = readFileSync(resolve('data/eventProfileAdapter.ts'), 'utf8');
+assert(
+  profileAdapterSource.includes('resolveReviewedAtlasEventTiming') &&
+    profileAdapterSource.includes('?? EVENT_TIMING_METADATA[event.id]'),
+  'event profiles do not prefer reviewed exact timing over estimated fallback metadata',
 );
 const eventQueryIndex = publishedResolverSource.indexOf('.from("events")');
 const packageQueryIndex = publishedResolverSource.indexOf('.from("event_factory_packages")');
