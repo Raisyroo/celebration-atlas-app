@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run validate:flyers && npm run validate:event-pages && npm run validate:event-source-inspection && npm run validate:event-source-synthesis && npm run validate:state-atlas-data && npm run validate:home-atlas-search && npm run validate:atlas-control && next build",
+    "build": "npm run validate:flyers && npm run validate:event-pages && npm run validate:event-source-inspection && npm run validate:event-source-synthesis && npm run validate:state-atlas-data && npm run validate:atlas-viewport-mode && npm run validate:home-atlas-search && npm run validate:home-atlas-discovery && npm run validate:atlas-control && next build",
     "start": "next start",
     "lint": "eslint",
     "atlas:check": "npm run lint && npm run build",
@@ -30,7 +30,9 @@
     "test:visual-smoke": "node scripts/visual-smoke.mjs",
     "validate:atlas-control": "node scripts/validate-atlas-control.mjs",
     "validate:state-atlas-data": "node --experimental-strip-types scripts/validate-state-atlas-data.ts",
+    "validate:atlas-viewport-mode": "node --experimental-strip-types scripts/validate-atlas-viewport-mode.ts",
     "validate:home-atlas-search": "node --experimental-strip-types scripts/validate-home-atlas-search.ts",
+    "validate:home-atlas-discovery": "node --experimental-strip-types scripts/validate-home-atlas-discovery.ts",
     "validate:result-label-layout": "node --experimental-strip-types scripts/validate-result-label-layout.mjs",
     "validate:result-label-typography": "node scripts/validate-result-label-typography.mjs"
   },

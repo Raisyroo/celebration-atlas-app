@@ -111,7 +111,7 @@ Never place Supabase or Vercel credentials in documentation, source code, prompt
 
 ## Michigan Homepage State
 
-The Michigan Atlas homepage completed a rail and responsive-layout baseline on July 15, 2026.
+The Michigan Atlas homepage completed its rail, deterministic discovery, and shared responsive-shell checkpoint on July 15, 2026.
 
 - The homepage now receives an explicit serializable Michigan state configuration and state-local event catalog; `AtlasMap` no longer owns a silent global Michigan fallback.
 - Published database overlays are scoped to canonical `MI`/`Michigan` events before published packages are loaded, so another state cannot leak into or replace a Michigan fallback event by name.
@@ -125,6 +125,11 @@ The Michigan Atlas homepage completed a rail and responsive-layout baseline on J
 - Homepage search now runs through one deterministic resolver with explicit state rules, catalog, profiles, and configuration. Exact identities remain unique, broad results are stably ranked, and only structured identity, place, category, region, reviewed date, season, or curated state rules participate.
 - The legacy any-token matcher and the rule that incorrectly linked cherry, lilac, and tulip searches to Romeo Peach Festival were removed. Exact navigation, map labels, result callouts, and the geospatial development route now share the same resolver semantics.
 - Search label locations preserve the supplied state instead of appending `MI`, and the full build includes deterministic regression coverage for ambiguity, category leakage, reviewed dates, state curation, and catalog-order independence.
+- One classifier now owns portrait, compact-landscape, and desktop behavior. `1024×390` remains compact rather than entering a broken desktop hybrid, while desktop requires at least `1024×600` in landscape.
+- Essential menu, filter, Ask Atlas, and dated-rail controls no longer wait for artwork loading or map measurement after rotation. The selected artwork variant and viewport mode are exposed as root data contracts and covered by visual smoke tests.
+- Homepage filters are functional and limited to reviewed facts: exact category, explicitly curated state region IDs, exact city, reviewed month, and the same live/upcoming eligibility used by the rail. Artistic atmosphere labels never become geographic regions.
+- Broad search and filter-only discovery share one ranked resolver and one accessible result list. Active-empty discovery hides contradictory map markers, exact identity still bypasses filters, and filter changes never mutate rail membership.
+- Mobile filter and menu sheets now have real actions, Escape/focus containment, focus restoration, and background inerting. Decorative map result labels and overflow indicators are no longer duplicate keyboard targets.
 - The illustrated map remains approximate. A unified coded-star and presentation-position resolver is not implemented yet.
 
 The durable audit and multi-state recommendations are in `docs/MICHIGAN_HOMEPAGE_AUDIT.md`.
@@ -149,9 +154,9 @@ Published package v4 incorporates Ray's editorial feedback: the 1924 picnic and 
 
 ## Current Next Milestone
 
-Ray selected the remaining Michigan homepage improvements for implementation. The state-scoped catalog/configuration foundation and deterministic state-owned search resolver are complete checkpoints.
+The state-scoped catalog/configuration, deterministic search, live/upcoming rail, shared viewport model, and functional discovery/filter surfaces are complete checkpoints.
 
-The next focused checkpoint is one shared viewport model with functional discovery/filter surfaces across portrait, short landscape, and desktop. Then define the shared `StateMapPresentationProfile` and one versioned position resolver for stars, labels, atmosphere, constellation lines, and audits. Preserve verified coordinates as source truth and treat illustrated offsets as presentation data.
+The next focused checkpoint is a shared `StateMapPresentationProfile` and one versioned position resolver for stars, labels, atmosphere, constellation lines, and audits. It must account for artwork fit/crop, keep Upper and Lower Peninsula calibration regions separate, render one accessible coded-star control per reachable event on every supported viewport, and preserve verified coordinates as source truth while treating illustrated offsets as presentation data. Pre-aggregate discovery facet counts before catalogs grow to national scale.
 
 ## Required Verification
 
