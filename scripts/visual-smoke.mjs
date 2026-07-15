@@ -233,6 +233,7 @@ async function main() {
 
   await page.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
 
+  await page.locator('[data-state-slug="michigan"][data-presentation-profile="michigan-illustrated-map-v1"]').waitFor({ state: 'visible', timeout: 45_000 });
   await page.locator('.atlas-desktop-intro').waitFor({ state: 'visible', timeout: 45_000 });
   await page.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
   await page.locator('img.atlas-map-image[alt="Michigan Atlas"]').waitFor({ state: 'visible', timeout: 45_000 });
@@ -262,6 +263,7 @@ async function main() {
   await mobilePage.clock.setFixedTime(visualSmokeTime);
   captureBrowserErrors(mobilePage, 'mobile');
   await mobilePage.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+  await mobilePage.locator('[data-state-slug="michigan"][data-presentation-profile="michigan-illustrated-map-v1"]').waitFor({ state: 'visible', timeout: 45_000 });
   await mobilePage.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
   await submitAtlasSearch(mobilePage, 'music festivals');
   await mobilePage.locator('.atlas-result-text-field').waitFor({ state: 'visible', timeout: 45_000 });

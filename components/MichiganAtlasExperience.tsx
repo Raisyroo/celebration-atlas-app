@@ -1,15 +1,24 @@
 import HomeAtlasExperience from './HomeAtlasExperience';
+import type { AtlasEvent } from '../data/events';
+import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes';
+import { MICHIGAN_STATE_ATLAS_CONFIG } from '../data/stateAtlasConfig';
 
-// Safe Michigan atlas alias/wrapper.
-//
-// HomeAtlasExperience currently functions as the Michigan state atlas boundary.
-// This component gives that boundary its future canonical name without changing
-// HomeAtlasExperience itself and without changing app/page.tsx to use it yet.
-// Rendering this wrapper manually should produce the same behavior as rendering
-// HomeAtlasExperience directly.
+type MichiganAtlasExperienceProps = {
+  events: readonly AtlasEvent[];
+  flyerResolutions?: EventFlyerResolutionMap;
+};
 
-export default function MichiganAtlasExperience() {
-  return <HomeAtlasExperience />;
+export default function MichiganAtlasExperience({
+  events,
+  flyerResolutions = {},
+}: MichiganAtlasExperienceProps) {
+  return (
+    <HomeAtlasExperience
+      stateConfig={MICHIGAN_STATE_ATLAS_CONFIG}
+      events={events}
+      flyerResolutions={flyerResolutions}
+    />
+  );
 }
 
 export { MichiganAtlasExperience };

@@ -1,6 +1,8 @@
 import type { AtlasEvent } from './events';
+import type { StateAtlasConfig } from './stateAtlasConfig';
 import { EVENT_TIMING_METADATA } from './eventTimingMetadata';
 import { resolveEventThumbnail } from './eventThumbnail';
+import { resolveAtlasEventProfileDateRange } from './stateAtlasEventProfile';
 import type {
   EventCoverageLevel,
   EventIndoorOutdoor,
@@ -10,8 +12,8 @@ import type {
   EventSeason,
 } from './eventProfileTypes';
 
-// This adapter is a compatibility bridge from the current hardcoded AtlasEvent
-// model to the future EventProfile model. It is not yet used by the UI.
+// This adapter is a compatibility bridge from the current AtlasEvent catalog
+// to the richer EventProfile model consumed by homepage discovery and search.
 
 type ParsedLocation = {
   city: string;
@@ -33,11 +35,23 @@ function uniqueStrings(values: Array<string | undefined | null>): string[] {
   return Array.from(new Set(compactStrings(values)));
 }
 
-function parseLocationLabel(location: string): ParsedLocation {
+function parseLocationLabel(
+  location: string,
+  stateConfig?: StateAtlasConfig,
+): ParsedLocation {
   const [rawCity, rawState, ...remainingParts] = location
     .split(',')
     .map((part) => part.trim())
     .filter(Boolean);
+
+  if (stateConfig) {
+    return {
+      city: rawCity || location,
+      state: stateConfig.identity.name,
+      stateSlug: stateConfig.identity.slug,
+      locationName: location,
+    };
+  }
 
   if (rawCity && rawState && remainingParts.length === 0) {
     const normalizedState = rawState === 'MI' ? 'Michigan' : rawState;
@@ -260,12 +274,20 @@ function createTags(event: AtlasEvent): string[] {
   ]);
 }
 
-export function toEventProfile(event: AtlasEvent): EventProfile {
-  const location = parseLocationLabel(event.location);
+export function toEventProfile(
+  event: AtlasEvent,
+  stateConfig?: StateAtlasConfig,
+): EventProfile {
+  const location = parseLocationLabel(event.location, stateConfig);
   const categories = uniqueStrings([event.category, event.cardTag]);
   const eventTypes = uniqueStrings([event.category, event.iconType]);
   const snapshot = event.detailPage?.eventSnapshot;
   const timing = EVENT_TIMING_METADATA[event.id];
+  const exactDateRange = resolveAtlasEventProfileDateRange(
+    event.dateRange,
+    stateConfig?.defaultTimeZone ??
+      (location.stateSlug === 'michigan' ? 'America/Detroit' : undefined),
+  );
 
   return {
     id: event.id,
@@ -288,11 +310,13 @@ export function toEventProfile(event: AtlasEvent): EventProfile {
       longitude: event.longitude,
       precision: 'approximate',
     },
-    dateRange: {
-      startDate: UNKNOWN_DATE_TEXT,
-      displayText: snapshot?.typicalMonth ?? UNKNOWN_DATE_TEXT,
-      isEstimated: true,
-    },
+    dateRange: exactDateRange
+      ? exactDateRange
+      : {
+          startDate: UNKNOWN_DATE_TEXT,
+          displayText: snapshot?.typicalMonth ?? UNKNOWN_DATE_TEXT,
+          isEstimated: true,
+        },
     recurrence: snapshot?.typicalMonth
       ? {
           frequency: 'annual',
@@ -344,6 +368,9 @@ export function toEventProfile(event: AtlasEvent): EventProfile {
   };
 }
 
-export function toEventProfiles(events: AtlasEvent[]): EventProfile[] {
-  return events.map(toEventProfile);
+export function toEventProfiles(
+  events: readonly AtlasEvent[],
+  stateConfig?: StateAtlasConfig,
+): EventProfile[] {
+  return events.map((event) => toEventProfile(event, stateConfig));
 }

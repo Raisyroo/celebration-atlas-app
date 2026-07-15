@@ -122,11 +122,16 @@ assert(!/rpc\([^"'`]/.test(eventFactoryPackages), 'event package service appears
 
 const publishedAtlasEvents = read('lib/events/publishedAtlasEvents.ts');
 const atlasHomePage = read('app/page.tsx');
+const michiganAtlasExperience = read('components/MichiganAtlasExperience.tsx');
+const homeAtlasExperience = read('components/HomeAtlasExperience.tsx');
 const atlasMap = read('components/AtlasMap.tsx');
 assert(publishedAtlasEvents.includes('.eq("status", "published")') && publishedAtlasEvents.includes('event_factory_packages'), 'public map catalog is not gated by published Event Factory packages');
 assert(publishedAtlasEvents.includes('validateEventPageManifest'), 'public map catalog does not validate the approved Event Hub manifest');
-assert(atlasHomePage.includes('resolvePublishedAtlasEvents') && atlasHomePage.includes('<HomeAtlasExperience events={events}'), 'home page does not supply the approved database catalog to the map');
-assert(atlasMap.includes('events = ATLAS_EVENTS') && atlasMap.includes('resolveAtlasMarkerLayouts(events'), 'AtlasMap does not support a supplied event catalog with a local fallback');
+assert(atlasHomePage.includes('resolvePublishedAtlasEvents(MICHIGAN_STATE_ATLAS_CONFIG)') && atlasHomePage.includes('<MichiganAtlasExperience events={events}'), 'home page does not resolve and supply the explicit Michigan catalog');
+assert(michiganAtlasExperience.includes('stateConfig={MICHIGAN_STATE_ATLAS_CONFIG}') && michiganAtlasExperience.includes('events={events}'), 'Michigan atlas wrapper does not bind the Michigan state configuration and supplied catalog');
+assert(homeAtlasExperience.includes('stateConfig: StateAtlasConfig') && homeAtlasExperience.includes('events: readonly AtlasEvent[]') && homeAtlasExperience.includes('stateConfig={stateConfig}') && homeAtlasExperience.includes('events={events}'), 'state atlas experience does not require and forward explicit state data');
+assert(atlasMap.includes('stateConfig: StateAtlasConfig') && atlasMap.includes('events: readonly AtlasEvent[]') && atlasMap.includes('resolveAtlasMarkerLayouts(events'), 'AtlasMap does not require and use the supplied state catalog');
+assert(!atlasMap.includes('events = ATLAS_EVENTS'), 'AtlasMap silently falls back to the global Michigan catalog');
 
 const eventVerificationRoute = read('app/api/atlas-control/event-verifications/route.ts');
 const eventVerificationService = read('lib/event-factory/verification.ts');

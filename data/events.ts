@@ -41,6 +41,8 @@ export type AtlasEvent = {
   dateRange?: {
     startDate: string;
     endDate?: string;
+    timeZone?: string;
+    isEstimated?: boolean;
   };
   cardMedia?: {
     mediaType?: 'image' | 'video';
@@ -111,6 +113,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     dateRange: {
       startDate: '2026-09-03',
       endDate: '2026-09-07',
+      isEstimated: false,
     },
     cardMedia: {
       mediaType: 'video',
@@ -185,6 +188,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     dateRange: {
       startDate: '2026-09-04',
       endDate: '2026-09-07',
+      isEstimated: false,
     },
     fullCardBriefing: {
       intro:
@@ -345,6 +349,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     dateRange: {
       startDate: '2026-07-17',
       endDate: '2026-07-26',
+      isEstimated: false,
     },
     cardMedia: {
       thumbnailSrc: '/event-media/brown-trout/brown-trout-hero-v1.webp',

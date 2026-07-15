@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run validate:flyers && npm run validate:event-pages && npm run validate:event-source-inspection && npm run validate:event-source-synthesis && npm run validate:atlas-control && next build",
+    "build": "npm run validate:flyers && npm run validate:event-pages && npm run validate:event-source-inspection && npm run validate:event-source-synthesis && npm run validate:state-atlas-data && npm run validate:atlas-control && next build",
     "start": "next start",
     "lint": "eslint",
     "atlas:check": "npm run lint && npm run build",
@@ -29,6 +29,7 @@
     "test:visual-install": "playwright install chromium",
     "test:visual-smoke": "node scripts/visual-smoke.mjs",
     "validate:atlas-control": "node scripts/validate-atlas-control.mjs",
+    "validate:state-atlas-data": "node --experimental-strip-types scripts/validate-state-atlas-data.ts",
     "validate:result-label-layout": "node --experimental-strip-types scripts/validate-result-label-layout.mjs",
     "validate:result-label-typography": "node scripts/validate-result-label-typography.mjs"
   },

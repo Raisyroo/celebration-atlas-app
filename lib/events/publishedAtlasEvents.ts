@@ -1,10 +1,24 @@
 import "server-only";
-import { ATLAS_EVENTS, type AtlasCategory, type AtlasEvent } from "@/data/events";
+import type { AtlasCategory, AtlasEvent } from "@/data/events";
 import { validateEventPageManifest } from "@/data/eventPageManifestValidation";
+import { groupPublishedAtlasPackagesByEvent } from "@/data/publishedAtlasPackageSelection";
+import {
+  getStateAtlasEventCatalog,
+  reconcileStateAtlasEvents,
+} from "@/data/stateAtlasEvents";
+import {
+  isStateAtlasDatabaseValue,
+  isValidIanaTimeZone,
+  resolveStateAtlasRegionAtmosphere,
+  type StateAtlasConfig,
+} from "@/data/stateAtlasConfig";
 import { createAtlasServiceClient } from "@/lib/atlas-control/service";
 
 type PackageRow = {
+  id: string;
   event_id: string;
+  target_year: number;
+  published_at: string | null;
   page_manifest: unknown;
   art_asset: Record<string, unknown>;
 };
@@ -27,6 +41,10 @@ type EventRow = {
   location_verified: boolean;
 };
 
+const PACKAGE_EVENT_ID_BATCH_SIZE = 100;
+const STATE_EVENT_PAGE_SIZE = 500;
+const PACKAGE_PAGE_SIZE = 500;
+
 function atlasCategory(event: EventRow): AtlasCategory {
   const category = `${event.category ?? ""} ${event.event_type} ${event.subcategory ?? ""}`.toLowerCase();
   if (/music|concert|jazz/.test(category)) return "Music";
@@ -46,41 +64,34 @@ function iconType(event: EventRow): NonNullable<AtlasEvent["iconType"]> {
   return "fair";
 }
 
-function regionAtmosphere(event: EventRow): NonNullable<AtlasEvent["regionAtmosphere"]> {
-  if ((event.longitude ?? -85) > -84.2 && (event.latitude ?? 44) < 43.5) return "urban";
-  if ((event.latitude ?? 0) >= 45.7) return "northwoods";
-  if (/harvest|agricultur|fair/.test(`${event.category ?? ""} ${event.subcategory ?? ""}`.toLowerCase())) return "harvest";
-  return "lakeshore";
-}
-
-function stateLabel(state: string) {
-  return state === "Michigan" ? "MI" : state;
-}
-
-function normalizedName(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function packageToAtlasEvent(event: EventRow, eventPackage: PackageRow): AtlasEvent | null {
+function packageToAtlasEvent(
+  config: StateAtlasConfig,
+  event: EventRow,
+  eventPackage: PackageRow,
+): AtlasEvent | null {
   if (!event.location_verified || event.latitude === null || event.longitude === null) return null;
+  if (!isStateAtlasDatabaseValue(config, event.state)) return null;
   const validation = validateEventPageManifest(eventPackage.page_manifest);
   if (!validation.ok || validation.value.eventId !== event.slug || validation.value.slug !== event.slug) return null;
   const manifest = validation.value;
   const artSrc = typeof eventPackage.art_asset?.src === "string" ? eventPackage.art_asset.src : manifest.hero.imageSrc;
   const artAlt = typeof eventPackage.art_asset?.alt === "string" ? eventPackage.art_asset.alt : manifest.hero.imageAlt;
   const category = atlasCategory(event);
+  const categoryText = `${event.category ?? ""} ${event.event_type} ${event.subcategory ?? ""}`;
 
   return {
     id: event.slug,
     name: manifest.identity.shortName || event.name,
     searchAliases: [event.name, manifest.identity.name],
-    location: `${event.city ?? manifest.identity.location}, ${stateLabel(event.state)}`,
+    location: event.city
+      ? `${event.city}, ${config.identity.postalCode}`
+      : manifest.identity.location,
     latitude: event.latitude,
     longitude: event.longitude,
     coordinateSource: event.location_source
       ? { label: "Approved Event Factory map record", url: event.location_source, method: "manual-verification" }
       : undefined,
-    atmosphereLabel: `${event.city ?? "Michigan"} annual celebration`,
+    atmosphereLabel: `${event.city ?? config.identity.name} annual celebration`,
     blurb: event.short_description ?? manifest.hero.tagline,
     category,
     cardTag: event.event_type.replaceAll("_", " "),
@@ -88,10 +99,18 @@ function packageToAtlasEvent(event: EventRow, eventPackage: PackageRow): AtlasEv
     iconType: iconType(event),
     x: 50,
     y: 50,
-    regionAtmosphere: regionAtmosphere(event),
+    regionAtmosphere: resolveStateAtlasRegionAtmosphere(config, {
+      latitude: event.latitude,
+      longitude: event.longitude,
+      categoryText,
+    }),
     dateRange: {
       startDate: manifest.identity.startsOn,
       endDate: manifest.identity.endsOn,
+      timeZone: isValidIanaTimeZone(manifest.identity.timezone)
+        ? manifest.identity.timezone
+        : config.defaultTimeZone,
+      isEstimated: false,
     },
     cardMedia: {
       thumbnailSrc: artSrc,
@@ -102,66 +121,86 @@ function packageToAtlasEvent(event: EventRow, eventPackage: PackageRow): AtlasEv
   };
 }
 
-export async function resolvePublishedAtlasEvents(): Promise<AtlasEvent[]> {
+export async function resolvePublishedAtlasEvents(
+  config: StateAtlasConfig,
+): Promise<AtlasEvent[]> {
+  const localEvents = getStateAtlasEventCatalog(config.identity.slug);
   const supabase = createAtlasServiceClient();
-  if (!supabase) return ATLAS_EVENTS;
+  if (!supabase) return [...localEvents];
 
-  const packageResult = await supabase
-    .from("event_factory_packages")
-    .select("event_id,page_manifest,art_asset")
-    .eq("status", "published")
-    .not("event_id", "is", null)
-    .limit(2000);
-  if (packageResult.error || !packageResult.data?.length) return ATLAS_EVENTS;
+  const loadStateEvents = async (): Promise<EventRow[] | null> => {
+    const rows: EventRow[] = [];
 
-  const packages = packageResult.data as PackageRow[];
-  const eventIds = packages.map((eventPackage) => eventPackage.event_id);
-  const eventResult = await supabase
-    .from("events")
-    .select("id,name,slug,event_type,category,subcategory,city,state,venue_name,official_website,short_description,latitude,longitude,location_source,location_verified")
-    .in("id", eventIds)
-    .eq("status", "active")
-    .eq("verification_status", "verified")
-    .limit(2000);
-  if (eventResult.error) return ATLAS_EVENTS;
+    for (let pageStart = 0; ; pageStart += STATE_EVENT_PAGE_SIZE) {
+      const result = await supabase
+        .from("events")
+        .select("id,name,slug,event_type,category,subcategory,city,state,venue_name,official_website,short_description,latitude,longitude,location_source,location_verified")
+        .in("state", [...config.identity.databaseStateValues])
+        .eq("status", "active")
+        .eq("verification_status", "verified")
+        .order("name", { ascending: true })
+        .order("id", { ascending: true })
+        .range(pageStart, pageStart + STATE_EVENT_PAGE_SIZE - 1);
+      if (result.error) return null;
 
-  const packageByEvent = new Map(packages.map((eventPackage) => [eventPackage.event_id, eventPackage]));
-  const approvedEvents = ((eventResult.data ?? []) as EventRow[]).flatMap((event) => {
-    const eventPackage = packageByEvent.get(event.id);
-    if (!eventPackage) return [];
-    const atlasEvent = packageToAtlasEvent(event, eventPackage);
-    return atlasEvent ? [atlasEvent] : [];
-  });
-  const approvedById = new Map(approvedEvents.map((event) => [event.id, event]));
-  const approvedAliasCounts = new Map<string, number>();
-  const localNameCounts = new Map<string, number>();
-  for (const event of approvedEvents) {
-    const keys = new Set([event.name, ...(event.searchAliases ?? [])].map(normalizedName));
-    for (const key of keys) {
-      approvedAliasCounts.set(key, (approvedAliasCounts.get(key) ?? 0) + 1);
+      const page = (result.data ?? []) as EventRow[];
+      rows.push(...page);
+      if (page.length < STATE_EVENT_PAGE_SIZE) return rows;
     }
-  }
-  for (const event of ATLAS_EVENTS) {
-    const key = normalizedName(event.name);
-    localNameCounts.set(key, (localNameCounts.get(key) ?? 0) + 1);
-  }
-  const approvedByUniqueAlias = new Map<string, AtlasEvent>();
-  for (const event of approvedEvents) {
-    const keys = new Set([event.name, ...(event.searchAliases ?? [])].map(normalizedName));
-    for (const key of keys) {
-      if (approvedAliasCounts.get(key) === 1) approvedByUniqueAlias.set(key, event);
-    }
-  }
-  const resolvedApprovedIds = new Set<string>();
+  };
 
-  const reconciledLocalEvents = ATLAS_EVENTS.map((event) => {
-    const byId = approvedById.get(event.id);
-    const nameKey = normalizedName(event.name);
-    const byUniqueAlias = localNameCounts.get(nameKey) === 1 ? approvedByUniqueAlias.get(nameKey) : undefined;
-    const approved = byId ?? byUniqueAlias;
-    if (approved) resolvedApprovedIds.add(approved.id);
-    return approved ?? event;
+  const stateEvents = await loadStateEvents();
+  if (!stateEvents?.length) return [...localEvents];
+
+  const eventIds = stateEvents.map((event) => event.id);
+  const eventIdBatches = Array.from(
+    { length: Math.ceil(eventIds.length / PACKAGE_EVENT_ID_BATCH_SIZE) },
+    (_, index) => eventIds.slice(
+      index * PACKAGE_EVENT_ID_BATCH_SIZE,
+      (index + 1) * PACKAGE_EVENT_ID_BATCH_SIZE,
+    ),
+  );
+  const loadPublishedPackages = async (
+    eventIdBatch: readonly string[],
+  ): Promise<PackageRow[] | null> => {
+    const rows: PackageRow[] = [];
+
+    for (let pageStart = 0; ; pageStart += PACKAGE_PAGE_SIZE) {
+      const result = await supabase
+        .from("event_factory_packages")
+        .select("id,event_id,target_year,published_at,page_manifest,art_asset")
+        .eq("status", "published")
+        .in("event_id", [...eventIdBatch])
+        .order("target_year", { ascending: false })
+        .order("published_at", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: false })
+        .range(pageStart, pageStart + PACKAGE_PAGE_SIZE - 1);
+      if (result.error) return null;
+
+      const page = (result.data ?? []) as PackageRow[];
+      rows.push(...page);
+      if (page.length < PACKAGE_PAGE_SIZE) return rows;
+    }
+  };
+
+  const packageBatches = await Promise.all(
+    eventIdBatches.map(loadPublishedPackages),
+  );
+  if (packageBatches.some((eventPackages) => eventPackages === null)) {
+    return [...localEvents];
+  }
+
+  const packages = packageBatches.flatMap((eventPackages) => eventPackages ?? []);
+  if (!packages.length) return [...localEvents];
+  const packagesByEvent = groupPublishedAtlasPackagesByEvent(packages);
+  const approvedEvents = stateEvents.flatMap((event) => {
+    const eventPackages = packagesByEvent.get(event.id) ?? [];
+    for (const eventPackage of eventPackages) {
+      const atlasEvent = packageToAtlasEvent(config, event, eventPackage);
+      if (atlasEvent) return [atlasEvent];
+    }
+    return [];
   });
 
-  return [...reconciledLocalEvents, ...approvedEvents.filter((event) => !resolvedApprovedIds.has(event.id))];
+  return reconcileStateAtlasEvents(localEvents, approvedEvents);
 }
