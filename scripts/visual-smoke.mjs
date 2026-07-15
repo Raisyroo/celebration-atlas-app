@@ -240,9 +240,24 @@ async function main() {
   await waitForLoadedImage(page, 'img.atlas-map-image[alt="Michigan Atlas"]');
   await page.getByLabel('Ask Celebration Atlas').waitFor({ state: 'visible', timeout: 45_000 });
   await submitAtlasSearch(page, 'music festivals');
-  await page.locator('.atlas-result-text-field').waitFor({ state: 'visible', timeout: 45_000 });
+  const desktopResultField = page.locator('.atlas-result-text-field[data-search-mode="results"]');
+  await desktopResultField.waitFor({ state: 'visible', timeout: 45_000 });
+  const desktopResultCount = Number(await desktopResultField.getAttribute('data-search-result-count'));
+  if (!Number.isFinite(desktopResultCount) || desktopResultCount < 1) {
+    throw new Error(`Expected deterministic desktop search results, received ${desktopResultCount}.`);
+  }
   await page.screenshot({ path: resultCloudScreenshotPath, fullPage: true, caret: 'initial' });
   console.log(`Desktop multi-result search screenshot written to ${path.relative(process.cwd(), resultCloudScreenshotPath)}`);
+
+  await page.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+  await submitAtlasSearch(page, 'cherry');
+  const cherryResultField = page.locator('.atlas-result-text-field[data-search-mode="results"]');
+  await cherryResultField.waitFor({ state: 'visible', timeout: 45_000 });
+  await cherryResultField.locator('[data-search-event-id="traverse-city-cherry"], [data-search-event-id="national-cherry-festival"]').waitFor({ state: 'visible', timeout: 45_000 });
+  if (await cherryResultField.locator('[data-search-event-id^="romeo-peach"]').count()) {
+    throw new Error('Deterministic cherry search incorrectly included Romeo Peach Festival.');
+  }
+  console.log('Deterministic cherry search includes National Cherry Festival and excludes Romeo Peach Festival.');
 
   await page.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
   await page.getByLabel('Ask Celebration Atlas').waitFor({ state: 'visible', timeout: 45_000 });

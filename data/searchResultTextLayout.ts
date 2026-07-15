@@ -78,8 +78,12 @@ export function getResultLabelTier(index: number): ResultLabelTier {
 }
 
 export function formatResultLabelLocation(location: string): string {
-  const [city] = location.split(',').map((part) => part.trim()).filter(Boolean);
-  return city ? `${city}, MI` : '';
+  return location
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(', ');
 }
 
 const intersects = (a: LabelRect, b: LabelRect) => a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;

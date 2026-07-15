@@ -30,7 +30,8 @@ assert.equal(desktopLabels[0].anchorX, 10, 'label anchor x should come from the 
 assert.equal(desktopLabels[0].anchorY, 22, 'label anchor y should come from the existing projected event position');
 assert(!desktop.some((placement) => placement.kind === 'label' && placement.event.id === 'missing-coordinates'), 'events without valid projected positions should not be placed on the map text layer');
 assert.equal(formatResultLabelLocation('Traverse City, MI'), 'Traverse City, MI');
-assert.equal(formatResultLabelLocation('Holland'), 'Holland, MI');
+assert.equal(formatResultLabelLocation('Holland'), 'Holland');
+assert.equal(formatResultLabelLocation('Cleveland, OH'), 'Cleveland, OH');
 assert.equal(formatResultLabelLocation(''), '');
 
 const helperSource = readFileSync(resolve('data/searchResultTextLayout.ts'), 'utf8');
@@ -67,7 +68,10 @@ assert(fieldBlock.includes('markerLayouts') && fieldBlock.includes('isFiniteMark
 assert(!/(SLOTS|type Slot|const [A-Z_]*SLOTS)/.test(helperSource), 'result label helper must not contain arbitrary composition slot coordinates');
 assert(helperSource.includes("export type ResultLabelAlign") && fieldBlock.includes('data-result-label-align') && fieldBlock.includes('placement.align'), 'floating result labels should expose and render adaptive side alignment');
 assert(fieldBlock.includes('resultTextLabelHalo') && styleBlock.includes('radial-gradient(ellipse at center'), 'floating result labels should include a subtle text-bound readability halo');
-assert(atlasMapSource.includes('rankedSubmittedSearchResults.length > 0 ?') && atlasMapSource.includes('<SearchResultTextField') && atlasMapSource.includes('if (exactEventIntent || !q || highlightedIds.size === 0) return [];'), 'exact-event search should remain separate from broad result text field rendering');
+assert(atlasMapSource.includes('rankedSubmittedSearchResults.length > 0 ?') && atlasMapSource.includes('<SearchResultTextField') && atlasMapSource.includes('if (exactEventIntent || !q || homeAtlasSearch.results.length === 0) return [];'), 'exact-event search should remain separate from broad result text field rendering');
+assert(atlasMapSource.includes('searchHomeAtlas({') && !atlasMapSource.includes('getLegacyHighlightedIdsFromQuery') && !atlasMapSource.includes('searchEventProfiles'), 'AtlasMap search should use only the deterministic state-scoped resolver');
+assert(fieldBlock.includes('data-search-event-id') && fieldBlock.includes('data-search-mode="results"') && fieldBlock.includes('data-search-result-count'), 'broad result fields should expose stable deterministic smoke selectors');
+assert(atlasMapSource.includes('data-search-mode={submittedSearchMode}') && atlasMapSource.includes('data-search-result-count={isSubmittedSearchActive ? homeAtlasSearch.results.length : 0}'), 'homepage search state should expose stable mode and result-count diagnostics');
 assert(atlasMapSource.includes('isDesktop && !hasActiveAskQuery'), 'desktop intro panel should not cover submitted search result labels');
 assert(atlasMapSource.includes('data-testid="event-rail"') && atlasMapSource.includes('areMobileAmbientControlsVisible'), 'bottom event rail should remain present in ambient/broad search UI');
 console.log('Result label layout validation passed.');

@@ -11,14 +11,13 @@ import type { AtlasEvent } from '../data/events';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
 import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes';
 import { getFlyerEventPresentation } from '../data/flyerEventPresentation';
-import {
-  searchEventProfiles,
-} from '../data/eventProfiles';
 import { toEventProfiles } from '../data/eventProfileAdapter';
-import type { EventProfile } from '../data/eventProfileTypes';
 import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
 import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
-import { resolveExactEventIntent } from '../data/exactEventIntent';
+import {
+  searchHomeAtlas,
+  type HomeAtlasSearchRules,
+} from '../data/homeAtlasSearch';
 import {
   getEventRailStatus,
   selectEventRailEvents,
@@ -244,120 +243,8 @@ const RESET_SEARCH_COMMANDS = new Set([
   'clear',
 ]);
 
-const REGIONAL_DISCOVERY_EVENT_IDS: Record<string, string[]> = {
-  'detroit metro': ['detroit-jazz', 'romeo-peach', 'armada-fair'],
-  thumb: ['black-river-tattoo', 'goodells-fair', 'armada-fair'],
-  'west michigan': [
-    'electric-forest',
-    'coast-guard-festival',
-    'holland-tulip-time',
-    'muskegon-summer-celebration',
-    'allendale-balloon-fest',
-  ],
-  'northern michigan': [
-    'traverse-city-cherry',
-    'mackinac-lilac',
-    'alpena-brown-trout',
-    'charlevoix-venetian',
-    'cheboygan-4th-fireworks',
-  ],
-  'upper peninsula': ['upper-peninsula-state-fair'],
-};
-
 const isResetSearchCommand = (queryText: string) =>
   RESET_SEARCH_COMMANDS.has(queryText.trim().toLowerCase());
-const getLegacyHighlightedIdsFromQuery = (queryText: string, events: readonly AtlasEvent[]) => {
-  const ids = new Set<string>();
-  const normalizedQuery = queryText.trim().toLowerCase();
-
-  if (!normalizedQuery) return ids;
-
-  const addMusicFestivals = () => {
-    ids.add('electric-forest');
-    ids.add('detroit-jazz');
-  };
-
-  for (const [regionLabel, eventIds] of Object.entries(
-    REGIONAL_DISCOVERY_EVENT_IDS,
-  )) {
-    if (normalizedQuery.includes(regionLabel)) {
-      eventIds.forEach((eventId) => ids.add(eventId));
-    }
-  }
-
-  if (
-    normalizedQuery.includes('music festival') ||
-    normalizedQuery.includes('music festivals')
-  )
-    addMusicFestivals();
-  if (normalizedQuery.includes('music')) addMusicFestivals();
-
-  if (
-    normalizedQuery.includes('county fair') ||
-    normalizedQuery.includes('county fairs') ||
-    normalizedQuery.includes('fair') ||
-    normalizedQuery.includes('fairs')
-  ) {
-    ids.add('armada-fair');
-  }
-
-  if (
-    normalizedQuery.includes('peach festival') ||
-    normalizedQuery.includes('romeo') ||
-    normalizedQuery.includes('peach')
-  ) {
-    ids.add('romeo-peach');
-  }
-  if (normalizedQuery.includes('jazz')) ids.add('detroit-jazz');
-  if (normalizedQuery.includes('forest')) ids.add('electric-forest');
-  if (
-    normalizedQuery.includes('hidden gem') ||
-    normalizedQuery.includes('hidden gems')
-  )
-    ids.add('electric-forest');
-
-  if (
-    normalizedQuery.includes('cherry') ||
-    normalizedQuery.includes('lilac') ||
-    normalizedQuery.includes('tulip')
-  ) {
-    ids.add('romeo-peach');
-  }
-
-  for (const event of events) {
-    const searchableTerms = [
-      event.name,
-      event.location,
-      ...(event.searchAliases ?? []),
-    ]
-      .filter(Boolean)
-      .map((term) => term.toLowerCase());
-    if (
-      searchableTerms.some(
-        (term) =>
-          normalizedQuery.includes(term) || term.includes(normalizedQuery),
-      )
-    ) {
-      ids.add(event.id);
-    }
-  }
-
-  return ids;
-};
-
-const getHighlightedIdsFromQuery = (
-  queryText: string,
-  events: readonly AtlasEvent[],
-  profiles: readonly EventProfile[],
-) => {
-  const ids = getLegacyHighlightedIdsFromQuery(queryText, events);
-
-  for (const profile of searchEventProfiles(queryText, profiles)) {
-    ids.add(profile.id);
-  }
-
-  return ids;
-};
 
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
@@ -589,6 +476,8 @@ function SearchResultTextField({
       aria-label="Search result text field"
       ref={fieldRef}
       className={`atlas-result-text-field ${resultLabelSerif.variable}`}
+      data-search-mode="results"
+      data-search-result-count={results.length}
       style={styles.resultTextField}
     >
       {placements.map((placement) => {
@@ -599,6 +488,7 @@ function SearchResultTextField({
               type="button"
               aria-label={`Open ${placement.label}`}
               className="atlas-result-text-cluster"
+              data-search-event-ids={placement.events.map((event) => event.id).join(',')}
               onClick={() => setOpenClusterId(placement.id)}
               style={{
                 ...styles.resultTextCluster,
@@ -625,6 +515,7 @@ function SearchResultTextField({
             data-result-label-slot={placement.slot}
             data-result-label-font="atlas-result-label-serif"
             data-result-label-diagnostic={fontDiagnostic === null ? 'sample' : undefined}
+            data-search-event-id={placement.event.id}
             onClick={() => onEventSelect(placement.event.id)}
             style={{
               ...styles.resultTextLabel,
@@ -671,7 +562,7 @@ function SearchResultTextField({
                 const locationLabel = formatResultLabelLocation(event.location);
 
                 return (
-                  <button key={event.id} type="button" onClick={() => onEventSelect(event.id)} style={styles.resultTextClusterEvent}>
+                  <button key={event.id} type="button" data-search-event-id={event.id} onClick={() => onEventSelect(event.id)} style={styles.resultTextClusterEvent}>
                     <span style={styles.resultTextClusterEventName}>{event.name}</span>
                     {locationLabel ? <span style={styles.resultTextClusterEventLocation}>{locationLabel}</span> : null}
                   </button>
@@ -1112,12 +1003,14 @@ const resolveMapCalloutPlan = ({
   mode,
   markerLayouts,
   highlightedIds,
+  rankedResultIds,
   selectedId,
   exactEventId,
 }: {
   mode: MapPresentationMode;
   markerLayouts: AtlasMarkerLayout[];
   highlightedIds: ReadonlySet<string>;
+  rankedResultIds: readonly string[];
   selectedId: string | null;
   exactEventId: string | null;
 }): MapCalloutPlan => {
@@ -1131,9 +1024,19 @@ const resolveMapCalloutPlan = ({
     return { eventIds: new Set([exactEventId]), clusterIndicators: [] };
   }
 
+  const rankByEventId = new Map(
+    rankedResultIds.map((eventId, index) => [eventId, index]),
+  );
   const candidates = markerLayouts
     .filter((layout) => highlightedIds.has(layout.event.id))
-    .sort((a, b) => a.eventIndex - b.eventIndex)
+    .sort((a, b) => {
+      const aRank = rankByEventId.get(a.event.id);
+      const bRank = rankByEventId.get(b.event.id);
+      if (aRank !== undefined || bRank !== undefined) {
+        return (aRank ?? Number.MAX_SAFE_INTEGER) - (bRank ?? Number.MAX_SAFE_INTEGER);
+      }
+      return a.eventIndex - b.eventIndex;
+    })
     .slice(0, MAX_RESULTS_CALLOUTS);
   const shownIds = new Set<string>();
   const clusterIndicators: MapCalloutClusterIndicator[] = [];
@@ -1186,6 +1089,7 @@ type FlyerMediaDebugSnapshot = {
 
 type AtlasMapProps = {
   stateConfig: StateAtlasConfig;
+  searchRules: HomeAtlasSearchRules;
   events: readonly AtlasEvent[];
   constellationHighlightedIds?: readonly string[];
   celebrationSearchHighlightedIds?: readonly string[];
@@ -1518,6 +1422,7 @@ function AtlasCalibrationPanel({
 
 export default function AtlasMap({
   stateConfig,
+  searchRules,
   events,
   constellationHighlightedIds = [],
   celebrationSearchHighlightedIds = [],
@@ -1656,16 +1561,22 @@ export default function AtlasMap({
     () => new Map(eventProfiles.map((profile) => [profile.id, profile])),
     [eventProfiles],
   );
-  const q = submittedQuery.trim().toLowerCase();
-  const exactEventIntent = useMemo(
-    () => resolveExactEventIntent(submittedQuery, events, eventProfiles),
-    [eventProfiles, events, submittedQuery],
+  const homeAtlasSearch = useMemo(
+    () =>
+      searchHomeAtlas({
+        query: submittedQuery,
+        events,
+        profiles: eventProfiles,
+        stateConfig,
+        rules: searchRules,
+      }),
+    [eventProfiles, events, searchRules, stateConfig, submittedQuery],
   );
+  const q = homeAtlasSearch.normalizedQuery;
+  const exactEventIntent = homeAtlasSearch.exactMatch;
   const searchHighlightedIds = useMemo(() => {
-    if (exactEventIntent) return new Set([exactEventIntent.eventId]);
-
-    return getHighlightedIdsFromQuery(q, events, eventProfiles);
-  }, [eventProfiles, events, exactEventIntent, q]);
+    return new Set(homeAtlasSearch.results.map((result) => result.event.id));
+  }, [homeAtlasSearch.results]);
   const celebrationSearchHighlightedIdSet = useMemo(
     () => new Set(celebrationSearchHighlightedIds),
     [celebrationSearchHighlightedIds],
@@ -1686,11 +1597,22 @@ export default function AtlasMap({
     isSubmittedSearchActive && highlightedIds.size > 0;
   const hasSubmittedSearchNoResults =
     isSubmittedSearchActive && highlightedIds.size === 0;
+  const submittedSearchMode = !isSubmittedSearchActive
+    ? 'idle'
+    : exactEventIntent
+      ? 'exact'
+      : hasSubmittedSearchMatches
+        ? 'results'
+        : 'none';
   const rankedSubmittedSearchResults = useMemo(() => {
-    if (exactEventIntent || !q || highlightedIds.size === 0) return [];
+    if (exactEventIntent || !q || homeAtlasSearch.results.length === 0) return [];
 
-    return events.filter((event) => highlightedIds.has(event.id));
-  }, [events, exactEventIntent, highlightedIds, q]);
+    return homeAtlasSearch.results.map((result) => result.event);
+  }, [exactEventIntent, homeAtlasSearch.results, q]);
+  const rankedSubmittedSearchResultIds = useMemo(
+    () => rankedSubmittedSearchResults.map((event) => event.id),
+    [rankedSubmittedSearchResults],
+  );
   const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
     return rankedSubmittedSearchResults.map((event) => ({
       id: event.id,
@@ -1731,6 +1653,7 @@ export default function AtlasMap({
       mode: mapPresentationMode,
       markerLayouts: displayMarkerLayouts,
       highlightedIds,
+      rankedResultIds: rankedSubmittedSearchResultIds,
       selectedId,
       exactEventId: exactEventIntent?.eventId ?? null,
     });
@@ -1739,6 +1662,7 @@ export default function AtlasMap({
     exactEventIntent,
     highlightedIds,
     mapPresentationMode,
+    rankedSubmittedSearchResultIds,
     activePresentationPlan,
     selectedId,
   ]);
@@ -2584,7 +2508,14 @@ export default function AtlasMap({
       return;
     }
 
-    const exactMatch = resolveExactEventIntent(trimmedQuery, events, eventProfiles);
+    const nextSearch = searchHomeAtlas({
+      query: trimmedQuery,
+      events,
+      profiles: eventProfiles,
+      stateConfig,
+      rules: searchRules,
+    });
+    const exactMatch = nextSearch.exactMatch;
 
     if (exactEventOpenTimerRef.current) {
       clearTimeout(exactEventOpenTimerRef.current);
@@ -2599,10 +2530,10 @@ export default function AtlasMap({
         exactEventOpenTimerRef.current = null;
       }, EXACT_EVENT_CARD_OPEN_DELAY_MS);
     } else {
-      const nextHighlightedIds = getHighlightedIdsFromQuery(trimmedQuery, events, eventProfiles);
+      const resultCount = nextSearch.results.length;
       setDiscoveryStatusText(
-        nextHighlightedIds.size > 0
-          ? `Showing ${nextHighlightedIds.size} ${nextHighlightedIds.size === 1 ? 'discovery' : 'discoveries'} for “${trimmedQuery}”`
+        resultCount > 0
+          ? `Showing ${resultCount} ${resultCount === 1 ? 'discovery' : 'discoveries'} for “${trimmedQuery}”`
           : `No discoveries found for “${trimmedQuery}”`,
       );
     }
@@ -2623,7 +2554,9 @@ export default function AtlasMap({
     events,
     onSearchActivate,
     openAtlasEvent,
+    searchRules,
     selectAtlasEvent,
+    stateConfig,
     setDiscoveryStatusText,
     setDisplayedQuery,
     setIsSubmittedQueryFading,
@@ -3022,6 +2955,9 @@ export default function AtlasMap({
         .join(' ')}
       data-state-slug={stateConfig.identity.slug}
       data-presentation-profile={stateConfig.presentation.profileId}
+      data-search-mode={submittedSearchMode}
+      data-search-result-count={isSubmittedSearchActive ? homeAtlasSearch.results.length : 0}
+      data-search-event-id={exactEventIntent?.eventId}
       style={styles.hero}
       onPointerDown={handleBackdropPointerDown}
     >
@@ -4180,6 +4116,10 @@ export default function AtlasMap({
                 }
                 onChange={(event) => {
                   const nextQuery = event.target.value;
+                  if (exactEventOpenTimerRef.current) {
+                    clearTimeout(exactEventOpenTimerRef.current);
+                    exactEventOpenTimerRef.current = null;
+                  }
                   setQuery(nextQuery);
                   if (nextQuery.trim().length > 0) beginMobileExploration();
 
@@ -4191,10 +4131,6 @@ export default function AtlasMap({
                     setDisplayedQuery('');
                     setSubmittedQuery('');
                     setIsSubmittedQueryFading(false);
-                    if (exactEventOpenTimerRef.current) {
-                      clearTimeout(exactEventOpenTimerRef.current);
-                      exactEventOpenTimerRef.current = null;
-                    }
                     setDiscoveryStatusText(null);
                   }
                 }}

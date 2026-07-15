@@ -6,6 +6,7 @@ import {
   MICHIGAN_COMPOSITION_SAMPLE_PLANS,
   MUSIC_PRESENTATION_PRIMARY_EVENT_IDS,
 } from '@/data/mapPresentationPlan';
+import { MICHIGAN_HOME_ATLAS_SEARCH_RULES } from '@/data/stateAtlasSearchRules';
 import { MICHIGAN_STATE_ATLAS_CONFIG } from '@/data/stateAtlasConfig';
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function MichiganPresentationPlanPage() {
       <div style={{ height: '78vh', minHeight: 640 }}>
         <AtlasMap
           stateConfig={MICHIGAN_STATE_ATLAS_CONFIG}
+          searchRules={MICHIGAN_HOME_ATLAS_SEARCH_RULES}
           events={ATLAS_EVENTS}
           presentationPlan={musicPlan}
         />
