@@ -1,6 +1,6 @@
 import EventHub from '../../../components/EventHub';
 import LegacyEventDetailPage from '../../../components/LegacyEventDetailPage';
-import { resolveEventPageManifest } from '../../../lib/event-pages/publishedManifest';
+import { resolveEventPage } from '../../../lib/event-pages/publishedManifest';
 
 type EventPageProps = {
   params: Promise<{ id: string }>;
@@ -8,10 +8,15 @@ type EventPageProps = {
 
 export default async function EventPage({ params }: EventPageProps) {
   const { id } = await params;
-  const manifest = await resolveEventPageManifest(id);
+  const resolvedEventPage = await resolveEventPage(id);
 
-  if (manifest) {
-    return <EventHub manifest={manifest} />;
+  if (resolvedEventPage) {
+    return (
+      <EventHub
+        manifest={resolvedEventPage.manifest}
+        scoutContentReference={resolvedEventPage.scoutContentReference}
+      />
+    );
   }
 
   return <LegacyEventDetailPage />;

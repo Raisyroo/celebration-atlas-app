@@ -7,7 +7,6 @@ import {
   BadgeCheck,
   CalendarDays,
   CalendarRange,
-  ChevronUp,
   Clock3,
   Compass,
   Crown,
@@ -19,7 +18,6 @@ import {
   Info,
   Map as MapIcon,
   MapPin,
-  MessageCircle,
   Music2,
   Palette,
   PartyPopper,
@@ -57,12 +55,15 @@ import type {
   PlanVisitModuleManifest,
   ScheduleModuleManifest,
   ScoutSpotlightPose,
-  ScoutSuggestion,
   TraditionsModuleManifest,
   WhyGoModuleManifest,
 } from '../data/eventPageManifestTypes';
 import { getEventPageVisual } from '../data/eventPageVisuals';
 import { getDateKeyInTimeZone, getScheduleItemDateKey } from '../lib/eventScheduleDates';
+import {
+  createScoutComposerContext,
+  type ScoutContentReference,
+} from '../lib/scout/composerContext';
 import styles from './EventHub.module.css';
 
 const NAVIGATION_ICONS: Record<EventPageNavigationIcon, LucideIcon> = {
@@ -136,6 +137,7 @@ const SCOUT_SPOTLIGHT_ARTWORK: Record<ScoutSpotlightPose, string> = {
 
 type EventHubProps = {
   manifest: EventPageManifest;
+  scoutContentReference?: ScoutContentReference;
 };
 
 function getTodayKey(timeZone: string): string {
@@ -753,7 +755,7 @@ function PlanVisitModule({
   );
 }
 
-export default function EventHub({ manifest }: EventHubProps) {
+export default function EventHub({ manifest, scoutContentReference }: EventHubProps) {
   const initialModuleId = manifest.navigation[0]?.targetModuleId ?? manifest.modules[0]?.id;
   const [activeModuleId, setActiveModuleId] = useState(initialModuleId);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>(() =>
@@ -765,10 +767,11 @@ export default function EventHub({ manifest }: EventHubProps) {
   );
   const [isFavorite, setIsFavorite] = useState(false);
   const [shareStatus, setShareStatus] = useState('');
-  const [isScoutOpen, setIsScoutOpen] = useState(false);
-  const [scoutResponse, setScoutResponse] = useState('');
   const [scoutQuery, setScoutQuery] = useState('');
+  const [scoutStatus, setScoutStatus] = useState('');
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const scoutDockRef = useRef<HTMLElement | null>(null);
+  const scoutInputRef = useRef<HTMLInputElement | null>(null);
   const todayKey = useMemo(
     () => getTodayKey(manifest.identity.timezone),
     [manifest.identity.timezone],
@@ -789,13 +792,6 @@ export default function EventHub({ manifest }: EventHubProps) {
       manifest.identity.timezone,
     );
   }, [activeFilters, activeModule, manifest.identity.timezone, manifest.scheduleItems, todayKey]);
-
-  const scopedScoutSuggestions = useMemo(() => {
-    const matching = manifest.scoutSuggestions.filter((suggestion) =>
-      suggestion.scopeModuleIds.includes(activeModuleId),
-    );
-    return (matching.length ? matching : manifest.scoutSuggestions).slice(0, 2);
-  }, [activeModuleId, manifest.scoutSuggestions]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -820,6 +816,41 @@ export default function EventHub({ manifest }: EventHubProps) {
     const timer = window.setTimeout(() => setShareStatus(''), 2200);
     return () => window.clearTimeout(timer);
   }, [shareStatus]);
+
+  useEffect(() => {
+    const dock = scoutDockRef.current;
+    if (!dock) return;
+
+    const visualViewport = window.visualViewport;
+    let animationFrame = 0;
+
+    const updateKeyboardInset = () => {
+      const visibleBottom = visualViewport
+        ? visualViewport.offsetTop + visualViewport.height
+        : window.innerHeight;
+      const occludedBottom = Math.max(0, window.innerHeight - visibleBottom);
+      const keyboardInset = occludedBottom >= 96 ? Math.round(occludedBottom) : 0;
+      dock.style.setProperty('--scout-keyboard-inset', `${keyboardInset}px`);
+      dock.dataset.keyboardInset = String(keyboardInset);
+    };
+
+    const queueKeyboardInsetUpdate = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(updateKeyboardInset);
+    };
+
+    queueKeyboardInsetUpdate();
+    window.addEventListener('resize', queueKeyboardInsetUpdate);
+    visualViewport?.addEventListener('resize', queueKeyboardInsetUpdate);
+    visualViewport?.addEventListener('scroll', queueKeyboardInsetUpdate);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener('resize', queueKeyboardInsetUpdate);
+      visualViewport?.removeEventListener('resize', queueKeyboardInsetUpdate);
+      visualViewport?.removeEventListener('scroll', queueKeyboardInsetUpdate);
+    };
+  }, []);
 
   const selectModule = (moduleId: string, scrollToContent = true) => {
     setActiveModuleId(moduleId);
@@ -863,115 +894,29 @@ export default function EventHub({ manifest }: EventHubProps) {
     }
   };
 
-  const getScoutResponse = (suggestion: ScoutSuggestion): string => {
-    if (suggestion.id !== 'scout-today') return suggestion.response;
-
-    const todayItems = manifest.scheduleItems.filter(
-      (item) => getScheduleItemDateKey(item, manifest.identity.timezone) === todayKey,
-    );
-    if (todayItems.length) {
-      const firstItem = [...todayItems].sort((left, right) =>
-        left.startsAt.localeCompare(right.startsAt),
-      )[0];
-      return `${todayItems.length} official schedule item${
-        todayItems.length === 1 ? '' : 's'
-      } are published for today. First up: ${firstItem.title} at ${formatScheduleTime(
-        firstItem.startsAt,
-        manifest.identity.timezone,
-      )}.`;
-    }
-
-    const nextItem = manifest.scheduleItems
-      .filter((item) => getScheduleItemDateKey(item, manifest.identity.timezone) > todayKey)
-      .sort((left, right) => left.startsAt.localeCompare(right.startsAt))[0];
-    if (nextItem) {
-      return `Nothing is published for today. The next official item is ${
-        nextItem.title
-      } on ${formatDayLabel(getScheduleItemDateKey(nextItem, manifest.identity.timezone))} at ${formatScheduleTime(
-        nextItem.startsAt,
-        manifest.identity.timezone,
-      )}.`;
-    }
-
-    if (todayKey <= manifest.identity.endsOn) return suggestion.response;
-    return 'This event schedule has concluded. I can still show the full published program.';
-  };
-
-  const runScoutSuggestion = (suggestion: ScoutSuggestion) => {
-    setIsScoutOpen(true);
-    setScoutResponse(getScoutResponse(suggestion));
-    const command = suggestion.command;
-
-    if (command.type === 'openModule') {
-      selectModule(command.moduleId, false);
-    } else if (command.type === 'filterSchedule') {
-      const { moduleId, filterId } = command;
-      setActiveFilters((current) => ({
-        ...current,
-        [moduleId]: filterId,
-      }));
-      selectModule(moduleId, false);
-    } else {
-      window.open(command.href, '_blank', 'noopener,noreferrer');
-    }
-  };
-
   const submitScoutQuery = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const normalizedQuery = scoutQuery.trim().toLowerCase();
-    if (!normalizedQuery) return;
-
-    let suggestion: ScoutSuggestion | undefined;
-    if (normalizedQuery.includes('today') || normalizedQuery.includes('now')) {
-      suggestion = manifest.scoutSuggestions.find((item) => item.id === 'scout-today');
-    } else if (
-      normalizedQuery.includes('music') ||
-      normalizedQuery.includes('band') ||
-      normalizedQuery.includes('concert')
-    ) {
-      suggestion = manifest.scoutSuggestions.find((item) => item.id === 'scout-best-music');
-    } else if (normalizedQuery.includes('kid') || normalizedQuery.includes('family')) {
-      suggestion = manifest.scoutSuggestions.find((item) => item.id === 'scout-family');
-    } else if (
-      normalizedQuery.includes('queen') ||
-      normalizedQuery.includes('pageant') ||
-      normalizedQuery.includes('royal')
-    ) {
-      suggestion = manifest.scoutSuggestions.find((item) => item.id === 'scout-pageantry');
-    } else if (
-      normalizedQuery.includes('parade') ||
-      normalizedQuery.includes('floral') ||
-      normalizedQuery.includes('bed race') ||
-      normalizedQuery.includes('tradition') ||
-      normalizedQuery.includes('history')
-    ) {
-      suggestion = manifest.scoutSuggestions.find((item) => item.id === 'scout-traditions');
-    } else if (
-      normalizedQuery.includes('park') ||
-      normalizedQuery.includes('where') ||
-      normalizedQuery.includes('direction')
-    ) {
-      suggestion = manifest.scoutSuggestions.find((item) => item.id === 'scout-parking');
-    } else if (
-      normalizedQuery.includes('miss') ||
-      normalizedQuery.includes('highlight') ||
-      normalizedQuery.includes('best')
-    ) {
-      suggestion = manifest.scoutSuggestions.find((item) => item.id === 'scout-not-miss');
+    if (!scoutQuery.trim()) {
+      setScoutStatus('Write a question before submitting.');
+      scoutInputRef.current?.focus({ preventScroll: true });
+      return;
     }
 
-    if (suggestion) {
-      runScoutSuggestion(suggestion);
-    } else {
-      setScoutResponse(
-        'I can answer from the verified event guidance shown here or open the official planning links.',
-      );
-    }
-    setScoutQuery('');
+    setScoutStatus(
+      'Question kept in this composer. Universal Scout responses are not connected yet.',
+    );
+    window.requestAnimationFrame(() => {
+      scoutInputRef.current?.focus({ preventScroll: true });
+    });
   };
 
   if (!activeModule) return null;
 
+  const scoutComposerContext = createScoutComposerContext({
+    manifest,
+    contentReference: scoutContentReference,
+    activeSectionId: activeModule.id,
+  });
   const activeNavigationItem = manifest.navigation.find(
     (item) => item.targetModuleId === activeModule.id,
   );
@@ -1121,8 +1066,16 @@ export default function EventHub({ manifest }: EventHubProps) {
       </div>
 
       <section
-        className={`${styles.scoutDock} ${isScoutOpen ? styles.scoutDockOpen : ''}`}
-        aria-label="Scout event guide"
+        ref={scoutDockRef}
+        className={styles.scoutDock}
+        aria-label="Scout question composer"
+        data-testid="scout-composer"
+        data-scout-contract-version={scoutComposerContext.contractVersion}
+        data-scout-event-id={scoutComposerContext.eventId}
+        data-scout-package-id={scoutComposerContext.packageId}
+        data-scout-package-version={scoutComposerContext.packageVersion}
+        data-scout-source-kind={scoutComposerContext.sourceKind}
+        data-scout-active-section-id={scoutComposerContext.activeSectionId}
       >
         <div className={styles.scoutHeader}>
           <div className={styles.scoutPortrait}>
@@ -1135,58 +1088,63 @@ export default function EventHub({ manifest }: EventHubProps) {
               aria-hidden="true"
             />
           </div>
-          <button
-            type="button"
-            className={styles.scoutTitleButton}
-            aria-expanded={isScoutOpen}
-            onClick={() => setIsScoutOpen((isOpen) => !isOpen)}
-          >
-            <span>
-              <strong>Ask Scout</strong>
-              <small>Verified guidance for this event</small>
-            </span>
-            <ChevronUp className={isScoutOpen ? styles.scoutChevronOpen : ''} aria-hidden="true" />
-          </button>
+          <div className={styles.scoutTitle}>
+            <strong>Ask Scout</strong>
+            <small>Question composer for this Event Hub</small>
+          </div>
         </div>
 
-        {isScoutOpen ? (
-          <div className={styles.scoutPanel}>
-            {scoutResponse ? (
-              <div className={styles.scoutAnswer} role="status" aria-live="polite">
-                <Compass size={20} aria-hidden="true" />
-                <p>{scoutResponse}</p>
-              </div>
-            ) : null}
-
-            <div className={styles.scoutSuggestions}>
-              {scopedScoutSuggestions.map((suggestion) => (
-                <button
-                  type="button"
-                  key={suggestion.id}
-                  onClick={() => runScoutSuggestion(suggestion)}
-                >
-                  <MessageCircle size={17} aria-hidden="true" />
-                  <span>{suggestion.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <form className={styles.scoutForm} onSubmit={submitScoutQuery}>
-              <label htmlFor="scout-event-question" className={styles.srOnly}>
-                Ask Scout about {manifest.identity.shortName}
-              </label>
-              <input
-                id="scout-event-question"
-                value={scoutQuery}
-                onChange={(event) => setScoutQuery(event.target.value)}
-                placeholder="Ask Scout about this event"
-              />
-              <button type="submit" aria-label="Ask Scout" title="Ask Scout">
-                <Send size={18} aria-hidden="true" />
-              </button>
-            </form>
-          </div>
-        ) : null}
+        <form
+          className={styles.scoutForm}
+          data-testid="scout-composer-form"
+          onSubmit={submitScoutQuery}
+        >
+          <input type="hidden" name="eventId" value={scoutComposerContext.eventId} />
+          <input type="hidden" name="packageId" value={scoutComposerContext.packageId} />
+          <input
+            type="hidden"
+            name="packageVersion"
+            value={scoutComposerContext.packageVersion}
+          />
+          <input
+            type="hidden"
+            name="activeSectionId"
+            value={scoutComposerContext.activeSectionId}
+          />
+          <label htmlFor="scout-event-question" className={styles.srOnly}>
+            Ask Scout about {manifest.identity.shortName}
+          </label>
+          <input
+            ref={scoutInputRef}
+            id="scout-event-question"
+            name="question"
+            value={scoutQuery}
+            aria-describedby="scout-composer-availability"
+            autoComplete="off"
+            autoCapitalize="sentences"
+            enterKeyHint="send"
+            maxLength={500}
+            onChange={(event) => {
+              setScoutQuery(event.target.value);
+              if (scoutStatus) setScoutStatus('');
+            }}
+            placeholder="Ask Scout a question"
+          />
+          <button
+            type="submit"
+            aria-label="Submit question to Scout composer"
+            title="Submit question to Scout composer"
+          >
+            <Send size={19} aria-hidden="true" />
+          </button>
+        </form>
+        <p id="scout-composer-availability" className={styles.scoutAvailability}>
+          {scoutStatus ||
+            'Composer preview: universal Scout responses are not connected yet.'}
+        </p>
+        <span className={styles.srOnly} role="status" aria-live="polite">
+          {scoutStatus}
+        </span>
       </section>
     </main>
   );

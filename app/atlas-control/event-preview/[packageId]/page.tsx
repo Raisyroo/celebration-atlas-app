@@ -28,6 +28,11 @@ export default async function EventPackagePreviewPage({ params }: EventPackagePr
   if (!auth.ok) redirect("/atlas-login");
 
   const { packageId } = await params;
-  const manifest = await loadManifest(packageId);
-  return <EventHub manifest={manifest} />;
+  const preview = await loadManifest(packageId);
+  return (
+    <EventHub
+      manifest={preview.manifest}
+      scoutContentReference={preview.scoutContentReference}
+    />
+  );
 }

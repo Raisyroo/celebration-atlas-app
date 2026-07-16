@@ -9,6 +9,26 @@ const resultCloudScreenshotPath = path.join(outputDir, 'map-search-result-text-c
 const exactEventScreenshotPath = path.join(outputDir, 'exact-event-hub-desktop.png');
 const resultCloudMobileScreenshotPath = path.join(outputDir, 'map-search-result-text-cloud-mobile.png');
 const eventHubMobileTabsScreenshotPath = path.join(outputDir, 'event-hub-mobile-tabs.png');
+const scoutComposerPhonePortraitScreenshotPath = path.join(
+  outputDir,
+  'scout-composer-phone-portrait.png',
+);
+const scoutComposerKeyboardViewportScreenshotPath = path.join(
+  outputDir,
+  'scout-composer-keyboard-viewport.png',
+);
+const scoutComposerPhoneLandscapeScreenshotPath = path.join(
+  outputDir,
+  'scout-composer-phone-landscape.png',
+);
+const scoutComposerTabletScreenshotPath = path.join(
+  outputDir,
+  'scout-composer-tablet.png',
+);
+const scoutComposerDesktopScreenshotPath = path.join(
+  outputDir,
+  'scout-composer-desktop.png',
+);
 const atlasControlScreenshotPath = path.join(outputDir, 'atlas-control-unauthenticated.png');
 const baseUrl = process.env.VISUAL_SMOKE_BASE_URL || 'http://127.0.0.1:3000';
 const shouldStartServer = !process.env.VISUAL_SMOKE_BASE_URL;
@@ -26,6 +46,33 @@ const atlasViewportFixtures = Object.freeze([
   { label: 'tablet portrait', width: 768, height: 1024, mode: 'portrait', artworkVariant: 'mobile' },
   { label: 'desktop boundary', width: 1024, height: 768, mode: 'desktop', artworkVariant: 'desktop' },
   { label: 'wide desktop', width: 1440, height: 900, mode: 'desktop', artworkVariant: 'desktop' },
+]);
+const scoutComposerReviewFixtures = Object.freeze([
+  {
+    label: 'phone portrait',
+    width: 390,
+    height: 844,
+    screenshotPath: scoutComposerPhonePortraitScreenshotPath,
+  },
+  {
+    label: 'keyboard-reduced phone portrait',
+    width: 390,
+    height: 430,
+    screenshotPath: scoutComposerKeyboardViewportScreenshotPath,
+    exerciseKeyboard: true,
+  },
+  {
+    label: 'short phone landscape',
+    width: 844,
+    height: 390,
+    screenshotPath: scoutComposerPhoneLandscapeScreenshotPath,
+  },
+  {
+    label: 'tablet portrait',
+    width: 768,
+    height: 1024,
+    screenshotPath: scoutComposerTabletScreenshotPath,
+  },
 ]);
 
 let server;
@@ -342,6 +389,18 @@ async function assertEventHubTabContract(page, label) {
       throw new Error(`${label}: ${expectedName} did not become the selected Event Hub tab.`);
     }
 
+    await selectedTab.evaluate(async (element) => {
+      const deadline = performance.now() + 5_000;
+
+      while (performance.now() < deadline) {
+        const borderColor = window.getComputedStyle(element).borderBottomColor;
+        if (borderColor !== 'rgba(0, 0, 0, 0)' && borderColor !== 'transparent') {
+          return;
+        }
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+    });
+
     const contract = await selectedTab.evaluate((element) => {
       const style = window.getComputedStyle(element);
       const panelId = element.getAttribute('aria-controls');
@@ -373,12 +432,27 @@ async function assertEventHubTabContract(page, label) {
     }
   };
 
+  const activateTab = async (tab) => {
+    const tabId = await tab.getAttribute('id');
+    await page.waitForFunction(
+      (targetTabId) => {
+        const target = targetTabId ? document.getElementById(targetTabId) : null;
+        if (!(target instanceof HTMLButtonElement)) return false;
+        if (target.getAttribute('aria-selected') === 'true') return true;
+        target.click();
+        return false;
+      },
+      tabId,
+      { timeout: 45_000 },
+    );
+  };
+
   await assertSelectedTab('Why Go');
   const scheduleTab = tablist.getByRole('tab', { name: 'Schedule', exact: true });
-  await scheduleTab.click();
+  await activateTab(scheduleTab);
   await assertSelectedTab('Schedule');
   const whyGoTab = tablist.getByRole('tab', { name: 'Why Go', exact: true });
-  await whyGoTab.click();
+  await activateTab(whyGoTab);
   await assertSelectedTab('Why Go');
 
   const leakedHomepageClasses = await page.evaluate(() =>
@@ -387,6 +461,153 @@ async function assertEventHubTabContract(page, label) {
   if (leakedHomepageClasses.length > 0) {
     throw new Error(`${label}: homepage body classes leaked into Event Hub: ${leakedHomepageClasses.join(', ')}.`);
   }
+}
+
+async function assertScoutComposerContract(
+  page,
+  label,
+  expectedEventId,
+  { exerciseKeyboard = false } = {},
+) {
+  const composer = page.locator('[data-testid="scout-composer"]');
+  const form = composer.locator('[data-testid="scout-composer-form"]');
+  const input = form.getByLabel(/Ask Scout about/i);
+  const sendButton = form.getByRole('button', {
+    name: 'Submit question to Scout composer',
+    exact: true,
+  });
+
+  await composer.waitFor({ state: 'visible', timeout: 45_000 });
+  await input.waitFor({ state: 'visible', timeout: 45_000 });
+  await sendButton.waitFor({ state: 'visible', timeout: 45_000 });
+
+  const composerButtonCount = await composer.getByRole('button').count();
+  if (composerButtonCount !== 1) {
+    throw new Error(
+      `${label}: Ask Scout must contain only the icon send control; received ${composerButtonCount} buttons.`,
+    );
+  }
+
+  const selectedTab = page.locator('[role="tab"][aria-selected="true"]');
+  const selectedPanelId = await selectedTab.getAttribute('aria-controls');
+  const expectedSectionId = selectedPanelId?.replace(/^event-module-/, '') ?? null;
+  const context = await composer.evaluate((element) => {
+    const formElement = element.querySelector('[data-testid="scout-composer-form"]');
+    if (!(formElement instanceof HTMLFormElement)) return null;
+    const formData = new FormData(formElement);
+    return {
+      activeSectionId: element.getAttribute('data-scout-active-section-id'),
+      contractVersion: element.getAttribute('data-scout-contract-version'),
+      eventId: element.getAttribute('data-scout-event-id'),
+      packageId: element.getAttribute('data-scout-package-id'),
+      packageVersion: element.getAttribute('data-scout-package-version'),
+      sourceKind: element.getAttribute('data-scout-source-kind'),
+      hiddenActiveSectionId: formData.get('activeSectionId'),
+      hiddenEventId: formData.get('eventId'),
+      hiddenPackageId: formData.get('packageId'),
+      hiddenPackageVersion: formData.get('packageVersion'),
+    };
+  });
+
+  if (
+    !context ||
+    context.contractVersion !== '1' ||
+    context.eventId !== expectedEventId ||
+    !context.packageId ||
+    !context.packageVersion ||
+    !context.sourceKind ||
+    context.activeSectionId !== expectedSectionId ||
+    context.hiddenEventId !== context.eventId ||
+    context.hiddenPackageId !== context.packageId ||
+    context.hiddenPackageVersion !== context.packageVersion ||
+    context.hiddenActiveSectionId !== context.activeSectionId
+  ) {
+    throw new Error(`${label}: Scout composer context contract failed: ${JSON.stringify(context)}.`);
+  }
+
+  const geometry = await composer.evaluate((element) => {
+    const inputElement = element.querySelector('input[name="question"]');
+    const buttonElement = element.querySelector('button[type="submit"]');
+    if (!(inputElement instanceof HTMLInputElement) || !(buttonElement instanceof HTMLButtonElement)) {
+      return null;
+    }
+    const composerRect = element.getBoundingClientRect();
+    const inputRect = inputElement.getBoundingClientRect();
+    const buttonRect = buttonElement.getBoundingClientRect();
+    const composerStyle = window.getComputedStyle(element);
+    const inputStyle = window.getComputedStyle(inputElement);
+    const backgroundMatch = composerStyle.backgroundColor.match(
+      /rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+(?:\s*,\s*([\d.]+))?\s*\)/,
+    );
+    return {
+      backgroundAlpha: backgroundMatch?.[1] ? Number(backgroundMatch[1]) : 1,
+      backgroundColor: composerStyle.backgroundColor,
+      buttonHeight: buttonRect.height,
+      buttonRight: buttonRect.right,
+      buttonWidth: buttonRect.width,
+      composerBottom: composerRect.bottom,
+      composerLeft: composerRect.left,
+      composerRight: composerRect.right,
+      composerTop: composerRect.top,
+      inputFontSize: Number.parseFloat(inputStyle.fontSize),
+      inputLeft: inputRect.left,
+      inputRight: inputRect.right,
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  if (
+    !geometry ||
+    geometry.composerLeft < -1 ||
+    geometry.composerRight > geometry.viewportWidth + 1 ||
+    geometry.composerTop < -1 ||
+    geometry.composerBottom > geometry.viewportHeight + 1 ||
+    geometry.inputLeft < -1 ||
+    geometry.inputRight > geometry.viewportWidth + 1 ||
+    geometry.buttonRight > geometry.viewportWidth + 1 ||
+    geometry.buttonWidth < 44 ||
+    geometry.buttonHeight < 44 ||
+    geometry.inputFontSize < 16 ||
+    geometry.backgroundAlpha >= 1 ||
+    geometry.backgroundAlpha < 0.5
+  ) {
+    throw new Error(`${label}: Scout composer viewport contract failed: ${JSON.stringify(geometry)}.`);
+  }
+
+  await assertNoHorizontalOverflow(page, `${label} Scout composer`);
+
+  if (exerciseKeyboard) {
+    const question = 'What should I know before I go?';
+    await input.fill(question);
+    await input.focus();
+    await page.keyboard.press('Tab');
+    if (!(await sendButton.evaluate((element) => element === document.activeElement))) {
+      throw new Error(`${label}: keyboard focus did not move from the question field to send.`);
+    }
+    await page.keyboard.press('Shift+Tab');
+    if (!(await input.evaluate((element) => element === document.activeElement))) {
+      throw new Error(`${label}: reverse keyboard navigation did not return to the question field.`);
+    }
+    await page.keyboard.press('Enter');
+    const availability = composer.locator('#scout-composer-availability');
+    await availability.waitFor({ state: 'visible', timeout: 45_000 });
+    if (
+      (await availability.textContent())?.trim() !==
+      'Question kept in this composer. Universal Scout responses are not connected yet.'
+    ) {
+      throw new Error(`${label}: the disconnected Scout status message did not render.`);
+    }
+    if ((await input.inputValue()) !== question) {
+      throw new Error(`${label}: the disconnected composer discarded the visitor question.`);
+    }
+    if (!(await input.evaluate((element) => element === document.activeElement))) {
+      throw new Error(`${label}: submitting the disconnected composer did not preserve input focus.`);
+    }
+    await input.press('End');
+  }
+
+  console.log(`${label}: Scout composer contract passed for ${expectedEventId}.`);
 }
 
 async function assertSamePageRotation(page) {
@@ -541,6 +762,14 @@ async function main() {
     submitAtlasSearch(page, 'Detroit Jazz Festival'),
   ]);
   await page.locator('#event-hub-title').waitFor({ state: 'visible', timeout: 45_000 });
+  await assertScoutComposerContract(page, 'desktop homepage-to-Event-Hub navigation', 'detroit-jazz');
+  await page.screenshot({
+    path: scoutComposerDesktopScreenshotPath,
+    caret: 'initial',
+  });
+  console.log(
+    `Desktop Scout composer screenshot written to ${path.relative(process.cwd(), scoutComposerDesktopScreenshotPath)}`,
+  );
   await page.screenshot({ path: exactEventScreenshotPath, fullPage: true, caret: 'initial' });
   console.log(`Desktop exact-event search screenshot written to ${path.relative(process.cwd(), exactEventScreenshotPath)}`);
 
@@ -550,9 +779,38 @@ async function main() {
     colorScheme: 'dark',
     reducedMotion: 'reduce',
   });
+  const mobileReviewPage = await mobileContext.newPage();
+  await mobileReviewPage.clock.setFixedTime(visualSmokeTime);
+  captureBrowserErrors(mobileReviewPage, 'mobile-review');
+
+  const directEventHubUrl = new URL('/events/detroit-jazz', baseUrl).toString();
+  for (const fixture of scoutComposerReviewFixtures) {
+    await mobileReviewPage.setViewportSize({ width: fixture.width, height: fixture.height });
+    await mobileReviewPage.goto(directEventHubUrl, { waitUntil: 'domcontentloaded' });
+    await mobileReviewPage
+      .locator('#event-hub-title')
+      .waitFor({ state: 'visible', timeout: 45_000 });
+    await assertEventHubTabContract(
+      mobileReviewPage,
+      `direct ${fixture.label} Event Hub navigation`,
+    );
+    await assertScoutComposerContract(
+      mobileReviewPage,
+      `direct ${fixture.label} Event Hub navigation`,
+      'detroit-jazz',
+      { exerciseKeyboard: fixture.exerciseKeyboard },
+    );
+    await mobileReviewPage.screenshot({ path: fixture.screenshotPath, caret: 'initial' });
+    console.log(
+      `${fixture.label} Scout composer screenshot written to ${path.relative(process.cwd(), fixture.screenshotPath)}`,
+    );
+  }
+
+  await mobileReviewPage.close();
   const mobilePage = await mobileContext.newPage();
   await mobilePage.clock.setFixedTime(visualSmokeTime);
   captureBrowserErrors(mobilePage, 'mobile');
+  await mobilePage.setViewportSize({ width: 390, height: 844 });
   await mobilePage.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
   await mobilePage.locator(atlasRootSelector).waitFor({ state: 'visible', timeout: 45_000 });
   await mobilePage.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
@@ -591,6 +849,11 @@ async function main() {
     detroitJazzTitleTag.click(),
   ]);
   await assertEventHubTabContract(mobilePage, 'homepage title-tag navigation');
+  await assertScoutComposerContract(
+    mobilePage,
+    'homepage title-tag navigation',
+    'detroit-jazz',
+  );
 
   await mobilePage.goto(atlasLoginUrl, { waitUntil: 'domcontentloaded' });
   const returnToAtlasLink = mobilePage.locator('.control-shell a[href="/"]').first();
@@ -607,9 +870,14 @@ async function main() {
   await brownTroutRailLink.waitFor({ state: 'visible', timeout: 45_000 });
   await Promise.all([
     mobilePage.waitForURL('**/events/alpena-brown-trout', { timeout: 45_000 }),
-    brownTroutRailLink.click(),
+    brownTroutRailLink.evaluate((element) => element.click()),
   ]);
   await assertEventHubTabContract(mobilePage, 'Atlas Control route-order navigation');
+  await assertScoutComposerContract(
+    mobilePage,
+    'Atlas Control route-order navigation',
+    'alpena-brown-trout',
+  );
   await mobilePage.getByRole('tablist', { name: 'Event sections' }).screenshot({
     path: eventHubMobileTabsScreenshotPath,
     caret: 'initial',

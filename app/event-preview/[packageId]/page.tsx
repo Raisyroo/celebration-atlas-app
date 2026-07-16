@@ -24,6 +24,11 @@ async function loadManifest(packageId: string) {
 
 export default async function EventPackagePreviewPage({ params }: EventPackagePreviewPageProps) {
   const { packageId } = await params;
-  const manifest = await loadManifest(packageId);
-  return <EventHub manifest={manifest} />;
+  const preview = await loadManifest(packageId);
+  return (
+    <EventHub
+      manifest={preview.manifest}
+      scoutContentReference={preview.scoutContentReference}
+    />
+  );
 }

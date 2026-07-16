@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: July 15, 2026
+Last updated: July 16, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -93,7 +93,11 @@ New package preparation prefers the approved cloud asset and retains the full vi
 
 ## Scout Status
 
-Scout's visual identity and source-backed prompt suggestions are implemented. A universal conversational Scout service is not yet connected.
+Scout's visual identity is implemented. Event Hub Ask Scout is now a single-purpose question composer: suggestion chips, suggested questions, predefined prompt tags, and event-specific keyword response routing are not rendered. Existing source-backed suggestion records remain in published manifests as compatibility data for the reviewed Event Factory lifecycle.
+
+The composer exposes a versioned context contract for event ID, content package/version, source kind, and active Event Hub section. Published page versions, Event Factory package previews, source-synthesis previews, and checked-in transition manifests each supply the strongest content reference they currently own.
+
+The universal conversational Scout service is not connected. Submitting the UI-only composer retains the visitor's question, preserves focus, and explicitly says that no response service received it. The fixed composer uses safe-area and visual-viewport keyboard insets, a 16px input to prevent iOS focus zoom, a minimum 44px send target, and one shared translucent dock treatment across phone, tablet, and desktop.
 
 Do not build one-off deep-question logic into individual event pages. The future Scout response layer should retrieve approved event claims, schedules, rules, PDFs, provenance, and freshness metadata at request time, then answer with citations and uncertainty controls. Event-specific source intelligence should become shared retrieval data, not custom chatbot code.
 
@@ -176,6 +180,7 @@ For Event Factory work, also confirm:
 - Browser console contains no application errors.
 - Existing published Event Hub pages and the homepage still resolve.
 - Mobile smoke coverage preserves query-only map title tags and verifies Event Hub tab geometry both directly and after Atlas Login -> homepage -> Event Hub client navigation.
+- Scout Composer smoke coverage verifies direct and client Event Hub navigation, context updates, keyboard focus order, translucent treatment, no prompt-chip controls, and no overflow at 390x844, 390x430, 844x390, 768x1024, and 1440x900.
 
 ## Handoff Convention
 

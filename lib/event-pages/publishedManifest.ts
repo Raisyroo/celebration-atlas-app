@@ -4,15 +4,35 @@ import type { EventPageManifest } from '@/data/eventPageManifestTypes';
 import { validateEventPageManifest } from '@/data/eventPageManifestValidation';
 import { getEventPageManifest } from '@/data/eventPageManifests';
 import { createAtlasServiceClient } from '@/lib/atlas-control/service';
+import {
+  getManifestScoutContentReference,
+  type ScoutContentReference,
+} from '@/lib/scout/composerContext';
 
 type PublishedEventPageRow = {
   event_key: string;
   slug: string;
+  version_id: string;
+  version_number: number;
   manifest: unknown;
 };
 
-async function resolveManifest(identifier: string): Promise<EventPageManifest | undefined> {
+export type ResolvedEventPage = {
+  manifest: EventPageManifest;
+  scoutContentReference: ScoutContentReference;
+};
+
+function getLocalEventPage(identifier: string): ResolvedEventPage | undefined {
   const localFallback = getEventPageManifest(identifier);
+  if (!localFallback) return undefined;
+  return {
+    manifest: localFallback,
+    scoutContentReference: getManifestScoutContentReference(localFallback),
+  };
+}
+
+async function resolveEventPageResult(identifier: string): Promise<ResolvedEventPage | undefined> {
+  const localFallback = getLocalEventPage(identifier);
   const supabase = createAtlasServiceClient();
   if (!supabase) return localFallback;
 
@@ -28,7 +48,20 @@ async function resolveManifest(identifier: string): Promise<EventPageManifest | 
     return localFallback;
   }
 
-  return validation.value;
+  return {
+    manifest: validation.value,
+    scoutContentReference: {
+      sourceKind: 'event-page-version',
+      packageId: data.version_id,
+      packageVersion: String(data.version_number),
+    },
+  };
 }
 
-export const resolveEventPageManifest = cache(resolveManifest);
+export const resolveEventPage = cache(resolveEventPageResult);
+
+export async function resolveEventPageManifest(
+  identifier: string,
+): Promise<EventPageManifest | undefined> {
+  return (await resolveEventPage(identifier))?.manifest;
+}

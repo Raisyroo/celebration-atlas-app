@@ -11,6 +11,7 @@ import {
   reviewEventPageVersion,
   submitEventPageVersion,
 } from "@/lib/event-pages/publishing";
+import type { ScoutContentReference } from "@/lib/scout/composerContext";
 import { getApprovedEventVisualWorkflow } from "./visuals";
 import type {
   EventFactoryGateKey,
@@ -77,8 +78,14 @@ type PackageRow = {
   event_key: string;
   slug: string;
   status: EventFactoryPackageStatus;
+  package_version: number;
   page_manifest: unknown;
   art_asset: Record<string, unknown>;
+};
+
+export type EventFactoryPackagePreview = {
+  manifest: EventPageManifest;
+  scoutContentReference: ScoutContentReference;
 };
 
 type PackageListRow = {
@@ -405,20 +412,29 @@ async function getPackage(packageId: string): Promise<PackageRow> {
   const supabase = requireServiceClient();
   const { data, error } = await supabase
     .from("event_factory_packages")
-    .select("id,verification_case_id,candidate_id,event_id,event_key,slug,status,page_manifest,art_asset")
+    .select("id,verification_case_id,candidate_id,event_id,event_key,slug,status,package_version,page_manifest,art_asset")
     .eq("id", packageId)
     .single();
   if (error || !data) throw new Error(error?.message ?? "Event package was not found.");
   return data as PackageRow;
 }
 
-export async function getEventFactoryPackagePreview(packageId: string): Promise<EventPageManifest> {
+export async function getEventFactoryPackagePreview(
+  packageId: string,
+): Promise<EventFactoryPackagePreview> {
   const packageRow = await getPackage(packageId);
   const validation = validateEventPageManifest(packageRow.page_manifest);
   if (!validation.ok) {
     throw new Error(`Event package preview is invalid: ${validation.errors.join(" ")}`);
   }
-  return validation.value;
+  return {
+    manifest: validation.value,
+    scoutContentReference: {
+      sourceKind: "event-factory-package",
+      packageId: packageRow.id,
+      packageVersion: String(packageRow.package_version),
+    },
+  };
 }
 
 const PUBLIC_PREVIEW_STATUSES = new Set<EventFactoryPackageStatus>([
@@ -429,7 +445,9 @@ const PUBLIC_PREVIEW_STATUSES = new Set<EventFactoryPackageStatus>([
   "failed",
 ]);
 
-export async function getPublicEventFactoryPackagePreview(packageId: string): Promise<EventPageManifest> {
+export async function getPublicEventFactoryPackagePreview(
+  packageId: string,
+): Promise<EventFactoryPackagePreview> {
   const packageRow = await getPackage(packageId);
   if (!PUBLIC_PREVIEW_STATUSES.has(packageRow.status)) {
     throw new Error("This event package is not available for read-only review.");
@@ -438,7 +456,14 @@ export async function getPublicEventFactoryPackagePreview(packageId: string): Pr
   if (!validation.ok) {
     throw new Error(`Event package preview is invalid: ${validation.errors.join(" ")}`);
   }
-  return validation.value;
+  return {
+    manifest: validation.value,
+    scoutContentReference: {
+      sourceKind: "event-factory-package",
+      packageId: packageRow.id,
+      packageVersion: String(packageRow.package_version),
+    },
+  };
 }
 
 export async function reviewEventFactoryPackage(args: {
