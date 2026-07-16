@@ -94,6 +94,12 @@ assert(
   ),
   'Scout composer does not retain an ordered, component-local conversation.',
 );
+assert(
+  eventHubSource.includes(
+    'const [isScoutHistoryVisible, setIsScoutHistoryVisible] = useState(false)',
+  ),
+  'Scout conversation visibility must remain presentation state separate from retained turns.',
+);
 
 const submitScoutQueryMatch = eventHubSource.match(
   /const submitScoutQuery = \(event: FormEvent<HTMLFormElement>\) => \{[\s\S]*?\n  \};/,
@@ -107,10 +113,11 @@ assert(
   'Each valid Scout submit must append the question and generic demo answer.',
 );
 assert(
-  submitScoutQuerySource.includes("setScoutQuery('')") &&
+  submitScoutQuerySource.includes('setIsScoutHistoryVisible(true)') &&
+    submitScoutQuerySource.includes("setScoutQuery('')") &&
     submitScoutQuerySource.includes('setIsScoutInputFocused(false)') &&
     submitScoutQuerySource.includes('scoutInputRef.current?.blur()'),
-  'Scout submit must clear the composer, clear its focus state, and dismiss the keyboard.',
+  'Scout submit must reopen history, clear the composer, clear its focus state, and dismiss the keyboard.',
 );
 const emptyQueryReturnIndex = submitScoutQuerySource.indexOf('return;');
 assert(
@@ -126,6 +133,58 @@ assert(
   'Scout submit still preserves or restores text-input focus.',
 );
 
+const dismissScoutHistoryMatch = eventHubSource.match(
+  /const dismissScoutHistory = \(\) => \{[\s\S]*?\n  \};/,
+);
+assert(
+  dismissScoutHistoryMatch,
+  'Scout conversation dismissal handler could not be inspected.',
+);
+const dismissScoutHistorySource = dismissScoutHistoryMatch[0];
+assert(
+  dismissScoutHistorySource.includes('setIsScoutHistoryVisible(false)') &&
+    dismissScoutHistorySource.includes('setIsScoutInputFocused(false)') &&
+    dismissScoutHistorySource.includes('scoutInputRef.current?.blur()') &&
+    dismissScoutHistorySource.includes(
+      'scoutSubmitButtonRef.current?.focus({ preventScroll: true })',
+    ),
+  'Dismissing Scout history must hide it, dismiss the keyboard, and restore focus to the send control.',
+);
+assert(
+  !dismissScoutHistorySource.includes('setScoutConversation') &&
+    !/\bsetScoutConversation\(\s*\[\s*\]\s*\)/.test(eventHubSource),
+  'Dismissing Scout history must never clear the retained same-event conversation.',
+);
+
+const activateScoutInputMatch = eventHubSource.match(
+  /const activateScoutInput = \(\) => \{[\s\S]*?\n  \};/,
+);
+assert(
+  activateScoutInputMatch,
+  'Scout input activation handler could not be inspected.',
+);
+assert(
+  activateScoutInputMatch[0].includes('setIsScoutInputFocused(true)') &&
+    /if\s*\(\s*scoutConversation\.length\s*>\s*0\s*\)\s*\{[\s\S]*?setIsScoutHistoryVisible\(true\)/.test(
+      activateScoutInputMatch[0],
+    ),
+  'Focusing Scout must reopen retained history when the current event has prior turns.',
+);
+
+const scoutHistoryScrollEffectMatch = eventHubSource.match(
+  /useEffect\(\(\) => \{\s*const history = scoutHistoryRef\.current;[\s\S]*?\}, \[([^\]]+)\]\);/,
+);
+assert(
+  scoutHistoryScrollEffectMatch &&
+    scoutHistoryScrollEffectMatch[0].includes('!isScoutHistoryVisible') &&
+    scoutHistoryScrollEffectMatch[0].includes(
+      'history.scrollTop = history.scrollHeight',
+    ) &&
+    /\bisScoutHistoryVisible\b/.test(scoutHistoryScrollEffectMatch[1]) &&
+    /\bscoutConversation\.length\b/.test(scoutHistoryScrollEffectMatch[1]),
+  'Scout auto-scroll must run only for visible history and respond to both visibility and turn count.',
+);
+
 const scoutInputMatch = eventHubSource.match(
   /<input[\s\S]*?id="scout-event-question"[\s\S]*?\/>/,
 );
@@ -133,8 +192,24 @@ assert(scoutInputMatch, 'Scout question input could not be inspected.');
 assert(
   scoutInputMatch[0].includes(
     'onChange={(event) => setScoutQuery(event.target.value)}',
-  ) && !scoutInputMatch[0].includes('setScoutConversation'),
-  'Editing the Scout composer must not clear the same-event conversation history.',
+  ) &&
+    scoutInputMatch[0].includes('onFocus={activateScoutInput}') &&
+    !scoutInputMatch[0].includes('setScoutConversation'),
+  'Editing and refocusing Scout must preserve and reopen the same-event conversation history.',
+);
+
+assert(
+  /const hasVisibleScoutHistory\s*=\s*isScoutHistoryVisible\s*&&\s*scoutConversation\.length\s*>\s*0;/.test(
+    eventHubSource,
+  ) &&
+    /hasVisibleScoutHistory\s*\?\s*`\s*\$\{styles\.rootWithScoutResponse\}`\s*:\s*''/.test(
+      eventHubSource,
+    ) &&
+    eventHubSource.includes('{hasVisibleScoutHistory ? (') &&
+    eventHubSource.includes(
+      "data-scout-history-visible={hasVisibleScoutHistory ? 'true' : 'false'}",
+    ),
+  'Scout history rendering and content clearance must depend on both retained turns and visible presentation state.',
 );
 
 const scoutHistoryMatch = eventHubSource.match(
@@ -143,6 +218,7 @@ const scoutHistoryMatch = eventHubSource.match(
 assert(scoutHistoryMatch, 'Scout conversation history could not be inspected.');
 assert(
   scoutHistoryMatch[0].includes('data-scout-response-mode="demo"') &&
+    scoutHistoryMatch[0].includes('id="scout-conversation-history"') &&
     scoutHistoryMatch[0].includes('aria-label="Scout conversation history"') &&
     scoutHistoryMatch[0].includes('tabIndex={0}') &&
     scoutHistoryMatch[0].includes('scoutConversation.map((turn)') &&
@@ -151,6 +227,42 @@ assert(
     !scoutHistoryMatch[0].includes('role="status"') &&
     !scoutHistoryMatch[0].includes('aria-live='),
   'Scout demo history must render every turn without acting as the live announcement region.',
+);
+
+const scoutHistoryCloseClassIndex = eventHubSource.indexOf(
+  'className={styles.scoutHistoryClose}',
+);
+assert(
+  scoutHistoryCloseClassIndex >= 0,
+  'Scout conversation history does not expose a close control.',
+);
+const scoutHistoryCloseStart = eventHubSource.lastIndexOf(
+  '<button',
+  scoutHistoryCloseClassIndex,
+);
+const scoutHistoryCloseEnd = eventHubSource.indexOf(
+  '</button>',
+  scoutHistoryCloseClassIndex,
+);
+assert(
+  scoutHistoryCloseStart >= 0 && scoutHistoryCloseEnd >= 0,
+  'Scout conversation close button could not be inspected.',
+);
+const scoutHistoryCloseSource = eventHubSource.slice(
+  scoutHistoryCloseStart,
+  scoutHistoryCloseEnd + '</button>'.length,
+);
+assert(
+  scoutHistoryCloseSource.includes('type="button"') &&
+    scoutHistoryCloseSource.includes(
+      'aria-label="Hide Scout conversation history"',
+    ) &&
+    scoutHistoryCloseSource.includes(
+      'aria-controls="scout-conversation-history"',
+    ) &&
+    scoutHistoryCloseSource.includes('onClick={dismissScoutHistory}') &&
+    /<X\b[\s\S]*?aria-hidden="true"/.test(scoutHistoryCloseSource),
+  'Scout history close control must be an accessible X button connected to the history region.',
 );
 assert(
   /\.scoutResponse:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--hub-gold-soft\);[^}]*outline-offset:\s*-3px;/.test(
@@ -172,6 +284,40 @@ assert(
 assert(
   eventHubSource.includes('history.scrollTop = history.scrollHeight'),
   'Scout conversation history does not keep the latest appended turn in view.',
+);
+
+const getStyleRule = (selector: string) => {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = eventHubStyles.match(
+    new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`),
+  );
+  assert(match, `${selector} style contract could not be inspected.`);
+  return match[1];
+};
+
+const scoutHistoryRule = getStyleRule('.scoutHistory');
+const scoutTurnRule = getStyleRule('.scoutTurn');
+for (const [selector, rule] of [
+  ['.scoutHistory', scoutHistoryRule],
+  ['.scoutTurn', scoutTurnRule],
+] as const) {
+  assert(
+    !/(?:background(?:-color)?|border-radius|box-shadow)\s*:/.test(rule),
+    `${selector} must not introduce a nested panel box inside the shared Scout dock.`,
+  );
+}
+
+const scoutHistoryCloseRule = getStyleRule('.scoutHistoryClose');
+assert(
+  /position:\s*absolute;/.test(scoutHistoryCloseRule) &&
+    /top:\s*\d+(?:\.\d+)?px;/.test(scoutHistoryCloseRule) &&
+    /right:\s*\d+(?:\.\d+)?px;/.test(scoutHistoryCloseRule),
+  'Scout history close control must remain anchored at the top right of the response area.',
+);
+assert(
+  /min-width:\s*44px;/.test(scoutHistoryCloseRule) &&
+    /min-height:\s*44px;/.test(scoutHistoryCloseRule),
+  'Scout history close control must preserve a minimum 44px target.',
 );
 
 for (const contextField of [

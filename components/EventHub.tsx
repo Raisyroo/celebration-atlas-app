@@ -31,6 +31,7 @@ import {
   Users,
   Utensils,
   Wheat,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -778,6 +779,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
   const [shareStatus, setShareStatus] = useState('');
   const [scoutQuery, setScoutQuery] = useState('');
   const [isScoutInputFocused, setIsScoutInputFocused] = useState(false);
+  const [isScoutHistoryVisible, setIsScoutHistoryVisible] = useState(false);
   const [scoutConversation, setScoutConversation] = useState<ScoutDemoTurn[]>([]);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const scoutDockRef = useRef<HTMLElement | null>(null);
@@ -832,9 +834,9 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
 
   useEffect(() => {
     const history = scoutHistoryRef.current;
-    if (!history || scoutConversation.length === 0) return;
+    if (!isScoutHistoryVisible || !history || scoutConversation.length === 0) return;
     history.scrollTop = history.scrollHeight;
-  }, [scoutConversation.length]);
+  }, [isScoutHistoryVisible, scoutConversation.length]);
 
   useEffect(() => {
     const dock = scoutDockRef.current;
@@ -930,10 +932,25 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
         answer: SCOUT_DEMO_RESPONSE,
       },
     ]);
+    setIsScoutHistoryVisible(true);
     setScoutQuery('');
     setIsScoutInputFocused(false);
     scoutInputRef.current?.blur();
     scoutSubmitButtonRef.current?.focus({ preventScroll: true });
+  };
+
+  const dismissScoutHistory = () => {
+    setIsScoutHistoryVisible(false);
+    setIsScoutInputFocused(false);
+    scoutInputRef.current?.blur();
+    scoutSubmitButtonRef.current?.focus({ preventScroll: true });
+  };
+
+  const activateScoutInput = () => {
+    setIsScoutInputFocused(true);
+    if (scoutConversation.length > 0) {
+      setIsScoutHistoryVisible(true);
+    }
   };
 
   if (!activeModule) return null;
@@ -948,11 +965,13 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
     (item) => item.targetModuleId === activeModule.id,
   );
   const latestScoutTurn = scoutConversation[scoutConversation.length - 1];
+  const hasVisibleScoutHistory =
+    isScoutHistoryVisible && scoutConversation.length > 0;
 
   return (
     <main
       className={`${styles.root}${
-        scoutConversation.length > 0 ? ` ${styles.rootWithScoutResponse}` : ''
+        hasVisibleScoutHistory ? ` ${styles.rootWithScoutResponse}` : ''
       }`}
     >
       <header className={styles.topBar}>
@@ -1109,30 +1128,44 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
         data-scout-source-kind={scoutComposerContext.sourceKind}
         data-scout-active-section-id={scoutComposerContext.activeSectionId}
         data-scout-input-focused={isScoutInputFocused ? 'true' : 'false'}
+        data-scout-history-visible={hasVisibleScoutHistory ? 'true' : 'false'}
       >
-        {scoutConversation.length > 0 ? (
-          <ol
-            ref={scoutHistoryRef}
-            className={styles.scoutResponse}
-            aria-label="Scout conversation history"
-            data-testid="scout-response-preview"
-            data-scout-response-mode="demo"
-            data-scout-turn-count={scoutConversation.length}
-            tabIndex={0}
-          >
-            {scoutConversation.map((turn) => (
-              <li className={styles.scoutTurn} key={turn.id}>
-                <div className={styles.scoutExchange}>
-                  <span className={styles.scoutTurnLabel}>You</span>
-                  <p className={styles.scoutQuestion}>{turn.question}</p>
-                </div>
-                <div className={styles.scoutExchange}>
-                  <span className={styles.scoutTurnLabel}>Scout</span>
-                  <p className={styles.scoutAnswer}>{turn.answer}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+        {hasVisibleScoutHistory ? (
+          <div className={styles.scoutHistory}>
+            <button
+              type="button"
+              className={styles.scoutHistoryClose}
+              aria-controls="scout-conversation-history"
+              aria-label="Hide Scout conversation history"
+              title="Hide Scout conversation history"
+              onClick={dismissScoutHistory}
+            >
+              <X size={19} strokeWidth={2} aria-hidden="true" />
+            </button>
+            <ol
+              ref={scoutHistoryRef}
+              id="scout-conversation-history"
+              className={styles.scoutResponse}
+              aria-label="Scout conversation history"
+              data-testid="scout-response-preview"
+              data-scout-response-mode="demo"
+              data-scout-turn-count={scoutConversation.length}
+              tabIndex={0}
+            >
+              {scoutConversation.map((turn) => (
+                <li className={styles.scoutTurn} key={turn.id}>
+                  <div className={styles.scoutExchange}>
+                    <span className={styles.scoutTurnLabel}>You</span>
+                    <p className={styles.scoutQuestion}>{turn.question}</p>
+                  </div>
+                  <div className={styles.scoutExchange}>
+                    <span className={styles.scoutTurnLabel}>Scout</span>
+                    <p className={styles.scoutAnswer}>{turn.answer}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
         ) : null}
         <div
           className={styles.srOnly}
@@ -1192,7 +1225,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
               maxLength={500}
               onBlur={() => setIsScoutInputFocused(false)}
               onChange={(event) => setScoutQuery(event.target.value)}
-              onFocus={() => setIsScoutInputFocused(true)}
+              onFocus={activateScoutInput}
               placeholder=""
             />
           </div>
