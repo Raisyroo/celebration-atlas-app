@@ -21,6 +21,7 @@ type HomeDiscoveryLayerProps = {
   shortcutGroups?: DiscoveryShortcutGroup[];
   showShortcutGroups?: boolean;
   results?: HomeDiscoveryResultRow[];
+  selectedResultId?: string | null;
   onShortcutSelect?: (value: string) => void;
   onEventSelect?: (eventId: string) => void;
 };
@@ -106,6 +107,13 @@ const styles = {
     cursor: 'pointer',
     textAlign: 'left',
     touchAction: 'manipulation',
+  },
+  resultButtonSelected: {
+    border: '1px solid rgba(255, 231, 179, 0.58)',
+    background:
+      'linear-gradient(180deg, rgba(83, 62, 29, 0.42), rgba(17, 19, 24, 0.24))',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255, 245, 218, 0.08), 0 0 16px rgba(255, 207, 116, 0.2)',
   },
   resultIdentity: {
     display: 'flex',
@@ -213,6 +221,7 @@ export function HomeDiscoveryLayer({
   showShortcutGroups = true,
   statusText,
   results,
+  selectedResultId = null,
   onShortcutSelect,
   onEventSelect,
 }: HomeDiscoveryLayerProps) {
@@ -261,9 +270,20 @@ export function HomeDiscoveryLayer({
                 <li key={result.id} style={styles.resultRow}>
                   <button
                     type="button"
-                    style={styles.resultButton}
+                    style={{
+                      ...styles.resultButton,
+                      ...(selectedResultId === result.id
+                        ? styles.resultButtonSelected
+                        : null),
+                    }}
                     onClick={() => onEventSelect?.(result.id)}
                     aria-label={`Open ${result.name} in ${result.location}`}
+                    aria-current={
+                      selectedResultId === result.id ? 'true' : undefined
+                    }
+                    data-active={
+                      selectedResultId === result.id ? 'true' : 'false'
+                    }
                     data-search-event-id={result.id}
                   >
                     <span style={styles.resultIdentity}>
