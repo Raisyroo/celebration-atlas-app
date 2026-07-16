@@ -22,6 +22,7 @@ export default async function DevelopmentPackagePreview({ params }: DevelopmentP
   const preview = await loadManifest(packageId);
   return (
     <EventHub
+      key={preview.manifest.eventId}
       manifest={preview.manifest}
       scoutContentReference={preview.scoutContentReference}
     />

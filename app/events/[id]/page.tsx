@@ -13,6 +13,7 @@ export default async function EventPage({ params }: EventPageProps) {
   if (resolvedEventPage) {
     return (
       <EventHub
+        key={resolvedEventPage.manifest.eventId}
         manifest={resolvedEventPage.manifest}
         scoutContentReference={resolvedEventPage.scoutContentReference}
       />
