@@ -587,9 +587,16 @@ async function assertScoutComposerContract(
 
   if (exerciseKeyboard) {
     const question = 'What should I know before I go?';
-    await input.fill(question);
     await input.focus();
-    await helperSubtitle.waitFor({ state: 'detached', timeout: 45_000 });
+    await page.waitForFunction(
+      () => document.querySelector('#scout-event-question')?.getAttribute('placeholder') === '',
+      undefined,
+      { timeout: 45_000 },
+    );
+    if ((await input.inputValue()) !== '') {
+      throw new Error(`${label}: focusing the Scout field did not leave an empty input.`);
+    }
+    await helperSubtitle.waitFor({ state: 'visible', timeout: 45_000 });
     await page.keyboard.press('Tab');
     if (!(await sendButton.evaluate((element) => element === document.activeElement))) {
       throw new Error(`${label}: keyboard focus did not move from the question field to send.`);
@@ -598,6 +605,7 @@ async function assertScoutComposerContract(
     if (!(await input.evaluate((element) => element === document.activeElement))) {
       throw new Error(`${label}: reverse keyboard navigation did not return to the question field.`);
     }
+    await input.fill(question);
     await page.keyboard.press('Enter');
     if ((await input.inputValue()) !== question) {
       throw new Error(`${label}: the disconnected composer discarded the visitor question.`);
@@ -607,6 +615,11 @@ async function assertScoutComposerContract(
     }
     if (await composer.getByText(/Composer preview:|Question kept in this composer\./).count()) {
       throw new Error(`${label}: activating Scout added status copy.`);
+    }
+    await input.fill('');
+    await input.focus();
+    if ((await input.getAttribute('placeholder')) !== '' || (await input.inputValue()) !== '') {
+      throw new Error(`${label}: focused Scout review state was not completely blank.`);
     }
     await input.press('End');
   }

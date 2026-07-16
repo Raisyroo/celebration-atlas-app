@@ -913,7 +913,6 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
     contentReference: scoutContentReference,
     activeSectionId: activeModule.id,
   });
-  const isScoutActive = isScoutInputFocused || Boolean(scoutQuery);
   const activeNavigationItem = manifest.navigation.find(
     (item) => item.targetModuleId === activeModule.id,
   );
@@ -1087,7 +1086,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
           </div>
           <div className={styles.scoutTitle}>
             <strong>Ask Scout</strong>
-            {!isScoutActive ? <small>Verified guidance for this event</small> : null}
+            <small>Verified guidance for this event</small>
           </div>
         </div>
 
@@ -1123,7 +1122,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
             onBlur={() => setIsScoutInputFocused(false)}
             onChange={(event) => setScoutQuery(event.target.value)}
             onFocus={() => setIsScoutInputFocused(true)}
-            placeholder="Ask Scout a question"
+            placeholder={isScoutInputFocused ? '' : 'Ask Scout a question'}
           />
           <button
             type="submit"

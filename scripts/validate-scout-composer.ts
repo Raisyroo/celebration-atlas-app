@@ -67,8 +67,8 @@ assert(
   'Scout composer no longer uses the existing helper subtitle.',
 );
 assert(
-  eventHubSource.includes('isScoutInputFocused || Boolean(scoutQuery)'),
-  'Scout helper subtitle does not respond to focus and entered text.',
+  eventHubSource.includes("placeholder={isScoutInputFocused ? '' : 'Ask Scout a question'}"),
+  'Scout input placeholder does not clear when the field receives focus.',
 );
 
 for (const contextField of [
