@@ -42,6 +42,7 @@ Current operational state overrides older historical notes. Do not restore a sup
 - Work with existing dirty-tree changes. Never revert files you did not create or changes the user has not asked to remove.
 - Keep secrets in `.env.local` or managed platform settings. Never commit credentials.
 - `npm run build` is the required full check. It includes flyer, Event Hub, source inspection, synthesis, and Atlas Control validations.
+- Do not run `npm run test:visual-smoke` or `scripts/visual-smoke.mjs` unless the user explicitly requests it. Use available browser tools for targeted review; if those are unavailable, leave visual review to the user.
 - For user-facing changes, verify the real route at mobile width and check for horizontal overflow, rendering errors, and missing media.
 - For Supabase schema work, add a numbered migration and verify local/remote migration parity.
 - Update `docs/PROJECT_STATE.md` when a milestone changes architecture, publication state, or the next-task handoff.
