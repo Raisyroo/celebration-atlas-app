@@ -1496,12 +1496,45 @@
   white-space: nowrap;
 }
 
+.scoutHistory {
+  position: relative;
+  border-bottom: 1px solid rgba(239, 164, 61, 0.28);
+}
+
+.scoutHistoryClose {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(3, 11, 18, 0.3);
+  color: var(--hub-gold-soft);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.scoutHistoryClose:hover {
+  background: rgba(239, 164, 61, 0.14);
+  color: var(--hub-ink);
+}
+
+.scoutHistoryClose:active {
+  transform: translateY(1px);
+}
+
 .scoutResponse {
   display: grid;
   max-height: min(42dvh, 300px);
   overflow-y: auto;
   padding: 0;
-  border-bottom: 1px solid rgba(239, 164, 61, 0.28);
   color: var(--hub-ink);
   list-style: none;
   margin: 0;
@@ -1522,7 +1555,7 @@
 .scoutTurn {
   display: grid;
   gap: 9px;
-  padding: 13px 16px 14px;
+  padding: 13px 62px 14px 16px;
 }
 
 .scoutTurn:not(:last-child) {
@@ -1975,7 +2008,7 @@
 
   .scoutTurn {
     gap: 6px;
-    padding: 8px 12px 9px;
+    padding: 8px 58px 9px 12px;
   }
 
   .scoutTurnLabel {
