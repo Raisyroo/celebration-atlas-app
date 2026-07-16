@@ -247,7 +247,12 @@ assert(synthesisService.includes('getEventSourceSynthesisPreview'), 'source synt
 
 const synthesisPreviewPage = read('app/atlas-control/synthesis-preview/[synthesisId]/page.tsx');
 assert(synthesisPreviewPage.includes('requireAtlasAdmin'), 'synthesis preview is not protected by Atlas admin authorization');
-assert(synthesisPreviewPage.includes('getEventSourceSynthesisPreview') && synthesisPreviewPage.includes('<EventHub manifest={manifest} />'), 'synthesis preview does not render the exact reviewed Event Hub manifest');
+assert(
+  synthesisPreviewPage.includes('getEventSourceSynthesisPreview') &&
+    synthesisPreviewPage.includes('manifest={preview.manifest}') &&
+    synthesisPreviewPage.includes('scoutContentReference={preview.scoutContentReference}'),
+  'synthesis preview does not render the exact reviewed Event Hub manifest and Scout context',
+);
 assert(synthesisPreviewPage.includes('index: false') && synthesisPreviewPage.includes('follow: false'), 'synthesis preview is not excluded from search indexing');
 
 const controlDesk = read('app/atlas-control/ControlDesk.tsx');
@@ -257,7 +262,11 @@ assert(controlDesk.includes('Visual signature workflow') && controlDesk.includes
 
 const publicPackagePreview = read('app/event-preview/[packageId]/page.tsx');
 assert(publicPackagePreview.includes('getPublicEventFactoryPackagePreview'), 'Public package review does not use the status-gated package reader');
-assert(publicPackagePreview.includes('<EventHub manifest={manifest} />'), 'Public package review does not render the exact Event Hub manifest');
+assert(
+  publicPackagePreview.includes('manifest={preview.manifest}') &&
+    publicPackagePreview.includes('scoutContentReference={preview.scoutContentReference}'),
+  'Public package review does not render the exact Event Hub manifest and Scout context',
+);
 assert(!publicPackagePreview.includes('requireAtlasAdmin'), 'Read-only package review is still blocked by administrator authentication');
 assert(publicPackagePreview.includes('index: false') && publicPackagePreview.includes('follow: false'), 'Read-only package review is not excluded from search indexing');
 

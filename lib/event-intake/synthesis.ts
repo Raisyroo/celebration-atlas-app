@@ -1,6 +1,7 @@
 import 'server-only';
 import { createAtlasServiceClient } from '@/lib/atlas-control/service';
 import { resolveEventPageManifest } from '@/lib/event-pages/publishedManifest';
+import type { ScoutContentReference } from '@/lib/scout/composerContext';
 import { validateEventPageManifest } from '@/data/eventPageManifestValidation';
 import type { EventPageManifest } from '@/data/eventPageManifestTypes';
 import {
@@ -254,18 +255,32 @@ export async function listEventSourceSyntheses(): Promise<{
   return { items, error: null };
 }
 
-export async function getEventSourceSynthesisPreview(synthesisId: string): Promise<EventPageManifest> {
+export async function getEventSourceSynthesisPreview(synthesisId: string): Promise<{
+  manifest: EventPageManifest;
+  scoutContentReference: ScoutContentReference;
+}> {
   const supabase = requireServiceClient();
   const { data, error } = await supabase
     .from('event_source_syntheses')
-    .select('manifest_proposal,is_manifest_valid')
+    .select('version_number,manifest_proposal,is_manifest_valid')
     .eq('id', synthesisId)
-    .maybeSingle<{ manifest_proposal: unknown; is_manifest_valid: boolean }>();
+    .maybeSingle<{
+      version_number: number;
+      manifest_proposal: unknown;
+      is_manifest_valid: boolean;
+    }>();
   if (error || !data) throw new Error('Synthesis proposal was not found.');
   if (!data.is_manifest_valid) throw new Error('Synthesis proposal is not ready for preview.');
   const validation = validateEventPageManifest(data.manifest_proposal);
   if (!validation.ok) throw new Error(`Synthesis preview is invalid: ${validation.errors.join(' ')}`);
-  return validation.value;
+  return {
+    manifest: validation.value,
+    scoutContentReference: {
+      sourceKind: 'source-synthesis',
+      packageId: synthesisId,
+      packageVersion: String(data.version_number),
+    },
+  };
 }
 
 async function loadSynthesisInput(bundleId: string): Promise<EventSourceSynthesisInput> {

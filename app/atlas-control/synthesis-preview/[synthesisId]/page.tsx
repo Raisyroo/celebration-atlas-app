@@ -28,6 +28,11 @@ export default async function SynthesisPreviewPage({ params }: SynthesisPreviewP
   if (!auth.ok) redirect('/atlas-login');
 
   const { synthesisId } = await params;
-  const manifest = await loadManifest(synthesisId);
-  return <EventHub manifest={manifest} />;
+  const preview = await loadManifest(synthesisId);
+  return (
+    <EventHub
+      manifest={preview.manifest}
+      scoutContentReference={preview.scoutContentReference}
+    />
+  );
 }
