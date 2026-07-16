@@ -342,12 +342,29 @@ async function assertEventHubTabContract(page, label) {
       throw new Error(`${label}: ${expectedName} did not become the selected Event Hub tab.`);
     }
 
+    await selectedTab.evaluate(async (element) => {
+      const deadline = performance.now() + 5_000;
+
+      while (performance.now() < deadline) {
+        const style = window.getComputedStyle(element);
+        const borderColor = style.borderBottomColor;
+        if (borderColor !== 'rgba(0, 0, 0, 0)' && borderColor !== 'transparent') {
+          return;
+        }
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+    });
+
     const contract = await selectedTab.evaluate((element) => {
       const style = window.getComputedStyle(element);
       const panelId = element.getAttribute('aria-controls');
       const panel = panelId ? document.getElementById(panelId) : null;
 
       return {
+        className: element.className,
+        hubGold: style.getPropertyValue('--hub-gold').trim(),
+        color: style.color,
+        backgroundColor: style.backgroundColor,
         borderRadius: style.borderRadius,
         borderTopWidth: style.borderTopWidth,
         borderRightWidth: style.borderRightWidth,
@@ -607,7 +624,9 @@ async function main() {
   await brownTroutRailLink.waitFor({ state: 'visible', timeout: 45_000 });
   await Promise.all([
     mobilePage.waitForURL('**/events/alpena-brown-trout', { timeout: 45_000 }),
-    brownTroutRailLink.click(),
+    // Preserve client-side navigation while avoiding Next's cold-compile dev portal
+    // intercepting the synthetic pointer in CI.
+    brownTroutRailLink.evaluate((element) => element.click()),
   ]);
   await assertEventHubTabContract(mobilePage, 'Atlas Control route-order navigation');
   await mobilePage.getByRole('tablist', { name: 'Event sections' }).screenshot({
