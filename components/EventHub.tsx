@@ -138,6 +138,12 @@ const SCOUT_SPOTLIGHT_ARTWORK: Record<ScoutSpotlightPose, string> = {
 const SCOUT_DEMO_RESPONSE =
   'Thanks for asking. This is a generic Scout response so you can review how answers will appear here. The universal Scout intelligence service is not connected yet.';
 
+type ScoutDemoTurn = Readonly<{
+  id: string;
+  question: string;
+  answer: string;
+}>;
+
 type EventHubProps = {
   manifest: EventPageManifest;
   scoutContentReference?: ScoutContentReference;
@@ -772,10 +778,13 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
   const [shareStatus, setShareStatus] = useState('');
   const [scoutQuery, setScoutQuery] = useState('');
   const [isScoutInputFocused, setIsScoutInputFocused] = useState(false);
-  const [submittedScoutQuestion, setSubmittedScoutQuestion] = useState('');
+  const [scoutConversation, setScoutConversation] = useState<ScoutDemoTurn[]>([]);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const scoutDockRef = useRef<HTMLElement | null>(null);
+  const scoutHistoryRef = useRef<HTMLOListElement | null>(null);
   const scoutInputRef = useRef<HTMLInputElement | null>(null);
+  const scoutSubmitButtonRef = useRef<HTMLButtonElement | null>(null);
+  const scoutTurnSequenceRef = useRef(0);
   const todayKey = useMemo(
     () => getTodayKey(manifest.identity.timezone),
     [manifest.identity.timezone],
@@ -820,6 +829,12 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
     const timer = window.setTimeout(() => setShareStatus(''), 2200);
     return () => window.clearTimeout(timer);
   }, [shareStatus]);
+
+  useEffect(() => {
+    const history = scoutHistoryRef.current;
+    if (!history || scoutConversation.length === 0) return;
+    history.scrollTop = history.scrollHeight;
+  }, [scoutConversation.length]);
 
   useEffect(() => {
     const dock = scoutDockRef.current;
@@ -906,10 +921,19 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
       return;
     }
 
-    setSubmittedScoutQuestion(trimmedQuery);
-    window.requestAnimationFrame(() => {
-      scoutInputRef.current?.focus({ preventScroll: true });
-    });
+    scoutTurnSequenceRef.current += 1;
+    setScoutConversation((currentTurns) => [
+      ...currentTurns,
+      {
+        id: `${manifest.eventId}-${scoutTurnSequenceRef.current}`,
+        question: trimmedQuery,
+        answer: SCOUT_DEMO_RESPONSE,
+      },
+    ]);
+    setScoutQuery('');
+    setIsScoutInputFocused(false);
+    scoutInputRef.current?.blur();
+    scoutSubmitButtonRef.current?.focus({ preventScroll: true });
   };
 
   if (!activeModule) return null;
@@ -923,11 +947,12 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
   const activeNavigationItem = manifest.navigation.find(
     (item) => item.targetModuleId === activeModule.id,
   );
+  const latestScoutTurn = scoutConversation[scoutConversation.length - 1];
 
   return (
     <main
       className={`${styles.root}${
-        submittedScoutQuestion ? ` ${styles.rootWithScoutResponse}` : ''
+        scoutConversation.length > 0 ? ` ${styles.rootWithScoutResponse}` : ''
       }`}
     >
       <header className={styles.topBar}>
@@ -1083,24 +1108,40 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
         data-scout-package-version={scoutComposerContext.packageVersion}
         data-scout-source-kind={scoutComposerContext.sourceKind}
         data-scout-active-section-id={scoutComposerContext.activeSectionId}
+        data-scout-input-focused={isScoutInputFocused ? 'true' : 'false'}
       >
+        {scoutConversation.length > 0 ? (
+          <ol
+            ref={scoutHistoryRef}
+            className={styles.scoutResponse}
+            aria-label="Scout conversation history"
+            data-testid="scout-response-preview"
+            data-scout-response-mode="demo"
+            data-scout-turn-count={scoutConversation.length}
+          >
+            {scoutConversation.map((turn) => (
+              <li className={styles.scoutTurn} key={turn.id}>
+                <div className={styles.scoutExchange}>
+                  <span className={styles.scoutTurnLabel}>You</span>
+                  <p className={styles.scoutQuestion}>{turn.question}</p>
+                </div>
+                <div className={styles.scoutExchange}>
+                  <span className={styles.scoutTurnLabel}>Scout</span>
+                  <p className={styles.scoutAnswer}>{turn.answer}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : null}
         <div
-          className={submittedScoutQuestion ? styles.scoutResponse : styles.srOnly}
+          className={styles.srOnly}
           role="status"
           aria-live="polite"
           aria-atomic="true"
-          data-testid="scout-response-preview"
-          data-scout-response-mode="demo"
         >
-          {submittedScoutQuestion ? (
-            <>
-              <span className={styles.scoutResponseLabel}>Scout</span>
-              <p>{SCOUT_DEMO_RESPONSE}</p>
-              <span className={styles.srOnly}>
-                Preview response for the submitted question: {submittedScoutQuestion}
-              </span>
-            </>
-          ) : null}
+          {latestScoutTurn
+            ? `Conversation turn ${scoutConversation.length}. You asked: ${latestScoutTurn.question}. Scout answered: ${latestScoutTurn.answer}`
+            : ''}
         </div>
         <form
           className={styles.scoutForm}
@@ -1149,19 +1190,16 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
               enterKeyHint="send"
               maxLength={500}
               onBlur={() => setIsScoutInputFocused(false)}
-              onChange={(event) => {
-                setScoutQuery(event.target.value);
-                setSubmittedScoutQuestion('');
-              }}
+              onChange={(event) => setScoutQuery(event.target.value)}
               onFocus={() => setIsScoutInputFocused(true)}
               placeholder=""
             />
           </div>
           <button
+            ref={scoutSubmitButtonRef}
             type="submit"
             aria-label="Submit question to Scout composer"
             title="Submit question to Scout composer"
-            onMouseDown={(event) => event.preventDefault()}
           >
             <Send size={19} aria-hidden="true" />
           </button>

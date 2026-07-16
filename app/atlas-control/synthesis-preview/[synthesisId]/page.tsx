@@ -31,6 +31,7 @@ export default async function SynthesisPreviewPage({ params }: SynthesisPreviewP
   const preview = await loadManifest(synthesisId);
   return (
     <EventHub
+      key={preview.manifest.eventId}
       manifest={preview.manifest}
       scoutContentReference={preview.scoutContentReference}
     />
