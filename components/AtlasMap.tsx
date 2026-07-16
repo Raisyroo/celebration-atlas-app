@@ -24,8 +24,6 @@ import {
 } from '../data/eventRail';
 import {
   resolveHomeAtlasDiscovery,
-  type HomeAtlasDiscoveryDateFilter,
-  type HomeAtlasDiscoveryFilters,
 } from '../data/homeAtlasDiscovery';
 import {
   formatResultLabelLocation,
@@ -50,7 +48,6 @@ import type { AtlasViewportMode } from '../data/atlasViewportMode';
 import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
-import { HomeAtlasFilterControls } from './HomeAtlasFilterControls';
 
 const resultLabelSerif = localFont({
   src: [
@@ -1548,10 +1545,6 @@ export default function AtlasMap({
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileMenuDialogRef = useRef<HTMLElement | null>(null);
   const isMobileMenuOpenRef = useRef(false);
-  const filterTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const mobileFilterCloseButtonRef = useRef<HTMLButtonElement | null>(null);
-  const mobileFilterDialogRef = useRef<HTMLElement | null>(null);
-  const isMobileFilterOpenRef = useRef(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queryFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exactEventOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -1566,9 +1559,6 @@ export default function AtlasMap({
   const [cardEnterOffset, setCardEnterOffset] = useState(36);
   const [searchPulseTick, setSearchPulseTick] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [discoveryFilters, setDiscoveryFilters] =
-    useState<HomeAtlasDiscoveryFilters>({});
   const [isMobileFavoriteSaved, setIsMobileFavoriteSaved] = useMobileFavorite(
     stateConfig.identity.slug,
   );
@@ -1616,8 +1606,9 @@ export default function AtlasMap({
         profiles: eventProfiles,
         stateConfig,
         rules: searchRules,
+        now: discoveryNow,
       }),
-    [eventProfiles, events, searchRules, stateConfig, submittedQuery],
+    [discoveryNow, eventProfiles, events, searchRules, stateConfig, submittedQuery],
   );
   const homeAtlasDiscovery = useMemo(
     () =>
@@ -1627,11 +1618,9 @@ export default function AtlasMap({
         stateConfig,
         searchRules,
         searchResponse: homeAtlasSearch,
-        filters: discoveryFilters,
         now: discoveryNow,
       }),
     [
-      discoveryFilters,
       discoveryNow,
       eventProfiles,
       events,
@@ -2629,7 +2618,6 @@ export default function AtlasMap({
       }
       selectAtlasEvent(null);
       setDiscoveryStatusText(null);
-      setDiscoveryFilters({});
       setDisplayedQuery('');
       setQuery('');
       setIsSubmittedQueryFading(false);
@@ -2644,6 +2632,7 @@ export default function AtlasMap({
       profiles: eventProfiles,
       stateConfig,
       rules: searchRules,
+      now: discoveryNow,
     });
     const exactMatch = nextSearch.exactMatch;
 
@@ -2675,6 +2664,7 @@ export default function AtlasMap({
     }, 680);
   }, [
     beginMobileExploration,
+    discoveryNow,
     eventProfiles,
     events,
     onSearchActivate,
@@ -2753,29 +2743,6 @@ export default function AtlasMap({
     runDiscoverySearch(query);
   }, [query, runDiscoverySearch]);
 
-  const updateDiscoveryFilters = useCallback(
-    (updates: Partial<HomeAtlasDiscoveryFilters>) => {
-      onSearchActivate?.();
-      beginMobileExploration();
-      setDiscoveryFilters((currentFilters) => ({
-        ...currentFilters,
-        ...updates,
-      }));
-      setDiscoveryStatusText(null);
-    },
-    [
-      beginMobileExploration,
-      onSearchActivate,
-      setDiscoveryFilters,
-      setDiscoveryStatusText,
-    ],
-  );
-
-  const clearDiscoveryFilters = useCallback(() => {
-    setDiscoveryFilters({});
-    setDiscoveryStatusText(null);
-  }, [setDiscoveryFilters, setDiscoveryStatusText]);
-
   const clearDiscoveryQuery = useCallback(() => {
     if (exactEventOpenTimerRef.current) {
       clearTimeout(exactEventOpenTimerRef.current);
@@ -2795,11 +2762,6 @@ export default function AtlasMap({
     setSubmittedQuery,
   ]);
 
-  const updateDiscoveryDateFilter = useCallback(
-    (date: HomeAtlasDiscoveryDateFilter) => updateDiscoveryFilters({ date }),
-    [updateDiscoveryFilters],
-  );
-
   const openMobileMenu = useCallback(() => {
     beginMobileExploration();
     isMobileMenuOpenRef.current = true;
@@ -2813,26 +2775,12 @@ export default function AtlasMap({
     requestAnimationFrame(() => menuTriggerRef.current?.focus());
   }, [setIsMobileMenuOpen]);
 
-  const openMobileFilters = useCallback(() => {
-    beginMobileExploration();
-    isMobileFilterOpenRef.current = true;
-    setIsMobileFilterOpen(true);
-  }, [beginMobileExploration, setIsMobileFilterOpen]);
-
-  const closeMobileFilters = useCallback((restoreFocus = true) => {
-    isMobileFilterOpenRef.current = false;
-    setIsMobileFilterOpen(false);
-    if (!restoreFocus) return;
-    requestAnimationFrame(() => filterTriggerRef.current?.focus());
-  }, []);
-
   const resetAtlasExploration = useCallback(() => {
     if (exactEventOpenTimerRef.current) {
       clearTimeout(exactEventOpenTimerRef.current);
       exactEventOpenTimerRef.current = null;
     }
     selectAtlasEvent(null);
-    setDiscoveryFilters({});
     setDiscoveryStatusText(null);
     setDisplayedQuery('');
     setSubmittedQuery('');
@@ -2843,7 +2791,6 @@ export default function AtlasMap({
     searchInputRef.current?.focus();
   }, [
     selectAtlasEvent,
-    setDiscoveryFilters,
     setDiscoveryStatusText,
     setDisplayedQuery,
     setIsMobileMenuOpen,
@@ -2916,17 +2863,10 @@ export default function AtlasMap({
           currentMode === nextMode ? currentMode : nextMode,
         );
         if (nextMode === 'desktop') {
-          const shouldMoveFilterFocus = isMobileFilterOpenRef.current;
           const shouldMoveMenuFocus = isMobileMenuOpenRef.current;
-          isMobileFilterOpenRef.current = false;
           isMobileMenuOpenRef.current = false;
-          setIsMobileFilterOpen(false);
           setIsMobileMenuOpen(false);
-          if (shouldMoveFilterFocus) {
-            requestAnimationFrame(() => {
-              document.getElementById('desktop-atlas-filter-date')?.focus();
-            });
-          } else if (shouldMoveMenuFocus) {
+          if (shouldMoveMenuFocus) {
             requestAnimationFrame(() => searchInputRef.current?.focus());
           }
         }
@@ -2984,45 +2924,6 @@ export default function AtlasMap({
       document.removeEventListener('keydown', handleDialogKeyDown);
     };
   }, [closeMobileMenu, isMobileMenuOpen, viewportCapabilities.showsMobileChrome]);
-
-  useEffect(() => {
-    if (!isMobileFilterOpen || !viewportCapabilities.showsMobileChrome) return;
-
-    const focusFrame = requestAnimationFrame(() => {
-      mobileFilterCloseButtonRef.current?.focus();
-    });
-    const handleDialogKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closeMobileFilters();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-
-      const focusableElements = Array.from(
-        mobileFilterDialogRef.current?.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
-        ) ?? [],
-      ).filter((element) => element.getClientRects().length > 0);
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements.at(-1);
-      if (!firstElement || !lastElement) return;
-
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-    document.addEventListener('keydown', handleDialogKeyDown);
-
-    return () => {
-      cancelAnimationFrame(focusFrame);
-      document.removeEventListener('keydown', handleDialogKeyDown);
-    };
-  }, [closeMobileFilters, isMobileFilterOpen, viewportCapabilities.showsMobileChrome]);
 
   useEffect(() => {
     let shouldResetArtwork = true;
@@ -3175,7 +3076,6 @@ export default function AtlasMap({
       isCardVisible ||
       isSearchFocused ||
       hasActiveAskQuery ||
-      isMobileFilterOpen ||
       isMobileMenuOpen ||
       hasActiveSearchResult,
   );
@@ -3286,12 +3186,12 @@ export default function AtlasMap({
       !isVerificationMode &&
       !isAtlasPanelOpen &&
       (isDesktop ||
+        homeAtlasDiscovery.mode === 'empty' ||
         (!isQueryOnlyDiscovery &&
           (homeAtlasDiscovery.mode === 'results' ||
-            homeAtlasDiscovery.mode === 'empty' ||
             discoveryStatusText))),
   );
-  const isMobileModalOpen = isMobileFilterOpen || isMobileMenuOpen;
+  const isMobileModalOpen = isMobileMenuOpen;
 
   return (
     <section
@@ -3912,25 +3812,6 @@ export default function AtlasMap({
               <span aria-hidden="true">{isMobileFavoriteSaved ? '♥' : '♡'}</span>
             </button>
           </div>
-          {!shouldShowDiscoveryPanel ? (
-          <div className="mobile-side-controls" style={styles.mobileSideControls} aria-label="Mobile map tools" inert={isMobileModalOpen ? true : undefined}>
-            <button
-              ref={filterTriggerRef}
-              type="button"
-              aria-label={`Open atlas filters${homeAtlasDiscovery.activeFilterCount > 0 ? `, ${homeAtlasDiscovery.activeFilterCount} active` : ''}`}
-              aria-controls="atlas-mobile-filters"
-              aria-expanded={isMobileFilterOpen}
-              className="mobile-tool-button"
-              style={styles.mobileToolButton}
-              onClick={openMobileFilters}
-            >
-              <span aria-hidden="true">☷</span>
-              <span style={styles.mobileToolLabel}>
-                Filters{homeAtlasDiscovery.activeFilterCount > 0 ? ` (${homeAtlasDiscovery.activeFilterCount})` : ''}
-              </span>
-            </button>
-          </div>
-          ) : null}
         </>
       ) : null}
 
@@ -4022,7 +3903,6 @@ export default function AtlasMap({
           <div>selected event: {selectedId ?? 'none'}</div>
           <div>ask focused: {isSearchFocused ? 'true' : 'false'}</div>
           <div>ask value: {query.trim() ? 'non-empty' : 'empty'}</div>
-          <div>filter open: {isMobileFilterOpen ? 'true' : 'false'}</div>
           <div>menu open: {isMobileMenuOpen ? 'true' : 'false'}</div>
           <div>rendered event: {renderedEvent?.id ?? 'none'}</div>
           <div>card open: {renderedEvent ? 'true' : 'false'}</div>
@@ -4065,49 +3945,6 @@ export default function AtlasMap({
         </div>
       ) : null}
 
-      {shouldShowMobileChromeControls && isMobileFilterOpen ? (
-        <div style={styles.mobileSheetOverlay} onClick={() => closeMobileFilters()}>
-          <section
-            ref={mobileFilterDialogRef}
-            id="atlas-mobile-filters"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="atlas-mobile-filter-title"
-            style={styles.mobileFilterSheet}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div style={styles.mobileSheetHandle} />
-            <div style={styles.mobileFilterHeader}>
-              <div>
-                <p style={styles.mobileSheetKicker}>Refine {stateName}</p>
-                <h2 id="atlas-mobile-filter-title" style={styles.mobileSheetTitle}>Filters</h2>
-              </div>
-              <button
-                ref={mobileFilterCloseButtonRef}
-                type="button"
-                style={styles.mobileSheetCloseButton}
-                onClick={() => closeMobileFilters()}
-                aria-label="Close filters"
-              >
-                ×
-              </button>
-            </div>
-            <HomeAtlasFilterControls
-              idPrefix="mobile-atlas-filter"
-              stateName={stateName}
-              facets={homeAtlasDiscovery.facets}
-              filters={homeAtlasDiscovery.filters}
-              activeFilterCount={homeAtlasDiscovery.activeFilterCount}
-              onCategoryChange={(category) => updateDiscoveryFilters({ category })}
-              onRegionChange={(regionRuleId) => updateDiscoveryFilters({ regionRuleId })}
-              onCityChange={(city) => updateDiscoveryFilters({ city })}
-              onDateChange={updateDiscoveryDateFilter}
-              onClear={clearDiscoveryFilters}
-            />
-          </section>
-        </div>
-      ) : null}
-
       {shouldShowDiscoveryPanel ? (
         <aside
           id="atlas-discovery-results"
@@ -4133,18 +3970,6 @@ export default function AtlasMap({
               <span style={styles.discoveryCountBadge}>
                 {homeAtlasDiscovery.events.length}
               </span>
-            ) : !isDesktop ? (
-              <button
-                ref={filterTriggerRef}
-                type="button"
-                aria-label={`Open atlas filters${homeAtlasDiscovery.activeFilterCount > 0 ? `, ${homeAtlasDiscovery.activeFilterCount} active` : ''}`}
-                aria-controls="atlas-mobile-filters"
-                aria-expanded={isMobileFilterOpen}
-                style={styles.discoveryFilterButton}
-                onClick={openMobileFilters}
-              >
-                Filters{homeAtlasDiscovery.activeFilterCount > 0 ? ` (${homeAtlasDiscovery.activeFilterCount})` : ''}
-              </button>
             ) : null}
           </div>
 
@@ -4158,33 +3983,15 @@ export default function AtlasMap({
                 style={styles.discoveryClearQueryButton}
                 onClick={clearDiscoveryQuery}
               >
-                {homeAtlasDiscovery.activeFilterCount > 0
-                  ? 'Clear search'
-                  : 'Show all'}
+                Show all
               </button>
             </div>
           ) : null}
 
-          {isDesktop ? (
-            <>
-              {homeAtlasDiscovery.mode === 'idle' ? (
-                <p style={styles.desktopBody}>
-                  {stateConfig.presentation.copy.desktopBody}
-                </p>
-              ) : null}
-              <HomeAtlasFilterControls
-                idPrefix="desktop-atlas-filter"
-                stateName={stateName}
-                facets={homeAtlasDiscovery.facets}
-                filters={homeAtlasDiscovery.filters}
-                activeFilterCount={homeAtlasDiscovery.activeFilterCount}
-                onCategoryChange={(category) => updateDiscoveryFilters({ category })}
-                onRegionChange={(regionRuleId) => updateDiscoveryFilters({ regionRuleId })}
-                onCityChange={(city) => updateDiscoveryFilters({ city })}
-                onDateChange={updateDiscoveryDateFilter}
-                onClear={clearDiscoveryFilters}
-              />
-            </>
+          {isDesktop && homeAtlasDiscovery.mode === 'idle' ? (
+            <p style={styles.desktopBody}>
+              {stateConfig.presentation.copy.desktopBody}
+            </p>
           ) : null}
 
           <HomeDiscoveryLayer

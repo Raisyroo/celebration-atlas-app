@@ -115,7 +115,7 @@ Never place Supabase or Vercel credentials in documentation, source code, prompt
 
 ## Michigan Homepage State
 
-The Michigan Atlas homepage completed its rail, deterministic discovery, and shared responsive-shell checkpoint on July 15, 2026.
+The Michigan Atlas homepage completed its search-first public discovery checkpoint on July 16, 2026, building on the rail, deterministic discovery, and shared responsive-shell work completed July 15.
 
 - The homepage now receives an explicit serializable Michigan state configuration and state-local event catalog; `AtlasMap` no longer owns a silent global Michigan fallback.
 - Published database overlays are scoped to canonical `MI`/`Michigan` events before published packages are loaded, so another state cannot leak into or replace a Michigan fallback event by name.
@@ -123,17 +123,17 @@ The Michigan Atlas homepage completed its rail, deterministic discovery, and sha
 - Published package dates retain their reviewed event timezone. Rail eligibility evaluates each event in its own valid timezone and falls back safely to the state timezone when needed.
 - Completed, undated, TBA, estimated, and recurrence-only events remain eligible for general map/search discovery when otherwise public, but do not appear in the time-sensitive rail.
 - Ask Celebration Atlas remains visible when no rail event qualifies.
-- Short non-desktop landscape viewports retain menu, favorite, filter, Ask Atlas, and dated event access beside a bounded full-art map.
+- Short non-desktop landscape viewports retain menu, favorite, Ask Atlas, and dated event access beside a bounded full-art map.
 - Desktop preserves the portrait artwork content box beside a non-overlapping introduction/discovery panel instead of cropping the state art into a wide phone-like frame.
 - Versioned artwork identity, dimensions, and SHA-256 values are retained in the state configuration and checked by `validate:state-atlas-data` during every full build.
-- Homepage search now runs through one deterministic resolver with explicit state rules, catalog, profiles, and configuration. Exact identities remain unique, broad results are stably ranked, and only structured identity, place, category, region, reviewed date, season, or curated state rules participate.
+- Homepage search now runs through one deterministic resolver with explicit state rules, catalog, profiles, configuration, and a review-time clock. Exact identities remain unique, broad results are stably ranked, and only structured identity, place, category, region, reviewed date, season, live/upcoming status, or curated state rules participate.
 - The legacy any-token matcher and the rule that incorrectly linked cherry, lilac, and tulip searches to Romeo Peach Festival were removed. Exact navigation, map labels, result callouts, and the geospatial development route now share the same resolver semantics.
 - Search label locations preserve the supplied state instead of appending `MI`, and the full build includes deterministic regression coverage for ambiguity, category leakage, reviewed dates, state curation, and catalog-order independence.
 - One classifier now owns portrait, compact-landscape, and desktop behavior. `1024×390` remains compact rather than entering a broken desktop hybrid, while desktop requires at least `1024×600` in landscape.
-- Essential menu, filter, Ask Atlas, and dated-rail controls no longer wait for artwork loading or map measurement after rotation. The selected artwork variant and viewport mode are exposed as root data contracts and covered by visual smoke tests.
-- Homepage filters are functional and limited to reviewed facts: exact category, explicitly curated state region IDs, exact city, reviewed month, and the same live/upcoming eligibility used by the rail. Artistic atmosphere labels never become geographic regions.
-- Query-only broad search uses accessible, clickable title tags on the illustrated map. The discovery panel/list belongs to filter-only and query-plus-filter workflows, so ordinary search never replaces the map with a filter results screen. Exact identity still navigates directly, active-empty discovery hides contradictory markers, and filter changes never mutate rail membership.
-- Mobile filter and menu sheets now have real actions, Escape/focus containment, focus restoration, and background inerting. Query result title tags are keyboard targets; decorative labels and overflow indicators are not duplicate targets.
+- Essential menu, Ask Atlas, and dated-rail controls no longer wait for artwork loading or map measurement after rotation. The selected artwork variant and viewport mode are exposed as root data contracts and covered by responsive browser contracts.
+- The public Michigan homepage is now search-first. The visible filter button, mobile filter sheet, and desktop filter controls are removed, while the underlying exact category, curated region, exact city, reviewed month/date, live/upcoming, facet, and discovery APIs remain available to search, Scout, Near Me, agents, and future indexes. Artistic atmosphere labels never become geographic regions.
+- Query-only broad search uses accessible, clickable title tags on the illustrated map. Exact identity still navigates directly, combined structured criteria intersect, and a query-only empty result now opens a clear visible no-results panel while hiding contradictory markers.
+- The mobile menu retains Escape/focus containment, focus restoration, and background inerting. Query result title tags are keyboard targets; decorative labels and overflow indicators are not duplicate targets.
 - Atlas Control styles are scoped beneath `.control-shell`. A build validator and route-order visual smoke test protect public Event Hub controls from admin/login CSS that remains loaded after client navigation.
 - The illustrated map remains approximate. A unified coded-star and presentation-position resolver is not implemented yet.
 
@@ -159,7 +159,7 @@ Published package v4 incorporates Ray's editorial feedback: the 1924 picnic and 
 
 ## Current Next Milestone
 
-The state-scoped catalog/configuration, deterministic search, live/upcoming rail, shared viewport model, and functional discovery/filter surfaces are complete checkpoints.
+The state-scoped catalog/configuration, deterministic search, live/upcoming rail, shared viewport model, and search-first public discovery surface are complete checkpoints. Filter and facet data contracts remain retained beneath the public UI.
 
 The next focused checkpoint is a shared `StateMapPresentationProfile` and one versioned position resolver for stars, labels, atmosphere, constellation lines, and audits. It must account for artwork fit/crop, keep Upper and Lower Peninsula calibration regions separate, render one accessible coded-star control per reachable event on every supported viewport, and preserve verified coordinates as source truth while treating illustrated offsets as presentation data. Pre-aggregate discovery facet counts before catalogs grow to national scale.
 

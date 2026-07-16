@@ -237,6 +237,15 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - **Notes:** Preserve real coordinates as source truth. Resolve one reviewed artwork-relative layout for markers, labels, atmosphere, constellation lines, and audits; account for object-fit crop; keep Michigan peninsulas in separate calibration regions; introduce compatibility v1 before reviewed v2; and render reachable 44px coded stars on every supported viewport without hidden duplicate controls.
 - **Verification:** `npm run lint`, `npm run build`, `npm run test:visual-smoke`, frozen marker outputs and screenshots across portrait/compact/desktop, collision and keyboard audits, no overflow, no browser errors
 
+### 28. Make the Michigan homepage search-first
+
+- **Type:** architecture + implementation
+- **Status:** complete
+- **Scope:** Michigan homepage deterministic search gates and public filter-control removal
+- **Protected files/areas:** illustrated map artwork, event stars, Event Hubs, Ask Scout, Near Me, verified event facts, retained filter/facet data APIs
+- **Notes:** Verified exact identity, Music category, Detroit city, September month, Detroit Metro region, upcoming status, combined Music + Detroit + September intent, and a legitimate no-results query against the state-owned resolver. Added reviewed upcoming-status intent using the rail timing contract. Removed the public filter trigger, mobile filter sheet, and desktop filter controls only after the query gates passed; retained category, city, region, date, facet, and discovery APIs.
+- **Verification:** `npm run lint`, `npm run build`, deterministic search regressions, 390×844 portrait, 844×390 compact landscape, 1440×900 desktop, exact Event Hub navigation, keyboard result tags, screenshots, no overflow, no browser errors; visual smoke explicitly not run
+
 ## Completed Tasks
 
 - Define Celebration Search command model — completed in current queue item 6 as a data/model architecture step.
@@ -245,6 +254,7 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - Task 24: State-scoped homepage configuration, catalog resolution, date/timezone provenance, and build validation completed.
 - Task 25: Deterministic state-owned exact and broad homepage search completed.
 - Task 26: Shared viewport modes and functional fact-based discovery filters completed.
+- Task 28: Search-first Michigan homepage completed after the required deterministic query gates passed; public filter controls were removed while their data APIs were retained.
 
 ## Paused / Needs Human Review
 
