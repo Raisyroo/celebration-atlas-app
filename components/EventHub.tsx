@@ -135,6 +135,9 @@ const SCOUT_SPOTLIGHT_ARTWORK: Record<ScoutSpotlightPose, string> = {
   running: '/scout/spotlights/scout-running-card.webp',
 };
 
+const SCOUT_DEMO_RESPONSE =
+  'Thanks for asking. This is a generic Scout response so you can review how answers will appear here. The universal Scout intelligence service is not connected yet.';
+
 type EventHubProps = {
   manifest: EventPageManifest;
   scoutContentReference?: ScoutContentReference;
@@ -769,6 +772,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
   const [shareStatus, setShareStatus] = useState('');
   const [scoutQuery, setScoutQuery] = useState('');
   const [isScoutInputFocused, setIsScoutInputFocused] = useState(false);
+  const [submittedScoutQuestion, setSubmittedScoutQuestion] = useState('');
   const contentRef = useRef<HTMLDivElement | null>(null);
   const scoutDockRef = useRef<HTMLElement | null>(null);
   const scoutInputRef = useRef<HTMLInputElement | null>(null);
@@ -896,11 +900,13 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
 
   const submitScoutQuery = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!scoutQuery.trim()) {
+    const trimmedQuery = scoutQuery.trim();
+    if (!trimmedQuery) {
       scoutInputRef.current?.focus({ preventScroll: true });
       return;
     }
 
+    setSubmittedScoutQuestion(trimmedQuery);
     window.requestAnimationFrame(() => {
       scoutInputRef.current?.focus({ preventScroll: true });
     });
@@ -919,7 +925,11 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
   );
 
   return (
-    <main className={styles.root}>
+    <main
+      className={`${styles.root}${
+        submittedScoutQuestion ? ` ${styles.rootWithScoutResponse}` : ''
+      }`}
+    >
       <header className={styles.topBar}>
         <Link href="/" className={styles.iconButton} title="Back to Atlas">
           <ArrowLeft aria-hidden="true" />
@@ -1074,6 +1084,24 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
         data-scout-source-kind={scoutComposerContext.sourceKind}
         data-scout-active-section-id={scoutComposerContext.activeSectionId}
       >
+        <div
+          className={submittedScoutQuestion ? styles.scoutResponse : styles.srOnly}
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          data-testid="scout-response-preview"
+          data-scout-response-mode="demo"
+        >
+          {submittedScoutQuestion ? (
+            <>
+              <span className={styles.scoutResponseLabel}>Scout</span>
+              <p>{SCOUT_DEMO_RESPONSE}</p>
+              <span className={styles.srOnly}>
+                Preview response for the submitted question: {submittedScoutQuestion}
+              </span>
+            </>
+          ) : null}
+        </div>
         <form
           className={styles.scoutForm}
           data-testid="scout-composer-form"
@@ -1121,7 +1149,10 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
               enterKeyHint="send"
               maxLength={500}
               onBlur={() => setIsScoutInputFocused(false)}
-              onChange={(event) => setScoutQuery(event.target.value)}
+              onChange={(event) => {
+                setScoutQuery(event.target.value);
+                setSubmittedScoutQuestion('');
+              }}
               onFocus={() => setIsScoutInputFocused(true)}
               placeholder=""
             />
