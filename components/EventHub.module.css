@@ -51,6 +51,10 @@
   display: none;
 }
 
+.rootWithScoutResponse {
+  --hub-scout-clearance: 224px;
+}
+
 .root,
 .root * {
   box-sizing: border-box;
@@ -1492,6 +1496,35 @@
   white-space: nowrap;
 }
 
+.scoutResponse {
+  display: grid;
+  max-height: 132px;
+  gap: 5px;
+  overflow-y: auto;
+  padding: 13px 16px 12px;
+  border-bottom: 1px solid rgba(239, 164, 61, 0.28);
+  color: var(--hub-ink);
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(239, 164, 61, 0.38) transparent;
+  scrollbar-width: thin;
+}
+
+.scoutResponseLabel {
+  color: var(--hub-gold);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.08rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.scoutResponse p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: rgba(255, 240, 210, 0.88);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
 .scoutForm {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr) 50px;
@@ -1880,6 +1913,10 @@
     --hub-scout-clearance: 80px;
   }
 
+  .rootWithScoutResponse {
+    --hub-scout-clearance: 164px;
+  }
+
   .scoutDock {
     right: max(10px, env(safe-area-inset-right));
     left: max(10px, env(safe-area-inset-left));
@@ -1890,6 +1927,21 @@
   .scoutPortrait {
     width: 46px;
     height: 46px;
+  }
+
+  .scoutResponse {
+    max-height: 86px;
+    gap: 3px;
+    padding: 8px 12px 9px;
+  }
+
+  .scoutResponseLabel {
+    font-size: 0.94rem;
+  }
+
+  .scoutResponse p {
+    font-size: 0.76rem;
+    line-height: 1.35;
   }
 
   .scoutForm {

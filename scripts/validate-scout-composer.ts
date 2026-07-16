@@ -74,6 +74,24 @@ assert(
   eventHubSource.includes('placeholder=""'),
   'Scout input still supplies visible placeholder text.',
 );
+assert(
+  eventHubSource.includes('SCOUT_DEMO_RESPONSE') &&
+    eventHubSource.includes('universal Scout intelligence service is not connected yet'),
+  'Scout composer does not expose the explicit disconnected-service demo response.',
+);
+assert(
+  eventHubSource.includes('setSubmittedScoutQuestion(trimmedQuery)'),
+  'Scout submit does not reveal the generic response preview.',
+);
+assert(
+  eventHubSource.includes('data-scout-response-mode="demo"') &&
+    eventHubSource.includes('role="status"') &&
+    eventHubSource.includes('aria-live="polite"') &&
+    eventHubSource.includes(
+      'submittedScoutQuestion ? styles.scoutResponse : styles.srOnly',
+    ),
+  'Scout demo response does not expose its accessible preview contract.',
+);
 
 for (const contextField of [
   'data-scout-event-id',
@@ -116,6 +134,18 @@ assert(
 assert(
   eventHubStyles.includes('background-color: rgba(5, 44, 52, 0.72);'),
   'Scout composer translucency contract changed.',
+);
+assert(
+  /\.scoutResponse[\s\S]*?max-height:\s*132px;[\s\S]*?overflow-y:\s*auto;/.test(
+    eventHubStyles,
+  ),
+  'Scout response preview does not preserve a bounded, scroll-safe mobile layout.',
+);
+assert(
+  /\.rootWithScoutResponse[\s\S]*?--hub-scout-clearance:\s*224px;/.test(
+    eventHubStyles,
+  ),
+  'Scout response preview does not reserve content clearance for the taller dock.',
 );
 
 console.log('Scout composer contract validation passed.');
