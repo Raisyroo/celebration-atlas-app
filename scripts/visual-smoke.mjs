@@ -479,10 +479,12 @@ async function assertScoutComposerContract(
   const helperSubtitle = composer.getByText('Verified guidance for this event', {
     exact: true,
   });
+  const scoutTitle = composer.getByText('Ask Scout', { exact: true });
 
   await composer.waitFor({ state: 'visible', timeout: 45_000 });
   await input.waitFor({ state: 'visible', timeout: 45_000 });
   await sendButton.waitFor({ state: 'visible', timeout: 45_000 });
+  await scoutTitle.waitFor({ state: 'visible', timeout: 45_000 });
   await helperSubtitle.waitFor({ state: 'visible', timeout: 45_000 });
 
   if (await composer.getByText(/Composer preview:|Question kept in this composer\./).count()) {
@@ -596,7 +598,8 @@ async function assertScoutComposerContract(
     if ((await input.inputValue()) !== '') {
       throw new Error(`${label}: focusing the Scout field did not leave an empty input.`);
     }
-    await helperSubtitle.waitFor({ state: 'visible', timeout: 45_000 });
+    await scoutTitle.waitFor({ state: 'detached', timeout: 45_000 });
+    await helperSubtitle.waitFor({ state: 'detached', timeout: 45_000 });
     await page.keyboard.press('Tab');
     if (!(await sendButton.evaluate((element) => element === document.activeElement))) {
       throw new Error(`${label}: keyboard focus did not move from the question field to send.`);

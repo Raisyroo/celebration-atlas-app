@@ -913,6 +913,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
     contentReference: scoutContentReference,
     activeSectionId: activeModule.id,
   });
+  const isScoutActive = isScoutInputFocused || Boolean(scoutQuery);
   const activeNavigationItem = manifest.navigation.find(
     (item) => item.targetModuleId === activeModule.id,
   );
@@ -1084,10 +1085,12 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
               aria-hidden="true"
             />
           </div>
-          <div className={styles.scoutTitle}>
-            <strong>Ask Scout</strong>
-            <small>Verified guidance for this event</small>
-          </div>
+          {!isScoutActive ? (
+            <div className={styles.scoutTitle}>
+              <strong>Ask Scout</strong>
+              <small>Verified guidance for this event</small>
+            </div>
+          ) : null}
         </div>
 
         <form
