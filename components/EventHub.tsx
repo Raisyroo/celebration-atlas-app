@@ -768,7 +768,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
   const [isFavorite, setIsFavorite] = useState(false);
   const [shareStatus, setShareStatus] = useState('');
   const [scoutQuery, setScoutQuery] = useState('');
-  const [scoutStatus, setScoutStatus] = useState('');
+  const [isScoutInputFocused, setIsScoutInputFocused] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const scoutDockRef = useRef<HTMLElement | null>(null);
   const scoutInputRef = useRef<HTMLInputElement | null>(null);
@@ -897,14 +897,10 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
   const submitScoutQuery = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!scoutQuery.trim()) {
-      setScoutStatus('Write a question before submitting.');
       scoutInputRef.current?.focus({ preventScroll: true });
       return;
     }
 
-    setScoutStatus(
-      'Question kept in this composer. Universal Scout responses are not connected yet.',
-    );
     window.requestAnimationFrame(() => {
       scoutInputRef.current?.focus({ preventScroll: true });
     });
@@ -917,6 +913,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
     contentReference: scoutContentReference,
     activeSectionId: activeModule.id,
   });
+  const isScoutActive = isScoutInputFocused || Boolean(scoutQuery);
   const activeNavigationItem = manifest.navigation.find(
     (item) => item.targetModuleId === activeModule.id,
   );
@@ -1090,7 +1087,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
           </div>
           <div className={styles.scoutTitle}>
             <strong>Ask Scout</strong>
-            <small>Question composer for this Event Hub</small>
+            {!isScoutActive ? <small>Verified guidance for this event</small> : null}
           </div>
         </div>
 
@@ -1119,15 +1116,13 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
             id="scout-event-question"
             name="question"
             value={scoutQuery}
-            aria-describedby="scout-composer-availability"
             autoComplete="off"
             autoCapitalize="sentences"
             enterKeyHint="send"
             maxLength={500}
-            onChange={(event) => {
-              setScoutQuery(event.target.value);
-              if (scoutStatus) setScoutStatus('');
-            }}
+            onBlur={() => setIsScoutInputFocused(false)}
+            onChange={(event) => setScoutQuery(event.target.value)}
+            onFocus={() => setIsScoutInputFocused(true)}
             placeholder="Ask Scout a question"
           />
           <button
@@ -1138,13 +1133,6 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
             <Send size={19} aria-hidden="true" />
           </button>
         </form>
-        <p id="scout-composer-availability" className={styles.scoutAvailability}>
-          {scoutStatus ||
-            'Composer preview: universal Scout responses are not connected yet.'}
-        </p>
-        <span className={styles.srOnly} role="status" aria-live="polite">
-          {scoutStatus}
-        </span>
       </section>
     </main>
   );

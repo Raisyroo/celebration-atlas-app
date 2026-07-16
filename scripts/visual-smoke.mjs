@@ -476,10 +476,18 @@ async function assertScoutComposerContract(
     name: 'Submit question to Scout composer',
     exact: true,
   });
+  const helperSubtitle = composer.getByText('Verified guidance for this event', {
+    exact: true,
+  });
 
   await composer.waitFor({ state: 'visible', timeout: 45_000 });
   await input.waitFor({ state: 'visible', timeout: 45_000 });
   await sendButton.waitFor({ state: 'visible', timeout: 45_000 });
+  await helperSubtitle.waitFor({ state: 'visible', timeout: 45_000 });
+
+  if (await composer.getByText(/Composer preview:|Question kept in this composer\./).count()) {
+    throw new Error(`${label}: Scout composer rendered additional status copy.`);
+  }
 
   const composerButtonCount = await composer.getByRole('button').count();
   if (composerButtonCount !== 1) {
@@ -581,6 +589,7 @@ async function assertScoutComposerContract(
     const question = 'What should I know before I go?';
     await input.fill(question);
     await input.focus();
+    await helperSubtitle.waitFor({ state: 'detached', timeout: 45_000 });
     await page.keyboard.press('Tab');
     if (!(await sendButton.evaluate((element) => element === document.activeElement))) {
       throw new Error(`${label}: keyboard focus did not move from the question field to send.`);
@@ -590,19 +599,14 @@ async function assertScoutComposerContract(
       throw new Error(`${label}: reverse keyboard navigation did not return to the question field.`);
     }
     await page.keyboard.press('Enter');
-    const availability = composer.locator('#scout-composer-availability');
-    await availability.waitFor({ state: 'visible', timeout: 45_000 });
-    if (
-      (await availability.textContent())?.trim() !==
-      'Question kept in this composer. Universal Scout responses are not connected yet.'
-    ) {
-      throw new Error(`${label}: the disconnected Scout status message did not render.`);
-    }
     if ((await input.inputValue()) !== question) {
       throw new Error(`${label}: the disconnected composer discarded the visitor question.`);
     }
     if (!(await input.evaluate((element) => element === document.activeElement))) {
       throw new Error(`${label}: submitting the disconnected composer did not preserve input focus.`);
+    }
+    if (await composer.getByText(/Composer preview:|Question kept in this composer\./).count()) {
+      throw new Error(`${label}: activating Scout added status copy.`);
     }
     await input.press('End');
   }

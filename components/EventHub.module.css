@@ -8,7 +8,7 @@
   --hub-night: #030b12;
   --hub-panel: #07151d;
   --hub-topbar-height: calc(56px + env(safe-area-inset-top));
-  --hub-scout-clearance: 154px;
+  --hub-scout-clearance: 134px;
   box-sizing: border-box;
   width: 100%;
   height: 100dvh;
@@ -1483,7 +1483,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 48px;
   gap: 8px;
-  padding: 0 10px;
+  padding: 0 10px 10px;
 }
 
 .scoutForm input:not([type='hidden']) {
@@ -1525,15 +1525,6 @@
 
 .scoutForm button:active {
   transform: translateY(1px);
-}
-
-.scoutAvailability {
-  min-height: 25px;
-  margin: 0;
-  padding: 6px 12px 8px 73px;
-  color: rgba(255, 240, 210, 0.62);
-  font-size: 0.68rem;
-  line-height: 1.3;
 }
 
 @media (min-width: 700px) {
@@ -1860,7 +1851,7 @@
   }
 
   .root {
-    --hub-scout-clearance: 132px;
+    --hub-scout-clearance: 116px;
   }
 
   .scoutDock {
@@ -1884,7 +1875,7 @@
   .scoutForm {
     grid-template-columns: minmax(0, 1fr) 44px;
     gap: 7px;
-    padding: 0 8px;
+    padding: 0 8px 8px;
   }
 
   .scoutForm input:not([type='hidden']) {
@@ -1898,12 +1889,6 @@
     height: 44px;
     min-width: 44px;
     min-height: 44px;
-  }
-
-  .scoutAvailability {
-    min-height: 22px;
-    padding: 4px 10px 6px 59px;
-    font-size: 0.64rem;
   }
 }
 

@@ -97,7 +97,7 @@ Scout's visual identity is implemented. Event Hub Ask Scout is now a single-purp
 
 The composer exposes a versioned context contract for event ID, content package/version, source kind, and active Event Hub section. Published page versions, Event Factory package previews, source-synthesis previews, and checked-in transition manifests each supply the strongest content reference they currently own.
 
-The universal conversational Scout service is not connected. Submitting the UI-only composer retains the visitor's question, preserves focus, and explicitly says that no response service received it. The fixed composer uses safe-area and visual-viewport keyboard insets, a 16px input to prevent iOS focus zoom, a minimum 44px send target, and one shared translucent dock treatment across phone, tablet, and desktop.
+The universal conversational Scout service is not connected. Submitting the UI-only composer retains the visitor's question and preserves focus without adding response or status copy. The existing helper subtitle disappears while the input is focused or contains a question. The fixed composer uses safe-area and visual-viewport keyboard insets, a 16px input to prevent iOS focus zoom, a minimum 44px send target, and one shared translucent dock treatment across phone, tablet, and desktop.
 
 Do not build one-off deep-question logic into individual event pages. The future Scout response layer should retrieve approved event claims, schedules, rules, PDFs, provenance, and freshness metadata at request time, then answer with citations and uncertainty controls. Event-specific source intelligence should become shared retrieval data, not custom chatbot code.
 

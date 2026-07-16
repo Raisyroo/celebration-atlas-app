@@ -53,12 +53,23 @@ for (const removedComposerBehavior of [
   'runScoutSuggestion',
   'getScoutResponse',
   'normalizedQuery.includes',
+  'Composer preview:',
+  'Question kept in this composer.',
 ]) {
   assert(
     !eventHubSource.includes(removedComposerBehavior),
     `Ask Scout still includes legacy event-specific behavior: ${removedComposerBehavior}.`,
   );
 }
+
+assert(
+  eventHubSource.includes('Verified guidance for this event'),
+  'Scout composer no longer uses the existing helper subtitle.',
+);
+assert(
+  eventHubSource.includes('isScoutInputFocused || Boolean(scoutQuery)'),
+  'Scout helper subtitle does not respond to focus and entered text.',
+);
 
 for (const contextField of [
   'data-scout-event-id',
