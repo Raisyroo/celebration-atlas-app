@@ -144,12 +144,19 @@ assert(scoutHistoryMatch, 'Scout conversation history could not be inspected.');
 assert(
   scoutHistoryMatch[0].includes('data-scout-response-mode="demo"') &&
     scoutHistoryMatch[0].includes('aria-label="Scout conversation history"') &&
+    scoutHistoryMatch[0].includes('tabIndex={0}') &&
     scoutHistoryMatch[0].includes('scoutConversation.map((turn)') &&
     scoutHistoryMatch[0].includes('{turn.question}') &&
     scoutHistoryMatch[0].includes('{turn.answer}') &&
     !scoutHistoryMatch[0].includes('role="status"') &&
     !scoutHistoryMatch[0].includes('aria-live='),
   'Scout demo history must render every turn without acting as the live announcement region.',
+);
+assert(
+  /\.scoutResponse:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--hub-gold-soft\);[^}]*outline-offset:\s*-3px;/.test(
+    eventHubStyles,
+  ),
+  'Scrollable Scout history must preserve a visible keyboard focus indicator.',
 );
 const scoutHistoryEndIndex =
   eventHubSource.indexOf(scoutHistoryMatch[0]) + scoutHistoryMatch[0].length;

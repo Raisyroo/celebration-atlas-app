@@ -1514,6 +1514,11 @@
   max-height: min(24dvh, 160px);
 }
 
+.scoutResponse:focus-visible {
+  outline: 2px solid var(--hub-gold-soft);
+  outline-offset: -3px;
+}
+
 .scoutTurn {
   display: grid;
   gap: 9px;

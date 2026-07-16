@@ -1118,6 +1118,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
             data-testid="scout-response-preview"
             data-scout-response-mode="demo"
             data-scout-turn-count={scoutConversation.length}
+            tabIndex={0}
           >
             {scoutConversation.map((turn) => (
               <li className={styles.scoutTurn} key={turn.id}>
