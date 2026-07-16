@@ -71,8 +71,8 @@ assert(
   'Scout composer does not preserve its active state while focused or populated.',
 );
 assert(
-  eventHubSource.includes("placeholder={isScoutInputFocused ? '' : 'Ask Scout a question'}"),
-  'Scout input placeholder does not clear when the field receives focus.',
+  eventHubSource.includes('placeholder=""'),
+  'Scout input still supplies visible placeholder text.',
 );
 
 for (const contextField of [
@@ -94,10 +94,20 @@ assert(
   'Scout composer input must remain at least 16px to prevent iOS focus zoom.',
 );
 assert(
-  /\.scoutForm button[\s\S]*?min-width:\s*48px;[\s\S]*?min-height:\s*48px;/.test(
+  /\.scoutForm button[\s\S]*?min-width:\s*50px;[\s\S]*?min-height:\s*50px;/.test(
     eventHubStyles,
   ),
   'Scout send control must preserve a minimum 44px target.',
+);
+assert(
+  /\.scoutForm input:not\(\[type='hidden'\]\)[\s\S]*?border:\s*0;[\s\S]*?background:\s*transparent;/.test(
+    eventHubStyles,
+  ),
+  'Scout input must remain borderless and transparent inside the single outer composer.',
+);
+assert(
+  !eventHubStyles.includes('.scoutHeader'),
+  'Scout composer still uses a stacked header above the input row.',
 );
 assert(
   eventHubStyles.includes('var(--scout-keyboard-inset)'),

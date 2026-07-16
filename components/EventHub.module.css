@@ -8,7 +8,7 @@
   --hub-night: #030b12;
   --hub-panel: #07151d;
   --hub-topbar-height: calc(56px + env(safe-area-inset-top));
-  --hub-scout-clearance: 134px;
+  --hub-scout-clearance: 104px;
   box-sizing: border-box;
   width: 100%;
   height: 100dvh;
@@ -1418,7 +1418,7 @@
   margin: 0 auto;
   overflow: hidden;
   border: 1px solid rgba(239, 164, 61, 0.44);
-  border-radius: 14px;
+  border-radius: 20px;
   background-color: rgba(5, 44, 52, 0.72);
   background-image: linear-gradient(
     145deg,
@@ -1432,19 +1432,19 @@
   transition: bottom 140ms ease;
 }
 
-.scoutHeader {
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
-  gap: 9px;
-  align-items: center;
-  min-height: 58px;
-  padding: 5px 11px 3px 6px;
+.scoutDock:focus-within {
+  border-color: rgba(255, 209, 138, 0.82);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 240, 210, 0.08),
+    0 16px 42px rgba(0, 0, 0, 0.42),
+    0 0 24px rgba(239, 164, 61, 0.16);
 }
 
 .scoutPortrait {
   position: relative;
-  width: 52px;
-  height: 52px;
+  z-index: 2;
+  width: 56px;
+  height: 56px;
   overflow: visible;
   border: 0;
   background: transparent;
@@ -1456,10 +1456,23 @@
   filter: drop-shadow(0 0 7px rgba(239, 164, 61, 0.16));
 }
 
-.scoutTitle {
+.scoutField {
+  position: relative;
   display: grid;
   min-width: 0;
+  min-height: 52px;
+  align-items: center;
+}
+
+.scoutTitle {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-area: 1 / 1;
+  min-width: 0;
   gap: 2px;
+  padding: 0 4px;
+  pointer-events: none;
 }
 
 .scoutTitle strong {
@@ -1481,34 +1494,47 @@
 
 .scoutForm {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 48px;
-  gap: 8px;
-  padding: 0 10px 10px;
+  grid-template-columns: 56px minmax(0, 1fr) 50px;
+  gap: 10px;
+  min-height: 76px;
+  align-items: center;
+  padding: 9px 10px 9px 8px;
 }
 
 .scoutForm input:not([type='hidden']) {
+  position: relative;
+  z-index: 2;
+  grid-area: 1 / 1;
   width: 100%;
   min-width: 0;
-  min-height: 48px;
-  padding: 11px 14px;
-  border: 1px solid rgba(255, 240, 210, 0.25);
-  border-radius: 12px;
-  background: rgba(2, 12, 18, 0.58);
+  min-height: 52px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--hub-ink);
   font-size: 1rem;
+  font-weight: 600;
   line-height: 1.2;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .scoutForm input:not([type='hidden'])::placeholder {
-  color: rgba(200, 178, 142, 0.66);
+  color: transparent;
+}
+
+.scoutForm input:not([type='hidden']):focus-visible {
+  outline: none;
 }
 
 .scoutForm button {
   display: grid;
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
-  min-height: 48px;
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  min-height: 50px;
   place-items: center;
   padding: 0;
   border: 1px solid var(--hub-gold);
@@ -1851,7 +1877,7 @@
   }
 
   .root {
-    --hub-scout-clearance: 116px;
+    --hub-scout-clearance: 80px;
   }
 
   .scoutDock {
@@ -1861,27 +1887,21 @@
     max-width: 720px;
   }
 
-  .scoutHeader {
-    grid-template-columns: 46px minmax(0, 1fr);
-    min-height: 48px;
-    padding: 3px 10px 1px 5px;
-  }
-
   .scoutPortrait {
-    width: 44px;
-    height: 44px;
+    width: 46px;
+    height: 46px;
   }
 
   .scoutForm {
-    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-columns: 46px minmax(0, 1fr) 44px;
     gap: 7px;
-    padding: 0 8px 8px;
+    min-height: 60px;
+    padding: 7px 8px 7px 6px;
   }
 
+  .scoutField,
   .scoutForm input:not([type='hidden']) {
     min-height: 44px;
-    padding-top: 9px;
-    padding-bottom: 9px;
   }
 
   .scoutForm button {

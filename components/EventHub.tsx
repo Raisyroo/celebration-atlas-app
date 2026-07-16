@@ -1074,25 +1074,6 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
         data-scout-source-kind={scoutComposerContext.sourceKind}
         data-scout-active-section-id={scoutComposerContext.activeSectionId}
       >
-        <div className={styles.scoutHeader}>
-          <div className={styles.scoutPortrait}>
-            <Image
-              src="/scout/scout-guide-icon.png"
-              alt=""
-              fill
-              loading="eager"
-              sizes="58px"
-              aria-hidden="true"
-            />
-          </div>
-          {!isScoutActive ? (
-            <div className={styles.scoutTitle}>
-              <strong>Ask Scout</strong>
-              <small>Verified guidance for this event</small>
-            </div>
-          ) : null}
-        </div>
-
         <form
           className={styles.scoutForm}
           data-testid="scout-composer-form"
@@ -1110,27 +1091,46 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
             name="activeSectionId"
             value={scoutComposerContext.activeSectionId}
           />
-          <label htmlFor="scout-event-question" className={styles.srOnly}>
-            Ask Scout about {manifest.identity.shortName}
-          </label>
-          <input
-            ref={scoutInputRef}
-            id="scout-event-question"
-            name="question"
-            value={scoutQuery}
-            autoComplete="off"
-            autoCapitalize="sentences"
-            enterKeyHint="send"
-            maxLength={500}
-            onBlur={() => setIsScoutInputFocused(false)}
-            onChange={(event) => setScoutQuery(event.target.value)}
-            onFocus={() => setIsScoutInputFocused(true)}
-            placeholder={isScoutInputFocused ? '' : 'Ask Scout a question'}
-          />
+          <div className={styles.scoutPortrait}>
+            <Image
+              src="/scout/scout-guide-icon.png"
+              alt=""
+              fill
+              loading="eager"
+              sizes="58px"
+              aria-hidden="true"
+            />
+          </div>
+          <div className={styles.scoutField}>
+            {!isScoutActive ? (
+              <div className={styles.scoutTitle} aria-hidden="true">
+                <strong>Ask Scout</strong>
+                <small>Verified guidance for this event</small>
+              </div>
+            ) : null}
+            <label htmlFor="scout-event-question" className={styles.srOnly}>
+              Ask Scout about {manifest.identity.shortName}
+            </label>
+            <input
+              ref={scoutInputRef}
+              id="scout-event-question"
+              name="question"
+              value={scoutQuery}
+              autoComplete="off"
+              autoCapitalize="sentences"
+              enterKeyHint="send"
+              maxLength={500}
+              onBlur={() => setIsScoutInputFocused(false)}
+              onChange={(event) => setScoutQuery(event.target.value)}
+              onFocus={() => setIsScoutInputFocused(true)}
+              placeholder=""
+            />
+          </div>
           <button
             type="submit"
             aria-label="Submit question to Scout composer"
             title="Submit question to Scout composer"
+            onMouseDown={(event) => event.preventDefault()}
           >
             <Send size={19} aria-hidden="true" />
           </button>

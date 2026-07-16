@@ -559,6 +559,11 @@ async function assertScoutComposerContract(
       composerLeft: composerRect.left,
       composerRight: composerRect.right,
       composerTop: composerRect.top,
+      inputBackgroundColor: inputStyle.backgroundColor,
+      inputBorderBottomWidth: inputStyle.borderBottomWidth,
+      inputBorderLeftWidth: inputStyle.borderLeftWidth,
+      inputBorderRightWidth: inputStyle.borderRightWidth,
+      inputBorderTopWidth: inputStyle.borderTopWidth,
       inputFontSize: Number.parseFloat(inputStyle.fontSize),
       inputLeft: inputRect.left,
       inputRight: inputRect.right,
@@ -579,6 +584,11 @@ async function assertScoutComposerContract(
     geometry.buttonWidth < 44 ||
     geometry.buttonHeight < 44 ||
     geometry.inputFontSize < 16 ||
+    geometry.inputBackgroundColor !== 'rgba(0, 0, 0, 0)' ||
+    geometry.inputBorderTopWidth !== '0px' ||
+    geometry.inputBorderRightWidth !== '0px' ||
+    geometry.inputBorderBottomWidth !== '0px' ||
+    geometry.inputBorderLeftWidth !== '0px' ||
     geometry.backgroundAlpha >= 1 ||
     geometry.backgroundAlpha < 0.5
   ) {
