@@ -141,6 +141,10 @@ export const MICHIGAN_HOME_ATLAS_SEARCH_RULES = {
     { season: 'winter', phrases: ['winter'] },
     { season: 'yearRound', phrases: ['year round', 'year-round'] },
   ],
+  statusRules: [
+    { status: 'LIVE', phrases: ['live now', 'live events', 'live event'] },
+    { status: 'UPCOMING', phrases: ['upcoming events', 'upcoming event', 'upcoming'] },
+  ],
   curatedRules: [
     {
       id: 'county-fairs',

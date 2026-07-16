@@ -1,5 +1,6 @@
 import type { AtlasEvent } from './events.ts';
 import type { EventProfile, EventSeason } from './eventProfileTypes.ts';
+import { getEventRailStatus, type EventRailStatus } from './eventRail.ts';
 import type { StateAtlasConfig } from './stateAtlasConfig.ts';
 
 export type HomeAtlasValueRule = {
@@ -27,6 +28,11 @@ export type HomeAtlasSeasonRule = {
   phrases: readonly [string, ...string[]];
 };
 
+export type HomeAtlasStatusRule = {
+  status: EventRailStatus;
+  phrases: readonly [string, ...string[]];
+};
+
 export type HomeAtlasCuratedRule = {
   id: string;
   phrases: readonly [string, ...string[]];
@@ -40,6 +46,7 @@ export type HomeAtlasSearchRules = {
   regionRules: readonly HomeAtlasRegionRule[];
   monthRules: readonly HomeAtlasMonthRule[];
   seasonRules: readonly HomeAtlasSeasonRule[];
+  statusRules: readonly HomeAtlasStatusRule[];
   curatedRules: readonly HomeAtlasCuratedRule[];
 };
 
@@ -51,6 +58,7 @@ export type HomeAtlasSearchReason =
   | 'region'
   | 'month'
   | 'season'
+  | 'status'
   | 'curated';
 
 export type HomeAtlasSearchResult = {
@@ -77,6 +85,7 @@ export type HomeAtlasSearchInput = {
   profiles: readonly EventProfile[];
   stateConfig: StateAtlasConfig;
   rules: HomeAtlasSearchRules;
+  now?: Date;
 };
 
 type MatchedRule<T> = {
@@ -92,6 +101,7 @@ type CandidateSearchData = {
   regionValues: readonly string[];
   months: ReadonlySet<number>;
   seasons: ReadonlySet<EventSeason>;
+  status: EventRailStatus | null;
 };
 
 const SEASON_BY_MONTH: Readonly<Record<HomeAtlasMonth, EventSeason>> = {
@@ -117,6 +127,7 @@ const REASON_ORDER: readonly HomeAtlasSearchReason[] = [
   'region',
   'month',
   'season',
+  'status',
   'curated',
 ];
 
@@ -226,6 +237,7 @@ function collectRecognizedShortTokens(
     ...rules.regionRules.flatMap((rule) => rule.phrases),
     ...rules.monthRules.flatMap((rule) => rule.phrases),
     ...rules.seasonRules.flatMap((rule) => rule.phrases),
+    ...rules.statusRules.flatMap((rule) => rule.phrases),
     ...rules.curatedRules.flatMap((rule) => rule.phrases),
   ];
 
@@ -376,6 +388,8 @@ function isCalendarMonth(value: number): value is HomeAtlasMonth {
 function getCandidateSearchData(
   event: AtlasEvent,
   profile: EventProfile | undefined,
+  now: Date,
+  defaultTimeZone: string,
 ): CandidateSearchData {
   const identityValues = getIdentityValues(event, profile);
   const identityTokens = new Set(identityValues.flatMap(tokenize));
@@ -412,6 +426,24 @@ function getCandidateSearchData(
   for (const month of months) {
     if (isCalendarMonth(month)) seasons.add(SEASON_BY_MONTH[month]);
   }
+  const eventStatus = getEventRailStatus(event, {
+    now,
+    timeZone: defaultTimeZone,
+  });
+  const profileDateRange = profile?.dateRange;
+  const profileStatus = !eventStatus && profileDateRange?.isEstimated === false
+    ? getEventRailStatus(
+        {
+          dateRange: {
+            startDate: profileDateRange.startDate,
+            endDate: profileDateRange.endDate,
+            timeZone: profileDateRange.timezone,
+            isEstimated: false,
+          },
+        },
+        { now, timeZone: defaultTimeZone },
+      )
+    : null;
 
   return {
     identityValues,
@@ -421,6 +453,7 @@ function getCandidateSearchData(
     regionValues,
     months,
     seasons,
+    status: eventStatus ?? profileStatus,
   };
 }
 
@@ -446,6 +479,7 @@ function compareStable(left: HomeAtlasSearchResult, right: HomeAtlasSearchResult
 
 export function searchHomeAtlas(input: HomeAtlasSearchInput): HomeAtlasSearchResponse {
   const { query, events, profiles, stateConfig, rules } = input;
+  const now = input.now ?? new Date();
   const normalizedQuery = normalizeHomeAtlasSearchValue(query);
   const queryTokens = tokenize(normalizedQuery);
   const emptyResponse = (): HomeAtlasSearchResponse => ({
@@ -463,6 +497,7 @@ export function searchHomeAtlas(input: HomeAtlasSearchInput): HomeAtlasSearchRes
   const regionMatches = matchRules(queryTokens, rules.regionRules);
   const monthMatches = matchRules(queryTokens, rules.monthRules);
   const seasonMatches = matchRules(queryTokens, rules.seasonRules);
+  const statusMatches = matchRules(queryTokens, rules.statusRules);
   const curatedMatches = matchRules(queryTokens, rules.curatedRules);
   const stateScopePhrases = uniqueValues([
     stateConfig.identity.name,
@@ -518,6 +553,7 @@ export function searchHomeAtlas(input: HomeAtlasSearchInput): HomeAtlasSearchRes
     ...regionMatches,
     ...monthMatches,
     ...seasonMatches,
+    ...statusMatches,
     ...curatedMatches,
   ]) {
     for (const index of match.consumedIndexes) consumedIndexes.add(index);
@@ -534,6 +570,7 @@ export function searchHomeAtlas(input: HomeAtlasSearchInput): HomeAtlasSearchRes
     regionMatches.length > 0 ||
     monthMatches.length > 0 ||
     seasonMatches.length > 0 ||
+    statusMatches.length > 0 ||
     curatedMatches.length > 0;
   if (!hasStructuredIntent && freeTokens.length === 0) {
     return { ...emptyResponse(), queryTokens, freeTokens };
@@ -544,7 +581,12 @@ export function searchHomeAtlas(input: HomeAtlasSearchInput): HomeAtlasSearchRes
 
   for (const event of events) {
     const profile = profileById.get(event.id);
-    const data = getCandidateSearchData(event, profile);
+    const data = getCandidateSearchData(
+      event,
+      profile,
+      now,
+      stateConfig.defaultTimeZone,
+    );
     const reasons = new Set<HomeAtlasSearchReason>();
     let score = 0;
 
@@ -577,6 +619,12 @@ export function searchHomeAtlas(input: HomeAtlasSearchInput): HomeAtlasSearchRes
       if (!seasonMatches.some(({ rule }) => data.seasons.has(rule.season))) continue;
       reasons.add('season');
       score += 100;
+    }
+
+    if (statusMatches.length > 0) {
+      if (!statusMatches.some(({ rule }) => data.status === rule.status)) continue;
+      reasons.add('status');
+      score += 110;
     }
 
     if (curatedMatches.length > 0) {

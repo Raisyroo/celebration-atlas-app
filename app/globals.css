@@ -600,6 +600,12 @@ body.atlas-story-card-open {
     width: clamp(330px, 30vw, 430px) !important;
     max-height: none !important;
   }
+
+  .atlas-hero[data-viewport-mode="desktop"][data-search-presentation="title-tags"] .atlas-discovery-panel,
+  .atlas-hero[data-viewport-mode="desktop"][data-search-presentation="query-status"] .atlas-discovery-panel {
+    bottom: auto;
+    max-height: min(68dvh, 620px) !important;
+  }
 }
 
 .atlas-discovery-panel button:focus-visible,

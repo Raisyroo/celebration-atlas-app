@@ -134,6 +134,7 @@ function fixtureProfile(event: AtlasEvent): EventProfile {
 }
 
 const FIXTURE_PROFILES = FIXTURE_EVENTS.map(fixtureProfile);
+const FIXED_NOW = new Date('2026-07-16T16:00:00.000Z');
 
 function resultIds(
   query: string,
@@ -147,6 +148,7 @@ function resultIds(
     profiles,
     stateConfig: MICHIGAN_STATE_ATLAS_CONFIG,
     rules,
+    now: FIXED_NOW,
   }).results.map((result) => result.event.id);
 }
 
@@ -317,6 +319,23 @@ assertEqual(
   [],
   'month matching excludes estimated edition dates',
 );
+assertEqual(
+  resultIds('upcoming events', [estimatedSeptemberEvent], [fixtureProfile(estimatedSeptemberEvent)]),
+  [],
+  'status matching excludes estimated edition dates',
+);
+const completedReviewedEvent = fixtureEvent(
+  'completed-reviewed',
+  'Completed Reviewed Event',
+  'Detroit, MI',
+  'Music',
+  { dateRange: { startDate: '2026-07-01', endDate: '2026-07-05', isEstimated: false } },
+);
+assertEqual(
+  resultIds('upcoming events', [completedReviewedEvent], [fixtureProfile(completedReviewedEvent)]),
+  [],
+  'status matching excludes completed reviewed editions',
+);
 const invalidSeptemberEvent = fixtureEvent(
   'invalid-september',
   'Invalid September Event',
@@ -427,6 +446,80 @@ assert(
 
 const actualProfiles = ATLAS_EVENTS.map(fixtureProfile);
 const actualResultIds = (query: string) => resultIds(query, ATLAS_EVENTS, actualProfiles);
+
+const exactDetroitJazz = searchHomeAtlas({
+  query: 'Detroit Jazz Festival',
+  events: ATLAS_EVENTS,
+  profiles: actualProfiles,
+  stateConfig: MICHIGAN_STATE_ATLAS_CONFIG,
+  rules: MICHIGAN_HOME_ATLAS_SEARCH_RULES,
+  now: FIXED_NOW,
+});
+assertEqual(
+  exactDetroitJazz.exactMatch?.eventId,
+  'detroit-jazz',
+  'required exact-event query resolves Detroit Jazz Festival uniquely',
+);
+assertEqual(
+  exactDetroitJazz.results.map((result) => result.event.id),
+  ['detroit-jazz'],
+  'required exact-event query contains no unrelated result',
+);
+assertEqual(
+  actualResultIds('music festivals'),
+  [
+    'common-ground-lansing',
+    'detroit-jazz',
+    'electric-forest',
+    'faster-horses',
+    'muskegon-summer-celebration',
+  ],
+  'required category query returns only Music events',
+);
+assertEqual(
+  actualResultIds('events in Detroit'),
+  ['detroit-jazz'],
+  'required city query returns only reviewed Detroit events',
+);
+assertEqual(
+  actualResultIds('events in September'),
+  ['detroit-jazz', 'romeo-peach'],
+  'required month query returns only events with reviewed September dates',
+);
+assertEqual(
+  actualResultIds('events in Detroit Metro'),
+  ['armada-fair', 'detroit-jazz', 'romeo-peach'],
+  'required configured-region query uses the curated Detroit Metro membership',
+);
+assertEqual(
+  actualResultIds('upcoming events'),
+  ['alpena-brown-trout', 'detroit-jazz', 'romeo-peach'],
+  'required status query returns only reviewed upcoming editions',
+);
+const combinedRequiredQuery = searchHomeAtlas({
+  query: 'music events in Detroit in September',
+  events: ATLAS_EVENTS,
+  profiles: actualProfiles,
+  stateConfig: MICHIGAN_STATE_ATLAS_CONFIG,
+  rules: MICHIGAN_HOME_ATLAS_SEARCH_RULES,
+  now: FIXED_NOW,
+});
+assertEqual(
+  combinedRequiredQuery.results.map((result) => result.event.id),
+  ['detroit-jazz'],
+  'required combined query intersects category, city, and reviewed month',
+);
+assertEqual(
+  combinedRequiredQuery.results[0]?.reasons,
+  ['identity', 'place', 'category', 'month'],
+  'required combined query retains every structured match reason',
+);
+assertEqual(
+  actualResultIds('events in Kalamazoo in February'),
+  [],
+  'required legitimate no-results query does not manufacture a match',
+);
+
 assertEqual(
   actualResultIds('fair'),
   ['armada-fair', 'shiawassee-fair', 'goodells-fair', 'upper-peninsula-state-fair'],
