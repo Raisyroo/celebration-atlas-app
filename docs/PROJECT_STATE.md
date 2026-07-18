@@ -140,7 +140,6 @@ The Michigan Atlas homepage completed its search-first public discovery checkpoi
 - The mobile menu retains Escape/focus containment, focus restoration, and background inerting. Query result title tags are keyboard targets; decorative labels and overflow indicators are not duplicate targets.
 - Atlas Control styles are scoped beneath `.control-shell`. A build validator and route-order visual smoke test protect public Event Hub controls from admin/login CSS that remains loaded after client navigation.
 - The illustrated map remains approximate. A unified coded-star and presentation-position resolver is not implemented yet.
-- Supported mobile browsers now offer a session-only, opt-in `View in Depth` control. It calibrates the phone's current angle as neutral, moves the existing event-tag plane by at most four pixels, gives the Michigan artwork at most two additional pixels of travel, and leaves cards, search, navigation, menus, and all accepted projection coordinates stationary. Permission is requested only from the control, sensor readings are never stored, and unsupported, denied, unavailable, desktop, and reduced-motion states remain static.
 
 The durable audit and multi-state recommendations are in `docs/MICHIGAN_HOMEPAGE_AUDIT.md`.
 
@@ -166,7 +165,7 @@ Published package v4 incorporates Ray's editorial feedback: the 1924 picnic and 
 
 The state-scoped catalog/configuration, deterministic search, live/upcoming rail, shared viewport model, and search-first public discovery surface are complete checkpoints. Filter and facet data contracts remain retained beneath the public UI.
 
-The opt-in mobile map depth polish is complete. The previously queued Task 27 shared map-position and coded-star prototype was abandoned and is not the next checkpoint; do not carry its local projection, marker, circle, star, or position changes forward. No next focused checkpoint is selected. Pre-aggregate discovery facet counts before catalogs grow to national scale.
+The next focused checkpoint is a shared `StateMapPresentationProfile` and one versioned position resolver for stars, labels, atmosphere, constellation lines, and audits. It must account for artwork fit/crop, keep Upper and Lower Peninsula calibration regions separate, render one accessible coded-star control per reachable event on every supported viewport, and preserve verified coordinates as source truth while treating illustrated offsets as presentation data. Pre-aggregate discovery facet counts before catalogs grow to national scale.
 
 ## Required Verification
 

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run validate:flyers:local && npm run validate:event-pages && npm run validate:event-source-inspection && npm run validate:event-source-synthesis && npm run validate:scout-composer && npm run validate:state-atlas-data && npm run validate:atlas-viewport-mode && npm run validate:home-atlas-search && npm run validate:home-atlas-discovery && npm run validate:home-discovery-navigation && npm run validate:home-landing-identity && npm run validate:map-artwork-readiness && npm run validate:mobile-map-depth && npm run validate:universal-event-interface && npm run validate:result-label-layout && npm run validate:atlas-control-css-scope && npm run validate:atlas-control && next build",
+    "build": "npm run validate:flyers:local && npm run validate:event-pages && npm run validate:event-source-inspection && npm run validate:event-source-synthesis && npm run validate:scout-composer && npm run validate:state-atlas-data && npm run validate:atlas-viewport-mode && npm run validate:home-atlas-search && npm run validate:home-atlas-discovery && npm run validate:home-discovery-navigation && npm run validate:home-landing-identity && npm run validate:map-artwork-readiness && npm run validate:universal-event-interface && npm run validate:result-label-layout && npm run validate:atlas-control-css-scope && npm run validate:atlas-control && next build",
     "start": "next start",
     "lint": "eslint",
     "atlas:check": "npm run lint && npm run build",
@@ -38,7 +38,6 @@
     "validate:home-discovery-navigation": "node --experimental-strip-types scripts/validate-home-discovery-navigation.ts",
     "validate:home-landing-identity": "node --experimental-strip-types scripts/validate-home-landing-identity.ts",
     "validate:map-artwork-readiness": "node --experimental-strip-types scripts/validate-map-artwork-readiness.ts",
-    "validate:mobile-map-depth": "node --experimental-strip-types scripts/validate-mobile-map-depth.ts",
     "validate:universal-event-interface": "node --experimental-strip-types scripts/validate-universal-event-interface.ts",
     "validate:result-label-layout": "node --experimental-strip-types scripts/validate-result-label-layout.mjs",
     "validate:result-label-typography": "node scripts/validate-result-label-typography.mjs"
