@@ -11,6 +11,8 @@ export type AtlasViewportDimensions = Readonly<{
   height: number;
 }>;
 
+export type AtlasViewportOrientation = 'portrait' | 'landscape';
+
 export type AtlasArtworkVariant = 'mobile' | 'desktop';
 
 export type AtlasViewportCapabilities = Readonly<{
@@ -66,17 +68,21 @@ const hasUsableDimensions = ({ width, height }: AtlasViewportDimensions) =>
 /**
  * Resolves the shared Atlas shell mode from layout-viewport dimensions.
  *
- * Invalid dimensions fail closed to the portrait shell. For usable dimensions,
- * orientation is evaluated before desktop thresholds so a wide portrait tablet
- * cannot receive desktop behavior.
+ * Invalid dimensions fail closed to the portrait shell. A supplied layout
+ * orientation takes precedence over the dimensions so a soft keyboard cannot
+ * turn a physically portrait phone into the compact-landscape shell. Without an
+ * explicit orientation, dimensions retain the deterministic server/test fallback.
  */
 export function resolveAtlasViewportMode(
   dimensions: AtlasViewportDimensions,
+  orientation?: AtlasViewportOrientation,
 ): AtlasViewportMode {
   if (!hasUsableDimensions(dimensions)) return 'portrait';
 
   const { width, height } = dimensions;
-  if (width <= height) return 'portrait';
+  const resolvedOrientation =
+    orientation ?? (width <= height ? 'portrait' : 'landscape');
+  if (resolvedOrientation === 'portrait') return 'portrait';
   if (
     width >= ATLAS_DESKTOP_MIN_WIDTH &&
     height >= ATLAS_DESKTOP_MIN_HEIGHT
@@ -95,6 +101,9 @@ export function getAtlasViewportCapabilities(
 
 export function resolveAtlasViewportCapabilities(
   dimensions: AtlasViewportDimensions,
+  orientation?: AtlasViewportOrientation,
 ): AtlasViewportCapabilities {
-  return getAtlasViewportCapabilities(resolveAtlasViewportMode(dimensions));
+  return getAtlasViewportCapabilities(
+    resolveAtlasViewportMode(dimensions, orientation),
+  );
 }

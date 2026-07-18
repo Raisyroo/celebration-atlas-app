@@ -11,6 +11,7 @@ import type {
   AtlasViewportCapabilities,
   AtlasViewportDimensions,
   AtlasViewportMode,
+  AtlasViewportOrientation,
 } from '../data/atlasViewportMode.ts';
 
 type ViewportFixture = Readonly<{
@@ -116,6 +117,59 @@ assert.equal(
   'portrait',
   'orientation takes precedence over desktop-width dimensions',
 );
+
+type OrientationFixture = Readonly<{
+  label: string;
+  dimensions: AtlasViewportDimensions;
+  orientation: AtlasViewportOrientation;
+  expectedMode: AtlasViewportMode;
+  expectedArtworkVariant: AtlasViewportCapabilities['artworkVariant'];
+}>;
+
+const orientationFixtures: readonly OrientationFixture[] = [
+  {
+    label: 'portrait phone with a keyboard-shortened viewport',
+    dimensions: { width: 390, height: 350 },
+    orientation: 'portrait',
+    expectedMode: 'portrait',
+    expectedArtworkVariant: 'mobile',
+  },
+  {
+    label: 'portrait phone after the keyboard closes',
+    dimensions: { width: 390, height: 844 },
+    orientation: 'portrait',
+    expectedMode: 'portrait',
+    expectedArtworkVariant: 'mobile',
+  },
+  {
+    label: 'phone after a real landscape rotation',
+    dimensions: { width: 844, height: 390 },
+    orientation: 'landscape',
+    expectedMode: 'compact-landscape',
+    expectedArtworkVariant: 'desktop',
+  },
+  {
+    label: 'desktop landscape with an explicit orientation',
+    dimensions: { width: 1440, height: 900 },
+    orientation: 'landscape',
+    expectedMode: 'desktop',
+    expectedArtworkVariant: 'desktop',
+  },
+] as const;
+
+for (const fixture of orientationFixtures) {
+  assert.equal(
+    resolveAtlasViewportMode(fixture.dimensions, fixture.orientation),
+    fixture.expectedMode,
+    `${fixture.label} mode`,
+  );
+  assert.equal(
+    resolveAtlasViewportCapabilities(fixture.dimensions, fixture.orientation)
+      .artworkVariant,
+    fixture.expectedArtworkVariant,
+    `${fixture.label} artwork variant`,
+  );
+}
 assert.equal(
   resolveAtlasViewportMode({
     width: ATLAS_DESKTOP_MIN_WIDTH,
@@ -186,4 +240,6 @@ for (const mode of Object.keys(ATLAS_VIEWPORT_CAPABILITIES) as AtlasViewportMode
 
 assert(Object.isFrozen(ATLAS_VIEWPORT_CAPABILITIES), 'capability registry must be immutable');
 
-console.log(`Validated ${fixtures.length} Atlas viewport fixtures and ${invalidDimensions.length} invalid-dimension fallbacks.`);
+console.log(
+  `Validated ${fixtures.length} Atlas viewport fixtures, ${orientationFixtures.length} orientation fixtures, and ${invalidDimensions.length} invalid-dimension fallbacks.`,
+);
