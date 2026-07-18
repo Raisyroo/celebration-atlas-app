@@ -67,7 +67,6 @@ import {
 import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
-import MobileMapDepthControl from './MobileMapDepthControl';
 
 const resultLabelSerif = localFont({
   src: [
@@ -521,8 +520,6 @@ function SearchResultTextField({
                 ...styles.resultTextCluster,
                 left: `${placement.x}%`,
                 top: `${placement.y}%`,
-                transform:
-                  'translate(calc(-50% + var(--atlas-depth-shared-x, 0px)), calc(-50% + var(--atlas-depth-shared-y, 0px)))',
                 zIndex: Z_INDEX.markers + 36 + placement.zIndex,
               }}
             >
@@ -557,8 +554,6 @@ function SearchResultTextField({
               ...placement.style,
               left: `${placement.x}%`,
               top: `${placement.y}%`,
-              transform:
-                'translate(calc(-50% + var(--atlas-depth-shared-x, 0px)), calc(-50% + var(--atlas-depth-shared-y, 0px)))',
               justifyItems: placement.align === 'left' ? 'start' : placement.align === 'right' ? 'end' : 'center',
               textAlign: placement.align,
               zIndex: Z_INDEX.markers + 36 + placement.zIndex,
@@ -3477,7 +3472,6 @@ export default function AtlasMap({
             draggable={false}
             style={{
               ...styles.mapImage,
-              transform: 'var(--atlas-depth-artwork-transform, none)',
               opacity: isMapArtworkCelestialFallback ? 0 : 1,
             }}
             onLoad={handleMapArtworkLoad}
@@ -3550,11 +3544,7 @@ export default function AtlasMap({
             {viewportCapabilities.supportsRemoteCalloutConnectors && mobileSearchConnectors.length > 0 && mapViewportSize && rankedSubmittedSearchResults.length === 0 ? (
               <svg
                 aria-hidden="true"
-                style={{
-                  ...styles.mobileCalloutConnectorLayer,
-                  transform:
-                    'translate3d(var(--atlas-depth-shared-x, 0px), var(--atlas-depth-shared-y, 0px), 0)',
-                }}
+                style={styles.mobileCalloutConnectorLayer}
                 viewBox={`0 0 ${mapViewportSize.width} ${mapViewportSize.height}`}
                 preserveAspectRatio="none"
               >
@@ -3919,10 +3909,10 @@ export default function AtlasMap({
                                 : undefined,
                               opacity: shouldShowMarkerLabel ? 1 : 0,
                               transform: shouldUseMobileTagPlacement
-                                ? `translate(calc(-50% + ${mobileTagDx}px + var(--atlas-depth-shared-x, 0px)), calc(-50% + ${mobileTagDy}px + var(--atlas-depth-shared-y, 0px)))`
+                                ? `translate(calc(-50% + ${mobileTagDx}px), calc(-50% + ${mobileTagDy}px))`
                                 : shouldShowMarkerLabel
-                                  ? 'translate(calc(-50% + var(--atlas-depth-shared-x, 0px)), calc(-122% + var(--atlas-depth-shared-y, 0px)))'
-                                  : 'translate(calc(-50% + var(--atlas-depth-shared-x, 0px)), calc(-116% + var(--atlas-depth-shared-y, 0px)))',
+                                  ? 'translate(-50%, -122%)'
+                                  : 'translate(-50%, -116%)',
                               pointerEvents: shouldShowMarkerLabel
                                 ? 'auto'
                                 : 'none',
@@ -3990,19 +3980,6 @@ export default function AtlasMap({
           </div>
         ) : null}
       </div>
-
-      <MobileMapDepthControl
-        sceneRef={mapFrameRef}
-        isEligible={
-          viewportCapabilities.showsMobileChrome &&
-          shouldShowPolishedHomepageUi &&
-          !shouldShowCalibration &&
-          !isVerificationMode
-        }
-        isHidden={isAtlasPanelOpen || isMobileModalOpen}
-        mapScale={mapLayerScale}
-        prefersReducedMotion={prefersReducedMotion}
-      />
 
       {shouldShowCalibration ? (
         <AtlasCalibrationPanel
@@ -5618,7 +5595,6 @@ const styles: Record<string, CSSProperties> = {
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
     pointerEvents: 'none',
-    willChange: 'transform',
   },
 
 
