@@ -1,8 +1,7 @@
-import type { AtlasEvent } from './events';
-import { resolveExplicitEventThumbnail } from './eventThumbnail';
-import { resolveEventFlyerSrc } from './eventFlyers';
-import type { EventFlyerResolutionMap } from './eventMediaResolutionTypes';
-import type { ResolvedEventMedia } from './eventMedia';
+import type { AtlasEvent } from './events.ts';
+import { resolveExplicitEventThumbnail } from './eventThumbnail.ts';
+import type { EventFlyerResolutionMap } from './eventMediaResolutionTypes.ts';
+import type { ResolvedEventMedia } from './eventMedia.ts';
 
 export type SafeAtlasEventCard = {
   id: AtlasEvent['id'];
@@ -40,8 +39,7 @@ export function deriveSafeAtlasEventCard(
   flyerResolutions: EventFlyerResolutionMap = {},
 ): SafeAtlasEventCard {
   const explicitThumbnail = resolveExplicitEventThumbnail(event);
-  const flyerSrc = (flyerResolutions[event.id]?.src
-    ?? resolveEventFlyerSrc(event)) as AtlasEvent['flyerSrc'];
+  const flyerSrc = flyerResolutions[event.id]?.src as AtlasEvent['flyerSrc'];
   const flyerFallbackSrc = flyerResolutions[event.id]?.fallback?.src as AtlasEvent['flyerSrc'] | undefined;
   const flyerDeck = flyerResolutions[event.id]?.deck;
   const media = flyerSrc
@@ -90,7 +88,7 @@ export function deriveSafeAtlasEventCard(
     description: event.blurb,
     atmosphereLabel: event.cardMedia?.atmosphereTitle ?? event.atmosphereLabel,
     media,
-    detailAction: event.detailPage || event.eventPageKind === 'manifest'
+    detailAction: event.eventPageKind === 'manifest'
       ? {
           label: 'Open full event',
           href: `/events/${event.id}`,

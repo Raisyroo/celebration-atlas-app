@@ -26,17 +26,17 @@ const COVERAGE_INTENSITY: Record<
   { intensity: MarkerIntensity; reason: string }
 > = {
   basicNationalCoverage: {
-    intensity: 'dim',
-    reason: 'Basic national coverage starts as a quieter discovery marker.',
+    intensity: 'standard',
+    reason: 'Basic national coverage uses the established discovery marker intensity.',
   },
   stateDiscoveryCoverage: {
-    intensity: 'standard',
+    intensity: 'bright',
     reason:
-      'State discovery coverage uses the standard atlas marker intensity.',
+      'State discovery coverage uses the established atlas marker intensity.',
   },
   practicalEventPage: {
-    intensity: 'bright',
-    reason: 'Practical event page coverage earns a brighter planning marker.',
+    intensity: 'active',
+    reason: 'Practical event page coverage uses an active planning marker.',
   },
   atlasExperiencePage: {
     intensity: 'signature',
@@ -65,19 +65,6 @@ export function getEventMarkerPresentation(
   let intensity = COVERAGE_INTENSITY[profile.coverageLevel].intensity;
 
   reasons.push(COVERAGE_INTENSITY[profile.coverageLevel].reason);
-
-  if ((profile.media?.length ?? 0) > 0) {
-    const bumpedIntensity = bumpIntensity(intensity);
-
-    if (bumpedIntensity !== intensity) {
-      reasons.push('Attached media adds one subtle intensity step.');
-      intensity = bumpedIntensity;
-    } else {
-      reasons.push(
-        'Attached media is present, but intensity is already at the maximum.',
-      );
-    }
-  }
 
   if (profile.featured === true) {
     const bumpedIntensity = bumpIntensity(intensity);

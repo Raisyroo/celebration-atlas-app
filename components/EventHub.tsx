@@ -2,7 +2,6 @@
 
 import '@fontsource/cormorant-garamond/600.css';
 import {
-  ArrowLeft,
   Award,
   BadgeCheck,
   CalendarDays,
@@ -65,6 +64,10 @@ import {
   createScoutComposerContext,
   type ScoutContentReference,
 } from '../lib/scout/composerContext';
+import {
+  resolveEventHubHomeLink,
+  type EventHubHomeLink,
+} from '../data/eventHubNavigation';
 import styles from './EventHub.module.css';
 
 const NAVIGATION_ICONS: Record<EventPageNavigationIcon, LucideIcon> = {
@@ -148,6 +151,7 @@ type ScoutDemoTurn = Readonly<{
 type EventHubProps = {
   manifest: EventPageManifest;
   scoutContentReference?: ScoutContentReference;
+  homeLink?: EventHubHomeLink;
 };
 
 function getTodayKey(timeZone: string): string {
@@ -765,7 +769,7 @@ function PlanVisitModule({
   );
 }
 
-export default function EventHub({ manifest, scoutContentReference }: EventHubProps) {
+export default function EventHub({ manifest, scoutContentReference, homeLink }: EventHubProps) {
   const initialModuleId = manifest.navigation[0]?.targetModuleId ?? manifest.modules[0]?.id;
   const [activeModuleId, setActiveModuleId] = useState(initialModuleId);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>(() =>
@@ -967,6 +971,7 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
   const latestScoutTurn = scoutConversation[scoutConversation.length - 1];
   const hasVisibleScoutHistory =
     isScoutHistoryVisible && scoutConversation.length > 0;
+  const resolvedHomeLink = resolveEventHubHomeLink(homeLink);
 
   return (
     <main
@@ -975,9 +980,14 @@ export default function EventHub({ manifest, scoutContentReference }: EventHubPr
       }`}
     >
       <header className={styles.topBar}>
-        <Link href="/" className={styles.iconButton} title="Back to Atlas">
-          <ArrowLeft aria-hidden="true" />
-          <span className={styles.srOnly}>Back to Atlas</span>
+        <Link
+          href={resolvedHomeLink.href}
+          className={styles.iconButton}
+          title={resolvedHomeLink.label}
+          aria-label={resolvedHomeLink.label}
+        >
+          <MapIcon aria-hidden="true" />
+          <span className={styles.srOnly}>{resolvedHomeLink.label}</span>
         </Link>
         <div className={styles.topBarTitle}>
           <strong>{manifest.hero.eyebrow}</strong>

@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import CinematicIntro from '../components/CinematicIntro';
 import MichiganAtlasExperience from '../components/MichiganAtlasExperience';
 import AuthCallbackRecovery from '../components/AuthCallbackRecovery';
 import { resolveEventFlyerMediaMapServer } from '../data/eventMediaServer';
@@ -13,9 +12,7 @@ export default async function HomePage() {
   return (
     <Suspense fallback={null}>
       <AuthCallbackRecovery />
-      <CinematicIntro skipOnDesktop>
-        <MichiganAtlasExperience events={events} flyerResolutions={flyerResolutions} />
-      </CinematicIntro>
+      <MichiganAtlasExperience events={events} flyerResolutions={flyerResolutions} />
     </Suspense>
   );
 }
