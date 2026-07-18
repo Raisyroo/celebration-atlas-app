@@ -13,7 +13,7 @@ import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes'
 import { getFlyerEventPresentation } from '../data/flyerEventPresentation';
 import { toEventProfiles } from '../data/eventProfileAdapter';
 import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
-import { resolveExplicitEventThumbnail } from '../data/eventThumbnail';
+import { resolveEventThumbnailPresentation } from '../data/eventThumbnail';
 import {
   searchHomeAtlas,
   type HomeAtlasSearchRules,
@@ -53,6 +53,17 @@ import {
   resolveAtlasViewportMode,
 } from '../data/atlasViewportMode';
 import type { AtlasViewportMode } from '../data/atlasViewportMode';
+import {
+  getHomeLandingIdentitySessionStore,
+  persistHomeLandingIdentityDismissed,
+  readHomeLandingIdentityDismissed,
+  resolveHomeLandingIdentityState,
+  type HomeLandingIdentityState,
+} from '../data/homeLandingIdentity';
+import {
+  isMapArtworkSourceReady,
+  resolveLoadedMapArtworkSource,
+} from '../data/mapArtworkReadiness';
 import AtmosphereLayer from './AtmosphereLayer';
 import { HomeDiscoveryLayer } from './HomeDiscoveryLayer';
 import type { HomeDiscoveryResultRow } from './HomeDiscoveryLayer';
@@ -261,23 +272,6 @@ const MOBILE_LANDING_MAP_LOWERING = '3dvh';
 // The previous global -7% marker translate is intentionally replaced by the
 // inverse workbench calibration in data/michiganArtworkCalibration.ts. Keeping a
 // second global shift here would double-apply calibration and hide future tuning.
-
-const FALLBACK_THUMBNAIL_BY_ICON: Record<
-  NonNullable<AtlasEvent['iconType']>,
-  string
-> = {
-  music: '♪',
-  fair: '🎡',
-  food: '🍒',
-  fireworks: '✦',
-  flower: '✿',
-  harvest: '🍑',
-  waterfront: '≈',
-  winter: '❄',
-  art: '◆',
-  heritage: '◈',
-};
-
 
 function EventNavigationControl({
   event,
@@ -675,31 +669,6 @@ function formatMobileEventDate(event: AtlasEvent): string {
   return `${month} ${startDay}–${endMonth} ${endDay}`;
 }
 
-function getEventThumbnail(event: AtlasEvent):
-  | { kind: 'image'; src: string; alt: string; sourceType: 'override' | 'generated' }
-  | { kind: 'fallback'; glyph: string; label: string } {
-  const explicitThumbnail = resolveExplicitEventThumbnail(event);
-
-  if (explicitThumbnail) {
-    return {
-      kind: 'image',
-      src: explicitThumbnail.path,
-      alt: explicitThumbnail.alt,
-      sourceType:
-        explicitThumbnail.mediaSourceType === 'override'
-          ? 'override'
-          : 'generated',
-    };
-  }
-
-  return {
-    kind: 'fallback',
-    glyph: event.iconType ? FALLBACK_THUMBNAIL_BY_ICON[event.iconType] : '✦',
-    label: `${event.category} fallback visual`,
-  };
-}
-
-
 function EventThumbnail({
   event,
   variant,
@@ -707,7 +676,8 @@ function EventThumbnail({
   event: AtlasEvent;
   variant: 'floating' | 'live' | 'tag';
 }) {
-  const thumbnail = getEventThumbnail(event);
+  const [failedImageSrc, setFailedImageSrc] = useState<string | null>(null);
+  const thumbnail = resolveEventThumbnailPresentation(event, failedImageSrc);
   const wrapStyle =
     variant === 'live'
       ? styles.eventThumbnailLive
@@ -723,6 +693,7 @@ function EventThumbnail({
           alt={thumbnail.alt}
           style={styles.eventThumbnailImage}
           loading="lazy"
+          onError={() => setFailedImageSrc(thumbnail.src)}
         />
       </span>
     );
@@ -1518,12 +1489,16 @@ export default function AtlasMap({
   const isPhoneLandscape = viewportMode === 'compact-landscape';
   const artworkVariant: MichiganArtworkVariant =
     viewportCapabilities.artworkVariant;
-  const [isMapArtworkLoaded, setIsMapArtworkLoaded] = useState(false);
+  const [loadedMapArtworkSrc, setLoadedMapArtworkSrc] = useState<string | null>(
+    null,
+  );
   const [isMapArtworkCelestialFallback, setIsMapArtworkCelestialFallback] =
     useState(false);
   const [mobileMapArtworkSrc, setMobileMapArtworkSrc] = useState(
     mobileArtworkSrc,
   );
+  const activeMapArtworkSrc =
+    artworkVariant === 'mobile' ? mobileMapArtworkSrc : desktopArtworkSrc;
   const mapArtworkImageRef = useRef<HTMLImageElement | null>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [parallaxOffset, setParallaxOffset] = useState({ x: 0, y: 0 });
@@ -1575,7 +1550,6 @@ export default function AtlasMap({
   const isMediaDebugMode = searchParams.get('mediaDebug') === '1';
   const isAtlasDebugMode = enableAtlasDebug && searchParams.get('atlasDebug') === '1';
   const shouldShowCalibration = showAtlasCalibration && !isVerificationMode;
-  const initialEventParamHandledRef = useRef(false);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const [mapViewportSize, setMapViewportSize] = useState<MapViewportSize | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
@@ -1614,7 +1588,11 @@ export default function AtlasMap({
   const [flyerFavoriteConfirmation, setFlyerFavoriteConfirmation] = useState<string | null>(null);
   const [activeFlyerDeckIndex, setActiveFlyerDeckIndex] = useState(0);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isMobileExploring, setIsMobileExploring] = useState(false);
+  const [homeLandingIdentityState, setHomeLandingIdentityState] =
+    useState<HomeLandingIdentityState>('unresolved');
+  const isMobileLandingIdentityResolved =
+    homeLandingIdentityState !== 'unresolved';
+  const isMobileExploring = homeLandingIdentityState === 'dismissed';
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [isHomeControlsReturning, setIsHomeControlsReturning] = useState(false);
   const [isExactSearchReturnArmed, setIsExactSearchReturnArmed] = useState(false);
@@ -2011,13 +1989,6 @@ export default function AtlasMap({
   const selected = !isVerificationMode
     ? (events.find((event) => event.id === selectedId) ?? null)
     : null;
-  const startElectricForestTransition = useCallback(
-    (eventId: string) => {
-      prepareEventHubNavigation(eventId);
-      router.push(`/events/${eventId}?intro=cinematic`);
-    },
-    [prepareEventHubNavigation, router],
-  );
   const safeEventCard = renderedEvent
     ? deriveSafeAtlasEventCard(renderedEvent, flyerResolutions)
     : null;
@@ -2040,7 +2011,7 @@ export default function AtlasMap({
   const activeFlyerDeckCard = flyerDeck[boundedFlyerDeckIndex];
   const hasFlyerDeck = flyerDeck.length > 1;
   const largeCardThumbnail = renderedEvent
-    ? getEventThumbnail(renderedEvent)
+    ? resolveEventThumbnailPresentation(renderedEvent)
     : null;
   const resolvedLargeCardImageSrc =
     activeFlyerDeckCard?.src ??
@@ -2069,7 +2040,10 @@ export default function AtlasMap({
   const isLargeCardImageReady = Boolean(
     displayedLargeCardImageSrc && loadedLargeCardImageSrc === displayedLargeCardImageSrc,
   );
-  const flyerPresentation = getFlyerEventPresentation(safeEventCard);
+  const flyerPresentation = getFlyerEventPresentation(
+    safeEventCard,
+    displayedLargeCardImageSrc,
+  );
   const isFlyerCard = flyerPresentation.isFlyerFirst;
   const largeCardDateRange = renderedEvent ? formatEventDateRange(renderedEvent) : null;
   const largeCardStoryDetails = renderedEvent ? getEventStoryDetails(renderedEvent) : [];
@@ -2087,8 +2061,45 @@ export default function AtlasMap({
   const selectedFlyerResolution = safeEventCard ? flyerResolutions[safeEventCard.id] : undefined;
   const officialUrlDebug = selectedFlyerResolution?.officialUrlDebug;
   const isFlyerMediaDebug = Boolean(isMediaDebugMode && isFlyerCard);
+
+  useEffect(() => {
+    const sessionStore = getHomeLandingIdentitySessionStore();
+    const wasDismissedInSession = readHomeLandingIdentityDismissed(
+      sessionStore,
+    );
+    const hasDurableDiscoveryState = Boolean(submittedQuery.trim());
+    const resolvedState = resolveHomeLandingIdentityState({
+      currentState: homeLandingIdentityState,
+      wasDismissedInSession,
+      hasDurableDiscoveryState,
+    });
+
+    if (resolvedState === 'dismissed') {
+      persistHomeLandingIdentityDismissed(sessionStore);
+    }
+
+    let isCurrentResolution = true;
+    queueMicrotask(() => {
+      if (!isCurrentResolution) return;
+      setHomeLandingIdentityState((currentState) =>
+        resolveHomeLandingIdentityState({
+          currentState,
+          wasDismissedInSession,
+          hasDurableDiscoveryState,
+        }),
+      );
+    });
+
+    return () => {
+      isCurrentResolution = false;
+    };
+  }, [homeLandingIdentityState, submittedQuery]);
+
   const beginMobileExploration = useCallback(() => {
-    setIsMobileExploring(true);
+    persistHomeLandingIdentityDismissed(
+      getHomeLandingIdentitySessionStore(),
+    );
+    setHomeLandingIdentityState('dismissed');
   }, []);
   const selectAtlasEvent = useCallback((eventId: string | null) => {
     if (eventId) beginMobileExploration();
@@ -2098,6 +2109,7 @@ export default function AtlasMap({
     setSelectedId(eventId);
   }, [beginMobileExploration]);
   const openAtlasEvent = useCallback((eventId: string) => {
+    beginMobileExploration();
     const event = events.find((candidate) => candidate.id === eventId);
     if (event?.eventPageKind === 'manifest') {
       prepareEventHubNavigation(event.id);
@@ -2112,7 +2124,7 @@ export default function AtlasMap({
     eventFocusReturnEventIdRef.current = eventId;
     shouldRestoreEventFocusRef.current = false;
     selectAtlasEvent(eventId);
-  }, [events, prepareEventHubNavigation, router, selectAtlasEvent]);
+  }, [beginMobileExploration, events, prepareEventHubNavigation, router, selectAtlasEvent]);
   useEffect(() => {
     if (!shouldAutoNavigateExactSearch || !exactEventIntent) return;
 
@@ -2335,6 +2347,7 @@ export default function AtlasMap({
     (event: PointerEvent<HTMLDivElement>) => {
       if (shouldShowCalibration || isVerificationMode) return;
       if (event.pointerType !== 'touch') return;
+      beginMobileExploration();
 
       const nextPointers = activeMapPointersRef.current;
       nextPointers.set(event.pointerId, {
@@ -2369,7 +2382,7 @@ export default function AtlasMap({
         panGestureRef.current = null;
       }
     },
-    [isVerificationMode, mapTransform, shouldShowCalibration],
+    [beginMobileExploration, isVerificationMode, mapTransform, shouldShowCalibration],
   );
 
   const handleMapGesturePointerMove = useCallback(
@@ -2743,7 +2756,7 @@ export default function AtlasMap({
         (event) => event.id === selectedId,
       );
       if (!selectedEvent) return;
-      const selectedThumbnail = getEventThumbnail(selectedEvent);
+      const selectedThumbnail = resolveEventThumbnailPresentation(selectedEvent);
       if (
         selectedThumbnail.kind !== 'image' &&
         !selectedEvent.cardMedia?.mediaSrc &&
@@ -2982,22 +2995,6 @@ export default function AtlasMap({
   ]);
 
   useEffect(() => {
-    if (initialEventParamHandledRef.current) return;
-    const requestedEventId = searchParams.get('event');
-    initialEventParamHandledRef.current = true;
-    if (!requestedEventId) return;
-
-    const matchingEvent = events.find(
-      (event) => event.id === requestedEventId,
-    );
-    if (!matchingEvent) return;
-
-    queueMicrotask(() => {
-      openAtlasEvent(matchingEvent.id);
-    });
-  }, [events, openAtlasEvent, searchParams]);
-
-  useEffect(() => {
     if (askSuggestions.length <= 1) return;
     const rotateId = setInterval(() => {
       if (isSearchFocused || query.trim()) return;
@@ -3108,37 +3105,56 @@ export default function AtlasMap({
   }, [closeMobileMenu, isMobileMenuOpen, viewportCapabilities.showsMobileChrome]);
 
   useEffect(() => {
-    let shouldResetArtwork = true;
+    let isCurrentArtwork = true;
     queueMicrotask(() => {
-      if (!shouldResetArtwork) return;
-      setIsMapArtworkLoaded(false);
+      if (!isCurrentArtwork) return;
       setIsMapArtworkCelestialFallback(false);
       setMobileMapArtworkSrc(mobileArtworkSrc);
     });
 
     return () => {
-      shouldResetArtwork = false;
+      isCurrentArtwork = false;
     };
   }, [artworkVariant, desktopArtworkSrc, mobileArtworkSrc]);
 
   useEffect(() => {
     const image = mapArtworkImageRef.current;
-    if (!image || !image.complete || image.naturalWidth <= 0) return;
-    setIsMapArtworkLoaded(true);
+    const confirmedSource = resolveLoadedMapArtworkSource(
+      activeMapArtworkSrc,
+      image
+        ? {
+            source: image.getAttribute('src'),
+            complete: image.complete,
+            naturalWidth: image.naturalWidth,
+          }
+        : null,
+    );
+    if (!confirmedSource) return;
+    setLoadedMapArtworkSrc(confirmedSource);
     setIsMapArtworkCelestialFallback(false);
-  }, [artworkVariant, desktopArtworkSrc, mobileMapArtworkSrc]);
+  }, [activeMapArtworkSrc]);
 
   const handleMapArtworkLoad = useCallback(
     (event: SyntheticEvent<HTMLImageElement>) => {
-      if (event.currentTarget.naturalWidth <= 0) return;
-      setIsMapArtworkLoaded(true);
+      const confirmedSource = resolveLoadedMapArtworkSource(
+        activeMapArtworkSrc,
+        {
+          source: event.currentTarget.getAttribute('src'),
+          complete: event.currentTarget.complete,
+          naturalWidth: event.currentTarget.naturalWidth,
+        },
+      );
+      if (!confirmedSource) return;
+      setLoadedMapArtworkSrc(confirmedSource);
       setIsMapArtworkCelestialFallback(false);
     },
-    [],
+    [activeMapArtworkSrc],
   );
 
   const handleMapArtworkError = useCallback(() => {
-    setIsMapArtworkLoaded(false);
+    setLoadedMapArtworkSrc((currentSource) =>
+      currentSource === activeMapArtworkSrc ? null : currentSource,
+    );
 
     if (
       artworkVariant === 'mobile' &&
@@ -3150,7 +3166,7 @@ export default function AtlasMap({
     }
 
     setIsMapArtworkCelestialFallback(true);
-  }, [artworkVariant, desktopArtworkSrc, mobileMapArtworkSrc]);
+  }, [activeMapArtworkSrc, artworkVariant, desktopArtworkSrc, mobileMapArtworkSrc]);
 
   useEffect(() => {
     document.documentElement.classList.add(HOME_DISCOVERY_SCROLL_CLASS);
@@ -3214,7 +3230,11 @@ export default function AtlasMap({
     mapViewportSize && mapViewportSize.width > 0 && mapViewportSize.height > 0,
   );
   const isAskBarInitialStateResolved = !displayedQuery && !isSubmittedQueryFading;
-  const isMapArtworkReady = isMapArtworkLoaded || isMapArtworkCelestialFallback;
+  const isMapArtworkReady = isMapArtworkSourceReady({
+    activeSource: activeMapArtworkSrc,
+    loadedSource: loadedMapArtworkSrc,
+    isCelestialFallback: isMapArtworkCelestialFallback,
+  });
   const shouldShowEssentialHomepageUi = Boolean(
     hasResolvedResponsiveState || isVerificationMode,
   );
@@ -3252,39 +3272,15 @@ export default function AtlasMap({
       activePresentationPlan ||
       discoveryStatusText,
   );
-  const hasMobileExplorationActivity = Boolean(
-    selectedId ||
-      renderedEvent ||
-      isCardVisible ||
-      isSearchFocused ||
-      hasActiveAskQuery ||
-      isMobileMenuOpen ||
-      hasActiveSearchResult,
-  );
-
-  useEffect(() => {
-    if (hasMobileExplorationActivity) return undefined;
-
-    let shouldClearExploration = true;
-    queueMicrotask(() => {
-      if (!shouldClearExploration) return;
-      setIsMobileExploring(false);
-    });
-
-    return () => {
-      shouldClearExploration = false;
-    };
-  }, [hasMobileExplorationActivity]);
-  const isMobileLandingIdle = Boolean(
+  const shouldShowMobileLandingIdentity =
     shouldShowPolishedHomepageUi &&
-      !isDesktop &&
-      !isPhoneLandscape &&
-      !isMobileExploring,
-  );
+    isMobileLandingIdentityResolved &&
+    !isDesktop &&
+    !isPhoneLandscape;
   const shouldShowMobileLandingTitle =
-    shouldShowPolishedHomepageUi && !isDesktop && !isPhoneLandscape;
-  const mobileLandingTitleState = isMobileLandingIdle ? 'idle' : 'exploring';
-  const shouldShowMobileMichiganBreadcrumb = shouldShowMobileLandingTitle;
+    shouldShowMobileLandingIdentity && !isMobileExploring;
+  const shouldShowMobileMichiganBreadcrumb =
+    shouldShowMobileLandingIdentity && isMobileExploring;
   const areMobileAmbientControlsVisible = Boolean(
     shouldShowMobileAmbientAtlas && hasResolvedResponsiveState,
   );
@@ -3443,7 +3439,7 @@ export default function AtlasMap({
           {/* eslint-disable-next-line @next/next/no-img-element -- The state artwork source is selected by the shared viewport model. */}
           <img
             className="atlas-map-image atlas-map-image--atmosphere"
-            src={artworkVariant === 'mobile' ? mobileMapArtworkSrc : desktopArtworkSrc}
+            src={activeMapArtworkSrc}
             alt=""
             aria-hidden
             draggable={false}
@@ -3464,7 +3460,7 @@ export default function AtlasMap({
           {/* eslint-disable-next-line @next/next/no-img-element -- The state artwork source is selected by the shared viewport model. */}
           <img
             className="atlas-map-image"
-            src={artworkVariant === 'mobile' ? mobileMapArtworkSrc : desktopArtworkSrc}
+            src={activeMapArtworkSrc}
             ref={mapArtworkImageRef}
             alt={`${stateName} Atlas`}
             draggable={false}
@@ -3996,7 +3992,7 @@ export default function AtlasMap({
                 <path d="M4 6.5h16M4 12h16M4 17.5h16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </button>
-            <button type="button" aria-label={isMobileFavoriteSaved ? `Remove ${stateName} from favorites` : `Save ${stateName} to favorites`} aria-pressed={isMobileFavoriteSaved} className="mobile-chrome-button" style={{ ...styles.mobileChromeButton, ...styles.mobileFavoriteButton, ...(isMobileFavoriteSaved ? styles.mobileFavoriteButtonActive : null) }} onClick={() => setIsMobileFavoriteSaved((isSaved) => !isSaved)}>
+            <button type="button" aria-label={isMobileFavoriteSaved ? `Remove ${stateName} from favorites` : `Save ${stateName} to favorites`} aria-pressed={isMobileFavoriteSaved} className="mobile-chrome-button" style={{ ...styles.mobileChromeButton, ...styles.mobileFavoriteButton, ...(isMobileFavoriteSaved ? styles.mobileFavoriteButtonActive : null) }} onClick={() => { beginMobileExploration(); setIsMobileFavoriteSaved((isSaved) => !isSaved); }}>
               <span aria-hidden="true">{isMobileFavoriteSaved ? '♥' : '♡'}</span>
             </button>
           </div>
@@ -4005,25 +4001,20 @@ export default function AtlasMap({
 
       {shouldShowMobileLandingTitle ? (
         <header
-          className={`mobile-atlas-identity mobile-atlas-identity--${mobileLandingTitleState}`}
+          className="mobile-atlas-identity mobile-atlas-identity--idle"
           style={styles.mobileAtlasIdentity}
           aria-label={`Celebration Atlas ${stateName}`}
-          aria-hidden={isMobileExploring ? true : undefined}
-          data-mobile-title-state={mobileLandingTitleState}
-          data-mobile-exploring={isMobileExploring ? 'true' : 'false'}
+          data-mobile-title-state="idle"
+          data-mobile-exploring="false"
         >
           <span
             className="mobile-atlas-identity-scrim"
             aria-hidden="true"
             style={{
               ...styles.mobileAtlasIdentityScrim,
-              opacity: isMobileExploring ? 0 : 1,
-              transform: isMobileExploring
-                ? 'translate3d(-50%, -54%, 0) scale(0.94)'
-                : 'translate3d(-50%, -50%, 0)',
-              transition: isMobileExploring
-                ? 'opacity 340ms ease-out, transform 340ms ease-out'
-                : 'opacity 300ms ease-out, transform 300ms ease-out',
+              opacity: 1,
+              transform: 'translate3d(-50%, -50%, 0)',
+              transition: 'opacity 300ms ease-out, transform 300ms ease-out',
             }}
           />
           {/* eslint-disable-next-line @next/next/no-img-element -- Title artwork must render as the approved transparent brand asset without layout-driven image optimization wrappers. */}
@@ -4035,15 +4026,12 @@ export default function AtlasMap({
             draggable={false}
             style={{
               ...styles.mobileAtlasTitleArtwork,
-              opacity: isMobileExploring ? 0 : 1,
-              visibility: isMobileExploring ? 'hidden' : 'visible',
-              transform: isMobileExploring
-                ? 'translate3d(0, -8px, 0)'
-                : 'translate3d(0, 0, 0)',
-              pointerEvents: isMobileExploring ? 'none' : 'auto',
-              transition: isMobileExploring
-                ? 'opacity 340ms ease-out, transform 340ms ease-out, visibility 0ms linear 340ms'
-                : 'opacity 300ms ease-out, transform 300ms ease-out, visibility 0ms linear 0ms',
+              opacity: 1,
+              visibility: 'visible',
+              transform: 'translate3d(0, 0, 0)',
+              pointerEvents: 'auto',
+              transition:
+                'opacity 300ms ease-out, transform 300ms ease-out, visibility 0ms linear 0ms',
             }}
           />
         </header>
@@ -4055,18 +4043,15 @@ export default function AtlasMap({
           className="mobile-michigan-breadcrumb"
           style={{
             ...styles.mobileMichiganBreadcrumb,
-            opacity: isMobileExploring ? 0.64 : 0,
-            visibility: isMobileExploring ? 'visible' : 'hidden',
-            transform: isMobileExploring
-              ? 'translate3d(0, 0, 0)'
-              : 'translate3d(0, -7px, 0)',
-            transition: isMobileExploring
-              ? 'opacity 280ms ease-out, transform 280ms ease-out, visibility 0ms linear 0ms'
-              : 'opacity 240ms ease-out, transform 240ms ease-out, visibility 0ms linear 240ms',
+            opacity: 0.64,
+            visibility: 'visible',
+            transform: 'translate3d(0, 0, 0)',
+            transition:
+              'opacity 280ms ease-out, transform 280ms ease-out, visibility 0ms linear 0ms',
           }}
           aria-hidden="true"
-          data-mobile-title-state={mobileLandingTitleState}
-          data-mobile-exploring={isMobileExploring ? 'true' : 'false'}
+          data-mobile-title-state="exploring"
+          data-mobile-exploring="true"
         >
           <span
             className="mobile-michigan-breadcrumb-text"
@@ -4346,12 +4331,7 @@ export default function AtlasMap({
                     </figcaption>
                   ) : null}
                 </figure>
-              ) : (
-                <div style={styles.flyerUnavailableState} role="status">
-                  <strong>{safeEventCard.name} flyer unavailable</strong>
-                  <span>The flyer image could not be loaded right now.</span>
-                </div>
-              )}
+              ) : null}
               {isFlyerMediaDebug ? (
                 <div style={styles.flyerMediaDebugPanel} aria-label="Flyer media debug">
                   <div>intended flyer src: {selectedFlyerSrc ?? 'none'}</div>
@@ -4480,21 +4460,15 @@ export default function AtlasMap({
                   ) : null}
                   <p style={styles.cardTrustLine}>{safeEventCard.trustStatusCopy}</p>
                   {safeEventCard.detailAction ? (
-                    safeEventCard.id === 'electric-forest' ? (
-                      <button type="button" style={styles.enterEventButton} onClick={() => startElectricForestTransition(safeEventCard.id)}>
-                        {safeEventCard.detailAction.label}
-                      </button>
-                    ) : (
-                      <Link
-                        href={safeEventCard.detailAction.href}
-                        style={styles.enterEventLink}
-                        onNavigate={() =>
-                          prepareEventHubNavigation(safeEventCard.id)
-                        }
-                      >
-                        {safeEventCard.detailAction.label}
-                      </Link>
-                    )
+                    <Link
+                      href={safeEventCard.detailAction.href}
+                      style={styles.enterEventLink}
+                      onNavigate={() =>
+                        prepareEventHubNavigation(safeEventCard.id)
+                      }
+                    >
+                      {safeEventCard.detailAction.label}
+                    </Link>
                   ) : null}
                 </>
               )}
@@ -4685,6 +4659,7 @@ export default function AtlasMap({
                   ref={liveUpcomingRailRef}
                   className="mobile-live-sheet-scroller"
                   style={styles.mobileLiveStripScroller}
+                  onPointerDown={beginMobileExploration}
                 >
                   {liveUpcomingRailEvents.map((event) => {
                     const statusBadge = getEventRailStatus(event, {
@@ -4951,20 +4926,6 @@ export default function AtlasMap({
             }
 
             @media (max-width: 767px) and (max-height: 720px) {
-              .mobile-atlas-brand {
-                font-size: 9px !important;
-                letter-spacing: 1.5px !important;
-              }
-
-              .mobile-atlas-title {
-                font-size: clamp(27px, 8.4vw, 34px) !important;
-                letter-spacing: 0.105em !important;
-              }
-
-              .mobile-atlas-subtitle {
-                display: none !important;
-              }
-
               .mobile-floating-card {
                 width: fit-content !important;
                 min-width: 0 !important;
@@ -4997,27 +4958,11 @@ export default function AtlasMap({
               .mobile-atlas-identity {
                 top: calc(env(safe-area-inset-top) + 0px) !important;
               }
-
-              .mobile-atlas-title {
-                font-size: clamp(38px, 13vw, 56px) !important;
-                letter-spacing: 0.09em !important;
-              }
-
-              .mobile-atlas-identity--exploring .mobile-atlas-title {
-                font-size: 18px !important;
-                letter-spacing: 0.18em !important;
-              }
             }
 
             @media (max-width: 767px) {
               .mobile-atlas-identity {
                 padding-top: 10px !important;
-              }
-
-              .mobile-atlas-title {
-                font-size: 48px !important;
-                line-height: 0.95 !important;
-                letter-spacing: 0.04em !important;
               }
             }
 
@@ -5502,9 +5447,7 @@ export default function AtlasMap({
               .marker-pulse,
               .atlas-marker-starburst,
               .atlas-search-input--pulse,
-              .atlas-search-query,
-              .cinematic-intro-overlay,
-              .cinematic-intro-video {
+              .atlas-search-query {
                 animation: none !important;
                 transition-duration: 1ms !important;
               }
@@ -6719,19 +6662,6 @@ const styles: Record<string, CSSProperties> = {
     overflowWrap: 'anywhere',
     textAlign: 'left',
   },
-  flyerUnavailableState: {
-    position: 'absolute',
-    inset: 16,
-    display: 'grid',
-    placeContent: 'center',
-    gap: 8,
-    border: '1px solid rgba(255,225,160,.28)',
-    borderRadius: 18,
-    color: '#ffebb9',
-    textAlign: 'center',
-    background: 'rgba(13,18,27,.72)',
-    zIndex: 0,
-  },
   cardMediaOverlay: {
     position: 'absolute',
     inset: 0,
@@ -7091,26 +7021,6 @@ const styles: Record<string, CSSProperties> = {
     opacity: 0.9,
     transition: 'opacity 180ms ease, border-color 180ms ease',
   },
-  enterEventButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '9px 14px',
-    marginTop: 10,
-    borderRadius: 999,
-    border: '1px solid rgba(255,230,183,.56)',
-    color: 'rgba(255,242,215,.96)',
-    background:
-      'linear-gradient(180deg, rgba(255,206,124,.26), rgba(255,192,90,.14))',
-    letterSpacing: '0.12em',
-    textTransform: 'uppercase',
-    fontSize: 10,
-    fontWeight: 650,
-    textDecoration: 'none',
-    boxShadow: '0 0 18px rgba(255,194,104,.24)',
-  },
-
-
   mobileChromeControls: { position: 'absolute', top: 'calc(14px + env(safe-area-inset-top))', left: 'max(6px, env(safe-area-inset-left))', right: 'max(6px, env(safe-area-inset-right))', zIndex: Z_INDEX.searchDock + 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', pointerEvents: 'none' },
   mobileChromeButton: { width: 44, height: 44, borderRadius: 0, border: 0, background: 'transparent', color: 'rgba(255, 224, 158, 0.94)', boxShadow: 'none', display: 'grid', placeItems: 'center', padding: 0, fontSize: 18, lineHeight: 1, textShadow: '0 1px 7px rgba(0, 0, 0, 0.72)', cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto', appearance: 'none', WebkitAppearance: 'none' },
   mobileHamburgerIcon: { width: 23, height: 23, transform: 'translateY(-1px)' },

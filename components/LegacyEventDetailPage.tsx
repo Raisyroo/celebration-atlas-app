@@ -140,7 +140,7 @@ export default function LegacyEventDetailPage() {
         eventName={event.name}
         artworkSrc="/event-pages/goodells/goodells-master-page.webp"
         heroVideoSrc="/event-media/goodells/goodells-fair-intro.mp4"
-        backHref={`/?event=${event.id}`}
+        backHref="/"
       />
     );
   }
@@ -154,7 +154,7 @@ export default function LegacyEventDetailPage() {
         // Expected public asset path: /event-media/romeo/romeo-peach-memory-bg-v1.webp
         memoryImageSrc="/event-media/romeo/romeo-peach-memory-bg-v1.webp"
         introVideoSrc="/event-media/romeo/romeo-intro.mp4"
-        backHref={`/?event=${event.id}`}
+        backHref="/"
       />
     );
   }
@@ -163,7 +163,7 @@ export default function LegacyEventDetailPage() {
     return (
       <main style={styles.notFoundPage}>
         <Link href="/" style={styles.notFoundLink}>
-          ← Back to Atlas
+          Atlas home
         </Link>
       </main>
     );
@@ -471,8 +471,8 @@ function StandardEventDetailPage({ event, isElectricForestCinematicEntry }: { ev
         </section>
       ) : null}
 
-      <Link href={`/?event=${event.id}`} style={{ ...styles.backLink, color: tone.backLinkColor, borderBottom: `1px solid ${tone.backLinkColor.replace('0.9', '0.45')}` }}>
-        ← Back to Atlas
+      <Link href="/" style={{ ...styles.backLink, color: tone.backLinkColor, borderBottom: `1px solid ${tone.backLinkColor.replace('0.9', '0.45')}` }}>
+        Atlas home
       </Link>
       </>
       </main>

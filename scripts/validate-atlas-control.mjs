@@ -254,6 +254,17 @@ assert(
   'synthesis preview does not render the exact reviewed Event Hub manifest and Scout context',
 );
 assert(synthesisPreviewPage.includes('index: false') && synthesisPreviewPage.includes('follow: false'), 'synthesis preview is not excluded from search indexing');
+assert(
+  synthesisPreviewPage.includes("homeLink={{ href: '/atlas-control', label: 'Atlas Control' }}"),
+  'synthesis preview does not return authors to Atlas Control',
+);
+
+const privatePackagePreview = read('app/atlas-control/event-preview/[packageId]/page.tsx');
+assert(privatePackagePreview.includes('requireAtlasAdmin'), 'private package preview is not protected by Atlas admin authorization');
+assert(
+  privatePackagePreview.includes('homeLink={{ href: "/atlas-control", label: "Atlas Control" }}'),
+  'private package preview does not return authors to Atlas Control',
+);
 
 const controlDesk = read('app/atlas-control/ControlDesk.tsx');
 assert(controlDesk.includes('/atlas-control/synthesis-preview/${synthesis.id}'), 'Atlas Control does not link valid synthesis proposals to their private Event Hub preview');
@@ -268,6 +279,7 @@ assert(
   'Public package review does not render the exact Event Hub manifest and Scout context',
 );
 assert(!publicPackagePreview.includes('requireAtlasAdmin'), 'Read-only package review is still blocked by administrator authentication');
+assert(!publicPackagePreview.includes('homeLink='), 'Public package review overrides the public Atlas-home destination');
 assert(publicPackagePreview.includes('index: false') && publicPackagePreview.includes('follow: false'), 'Read-only package review is not excluded from search indexing');
 
 assert(eventFactoryPackages.includes('PUBLIC_PREVIEW_STATUSES') && eventFactoryPackages.includes('ready_for_review'), 'Public package review is not restricted to reviewable lifecycle states');

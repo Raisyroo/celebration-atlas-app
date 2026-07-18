@@ -328,7 +328,7 @@ export default function InteractiveArtworkPage({ eventId, eventName, artworkSrc,
           ) : null}
 
           <Link href={backHref} style={styles.topBackLink}>
-            ← Back to Atlas
+            Atlas home
           </Link>
 
           <div

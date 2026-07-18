@@ -1484,7 +1484,7 @@ export default function RomeoAtlasWindowPage({
           style={styles.backLink}
           onClick={handleAtlasExit}
         >
-          ← ATLAS
+          ATLAS HOME
         </Link>
 
         <div

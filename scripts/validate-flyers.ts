@@ -6,8 +6,10 @@ import { ATLAS_EVENTS } from '../data/events.ts';
 import { getFlyerEventPresentation } from '../data/flyerEventPresentation.ts';
 
 const LOCAL_RUNTIME_PREFIX = '/event-media/flyers/';
+const LEGACY_LOCAL_RUNTIME_PREFIX = '/event-media/';
 const LOCAL_PUBLIC_PREFIX = path.join('public', 'event-media', 'flyers');
 const LOCAL_PUBLIC_ROOT = path.join(process.cwd(), LOCAL_PUBLIC_PREFIX);
+const LEGACY_LOCAL_PUBLIC_ROOT = path.join(process.cwd(), 'public', 'event-media');
 const args = new Set(process.argv.slice(2));
 const checkLocalFiles = args.has('--local');
 
@@ -154,8 +156,8 @@ async function assertExactCaseFilePath(filePath: string): Promise<void> {
   if (!fileStat.isFile()) throw new Error('Local flyer path is not a file');
 }
 
-function normalizeLocalFlyerRelativePath(src: string): string {
-  const relativeName = src.slice(LOCAL_RUNTIME_PREFIX.length);
+function normalizeLocalMediaRelativePath(src: string, runtimePrefix: string): string {
+  const relativeName = src.slice(runtimePrefix.length);
   const normalizedRelativeName = path.posix.normalize(relativeName);
 
   if (
@@ -167,7 +169,7 @@ function normalizeLocalFlyerRelativePath(src: string): string {
     normalizedRelativeName.startsWith('../') ||
     normalizedRelativeName.includes('/../')
   ) {
-    throw new Error(`Local flyer src must resolve under ${LOCAL_RUNTIME_PREFIX}: ${src}`);
+    throw new Error(`Local flyer src must resolve under ${runtimePrefix}: ${src}`);
   }
 
   return normalizedRelativeName;
@@ -177,12 +179,30 @@ if (checkLocalFiles) {
   for (const [eventId, record] of flyerEntries) {
     if (record.assetMode !== 'local' || !record.src?.startsWith(LOCAL_RUNTIME_PREFIX)) continue;
     try {
-      const relativeName = normalizeLocalFlyerRelativePath(record.src);
+      const relativeName = normalizeLocalMediaRelativePath(record.src, LOCAL_RUNTIME_PREFIX);
       const publicPath = path.join(LOCAL_PUBLIC_ROOT, relativeName);
       await assertExactCaseFilePath(publicPath);
     } catch (error) {
       const publicPath = path.join(LOCAL_PUBLIC_ROOT, record.src.slice(LOCAL_RUNTIME_PREFIX.length));
       errors.push(`${error instanceof Error ? error.message : 'Missing local flyer file'} for ${eventId}: ${path.relative(process.cwd(), publicPath)}`);
+    }
+  }
+
+  for (const event of ATLAS_EVENTS) {
+    if (!event.flyerSrc?.startsWith(LEGACY_LOCAL_RUNTIME_PREFIX)) continue;
+    try {
+      const relativeName = normalizeLocalMediaRelativePath(
+        event.flyerSrc,
+        LEGACY_LOCAL_RUNTIME_PREFIX,
+      );
+      const publicPath = path.join(LEGACY_LOCAL_PUBLIC_ROOT, relativeName);
+      await assertExactCaseFilePath(publicPath);
+    } catch (error) {
+      const publicPath = path.join(
+        LEGACY_LOCAL_PUBLIC_ROOT,
+        event.flyerSrc.slice(LEGACY_LOCAL_RUNTIME_PREFIX.length),
+      );
+      errors.push(`${error instanceof Error ? error.message : 'Missing local flyer file'} for ${event.id}: ${path.relative(process.cwd(), publicPath)}`);
     }
   }
 }

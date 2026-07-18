@@ -25,6 +25,7 @@ export default async function DevelopmentPackagePreview({ params }: DevelopmentP
       key={preview.manifest.eventId}
       manifest={preview.manifest}
       scoutContentReference={preview.scoutContentReference}
+      homeLink={{ href: '/atlas-control', label: 'Atlas Control' }}
     />
   );
 }

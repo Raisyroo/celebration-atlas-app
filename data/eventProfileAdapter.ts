@@ -1,7 +1,7 @@
 import type { AtlasEvent } from './events';
 import type { StateAtlasConfig } from './stateAtlasConfig';
 import { EVENT_TIMING_METADATA } from './eventTimingMetadata';
-import { resolveEventThumbnail } from './eventThumbnail';
+import { resolveExplicitEventThumbnail } from './eventThumbnail';
 import {
   resolveAtlasEventProfileDateRange,
   resolveReviewedAtlasEventSeason,
@@ -199,18 +199,20 @@ function createMediaItems(event: AtlasEvent): EventMediaItem[] | undefined {
     }
   }
 
-  const thumbnail = resolveEventThumbnail(event);
+  const thumbnail = resolveExplicitEventThumbnail(event);
 
-  addMediaItem({
-    id: `${event.id}-thumbnail`,
-    slot: 'thumbnailImage',
-    kind: 'image',
-    src: thumbnail.path,
-    title: `${event.name} thumbnail`,
-    alt: thumbnail.alt,
-    isPrimary: true,
-    confidence: thumbnail.mediaSourceType === 'override' ? 'medium' : 'low',
-  });
+  if (thumbnail) {
+    addMediaItem({
+      id: `${event.id}-thumbnail`,
+      slot: 'thumbnailImage',
+      kind: 'image',
+      src: thumbnail.path,
+      title: `${event.name} thumbnail`,
+      alt: thumbnail.alt,
+      isPrimary: true,
+      confidence: thumbnail.mediaSourceType === 'override' ? 'medium' : 'low',
+    });
+  }
 
   if (event.cardMedia?.mediaSrc) {
     addMediaItem({

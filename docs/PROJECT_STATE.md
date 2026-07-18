@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: July 16, 2026
+Last updated: July 18, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -134,6 +134,9 @@ The Michigan Atlas homepage completed its search-first public discovery checkpoi
 - The public Michigan homepage is now search-first. The visible filter button, mobile filter sheet, and desktop filter controls are removed, while the underlying exact category, curated region, exact city, reviewed month/date, live/upcoming, facet, and discovery APIs remain available to search, Scout, Near Me, agents, and future indexes. Artistic atmosphere labels never become geographic regions.
 - Query-only broad search uses accessible, clickable title tags on the illustrated map. Exact identity still navigates directly, combined structured criteria intersect, and a query-only empty result now opens a clear visible no-results panel while hiding contradictory markers.
 - Submitted homepage discovery queries now live in the public `q` URL parameter and are deterministically reconstructed from the reviewed Michigan catalog. Browser-history entries retain only presentation state: page scroll, live/upcoming rail position, open result cluster, selected result, and exact-navigation suppression. Internal Event Hub transitions remain App Router client navigations, Back restores the homepage context without duplicated result storage, Forward returns to the same Event Hub, and exact-search returns do not immediately redirect again.
+- The large mobile landing identity is now a one-way, session-scoped welcome. The first meaningful interaction or a durable search URL dismisses it, the cream Michigan identity remains for the rest of that browser-tab session, and a source-keyed artwork readiness contract prevents cached-image load ordering from hiding or reviving either state.
+- Event Hubs expose an explicit Atlas-home destination instead of a control that claims to be Back. Native browser Back remains the sole discovery-restoration action; authenticated package and synthesis previews return explicitly to Atlas Control.
+- Unmanifested events remain discoverable through one generic inline card and no longer advertise experimental detail templates. Missing or failed thumbnails use the asset-independent event glyph, while approved hosted flyer decks remain supported. Broken local flyer references were removed without removing their events, and full builds now verify every retained local flyer path.
 - The mobile menu retains Escape/focus containment, focus restoration, and background inerting. Query result title tags are keyboard targets; decorative labels and overflow indicators are not duplicate targets.
 - Atlas Control styles are scoped beneath `.control-shell`. A build validator and route-order visual smoke test protect public Event Hub controls from admin/login CSS that remains loaded after client navigation.
 - The illustrated map remains approximate. A unified coded-star and presentation-position resolver is not implemented yet.

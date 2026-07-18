@@ -10,6 +10,35 @@ export type EventThumbnailMetadata = {
   generationStatus: EventThumbnailGenerationStatus;
 };
 
+export type EventThumbnailPresentation =
+  | {
+      kind: 'image';
+      src: string;
+      alt: string;
+      sourceType: 'override' | 'generated';
+    }
+  | {
+      kind: 'fallback';
+      glyph: string;
+      label: string;
+    };
+
+const FALLBACK_THUMBNAIL_BY_ICON: Record<
+  NonNullable<AtlasEvent['iconType']>,
+  string
+> = {
+  music: '♪',
+  fair: '🎡',
+  food: '🍒',
+  fireworks: '✦',
+  flower: '✿',
+  harvest: '🍑',
+  waterfront: '≈',
+  winter: '❄',
+  art: '◆',
+  heritage: '◈',
+};
+
 const CATEGORY_FALLBACK_PATH: Record<AtlasEvent['category'], string> = {
   'Arts & Culture': '/event-media/fallback/arts-culture-thumb.webp',
   Fairs: '/event-media/fallback/fairs-thumb.webp',
@@ -43,6 +72,31 @@ export function resolveExplicitEventThumbnail(
   }
 
   return null;
+}
+
+export function resolveEventThumbnailPresentation(
+  event: AtlasEvent,
+  failedImageSrc: string | null = null,
+): EventThumbnailPresentation {
+  const explicitThumbnail = resolveExplicitEventThumbnail(event);
+
+  if (explicitThumbnail && explicitThumbnail.path !== failedImageSrc) {
+    return {
+      kind: 'image',
+      src: explicitThumbnail.path,
+      alt: explicitThumbnail.alt,
+      sourceType:
+        explicitThumbnail.mediaSourceType === 'override'
+          ? 'override'
+          : 'generated',
+    };
+  }
+
+  return {
+    kind: 'fallback',
+    glyph: event.iconType ? FALLBACK_THUMBNAIL_BY_ICON[event.iconType] : '✦',
+    label: `${event.category} fallback visual`,
+  };
 }
 
 export function resolveEventThumbnail(event: AtlasEvent): EventThumbnailMetadata {
