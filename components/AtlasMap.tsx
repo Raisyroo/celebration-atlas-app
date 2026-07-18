@@ -3030,14 +3030,20 @@ export default function AtlasMap({
 
   useEffect(() => {
     let frameId: number | null = null;
+    const portraitOrientationQuery = window.matchMedia(
+      '(orientation: portrait)',
+    );
     const syncViewportMode = () => {
       if (frameId !== null) cancelAnimationFrame(frameId);
       frameId = requestAnimationFrame(() => {
         frameId = null;
-        const nextMode = resolveAtlasViewportMode({
-          width: window.innerWidth,
-          height: window.innerHeight,
-        });
+        const nextMode = resolveAtlasViewportMode(
+          {
+            width: window.innerWidth,
+            height: window.innerHeight,
+          },
+          portraitOrientationQuery.matches ? 'portrait' : 'landscape',
+        );
         setViewportMode((currentMode) =>
           currentMode === nextMode ? currentMode : nextMode,
         );
@@ -3056,13 +3062,13 @@ export default function AtlasMap({
     syncViewportMode();
     window.addEventListener('resize', syncViewportMode);
     window.addEventListener('orientationchange', syncViewportMode);
-    window.visualViewport?.addEventListener('resize', syncViewportMode);
+    portraitOrientationQuery.addEventListener('change', syncViewportMode);
 
     return () => {
       if (frameId !== null) cancelAnimationFrame(frameId);
       window.removeEventListener('resize', syncViewportMode);
       window.removeEventListener('orientationchange', syncViewportMode);
-      window.visualViewport?.removeEventListener('resize', syncViewportMode);
+      portraitOrientationQuery.removeEventListener('change', syncViewportMode);
     };
   }, []);
 
