@@ -2968,32 +2968,6 @@ export default function AtlasMap({
     requestAnimationFrame(() => menuTriggerRef.current?.focus());
   }, [setIsMobileMenuOpen]);
 
-  const resetAtlasExploration = useCallback(() => {
-    if (exactEventOpenTimerRef.current) {
-      clearTimeout(exactEventOpenTimerRef.current);
-      exactEventOpenTimerRef.current = null;
-    }
-    selectAtlasEvent(null);
-    setDiscoveryStatusText(null);
-    setDisplayedQuery('');
-    replaceSubmittedDiscoveryQuery('');
-    setShouldAutoNavigateExactSearch(false);
-    setQuery('');
-    setIsSubmittedQueryFading(false);
-    isMobileMenuOpenRef.current = false;
-    setIsMobileMenuOpen(false);
-    searchInputRef.current?.focus();
-  }, [
-    selectAtlasEvent,
-    setDiscoveryStatusText,
-    setDisplayedQuery,
-    setIsMobileMenuOpen,
-    setIsSubmittedQueryFading,
-    setQuery,
-    setShouldAutoNavigateExactSearch,
-    replaceSubmittedDiscoveryQuery,
-  ]);
-
   useEffect(() => {
     if (askSuggestions.length <= 1) return;
     const rotateId = setInterval(() => {
@@ -3095,13 +3069,16 @@ export default function AtlasMap({
       const firstElement = focusableElements[0];
       const lastElement = focusableElements.at(-1);
       if (!firstElement || !lastElement) return;
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
+      const activeIndex = focusableElements.indexOf(document.activeElement as HTMLElement);
+      const nextIndex = event.shiftKey
+        ? activeIndex <= 0
+          ? focusableElements.length - 1
+          : activeIndex - 1
+        : activeIndex < 0 || activeIndex === focusableElements.length - 1
+          ? 0
+          : activeIndex + 1;
+      event.preventDefault();
+      focusableElements[nextIndex]?.focus();
     };
     document.addEventListener('keydown', handleDialogKeyDown);
     return () => {
@@ -4109,16 +4086,43 @@ export default function AtlasMap({
             onClick={(event) => event.stopPropagation()}
           >
             <div style={styles.mobileSheetHandle} />
-            <p id="atlas-mobile-menu-title" style={styles.mobileSheetKicker}>Celebration Atlas</p>
-            <button type="button" style={styles.mobileMenuItem} onClick={resetAtlasExploration}>
-              Explore all {stateName} celebrations
-            </button>
+            <div style={styles.mobileMenuHeader}>
+              <p id="atlas-mobile-menu-title" style={styles.mobileSheetKicker}>Celebration Atlas</p>
+              <button
+                type="button"
+                aria-label="Close Celebration Atlas menu"
+                className="atlas-mobile-menu-close"
+                style={styles.mobileMenuCloseButton}
+                onClick={() => closeMobileMenu()}
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false" style={styles.mobileMenuCloseIcon}>
+                  <path d="M6.5 6.5l11 11m0-11-11 11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
             <Link
-              href="/atlas-login"
+              href="/about"
+              className="atlas-mobile-menu-item"
               style={{ ...styles.mobileMenuItem, ...styles.mobileMenuItemLink }}
               onClick={() => closeMobileMenu(false)}
             >
-              Atlas sign in
+              About Celebration Atlas
+            </Link>
+            <Link
+              href="/privacy"
+              className="atlas-mobile-menu-item"
+              style={{ ...styles.mobileMenuItem, ...styles.mobileMenuItemLink }}
+              onClick={() => closeMobileMenu(false)}
+            >
+              Privacy
+            </Link>
+            <Link
+              href="/terms"
+              className="atlas-mobile-menu-item"
+              style={{ ...styles.mobileMenuItem, ...styles.mobileMenuItemLink }}
+              onClick={() => closeMobileMenu(false)}
+            >
+              Terms
             </Link>
           </nav>
         </div>
@@ -4767,6 +4771,31 @@ export default function AtlasMap({
 
             .atlas-search-submit:active {
               transform: scale(0.97);
+            }
+
+            .atlas-mobile-menu-item {
+              transition:
+                background-color 160ms ease,
+                color 160ms ease,
+                outline-color 160ms ease;
+            }
+
+            .atlas-mobile-menu-item:hover {
+              background: rgba(255, 226, 170, 0.06) !important;
+              color: rgba(255, 249, 234, 1) !important;
+            }
+
+            .atlas-mobile-menu-item:focus-visible {
+              position: relative;
+              z-index: 1;
+              border-radius: 8px;
+              outline: 2px solid rgba(255, 233, 184, 0.92);
+              outline-offset: -2px;
+            }
+
+            .atlas-mobile-menu-close:focus-visible {
+              outline: 2px solid rgba(255, 233, 184, 0.92);
+              outline-offset: -3px;
             }
 
             .atlas-search-form .atlas-search-input {
@@ -7035,12 +7064,15 @@ const styles: Record<string, CSSProperties> = {
   mobileSideControls: { position: 'absolute', right: 'max(6px, env(safe-area-inset-right))', bottom: 'calc(212px + env(safe-area-inset-bottom))', zIndex: Z_INDEX.searchDock + 3, display: 'grid', gap: 6, justifyItems: 'center', pointerEvents: 'none' },
   mobileToolButton: { position: 'relative', width: 46, minHeight: 46, height: 46, borderRadius: 0, border: 0, background: 'transparent', color: 'rgba(255, 232, 184, 0.9)', boxShadow: 'none', display: 'grid', placeItems: 'center', gap: 2, padding: 0, fontSize: 17, textShadow: '0 1px 7px rgba(0, 0, 0, 0.76)', cursor: 'pointer', touchAction: 'manipulation', pointerEvents: 'auto', appearance: 'none', WebkitAppearance: 'none' },
   mobileToolLabel: { position: 'absolute', top: 'calc(100% - 5px)', left: '50%', transform: 'translateX(-50%)', width: 'max-content', marginTop: 0, color: 'rgba(255, 244, 221, 0.78)', fontSize: 9, fontWeight: 700, textShadow: '0 1px 6px rgba(0, 0, 0, 0.86)' },
-  mobileSheetOverlay: { position: 'fixed', inset: 0, zIndex: Z_INDEX.searchDock + 10, background: 'rgba(0, 0, 0, 0.22)', display: 'grid', alignItems: 'end' },
-  mobileMenuSheet: { margin: '0 12px calc(12px + env(safe-area-inset-bottom))', padding: '10px 12px 14px', borderRadius: 24, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.94), rgba(5, 9, 15, 0.92))', boxShadow: '0 22px 70px rgba(0,0,0,.56), inset 0 0 0 1px rgba(255, 245, 214, 0.05)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
+  mobileSheetOverlay: { position: 'fixed', inset: 0, zIndex: Z_INDEX.searchDock + 30, background: 'rgba(0, 0, 0, 0.22)', display: 'grid', alignItems: 'end' },
+  mobileMenuSheet: { maxHeight: 'calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))', margin: '0 max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))', padding: '10px 12px 14px', borderRadius: 24, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.94), rgba(5, 9, 15, 0.92))', boxShadow: '0 22px 70px rgba(0,0,0,.56), inset 0 0 0 1px rgba(255, 245, 214, 0.05)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', overflowY: 'auto' },
   mobileSheetHandle: { width: 38, height: 4, margin: '0 auto 12px', borderRadius: 999, background: 'rgba(255, 226, 170, 0.34)' },
-  mobileSheetKicker: { margin: '0 0 10px', color: 'rgba(255, 211, 134, 0.78)', fontSize: 11, fontWeight: 850, letterSpacing: 1.5, textTransform: 'uppercase' },
-  mobileMenuItem: { width: '100%', padding: '12px 10px', border: 0, borderTop: '1px solid rgba(255, 226, 170, 0.1)', background: 'transparent', color: 'rgba(255, 242, 216, 0.94)', fontSize: 15, fontWeight: 700, textAlign: 'left' },
-  mobileMenuItemLink: { display: 'flex', alignItems: 'center', minHeight: 44, textDecoration: 'none' },
+  mobileMenuHeader: { display: 'flex', minHeight: 44, alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 4 },
+  mobileSheetKicker: { margin: 0, color: 'rgba(255, 211, 134, 0.78)', fontSize: 11, fontWeight: 850, letterSpacing: 1.5, textTransform: 'uppercase' },
+  mobileMenuCloseButton: { width: 44, minWidth: 44, height: 44, border: 0, borderRadius: 10, background: 'transparent', color: 'rgba(255, 232, 184, 0.9)', display: 'grid', placeItems: 'center', padding: 0, cursor: 'pointer', touchAction: 'manipulation' },
+  mobileMenuCloseIcon: { width: 21, height: 21 },
+  mobileMenuItem: { width: '100%', minHeight: 44, padding: '10px', border: 0, borderTop: '1px solid rgba(255, 226, 170, 0.1)', background: 'transparent', color: 'rgba(255, 242, 216, 0.94)', fontSize: 15, fontWeight: 700, textAlign: 'left', touchAction: 'manipulation' },
+  mobileMenuItemLink: { display: 'flex', alignItems: 'center', textDecoration: 'none' },
   mobileFilterSheet: { maxHeight: 'calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))', margin: '0 12px calc(12px + env(safe-area-inset-bottom))', padding: '10px 14px 14px', borderRadius: 24, border: '1px solid rgba(255, 226, 170, 0.24)', background: 'linear-gradient(180deg, rgba(13, 19, 29, 0.95), rgba(5, 9, 15, 0.93))', boxShadow: '0 22px 70px rgba(0,0,0,.56), inset 0 0 0 1px rgba(255, 245, 214, 0.05)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', overflowY: 'auto' },
   mobileFilterHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   mobileSheetTitle: { margin: '0 0 12px', color: 'rgba(255, 246, 226, 0.98)', fontSize: 22 },

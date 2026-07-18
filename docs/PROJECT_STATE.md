@@ -138,6 +138,7 @@ The Michigan Atlas homepage completed its search-first public discovery checkpoi
 - Event Hubs expose an explicit Atlas-home destination instead of a control that claims to be Back. Native browser Back remains the sole discovery-restoration action; authenticated package and synthesis previews return explicitly to Atlas Control.
 - Unmanifested events remain discoverable through one generic inline card and no longer advertise experimental detail templates. Missing or failed thumbnails use the asset-independent event glyph, while approved hosted flyer decks remain supported. Broken local flyer references were removed without removing their events, and full builds now verify every retained local flyer path.
 - The mobile menu retains Escape/focus containment, focus restoration, and background inerting. Query result title tags are keyboard targets; decorative labels and overflow indicators are not duplicate targets.
+- The public mobile hamburger is intentionally anonymous-only: About Celebration Atlas, Privacy, and Terms. Celebration Atlas has no public account session or favorites collection yet, so the menu exposes no Sign In, Create Account, Favorites, Account, Sign Out, Atlas Login, discovery reset, or administrative action. Existing homepage and Event Hub heart toggles remain browser-local preferences outside the hamburger; `docs/PUBLIC_ACCOUNT_FAVORITES_FOLLOW_UP.md` defines the separate account and synchronized-favorites milestone.
 - Atlas Control styles are scoped beneath `.control-shell`. A build validator and route-order visual smoke test protect public Event Hub controls from admin/login CSS that remains loaded after client navigation.
 - The illustrated map remains approximate. A unified coded-star and presentation-position resolver is not implemented yet.
 
@@ -166,6 +167,8 @@ Published package v4 incorporates Ray's editorial feedback: the 1924 picnic and 
 The state-scoped catalog/configuration, deterministic search, live/upcoming rail, shared viewport model, and search-first public discovery surface are complete checkpoints. Filter and facet data contracts remain retained beneath the public UI.
 
 The next focused checkpoint is a shared `StateMapPresentationProfile` and one versioned position resolver for stars, labels, atmosphere, constellation lines, and audits. It must account for artwork fit/crop, keep Upper and Lower Peninsula calibration regions separate, render one accessible coded-star control per reachable event on every supported viewport, and preserve verified coordinates as source truth while treating illustrated offsets as presentation data. Pre-aggregate discovery facet counts before catalogs grow to national scale.
+
+The anonymous public hamburger cleanup is also complete. Public accounts and synchronized favorites remain a separate, unselected milestone defined in `docs/PUBLIC_ACCOUNT_FAVORITES_FOLLOW_UP.md`; do not expose account menu controls until that complete public system exists.
 
 ## Required Verification
 
