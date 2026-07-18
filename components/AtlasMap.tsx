@@ -26,6 +26,14 @@ import {
   resolveHomeAtlasDiscovery,
 } from '../data/homeAtlasDiscovery';
 import {
+  mergeHomeDiscoveryHistoryEntry,
+  parseHomeDiscoveryUrlState,
+  readHomeDiscoveryHistoryEntry,
+  serializeHomeDiscoveryUrlState,
+  type HomeDiscoveryExactNavigationState,
+  type HomeDiscoveryHistoryEntry,
+} from '../data/homeDiscoveryNavigation';
+import {
   formatResultLabelLocation,
   resolveResultLabelPlacements,
   type ResultLabelClusterPlacement,
@@ -429,11 +437,17 @@ function SearchResultTextField({
   results,
   markerLayouts,
   isDesktop,
+  openClusterId,
+  selectedResultId,
+  onOpenClusterChange,
   onEventSelect,
 }: {
   results: readonly AtlasEvent[];
   markerLayouts: readonly AtlasMarkerLayout[];
   isDesktop: boolean;
+  openClusterId: string | null;
+  selectedResultId: string | null;
+  onOpenClusterChange: (clusterId: string | null) => void;
   onEventSelect: (eventId: string) => void;
 }) {
   const projectedResults = useMemo(() => {
@@ -453,13 +467,17 @@ function SearchResultTextField({
     () => resolveResultLabelPlacements(projectedResults, isDesktop ? 'desktop' : 'mobile'),
     [isDesktop, projectedResults],
   );
-  const [openClusterId, setOpenClusterId] = useState<string | null>(null);
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const [fontDiagnostic, setFontDiagnostic] = useState<{ family: string; weight: string } | null>(null);
   const openCluster = placements.find(
     (placement): placement is ResultLabelClusterPlacement =>
       placement.kind === 'cluster' && placement.id === openClusterId,
   );
+
+  useEffect(() => {
+    if (!openClusterId || openCluster) return;
+    onOpenClusterChange(null);
+  }, [onOpenClusterChange, openCluster, openClusterId]);
 
   useEffect(() => {
     if (!SHOW_RESULT_LABEL_FONT_DIAGNOSTIC) return;
@@ -498,7 +516,12 @@ function SearchResultTextField({
               aria-label={`Open ${placement.label}`}
               className="atlas-result-text-cluster"
               data-search-event-ids={placement.events.map((event) => event.id).join(',')}
-              onClick={() => setOpenClusterId(placement.id)}
+              data-active={
+                placement.events.some((event) => event.id === selectedResultId)
+                  ? 'true'
+                  : 'false'
+              }
+              onClick={() => onOpenClusterChange(placement.id)}
               style={{
                 ...styles.resultTextCluster,
                 left: `${placement.x}%`,
@@ -525,6 +548,12 @@ function SearchResultTextField({
             data-result-label-font="atlas-result-label-serif"
             data-result-label-diagnostic={fontDiagnostic === null ? 'sample' : undefined}
             data-search-event-id={placement.event.id}
+            data-active={
+              selectedResultId === placement.event.id ? 'true' : 'false'
+            }
+            aria-current={
+              selectedResultId === placement.event.id ? 'true' : undefined
+            }
             onClick={() => onEventSelect(placement.event.id)}
             style={{
               ...styles.resultTextLabel,
@@ -568,7 +597,7 @@ function SearchResultTextField({
             <button
               type="button"
               aria-label="Close event cluster"
-              onClick={() => setOpenClusterId(null)}
+              onClick={() => onOpenClusterChange(null)}
               style={styles.resultTextClusterClose}
             >
               ×
@@ -582,8 +611,19 @@ function SearchResultTextField({
                     key={event.id}
                     type="button"
                     data-search-event-id={event.id}
+                    data-active={
+                      selectedResultId === event.id ? 'true' : 'false'
+                    }
+                    aria-current={
+                      selectedResultId === event.id ? 'true' : undefined
+                    }
                     onClick={() => onEventSelect(event.id)}
-                    style={styles.resultTextClusterEvent}
+                    style={{
+                      ...styles.resultTextClusterEvent,
+                      ...(selectedResultId === event.id
+                        ? styles.resultTextClusterEventSelected
+                        : null),
+                    }}
                   >
                     <span style={styles.resultTextClusterEventName}>{event.name}</span>
                     {locationLabel ? (
@@ -1468,7 +1508,6 @@ export default function AtlasMap({
   const [query, setQuery] = useState('');
   const [discoveryNow, setDiscoveryNow] = useState(() => new Date());
   const [displayedQuery, setDisplayedQuery] = useState('');
-  const [submittedQuery, setSubmittedQuery] = useState('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewportMode, setViewportMode] =
@@ -1527,6 +1566,11 @@ export default function AtlasMap({
   const largeCardImageRef = useRef<HTMLImageElement | null>(null);
 
   const searchParams = useSearchParams();
+  const discoveryUrlState = useMemo(
+    () => parseHomeDiscoveryUrlState(searchParams),
+    [searchParams],
+  );
+  const submittedQuery = discoveryUrlState.query;
   const isVerificationMode = searchParams.get('verify') === '1';
   const isMediaDebugMode = searchParams.get('mediaDebug') === '1';
   const isAtlasDebugMode = enableAtlasDebug && searchParams.get('atlasDebug') === '1';
@@ -1542,6 +1586,11 @@ export default function AtlasMap({
   const mobileTitleArtworkRef = useRef<HTMLImageElement | null>(null);
   const mobileMichiganBreadcrumbRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const liveUpcomingRailRef = useRef<HTMLDivElement | null>(null);
+  const pendingHistoryRestorationRef = useRef<HomeDiscoveryHistoryEntry | null>(
+    null,
+  );
+  const hasReadInitialHistoryEntryRef = useRef(false);
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileMenuDialogRef = useRef<HTMLElement | null>(null);
   const isMobileMenuOpenRef = useRef(false);
@@ -1569,6 +1618,14 @@ export default function AtlasMap({
   const [isSubmittedQueryFading, setIsSubmittedQueryFading] = useState(false);
   const [isHomeControlsReturning, setIsHomeControlsReturning] = useState(false);
   const [isExactSearchReturnArmed, setIsExactSearchReturnArmed] = useState(false);
+  const [openSearchClusterId, setOpenSearchClusterId] = useState<string | null>(
+    null,
+  );
+  const [selectedDiscoveryResultId, setSelectedDiscoveryResultId] = useState<
+    string | null
+  >(null);
+  const [shouldAutoNavigateExactSearch, setShouldAutoNavigateExactSearch] =
+    useState(false);
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
     null,
   );
@@ -1590,6 +1647,71 @@ export default function AtlasMap({
   const calibrationCopyStatusTimerRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
+  const replaceSubmittedDiscoveryQuery = useCallback(
+    (
+      nextQuery: string,
+      exactNavigation: HomeDiscoveryExactNavigationState = 'idle',
+    ) => {
+      const nextHref = serializeHomeDiscoveryUrlState(searchParams.toString(), {
+        query: nextQuery,
+      });
+      router.replace(nextHref, { scroll: false });
+      setOpenSearchClusterId(null);
+      setSelectedDiscoveryResultId(null);
+      if (exactNavigation === 'idle') {
+        setShouldAutoNavigateExactSearch(false);
+      }
+    },
+    [router, searchParams, setShouldAutoNavigateExactSearch],
+  );
+  const captureHomeDiscoveryHistoryEntry = useCallback(
+    (
+      selectedResultId = selectedDiscoveryResultId,
+      exactNavigation: HomeDiscoveryExactNavigationState = 'idle',
+    ) => {
+      const nextHistoryState = mergeHomeDiscoveryHistoryEntry(
+        window.history.state,
+        {
+          scrollY: window.scrollY,
+          railScrollLeft: liveUpcomingRailRef.current?.scrollLeft ?? 0,
+          openClusterId: openSearchClusterId,
+          selectedResultId,
+          exactNavigation,
+        },
+      );
+
+      window.history.replaceState(nextHistoryState, '');
+    },
+    [openSearchClusterId, selectedDiscoveryResultId],
+  );
+  const prepareEventHubNavigation = useCallback(
+    (eventId: string) => {
+      setSelectedDiscoveryResultId(eventId);
+      captureHomeDiscoveryHistoryEntry(eventId, 'suppressed');
+      setShouldAutoNavigateExactSearch(false);
+    },
+    [
+      captureHomeDiscoveryHistoryEntry,
+      setSelectedDiscoveryResultId,
+      setShouldAutoNavigateExactSearch,
+    ],
+  );
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useLayoutEffect(() => {
+    if (hasReadInitialHistoryEntryRef.current) return;
+    hasReadInitialHistoryEntryRef.current = true;
+
+    const historyEntry = readHomeDiscoveryHistoryEntry(window.history.state);
+    if (!historyEntry) return;
+
+    pendingHistoryRestorationRef.current = historyEntry;
+    setOpenSearchClusterId(historyEntry.openClusterId);
+    setSelectedDiscoveryResultId(historyEntry.selectedResultId);
+    setShouldAutoNavigateExactSearch(
+      historyEntry.exactNavigation === 'pending',
+    );
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
   const eventProfiles = useMemo(
     () => toEventProfiles(events, stateConfig),
     [events, stateConfig],
@@ -1762,6 +1884,26 @@ export default function AtlasMap({
       }),
     [discoveryNow, events, stateConfig.defaultTimeZone],
   );
+  useEffect(() => {
+    const historyEntry = pendingHistoryRestorationRef.current;
+    if (!historyEntry || !hasResolvedResponsiveState) return;
+
+    let secondFrame: number | null = null;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        window.scrollTo({ top: historyEntry.scrollY, behavior: 'auto' });
+        if (liveUpcomingRailRef.current) {
+          liveUpcomingRailRef.current.scrollLeft = historyEntry.railScrollLeft;
+        }
+        pendingHistoryRestorationRef.current = null;
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame !== null) window.cancelAnimationFrame(secondFrame);
+    };
+  }, [hasResolvedResponsiveState, liveUpcomingRailEvents.length, submittedQuery]);
   const isMobileAmbientLayoutReady = Boolean(
     mapViewportSize &&
       mapViewportSize.width > 0 &&
@@ -1871,9 +2013,10 @@ export default function AtlasMap({
     : null;
   const startElectricForestTransition = useCallback(
     (eventId: string) => {
+      prepareEventHubNavigation(eventId);
       router.push(`/events/${eventId}?intro=cinematic`);
     },
-    [router],
+    [prepareEventHubNavigation, router],
   );
   const safeEventCard = renderedEvent
     ? deriveSafeAtlasEventCard(renderedEvent, flyerResolutions)
@@ -1957,6 +2100,7 @@ export default function AtlasMap({
   const openAtlasEvent = useCallback((eventId: string) => {
     const event = events.find((candidate) => candidate.id === eventId);
     if (event?.eventPageKind === 'manifest') {
+      prepareEventHubNavigation(event.id);
       router.push(`/events/${event.id}`);
       return;
     }
@@ -1968,7 +2112,37 @@ export default function AtlasMap({
     eventFocusReturnEventIdRef.current = eventId;
     shouldRestoreEventFocusRef.current = false;
     selectAtlasEvent(eventId);
-  }, [events, router, selectAtlasEvent]);
+  }, [events, prepareEventHubNavigation, router, selectAtlasEvent]);
+  useEffect(() => {
+    if (!shouldAutoNavigateExactSearch || !exactEventIntent) return;
+
+    const pendingHistoryState = mergeHomeDiscoveryHistoryEntry(
+      window.history.state,
+      {
+        scrollY: window.scrollY,
+        railScrollLeft: liveUpcomingRailRef.current?.scrollLeft ?? 0,
+        openClusterId: null,
+        selectedResultId: null,
+        exactNavigation: 'pending',
+      },
+    );
+    window.history.replaceState(pendingHistoryState, '');
+
+    if (exactEventOpenTimerRef.current) {
+      clearTimeout(exactEventOpenTimerRef.current);
+    }
+
+    exactEventOpenTimerRef.current = setTimeout(() => {
+      openAtlasEvent(exactEventIntent.eventId);
+      exactEventOpenTimerRef.current = null;
+    }, EXACT_EVENT_CARD_OPEN_DELAY_MS);
+
+    return () => {
+      if (!exactEventOpenTimerRef.current) return;
+      clearTimeout(exactEventOpenTimerRef.current);
+      exactEventOpenTimerRef.current = null;
+    };
+  }, [exactEventIntent, openAtlasEvent, shouldAutoNavigateExactSearch]);
   const closeAtlasEvent = useCallback(() => {
     shouldRestoreEventFocusRef.current = true;
     selectAtlasEvent(null);
@@ -2609,8 +2783,6 @@ export default function AtlasMap({
 
     beginMobileExploration();
 
-    setSubmittedQuery(isResetCommand ? '' : trimmedQuery);
-
     if (isResetCommand) {
       if (exactEventOpenTimerRef.current) {
         clearTimeout(exactEventOpenTimerRef.current);
@@ -2620,6 +2792,7 @@ export default function AtlasMap({
       setDiscoveryStatusText(null);
       setDisplayedQuery('');
       setQuery('');
+      replaceSubmittedDiscoveryQuery('');
       setIsSubmittedQueryFading(false);
       setSearchPulseTick((prev) => prev + 1);
       searchInputRef.current?.blur();
@@ -2644,11 +2817,11 @@ export default function AtlasMap({
     if (exactMatch) {
       selectAtlasEvent(null);
       setDiscoveryStatusText(null);
-      exactEventOpenTimerRef.current = setTimeout(() => {
-        openAtlasEvent(exactMatch.eventId);
-        exactEventOpenTimerRef.current = null;
-      }, EXACT_EVENT_CARD_OPEN_DELAY_MS);
+      replaceSubmittedDiscoveryQuery(trimmedQuery, 'pending');
+      setShouldAutoNavigateExactSearch(true);
     } else {
+      replaceSubmittedDiscoveryQuery(trimmedQuery);
+      setShouldAutoNavigateExactSearch(false);
       setDiscoveryStatusText(null);
     }
     setQuery(trimmedQuery);
@@ -2668,7 +2841,7 @@ export default function AtlasMap({
     eventProfiles,
     events,
     onSearchActivate,
-    openAtlasEvent,
+    replaceSubmittedDiscoveryQuery,
     searchRules,
     selectAtlasEvent,
     stateConfig,
@@ -2677,7 +2850,7 @@ export default function AtlasMap({
     setIsSubmittedQueryFading,
     setQuery,
     setSearchPulseTick,
-    setSubmittedQuery,
+    setShouldAutoNavigateExactSearch,
   ]);
 
   useEffect(() => {
@@ -2696,7 +2869,7 @@ export default function AtlasMap({
         queryFadeTimerRef.current = null;
       }
 
-      setSubmittedQuery('');
+      if (q) replaceSubmittedDiscoveryQuery('');
       setDisplayedQuery('');
       setQuery('');
       setIsSubmittedQueryFading(false);
@@ -2714,7 +2887,12 @@ export default function AtlasMap({
     return () => {
       isCurrentConstellationState = false;
     };
-  }, [activeConstellationTitle, constellationHighlightedIds, q]);
+  }, [
+    activeConstellationTitle,
+    constellationHighlightedIds,
+    q,
+    replaceSubmittedDiscoveryQuery,
+  ]);
 
   useEffect(() => {
     let isCurrentCelebrationSearchState = true;
@@ -2749,7 +2927,8 @@ export default function AtlasMap({
       exactEventOpenTimerRef.current = null;
     }
     setDisplayedQuery('');
-    setSubmittedQuery('');
+    replaceSubmittedDiscoveryQuery('');
+    setShouldAutoNavigateExactSearch(false);
     setQuery('');
     setIsSubmittedQueryFading(false);
     setDiscoveryStatusText(null);
@@ -2759,7 +2938,8 @@ export default function AtlasMap({
     setDisplayedQuery,
     setIsSubmittedQueryFading,
     setQuery,
-    setSubmittedQuery,
+    setShouldAutoNavigateExactSearch,
+    replaceSubmittedDiscoveryQuery,
   ]);
 
   const openMobileMenu = useCallback(() => {
@@ -2783,7 +2963,8 @@ export default function AtlasMap({
     selectAtlasEvent(null);
     setDiscoveryStatusText(null);
     setDisplayedQuery('');
-    setSubmittedQuery('');
+    replaceSubmittedDiscoveryQuery('');
+    setShouldAutoNavigateExactSearch(false);
     setQuery('');
     setIsSubmittedQueryFading(false);
     isMobileMenuOpenRef.current = false;
@@ -2796,7 +2977,8 @@ export default function AtlasMap({
     setIsMobileMenuOpen,
     setIsSubmittedQueryFading,
     setQuery,
-    setSubmittedQuery,
+    setShouldAutoNavigateExactSearch,
+    replaceSubmittedDiscoveryQuery,
   ]);
 
   useEffect(() => {
@@ -3752,6 +3934,9 @@ export default function AtlasMap({
                 results={rankedSubmittedSearchResults}
                 markerLayouts={displayMarkerLayouts}
                 isDesktop={isDesktop}
+                openClusterId={openSearchClusterId}
+                selectedResultId={selectedDiscoveryResultId}
+                onOpenClusterChange={setOpenSearchClusterId}
                 onEventSelect={openAtlasEvent}
               />
             ) : null}
@@ -3785,6 +3970,9 @@ export default function AtlasMap({
               results={rankedSubmittedSearchResults}
               markerLayouts={displayMarkerLayouts}
               isDesktop={isDesktop}
+              openClusterId={openSearchClusterId}
+              selectedResultId={selectedDiscoveryResultId}
+              onOpenClusterChange={setOpenSearchClusterId}
               onEventSelect={openAtlasEvent}
             />
           </div>
@@ -3997,6 +4185,7 @@ export default function AtlasMap({
           <HomeDiscoveryLayer
             statusText={homeAtlasDiscovery.statusText ?? discoveryStatusText ?? undefined}
             results={discoveryResultRows}
+            selectedResultId={selectedDiscoveryResultId}
             onEventSelect={openAtlasEvent}
           />
         </aside>
@@ -4296,7 +4485,13 @@ export default function AtlasMap({
                         {safeEventCard.detailAction.label}
                       </button>
                     ) : (
-                      <Link href={safeEventCard.detailAction.href} style={styles.enterEventLink}>
+                      <Link
+                        href={safeEventCard.detailAction.href}
+                        style={styles.enterEventLink}
+                        onNavigate={() =>
+                          prepareEventHubNavigation(safeEventCard.id)
+                        }
+                      >
                         {safeEventCard.detailAction.label}
                       </Link>
                     )
@@ -4425,7 +4620,8 @@ export default function AtlasMap({
                       queryFadeTimerRef.current = null;
                     }
                     setDisplayedQuery('');
-                    setSubmittedQuery('');
+                    replaceSubmittedDiscoveryQuery('');
+                    setShouldAutoNavigateExactSearch(false);
                     setIsSubmittedQueryFading(false);
                     setDiscoveryStatusText(null);
                   }
@@ -4485,7 +4681,11 @@ export default function AtlasMap({
                 data-layout-ready={areMobileAmbientControlsVisible ? 'true' : 'false'}
                 data-testid="event-rail"
               >
-                <div className="mobile-live-sheet-scroller" style={styles.mobileLiveStripScroller}>
+                <div
+                  ref={liveUpcomingRailRef}
+                  className="mobile-live-sheet-scroller"
+                  style={styles.mobileLiveStripScroller}
+                >
                   {liveUpcomingRailEvents.map((event) => {
                     const statusBadge = getEventRailStatus(event, {
                       now: discoveryNow,
@@ -4493,7 +4693,10 @@ export default function AtlasMap({
                     });
                     const eventDate = formatMobileEventDate(event);
 
-                    const isActiveRailEvent = event.id === selectedId || event.id === exactEventIntent?.eventId;
+                    const isActiveRailEvent =
+                      event.id === selectedId ||
+                      event.id === exactEventIntent?.eventId ||
+                      event.id === selectedDiscoveryResultId;
 
                     return (
                       <EventNavigationControl
@@ -5966,6 +6169,10 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'left',
     cursor: 'pointer',
   },
+  resultTextClusterEventSelected: {
+    color: 'rgba(255, 237, 190, 1)',
+    textShadow: '0 0 12px rgba(255, 202, 104, 0.42)',
+  },
   resultTextClusterEventName: { fontSize: 15, fontWeight: 500, lineHeight: 1.02, letterSpacing: '-0.01em' },
   resultTextClusterEventLocation: { fontSize: 10, fontWeight: 400, letterSpacing: '0.08em', color: 'rgba(235, 198, 132, 0.74)' },
   resultTextLabelLocation: {
@@ -7260,7 +7467,7 @@ const styles: Record<string, CSSProperties> = {
     transition: 'transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease',
   },
   mobileLiveCardActive: {
-    borderColor: 'rgba(255, 219, 151, 0.48)',
+    border: '1px solid rgba(255, 219, 151, 0.48)',
     boxShadow: 'inset 0 0 0 1px rgba(255, 246, 214, 0.09), 0 0 0 1px rgba(255, 202, 103, 0.12), 0 7px 18px rgba(0, 0, 0, 0.3), 0 0 20px rgba(231, 172, 80, 0.18)',
     transform: 'translateY(-1px) scale(1.012)',
   },
