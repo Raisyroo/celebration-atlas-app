@@ -40,14 +40,11 @@ Current public Event Hub coverage:
 | Black River Tattoo Convention | `black-river-tattoo-convention` | Published package |
 | St. Clair County 4-H & Youth Fair | `st-clair-county-4-h-youth-fair` | Published package |
 | Grand Haven Coast Guard Festival | `coast-guard-festival` | Published package |
+| Armada Fair | `armada-fair` | Published package |
 
-The six factory-published packages are at 100 percent readiness. Existing package and manifest fallbacks must remain valid while the generalized pipeline expands.
+The seven factory-published packages are at 100 percent readiness. Existing package and manifest fallbacks must remain valid while the generalized pipeline expands.
 
-Private review queue:
-
-| Event | Package | Status |
-| --- | --- | --- |
-| Armada Fair | `cca41beb-ddc5-4cb0-a168-b38c27affb69` | `ready_for_review`, readiness `1.0`; not published |
+The private review queue is empty.
 
 ## Event Factory
 
@@ -77,7 +74,7 @@ Canonical implementation notes live in:
 - `docs/event-page-publishing.md`
 - `docs/source-intelligence-schema.md`
 
-The Armada Fair trial is the current in-progress factory handoff. Its reviewed bundle retains eight explicit official snapshots, eleven claims, and eight 2026 schedule rows; its five-item verification case is verified at 100 percent. Ray's supplied text-free 2:3 hero is approved and publicly stored. Accepted deterministic synthesis `c94f5934-efea-4b2b-8012-fb4cab10f47f` uses engine v19, is valid at 95 percent quality, has no factual conflicts or missing fields, and retains the sourced OpenStreetMap fairgrounds record. Its visitor-facing Event Hub uses Why Go, Schedule, Highlights, and Plan; the revised Why Go and Schedule copy sells the experience without exposing factory provenance language. Private package `cca41beb-ddc5-4cb0-a168-b38c27affb69` is frozen at readiness `1.0` and has been reviewed at `390x844`; it is not published.
+The Armada Fair timing trial is complete. Its reviewed bundle retains eight explicit official snapshots, eleven claims, and eight 2026 schedule rows; its five-item verification case is verified at 100 percent. Ray's supplied text-free 2:3 hero is approved and publicly stored. Accepted deterministic synthesis `c94f5934-efea-4b2b-8012-fb4cab10f47f` uses engine v19, is valid at 95 percent quality, has no factual conflicts or missing fields, and retains the sourced OpenStreetMap fairgrounds record. Its visitor-facing Event Hub uses Why Go, Schedule, Highlights, and Plan; the revised Why Go and Schedule copy sells the experience without exposing factory provenance language. Package `cca41beb-ddc5-4cb0-a168-b38c27affb69` published canonical event `46d7e6ff-bec5-4801-80da-2d21aa131092` and immutable Event Hub version `faadd134-33c6-4d5b-8265-d419207ead29`. The public page is live at `https://celebration-atlas-app.vercel.app/events/armada-fair`.
 
 This trial also hardened the reusable path before more fairs enter the queue:
 
@@ -92,7 +89,7 @@ This trial also hardened the reusable path before more fairs enter the queue:
 - Visitor headlines, summaries, and module introductions must invite attendance. Factory phrases such as `official program` and `source-backed event times` belong in retained provenance and review surfaces, not public-facing promotional copy.
 - A protected fixed API action exposes the existing audited source-synthesis map-record operation.
 
-The exact next handoff is the separate explicit human decision on Armada package `cca41beb-ddc5-4cb0-a168-b38c27affb69`. Preparation and private review are complete; only `Approve and publish` may materialize the event, add it to the public map, and release its Event Hub.
+Armada publication is complete. The next Event Factory trial should begin from the generalized v19 rules and measure how much editorial intervention remains, rather than adding Armada-specific code.
 
 ## Hero Image Factory
 
@@ -175,13 +172,13 @@ The durable audit and multi-state recommendations are in `docs/MICHIGAN_HOMEPAGE
 
 ## Latest Completed Event Factory Milestone
 
-The Grand Haven Coast Guard Festival package completed the Event Factory and is public at:
+Armada Fair completed the Event Factory and is public at:
 
-`https://celebration-atlas-app.vercel.app/events/coast-guard-festival`
+`https://celebration-atlas-app.vercel.app/events/armada-fair`
 
-The package retains 11 source snapshots, 40 current official schedule rows, the distinct organizer/program/City date windows, an approved visual-signature workflow, Census-geocoded waterfront venue provenance, four visitor-planning links, and a source-backed maritime traditions module. The optional AI Gateway prose request was unavailable in the local environment, so the exact accepted child uses the existing evidence-bound editorial API with operator-reviewed copy and immutable facts locked.
+The package retains eight official snapshots, eight current schedule rows, a sourced OpenStreetMap fairgrounds record, a fully verified 2026 diligence case, and Ray's approved Supabase-hosted hero. Deterministic synthesis v19 excludes operational exhibitor copy, derives fair duration and experience claims from retained evidence, and enforces the four-section Why Go, Schedule, Highlights, and Plan structure.
 
-Published package v4 incorporates Ray's editorial feedback: the 1924 picnic and 1937 formal-festival origin appears in one dedicated tradition card, while the Traditions introduction covers present-day attendance and national dignitary scale and the Why Go Spotlight explains Grand Haven's 1998 `Coast Guard City, USA` designation. The package, immutable Event Hub v1, canonical event, approved hero, and homepage map entry were published together on July 15, 2026.
+The package, canonical event, immutable Event Hub v1, approved media record, and homepage entry were published together on July 23, 2026. Production mobile review at `390x844` confirmed the hero, all four sections, zero horizontal overflow, and a clean browser console.
 
 ## Current Next Milestone
 
