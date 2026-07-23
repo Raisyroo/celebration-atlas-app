@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: July 18, 2026
+Last updated: July 23, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -45,7 +45,9 @@ The six factory-published packages are at 100 percent readiness. Existing packag
 
 Private review queue:
 
-No packages are currently waiting for private review.
+| Event | Package | Status |
+| --- | --- | --- |
+| Armada Fair | `cca41beb-ddc5-4cb0-a168-b38c27affb69` | `ready_for_review`, readiness `1.0`; not published |
 
 ## Event Factory
 
@@ -75,6 +77,23 @@ Canonical implementation notes live in:
 - `docs/event-page-publishing.md`
 - `docs/source-intelligence-schema.md`
 
+The Armada Fair trial is the current in-progress factory handoff. Its reviewed bundle retains eight explicit official snapshots, eleven claims, and eight 2026 schedule rows; its five-item verification case is verified at 100 percent. Ray's supplied text-free 2:3 hero is approved and publicly stored. Accepted deterministic synthesis `c94f5934-efea-4b2b-8012-fb4cab10f47f` uses engine v19, is valid at 95 percent quality, has no factual conflicts or missing fields, and retains the sourced OpenStreetMap fairgrounds record. Its visitor-facing Event Hub uses Why Go, Schedule, Highlights, and Plan; the revised Why Go and Schedule copy sells the experience without exposing factory provenance language. Private package `cca41beb-ddc5-4cb0-a168-b38c27affb69` is frozen at readiness `1.0` and has been reviewed at `390x844`; it is not published.
+
+This trial also hardened the reusable path before more fairs enter the queue:
+
+- Candidate intake now preserves the reviewed event key, event type, recurrence, official URL, and canonical `Michigan` state value.
+- Factory joins compare only present candidate, event, and event-key identifiers, preventing unrelated null-owned records from sharing visual, verification, synthesis, or package readiness.
+- Supporting source captures can explicitly contribute identity, description, or location claims.
+- Schedule extraction can combine retained edition-date claims with a separate official heading/date-pair page while preserving both claim ids in row provenance.
+- Fair schedules now use first-class `livestock`, `exhibits`, `grandstand`, and `midway` categories through synthesis, validation, filtering, and Event Hub rendering.
+- Fair schedule categories now create source-bound Grandstand, Livestock, Midway, and Exhibits Scout shortcuts when matching current items exist.
+- Operational homepage notices such as exhibitor drop-off instructions remain retained as evidence but are excluded from general Event Hub copy; synthesis falls back to a restrained overview derived from source-backed schedule categories.
+- Every new Event Hub must materialize four primary sections: Why Go, Schedule, one evidence-backed experience section such as Highlights, and Plan. Missing third-section evidence is a completeness failure rather than permission to ship a three-tab page.
+- Visitor headlines, summaries, and module introductions must invite attendance. Factory phrases such as `official program` and `source-backed event times` belong in retained provenance and review surfaces, not public-facing promotional copy.
+- A protected fixed API action exposes the existing audited source-synthesis map-record operation.
+
+The exact next handoff is the separate explicit human decision on Armada package `cca41beb-ddc5-4cb0-a168-b38c27affb69`. Preparation and private review are complete; only `Approve and publish` may materialize the event, add it to the public map, and release its Event Hub.
+
 ## Hero Image Factory
 
 Migration `014_event_visual_workflows.sql` and the Control Desk Hero Image Factory implement the fast visual workflow:
@@ -88,6 +107,8 @@ Migration `014_event_visual_workflows.sql` and the Control Desk Hero Image Facto
 7. Upload the selected image to the public `celebration-atlas-media` Supabase bucket.
 8. Verify visual facts, independent composition, absence of invented marks, mobile crop, and public asset delivery.
 9. Require explicit human approval before synthesis or package publication can use the art.
+
+Event-category exemplars may guide layout or rendering quality, but they are not event-content references. The selected generation must follow the saved event-and-location research, recurring motifs, and defining hero moment; if the actual generation diverges, reset QA, replace the asset, and rerun the checks before requesting approval.
 
 New package preparation prefers the approved cloud asset and retains the full visual brief and QA audit. Existing published legacy packages continue to render without retroactive migration.
 

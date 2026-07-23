@@ -39,6 +39,12 @@ type BundleRow = {
   ready_at: string | null;
 };
 
+type ScheduleDateClaimRow = {
+  id: string;
+  field_path: string;
+  value: unknown;
+};
+
 function requireServiceClient() {
   const supabase = createAtlasServiceClient();
   if (!supabase) throw new Error('Atlas Control Plane configuration is incomplete.');
@@ -49,6 +55,41 @@ function firstRpcRow(data: unknown): Record<string, unknown> {
   const row = Array.isArray(data) ? data[0] : data;
   if (!row || typeof row !== 'object') throw new Error('Source bundle operation returned no result.');
   return row as Record<string, unknown>;
+}
+
+function dateClaimValue(value: unknown) {
+  const candidate = typeof value === 'string' ? value : '';
+  return /^\d{4}-\d{2}-\d{2}$/.test(candidate) ? candidate : '';
+}
+
+async function loadBundleScheduleDateBasis(
+  supabase: ReturnType<typeof requireServiceClient>,
+  bundleId: string,
+) {
+  const { data, error } = await supabase
+    .from('event_source_claims')
+    .select('id,field_path,value')
+    .eq('bundle_id', bundleId)
+    .in('field_path', ['timing.startDate', 'timing.endDate'])
+    .in('review_status', ['unreviewed', 'accepted'])
+    .order('confidence_score', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (error) return null;
+
+  const rows = (data ?? []) as ScheduleDateClaimRow[];
+  const startClaim = rows.find((row) => row.field_path === 'timing.startDate' && dateClaimValue(row.value));
+  const endClaim = rows.find((row) => row.field_path === 'timing.endDate' && dateClaimValue(row.value));
+  const startDate = dateClaimValue(startClaim?.value);
+  const endDate = dateClaimValue(endClaim?.value) || startDate;
+  if (!startClaim || !startDate || endDate < startDate || startDate.slice(0, 4) !== endDate.slice(0, 4)) {
+    return null;
+  }
+  return {
+    startDate,
+    endDate,
+    startDateClaimId: startClaim.id,
+    endDateClaimId: endClaim?.id ?? startClaim.id,
+  };
 }
 
 export async function listEventSourceBundles(): Promise<{
@@ -117,13 +158,40 @@ export async function captureEventSourceToBundle(args: {
 
   const capture = await captureOfficialEventSource(args.sourceUrl);
   const sourceKind = inferEventSourceKind(capture.inspection.finalUrl, args.sourceKind);
+  const scheduleDateBasis = sourceKind === 'schedule'
+    && (!capture.inspection.candidate.startDate || !capture.inspection.candidate.endDate)
+    ? await loadBundleScheduleDateBasis(supabase, args.bundleId)
+    : null;
+  const scheduleInspection = scheduleDateBasis
+    ? {
+        ...capture.inspection,
+        candidate: {
+          ...capture.inspection.candidate,
+          startDate: capture.inspection.candidate.startDate || scheduleDateBasis.startDate,
+          endDate: capture.inspection.candidate.endDate || scheduleDateBasis.endDate,
+        },
+      }
+    : capture.inspection;
   let scheduleItems: Awaited<ReturnType<typeof collectDynamicSchedule>> = [];
   try {
     scheduleItems = await collectDynamicSchedule({
-      inspection: capture.inspection,
+      inspection: scheduleInspection,
       rawHtml: capture.rawHtml,
       sourceKind,
     });
+    if (scheduleDateBasis) {
+      scheduleItems = scheduleItems.map((item) => ({
+        ...item,
+        sourceLocator: {
+          ...item.sourceLocator,
+          dateBasis: {
+            kind: 'bundle_claims',
+            startDateClaimId: scheduleDateBasis.startDateClaimId,
+            endDateClaimId: scheduleDateBasis.endDateClaimId,
+          },
+        },
+      }));
+    }
   } catch {
     capture.inspection.warnings.push('The page exposed a dynamic official schedule, but its structured calendar endpoint needs manual review.');
   }

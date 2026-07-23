@@ -175,6 +175,86 @@ assert.equal(
   'approved visual workflows should supply the scalable Event Hub hero',
 );
 assert.equal(withApprovedVisual.missingFields.includes('media.heroImage'), false);
+assert.equal(JSON.stringify(withApprovedVisual.manifestProposal).includes('Official event overview'), false);
+assert.equal(JSON.stringify(withApprovedVisual.manifestProposal).includes('Official program'), false);
+assert.equal(JSON.stringify(withApprovedVisual.manifestProposal).includes('Source-backed event times'), false);
+
+const operationalDescriptionInput: EventSourceSynthesisInput = {
+  ...input,
+  claims: input.claims.map((claim) => (
+    claim.fieldPath === 'identity.description'
+      ? {
+          ...claim,
+          value: 'Planning to exhibit at this year’s fair? Please review the drop-off schedule below and refer to the department you entered for additional instructions.',
+          normalizedText: 'planning to exhibit at this year fair please review the drop off schedule below',
+        }
+      : claim
+  )),
+  scheduleCandidates: [
+    {
+      id: 'fair-livestock',
+      sourceSnapshotId: 'snapshot-newer',
+      dedupeKey: 'fair-livestock',
+      title: 'Dairy cattle showmanship',
+      startsAt: '2026-07-25T13:00:00-04:00',
+      endsAt: null,
+      dateText: 'July 25, 2026',
+      timezone: 'America/Detroit',
+      venue: 'Show ring',
+      category: 'livestock',
+      tags: ['livestock'],
+      details: null,
+      confidence: 'verified',
+      confidenceScore: 1,
+      reviewStatus: 'accepted',
+    },
+    {
+      id: 'fair-grandstand',
+      sourceSnapshotId: 'snapshot-newer',
+      dedupeKey: 'fair-grandstand',
+      title: 'Truck pull',
+      startsAt: '2026-07-25T19:00:00-04:00',
+      endsAt: null,
+      dateText: 'July 25, 2026',
+      timezone: 'America/Detroit',
+      venue: 'Grandstand',
+      category: 'grandstand',
+      tags: ['grandstand'],
+      details: null,
+      confidence: 'verified',
+      confidenceScore: 1,
+      reviewStatus: 'accepted',
+    },
+  ],
+};
+const operationalDescriptionSynthesis = synthesizeEventSourceBundle({
+  ...operationalDescriptionInput,
+  approvedVisual: {
+    workflowId: 'visual-workflow-operational-description',
+    imageSrc: 'https://media.example/fair/hero.png',
+    imageAlt: 'A fair grandstand event under evening lights.',
+    contentHash: 'e'.repeat(64),
+  },
+});
+const operationalDescriptionManifest = operationalDescriptionSynthesis.manifestProposal as EventPageManifest;
+const operationalWhyGo = operationalDescriptionManifest.modules.find((module) => module.type === 'whyGo');
+assert(operationalWhyGo?.type === 'whyGo');
+assert(!JSON.stringify(operationalDescriptionManifest).includes('Planning to exhibit'), 'operational homepage instructions must not become general Event Hub copy');
+assert(!JSON.stringify(operationalDescriptionManifest).includes('official program'), 'factory provenance language must not become public Event Hub copy');
+assert.match(operationalDescriptionManifest.hero.tagline, /livestock and showmanship/);
+assert.match(operationalWhyGo.summary, /grandstand action/);
+assert(
+  operationalDescriptionManifest.scoutSuggestions.some((suggestion) => suggestion.id === 'scout-grandstand'),
+  'fair schedules should expose a source-bound Grandstand Scout shortcut',
+);
+assert(
+  operationalDescriptionManifest.scoutSuggestions.some((suggestion) => suggestion.id === 'scout-livestock'),
+  'fair schedules should expose a source-bound Livestock Scout shortcut',
+);
+assert(
+  operationalDescriptionSynthesis.validationReport.warnings.some((warning) => warning.includes('operational or task-specific')),
+  'excluded operational descriptions should remain visible to reviewers as retained evidence',
+);
 
 const withScaffold = synthesizeEventSourceBundle(input, BROWN_TROUT_EVENT_PAGE_MANIFEST);
 assert.equal(withScaffold.isManifestValid, true, 'a valid checked-in scaffold should remain valid after evidence overlays');
@@ -568,7 +648,76 @@ const countyFairInput: EventSourceSynthesisInput = {
       id: 'fair-url', sourceSnapshotId: 'fair-home', fieldPath: 'sources.officialUrl', value: 'https://fair.example/', normalizedText: 'https://fair.example/', confidence: 'verified', confidenceScore: 1, extractionMethod: 'metadata', reviewStatus: 'unreviewed', createdAt: '2026-07-14T12:00:00.000Z',
     },
   ],
-  scheduleCandidates: [],
+  scheduleCandidates: [
+    {
+      id: 'fair-livestock-schedule',
+      sourceSnapshotId: 'fair-schedule',
+      dedupeKey: 'fair-livestock-schedule',
+      title: 'Youth dairy showmanship',
+      startsAt: '2026-07-20T09:00:00-04:00',
+      endsAt: '2026-07-20T11:00:00-04:00',
+      dateText: 'July 20, 2026',
+      timezone: 'America/Detroit',
+      venue: 'Livestock arena',
+      category: 'Livestock',
+      tags: ['youth', 'showmanship'],
+      details: 'Official youth livestock program.',
+      confidence: 'verified',
+      confidenceScore: 1,
+      reviewStatus: 'unreviewed',
+    },
+    {
+      id: 'fair-exhibits-schedule',
+      sourceSnapshotId: 'fair-schedule',
+      dedupeKey: 'fair-exhibits-schedule',
+      title: 'Home arts judging',
+      startsAt: '2026-07-20T11:30:00-04:00',
+      endsAt: '2026-07-20T13:00:00-04:00',
+      dateText: 'July 20, 2026',
+      timezone: 'America/Detroit',
+      venue: 'Exhibit hall',
+      category: 'Exhibits',
+      tags: ['home-arts'],
+      details: 'Official exhibit judging.',
+      confidence: 'verified',
+      confidenceScore: 1,
+      reviewStatus: 'unreviewed',
+    },
+    {
+      id: 'fair-grandstand-schedule',
+      sourceSnapshotId: 'fair-schedule',
+      dedupeKey: 'fair-grandstand-schedule',
+      title: 'Demolition derby',
+      startsAt: '2026-07-20T19:00:00-04:00',
+      endsAt: '2026-07-20T21:00:00-04:00',
+      dateText: 'July 20, 2026',
+      timezone: 'America/Detroit',
+      venue: 'Grandstand',
+      category: 'Grandstand Events',
+      tags: ['ticketed'],
+      details: 'Official grandstand program.',
+      confidence: 'verified',
+      confidenceScore: 1,
+      reviewStatus: 'unreviewed',
+    },
+    {
+      id: 'fair-midway-schedule',
+      sourceSnapshotId: 'fair-schedule',
+      dedupeKey: 'fair-midway-schedule',
+      title: 'Carnival midway opens',
+      startsAt: '2026-07-21T12:00:00-04:00',
+      endsAt: null,
+      dateText: 'July 21, 2026',
+      timezone: 'America/Detroit',
+      venue: 'Midway',
+      category: 'Carnival',
+      tags: ['rides', 'mega-pass'],
+      details: 'Official midway opening time.',
+      confidence: 'verified',
+      confidenceScore: 1,
+      reviewStatus: 'unreviewed',
+    },
+  ],
 };
 const countyFairPlan = buildEditorialPlan(countyFairInput, reconcileEventSourceClaims(countyFairInput).profile.values);
 assert(countyFairPlan.highlights.length >= 4, 'County fair evidence should produce distinct livestock, exhibit, midway, and grandstand highlights.');
@@ -577,10 +726,67 @@ const countyFairManifest = synthesizeEventSourceBundle(countyFairInput).manifest
 assert.equal(countyFairManifest.identity.name, 'St. Clair County 4-H & Youth Fair', 'Bundle punctuation should survive equivalent evidence names.');
 assert.equal(countyFairManifest.identity.venue, 'Goodells County Park', 'A real venue in address text should outrank a generic address heading.');
 assert(countyFairManifest.navigation.some((item) => item.targetModuleId === 'highlights'));
+assert.deepEqual(
+  countyFairManifest.navigation.map((item) => item.label),
+  ['Why Go', 'Schedule', 'Highlights', 'Plan'],
+  'New Event Hubs should preserve the four-column Why Go, Schedule, experience, and Plan structure.',
+);
+assert.equal(
+  countyFairManifest.hero.tagline.includes('official'),
+  false,
+  'Visitor-facing hero copy must sell the experience rather than direct people to official program material.',
+);
+const countyFairWhyGo = countyFairManifest.modules.find((module) => module.type === 'whyGo');
+assert(countyFairWhyGo?.type === 'whyGo');
+assert.equal(countyFairWhyGo.eyebrow, '6 days of fair energy');
+assert.equal(countyFairWhyGo.headline, 'Come for the midway. Stay for the grandstand.');
+assert.match(countyFairWhyGo.summary, /Demolition derby/i);
+assert.match(countyFairWhyGo.summary, /carnival rides throughout fair week/i);
+assert.doesNotMatch(countyFairWhyGo.summary, /every fair day/i, 'Daily carnival copy requires explicit daily evidence.');
+assert.deepEqual(
+  countyFairManifest.scheduleItems.map((item) => item.category),
+  ['livestock', 'exhibits', 'grandstand', 'midway'],
+  'County fair schedule rows should preserve fair-specific visitor semantics.',
+);
+assert(
+  countyFairManifest.scheduleItems.every((item) => item.tags.includes(item.category)),
+  'County fair schedule rows should retain their normalized category as a filter tag.',
+);
+const countyFairSchedule = countyFairManifest.modules.find((module) => module.type === 'schedule');
+assert(countyFairSchedule?.type === 'schedule');
+assert.equal(countyFairSchedule.eyebrow, 'Fair week at a glance');
+assert.equal(
+  countyFairSchedule.subtitle,
+  "Plan around grandstand action and Monday's Youth dairy showmanship.",
+  'Fair schedules should invite visitors into the evidence-backed week without leaking another fair’s lineup.',
+);
+assert.deepEqual(
+  countyFairSchedule.filters.map((filter) => ({
+    id: filter.id,
+    label: filter.label,
+    mode: filter.mode,
+    value: filter.value,
+  })),
+  [
+    { id: 'all', label: 'All', mode: 'all', value: undefined },
+    { id: 'category-livestock', label: 'Livestock', mode: 'tag', value: 'livestock' },
+    { id: 'category-exhibits', label: 'Exhibits', mode: 'tag', value: 'exhibits' },
+    { id: 'category-grandstand', label: 'Grandstand', mode: 'tag', value: 'grandstand' },
+    { id: 'category-midway', label: 'Midway', mode: 'tag', value: 'midway' },
+  ],
+  'County fair schedule filters should expose each fair-specific schedule category.',
+);
 assert(!JSON.stringify(countyFairManifest).includes('tattoo collectors'), 'Event-specific audience copy must not leak into another event type.');
 assert(!JSON.stringify(countyFairManifest).includes('fair@example.com'), 'Personal contact details must stay in the evidence archive, not public highlights.');
+assert(!JSON.stringify(countyFairManifest).includes('Friday Livestock Sale'), 'Another fair’s dated livestock event must not leak into reusable fair copy.');
+assert(!JSON.stringify(countyFairManifest).includes('Seven days of fair energy'), 'Fair duration copy must be derived from the retained edition dates.');
 const countyFairHighlights = countyFairManifest.modules.find((module) => module.type === 'highlights');
 assert(countyFairHighlights?.type === 'highlights');
+assert(countyFairHighlights.items.length >= 3, 'A fair Highlights tab must contain multiple distinct reasons to attend.');
+assert.equal(countyFairHighlights.eyebrow, 'Three ways to do fair week');
+assert.match(countyFairHighlights.summary, /^Midway lights/);
+assert.match(countyFairHighlights.summary, /Midway lights, grandstand nights/i);
+assert.doesNotMatch(countyFairHighlights.summary, /live music/i, 'Live-music copy requires a retained concert source.');
 assert.equal(
   new Set((countyFairHighlights.links ?? []).map((link) => link.id)).size,
   (countyFairHighlights.links ?? []).length,

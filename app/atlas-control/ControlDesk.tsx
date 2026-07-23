@@ -1342,11 +1342,23 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
         <h2>Single event candidate</h2>
         <form action={submit} className="intake-form" key={candidateFormVersion}>
           <input name="name" placeholder="Event or festival name" defaultValue={candidatePrefill?.name} required />
+          <input name="eventKey" placeholder="Stable event key (optional, for example armada-fair)" />
+          <select name="eventType" defaultValue="unknown" aria-label="Event type">
+            <option value="unknown">Event type: needs review</option>
+            <option value="festival">Festival</option>
+            <option value="fair">Fair</option>
+            <option value="county_fair">County fair</option>
+            <option value="art_fair">Art fair</option>
+            <option value="convention">Convention</option>
+            <option value="community_event">Community event</option>
+            <option value="other">Other</option>
+          </select>
           <input name="city" placeholder="City" defaultValue={candidatePrefill?.city} required />
           <input name="county" placeholder="County (optional)" />
           <input name="state" defaultValue={candidatePrefill?.state || "MI"} />
           <input name="startDate" type="date" defaultValue={candidatePrefill?.startDate} />
           <input name="endDate" type="date" defaultValue={candidatePrefill?.endDate} />
+          <input name="recurrencePattern" placeholder="Recurrence (for example, annual)" />
           <input name="sourceName" placeholder="Official source name" defaultValue={candidatePrefill?.sourceName} required />
           <input name="sourceUrl" placeholder="https://official-source.example/event" defaultValue={candidatePrefill?.sourceUrl} required />
           <textarea name="sourceExcerpt" placeholder="Source excerpt / notes (optional)" defaultValue={candidatePrefill?.sourceExcerpt} />

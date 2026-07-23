@@ -296,8 +296,12 @@ function staticScheduleCategory(title: string) {
   const signal = title.toLowerCase();
   if (/concert|music|stage|band|orchestra|singer/.test(signal)) return 'music';
   if (/food|pie|market|culinary|dinner|breakfast|lunch/.test(signal)) return 'food';
-  if (/kid|family|youth|child|carnival|midway|ride|museum/.test(signal)) return 'family';
-  if (/rodeo|derby|truck|tractor|pull|bump|figure\s*8|competition|contest|showmanship|livestock/.test(signal)) return 'competition';
+  if (/carnival|midway|ride|armband|mega pass/.test(signal)) return 'midway';
+  if (/livestock|showmanship|beef|dairy cattle|goat|poultry|rabbit|sheep|swine|horse(?: and| &)? pony/.test(signal)) return 'livestock';
+  if (/exhibit|home arts?|horticulture|needlework|photography|woodworking/.test(signal)) return 'exhibits';
+  if (/rodeo|monster trucks?|demolition derby|truck|tractor|pull|bump|figure\s*8/.test(signal)) return 'grandstand';
+  if (/kid|family|youth|child|museum/.test(signal)) return 'family';
+  if (/competition|contest/.test(signal)) return 'competition';
   if (/award|queen|coronation|final|winner/.test(signal)) return 'awards';
   return 'community';
 }
@@ -348,6 +352,108 @@ function parseStaticScheduleLine(value: string) {
     timeText,
     title: split[2].trim(),
   };
+}
+
+const MONTH_NUMBERS: Record<string, number> = {
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+};
+
+function readableScheduleTitle(value: string) {
+  const normalized = text(value);
+  if (!normalized || normalized !== normalized.toUpperCase() || !/[A-Z]/.test(normalized)) {
+    return normalized;
+  }
+  return normalized
+    .toLowerCase()
+    .replace(/(^|[\s/&-])([a-z])/g, (_, prefix: string, letter: string) => `${prefix}${letter.toUpperCase()}`);
+}
+
+function parseHeadingDateTime(
+  value: string,
+  editionYear: number,
+  startDate: string,
+  endDate: string,
+) {
+  const match = text(value).match(
+    /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2})(?:,\s*(20\d{2}))?\s*@\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i,
+  );
+  if (!match) return null;
+  const year = Number(match[4] ?? editionYear);
+  const month = MONTH_NUMBERS[match[2].toLowerCase()];
+  const day = Number(match[3]);
+  const startValue = clockValue(match[5], match[6], match[7]);
+  if (!month || !day || startValue === null) return null;
+  const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  if (isoDate < startDate || isoDate > endDate) return null;
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+  if (weekday.toLowerCase() !== match[1].toLowerCase()) return null;
+  return {
+    dateText: `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year}`,
+    startValue,
+    timeText: `${match[5]}${match[6] ? `:${match[6]}` : ''}${match[7].toUpperCase()}`,
+  };
+}
+
+export function scheduleItemsFromHeadingDatePairs(
+  inspection: OfficialEventSourceInspection,
+  timeZone = 'America/Detroit',
+) {
+  const startDate = inspection.candidate.startDate;
+  const endDate = inspection.candidate.endDate || startDate;
+  const editionYear = Number(startDate.match(/^(20\d{2})/)?.[1] ?? '');
+  if (!editionYear || !startDate || !endDate) return [];
+
+  const output: EventScheduleCandidatePayload[] = [];
+  for (let index = 0; index < inspection.contentSegments.length - 1; index += 1) {
+    const heading = inspection.contentSegments[index];
+    const timing = inspection.contentSegments[index + 1];
+    if (heading.kind !== 'heading' || !['paragraph', 'detail', 'listItem'].includes(timing.kind)) continue;
+    if (/^(?:schedule|disclaimer|admissions?|tickets?|information)$/i.test(text(heading.text))) continue;
+    const parsed = parseHeadingDateTime(timing.text, editionYear, startDate, endDate);
+    if (!parsed) continue;
+    const cleanedTitle = cleanScheduleTitle(readableScheduleTitle(heading.text), '');
+    if (!cleanedTitle.title) continue;
+    const startsAt = zonedDateTime(localDateParts(parsed.dateText, parsed.startValue), timeZone);
+    if (!startsAt) continue;
+    const dedupeKey = createHash('sha256')
+      .update(JSON.stringify([cleanedTitle.title.toLowerCase(), startsAt, null, '']))
+      .digest('hex');
+    output.push({
+      dedupeKey,
+      title: cleanedTitle.title,
+      startsAt,
+      endsAt: null,
+      dateText: parsed.dateText,
+      timezone: timeZone,
+      venue: null,
+      category: staticScheduleCategory(cleanedTitle.title),
+      tags: ['main-event'],
+      details: null,
+      confidence: 'verified',
+      confidenceScore: 0.95,
+      sourceLocator: {
+        adapter: 'heading-date-pair-v1',
+        headingSegmentIndex: index,
+        timingSegmentIndex: index + 1,
+        date: parsed.dateText,
+        time: parsed.timeText,
+      },
+    });
+    if (output.length >= MAX_SCHEDULE_ITEMS) break;
+  }
+  return output;
 }
 
 export function scheduleItemsFromStaticSegments(
@@ -614,7 +720,13 @@ export async function collectDynamicSchedule(args: {
     );
   }
   if (!/Events\/JS\/EventSchedule\.js|services\/eventsservice\.asmx/i.test(args.rawHtml)) {
-    return scheduleItemsFromStaticSegments(args.inspection, args.timezone ?? 'America/Detroit');
+    const timeZone = args.timezone ?? 'America/Detroit';
+    const items = [
+      ...scheduleItemsFromHeadingDatePairs(args.inspection, timeZone),
+      ...scheduleItemsFromStaticSegments(args.inspection, timeZone),
+    ];
+    return [...new Map(items.map((item) => [item.dedupeKey, item])).values()]
+      .slice(0, MAX_SCHEDULE_ITEMS);
   }
   const dates = dateList(args.inspection.candidate.startDate, args.inspection.candidate.endDate);
   if (!dates.length) return [];

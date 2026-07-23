@@ -24,6 +24,10 @@ const CONFIDENCE_LEVELS = new Set(['unknown', 'low', 'medium', 'high', 'verified
 const SCHEDULE_CATEGORIES = new Set([
   'registration',
   'fishing',
+  'livestock',
+  'exhibits',
+  'grandstand',
+  'midway',
   'family',
   'music',
   'community',

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAtlasAdmin } from '@/lib/atlas-control/auth';
 import {
+  attachEventSourceSynthesisMapRecord,
   generateEventSourceSynthesis,
   generateModelAssistedEditorialSynthesis,
   listEventSourceSyntheses,
@@ -13,9 +14,14 @@ export const maxDuration = 60;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REVIEW_ACTIONS = new Set(['submit', 'accept', 'reject']);
+const COORDINATE_METHOD = /^[a-z0-9]+(?:[_-][a-z0-9]+)*$/;
 
 function text(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function number(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function noStoreJson(body: unknown, status = 200) {
@@ -67,6 +73,43 @@ export async function POST(request: Request) {
       if (!UUID.test(synthesisId)) return noStoreJson({ error: 'A valid deterministic synthesis id is required.' }, 400);
       const result = await generateModelAssistedEditorialSynthesis({ synthesisId, actorIdentity });
       return noStoreJson({ result: result.result, proposal: result.proposal });
+    }
+
+    if (action === 'attach_map') {
+      const synthesisId = text(payload.synthesisId);
+      const latitude = number(payload.latitude);
+      const longitude = number(payload.longitude);
+      const sourceUrl = text(payload.sourceUrl);
+      const sourceLabel = text(payload.sourceLabel);
+      const coordinateMethod = text(payload.coordinateMethod);
+      const confidenceScore = number(payload.confidenceScore);
+      const notes = text(payload.notes);
+      if (!UUID.test(synthesisId)) return noStoreJson({ error: 'A valid synthesis proposal id is required.' }, 400);
+      if (latitude === null || latitude < -90 || latitude > 90) return noStoreJson({ error: 'Latitude must be between -90 and 90.' }, 400);
+      if (longitude === null || longitude < -180 || longitude > 180) return noStoreJson({ error: 'Longitude must be between -180 and 180.' }, 400);
+      try {
+        if (new URL(sourceUrl).protocol !== 'https:') throw new Error('invalid');
+      } catch {
+        return noStoreJson({ error: 'Map provenance requires a public HTTPS source URL.' }, 400);
+      }
+      if (!sourceLabel || sourceLabel.length > 200) return noStoreJson({ error: 'Map source label must be between 1 and 200 characters.' }, 400);
+      if (!COORDINATE_METHOD.test(coordinateMethod) || coordinateMethod.length > 80) return noStoreJson({ error: 'Coordinate method must be a short machine-readable label.' }, 400);
+      if (confidenceScore === null || confidenceScore < 0 || confidenceScore > 1) return noStoreJson({ error: 'Coordinate confidence must be between 0 and 1.' }, 400);
+      if (notes.length > 2_000) return noStoreJson({ error: 'Map notes must be 2,000 characters or fewer.' }, 400);
+      const result = await attachEventSourceSynthesisMapRecord({
+        synthesisId,
+        mapRecord: {
+          latitude,
+          longitude,
+          sourceUrl,
+          sourceLabel,
+          coordinateMethod,
+          confidenceScore,
+        },
+        actorIdentity,
+        notes,
+      });
+      return noStoreJson({ result });
     }
 
     if (REVIEW_ACTIONS.has(action)) {

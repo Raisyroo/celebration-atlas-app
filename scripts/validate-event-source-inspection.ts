@@ -10,6 +10,7 @@ import {
 import { selectBoundedOfficialSourceLinks } from '../lib/event-intake/sourceCollection.ts';
 import {
   scheduleItemsFromFooEventsListing,
+  scheduleItemsFromHeadingDatePairs,
   scheduleItemsFromSaffireResponse,
   scheduleItemsFromStaticSegments,
 } from '../lib/event-intake/dynamicSchedule.ts';
@@ -122,6 +123,14 @@ assert(multiArticleHomeFixture.candidate.name === 'Grand Haven Coast Guard Festi
 assert(multiArticleHomeFixture.candidate.startDate === '2026-07-24' && multiArticleHomeFixture.candidate.endDate === '2026-08-02', 'A labeled festival date range outside multiple article cards was not retained.');
 assert(multiArticleHomeFixture.candidate.locationName === 'Lynne Sherwood Waterfront Stadium', 'A clearly labeled event venue was not retained from homepage content.');
 
+const genericScheduleHeadingFixture = parseOfficialEventSourceHtml({
+  html: `<!doctype html><html><head><title>Armada Fair</title></head><body><main><h1>SCHEDULE</h1><p>The Armada Fair is a nonprofit community fair with livestock exhibits and a carnival midway.</p></main></body></html>`,
+  requestedUrl: 'https://armadafair.example/',
+  finalUrl: 'https://armadafair.example/',
+  fetchedAt: '2026-07-23T12:00:00.000Z',
+});
+assert(genericScheduleHeadingFixture.candidate.name === 'Armada Fair', 'A generic schedule heading overrode the event identity in the page title.');
+
 const listingFixture = parseOfficialEventSourceHtml({
   html: `<!doctype html><html><head><title>Event Detail</title></head><body><h1>Event Detail</h1><p>Book An Overnight!</p><p>Family fair at the county fairgrounds, with livestock exhibits, a carnival, and youth projects.</p><p>Fair Entry Deadline is July 1.</p></body></html>`,
   requestedUrl: 'https://tourism.example/event-detail/county-fair/',
@@ -199,6 +208,29 @@ assert(staticScheduleItems.length === 3, 'Static weekday schedule parsing did no
 assert(staticScheduleItems[0]?.startsAt === '2026-07-20T16:00:00.000Z' && staticScheduleItems[0]?.endsAt === '2026-07-20T22:00:00.000Z', 'Static time ranges were not converted from Michigan local time.');
 assert(staticScheduleItems[1]?.venue === 'Rimrock Crater', 'Static schedule venue text was not separated from its title.');
 assert(staticScheduleItems[2]?.endsAt === null, 'A closing-time placeholder was incorrectly converted into an invented time.');
+
+const headingPairItems = scheduleItemsFromHeadingDatePairs({
+  ...genericScheduleHeadingFixture,
+  candidate: {
+    ...genericScheduleHeadingFixture.candidate,
+    startDate: '2026-08-17',
+    endDate: '2026-08-23',
+  },
+  contentSegments: [
+    { kind: 'heading', text: 'SCHEDULE' },
+    { kind: 'heading', text: 'MONSTER TRUCKS' },
+    { kind: 'paragraph', text: 'Tuesday, August 18 @ 7PM' },
+    { kind: 'heading', text: 'DEMOLITION DERBY' },
+    { kind: 'paragraph', text: 'Wednesday, August 19 @ 7PM' },
+    { kind: 'heading', text: 'DISCLAIMER' },
+    { kind: 'paragraph', text: 'NO REFUNDS' },
+  ],
+});
+assert(headingPairItems.length === 2, 'Heading/date-pair schedule parsing did not retain explicit main-event rows.');
+assert(headingPairItems[0]?.title === 'Monster Trucks', 'All-caps schedule headings were not normalized for display.');
+assert(headingPairItems[0]?.startsAt === '2026-08-18T23:00:00.000Z', 'Heading/date-pair local time was not converted with the event timezone.');
+assert(headingPairItems[0]?.category === 'grandstand', 'Fair main-event taxonomy was not applied to heading/date-pair rows.');
+assert(headingPairItems[1]?.sourceLocator.adapter === 'heading-date-pair-v1', 'Heading/date-pair source provenance is missing.');
 
 const fooEventsItems = scheduleItemsFromFooEventsListing(`<!doctype html><html><body><table><tr><th colspan="3">July 2026</th></tr><tr class="fooevents-event-listing-single"><td><div class="fooevents-event-listing-date-month">Jul</div><div class="fooevents-event-listing-date-day">23</div></td><td><h3><a href="/product/quilt-show/">Quilt Show</a></h3><p class="fooevents-event-listing-compact-location"><strong>Central Park Place</strong></p><span class="event-time">09:00 a.m. – 07:00 p.m.</span></td></tr><tr class="fooevents-event-listing-single"><td><div class="fooevents-event-listing-date-month">Jul</div><div class="fooevents-event-listing-date-day">25</div></td><td><h3><a href="/product/coast-guard-city-usa-run/">Coast Guard City USA Run</a></h3><span class="event-time">07:30 a.m. – 00:00</span></td></tr></table></body></html>`, multiArticleHomeFixture);
 assert(fooEventsItems.length === 2, 'FooEvents compact listings did not produce one candidate per timed event row.');

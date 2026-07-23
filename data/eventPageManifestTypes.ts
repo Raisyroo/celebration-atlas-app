@@ -31,6 +31,10 @@ export type EventPageActionType =
 export type EventScheduleCategory =
   | 'registration'
   | 'fishing'
+  | 'livestock'
+  | 'exhibits'
+  | 'grandstand'
+  | 'midway'
   | 'family'
   | 'music'
   | 'community'
