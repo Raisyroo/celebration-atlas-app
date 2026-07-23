@@ -4,6 +4,7 @@ import { getEventPageManifest } from "@/data/eventPageManifests";
 import { validateEventPageManifest } from "@/data/eventPageManifestValidation";
 import { resolveExplicitEventThumbnail } from "@/data/eventThumbnail";
 import { createAtlasServiceClient } from "@/lib/atlas-control/service";
+import { sharesEventFactoryIdentity } from "./identity";
 import type {
   EventFactoryGateKey,
   EventFactoryGateState,
@@ -279,13 +280,24 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
     const name = event?.name ?? candidate?.candidate_name ?? "Unnamed event";
     const slug = event?.slug ?? candidate?.slug_candidate ?? normalized(name).replaceAll(" ", "-");
     const officialWebsite = event?.official_website ?? candidate?.official_website_candidate ?? null;
-    const relatedCandidateSources = candidateSources.filter((source) => source.candidate_id === candidateId);
-    const relatedEventSources = eventSources.filter((source) => source.event_id === eventId);
+    const identity = { candidateId, eventId, eventKey: slug };
+    const relatedCandidateSources = candidateSources.filter((source) => sharesEventFactoryIdentity(
+      identity,
+      { candidateId: source.candidate_id },
+    ));
+    const relatedEventSources = eventSources.filter((source) => sharesEventFactoryIdentity(
+      identity,
+      { eventId: source.event_id },
+    ));
     const sourceUrls = new Set([...relatedCandidateSources, ...relatedEventSources].map((source) => source.source_url));
     if (officialWebsite) sourceUrls.add(officialWebsite);
     const trustedSourceCount = [...relatedCandidateSources, ...relatedEventSources].filter((source) => Number(source.trust_score ?? 0) >= 0.75).length;
     const localEvent = localEventById.get(slug) ?? localEventByName.get(normalized(name));
-    const relatedBundles = bundles.filter((bundle) => bundle.candidate_id === candidateId || bundle.canonical_event_id === eventId || bundle.event_key === slug);
+    const relatedBundles = bundles.filter((bundle) => sharesEventFactoryIdentity(identity, {
+      candidateId: bundle.candidate_id,
+      eventId: bundle.canonical_event_id,
+      eventKey: bundle.event_key,
+    }));
     const relatedBundleIds = new Set(relatedBundles.map((bundle) => bundle.id));
     const relatedAcceptedSyntheses = syntheses.filter((synthesis) => relatedBundleIds.has(synthesis.bundle_id));
     const acceptedManifest = relatedAcceptedSyntheses.flatMap((synthesis) => {
@@ -296,12 +308,33 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
     const hasAcceptedMap = relatedAcceptedSyntheses.some((synthesis) => hasVerifiedSynthesisMap(synthesis.reconciled_profile));
     const relatedPages = pages.filter((page) => {
       const owner = pageOwner(page);
-      return owner?.event_id === eventId || owner?.event_key === slug || owner?.slug === slug;
+      return Boolean(owner)
+        && (
+          sharesEventFactoryIdentity(identity, {
+            eventId: owner?.event_id,
+            eventKey: owner?.event_key,
+          })
+          || sharesEventFactoryIdentity(identity, { eventKey: owner?.slug })
+        );
     });
-    const relatedMedia = media.filter((item) => item.event_id === eventId && item.status === "approved" && PRODUCTION_MEDIA_ROLES.has(item.media_role));
-    const verificationCase = verificationCases.find((item) => item.candidate_id === candidateId || item.event_id === eventId);
-    const eventPackage = packages.find((item) => item.candidate_id === candidateId || item.event_id === eventId);
-    const visualWorkflow = visualWorkflows.find((item) => item.candidate_id === candidateId || item.event_id === eventId || item.event_key === slug);
+    const relatedMedia = media.filter((item) => (
+      sharesEventFactoryIdentity(identity, { eventId: item.event_id })
+      && item.status === "approved"
+      && PRODUCTION_MEDIA_ROLES.has(item.media_role)
+    ));
+    const verificationCase = verificationCases.find((item) => sharesEventFactoryIdentity(identity, {
+      candidateId: item.candidate_id,
+      eventId: item.event_id,
+    }));
+    const eventPackage = packages.find((item) => sharesEventFactoryIdentity(identity, {
+      candidateId: item.candidate_id,
+      eventId: item.event_id,
+    }));
+    const visualWorkflow = visualWorkflows.find((item) => sharesEventFactoryIdentity(identity, {
+      candidateId: item.candidate_id,
+      eventId: item.event_id,
+      eventKey: item.event_key,
+    }));
     const localManifest = getEventPageManifest(slug);
     const localArt = localEvent ? resolveExplicitEventThumbnail(localEvent) : null;
     const hasLocalCoordinates = Boolean(

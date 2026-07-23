@@ -33,6 +33,10 @@ function text(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function optionalBoolean(value: unknown) {
+  return value === true;
+}
+
 function noStoreJson(body: unknown, status = 200) {
   return NextResponse.json(body, {
     status,
@@ -79,6 +83,9 @@ export async function POST(request: Request) {
           bundleId: bundle.bundle_id,
           sourceUrl,
           sourceKind: sourceKind || undefined,
+          includeEventIdentity: optionalBoolean(payload.includeEventIdentity),
+          includeEventDescription: optionalBoolean(payload.includeEventDescription),
+          includeEventLocation: optionalBoolean(payload.includeEventLocation),
           actorIdentity,
         });
         const collection = action === 'create_and_collect'
@@ -110,6 +117,9 @@ export async function POST(request: Request) {
         bundleId,
         sourceUrl,
         sourceKind: sourceKind || undefined,
+        includeEventIdentity: optionalBoolean(payload.includeEventIdentity),
+        includeEventDescription: optionalBoolean(payload.includeEventDescription),
+        includeEventLocation: optionalBoolean(payload.includeEventLocation),
         actorIdentity,
       });
       return noStoreJson({ snapshot });

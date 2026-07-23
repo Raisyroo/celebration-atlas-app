@@ -17,7 +17,7 @@ import type {
   SynthesisSourceSnapshot,
 } from './synthesisTypes.ts';
 
-export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v10';
+export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v19';
 
 const CONFIDENCE_RANK: Record<SourceClaimConfidence, number> = {
   unknown: 0,
@@ -36,9 +36,14 @@ const REQUIRED_PROFILE_FIELDS = [
 ] as const;
 
 const SPONSOR_LANGUAGE = /\b(?:sponsor(?:ed|ship|s)?|presented by|presenting partner|title partner|powered by)\b/i;
+const OPERATIONAL_OVERVIEW_LANGUAGE = /\b(?:planning to (?:exhibit|enter|register)|please (?:review|refer|read|see|click|submit|complete|contact)|drop[- ]?off|pick[- ]?up|check[- ]?in|department you entered|(?:requirements?|instructions?|schedule|details?) below|entry form|application deadline)\b/i;
 const SCHEDULE_CATEGORIES = new Set<EventScheduleCategory>([
   'registration',
   'fishing',
+  'livestock',
+  'exhibits',
+  'grandstand',
+  'midway',
   'family',
   'music',
   'community',
@@ -163,6 +168,12 @@ function safeText(value: unknown): string | undefined {
   if (!hasText(value)) return undefined;
   const text = value.replace(/\s+/g, ' ').trim();
   return SPONSOR_LANGUAGE.test(text) ? undefined : text;
+}
+
+function generalOverviewText(value: unknown): string | undefined {
+  const text = safeText(value);
+  if (!text || OPERATIONAL_OVERVIEW_LANGUAGE.test(text)) return undefined;
+  return text;
 }
 
 function stringArray(value: unknown): string[] {
@@ -398,6 +409,7 @@ function planLinkLabel(snapshot: SynthesisSourceSnapshot) {
     return /livestock|exhibit|entry|entries/.test(signal) ? 'Entries & registration' : 'Registration';
   }
   if (/\b(?:transit|shuttle)\b/.test(signal)) return 'Transit & shuttles';
+  if (/vendors?/.test(signal)) return 'Vendors';
   if (/carnival|midway|rides?/.test(signal)) return 'Carnival information';
   if (/parking|park[ -]?and[ -]?ride|park[ -]?&[ -]?ride/.test(signal)) return 'Parking & shuttles';
   if (/admission|gate/.test(signal)) return 'Admission & parking';
@@ -432,14 +444,82 @@ function categoryForCandidate(candidate: SynthesisScheduleCandidate): EventSched
   if (candidate.category && SCHEDULE_CATEGORIES.has(candidate.category as EventScheduleCategory)) {
     return candidate.category as EventScheduleCategory;
   }
-  const signal = `${candidate.title} ${candidate.tags.join(' ')}`.toLowerCase();
+  const signal = `${candidate.category ?? ''} ${candidate.title} ${candidate.tags.join(' ')}`.toLowerCase();
   if (/register|check[ -]?in/.test(signal)) return 'registration';
   if (/fish|trout|salmon|walleye|weigh[ -]?in|tournament/.test(signal)) return 'fishing';
+  if (/grandstand|rodeo|monster trucks?|demolition derby|stock derby|bump n run|figure 8|harness racing|(?:truck|tractor) pull/.test(signal)) return 'grandstand';
+  if (/livestock|showmanship|beef|dairy cattle|goats?|poultry|rabbits?|sheep|swine|horse(?: and| &)? pony/.test(signal)) return 'livestock';
+  if (/exhibits?|home arts?|horticulture|needlework|photography|woodworking/.test(signal)) return 'exhibits';
+  if (/midway|carnival|rides?|armbands?|mega passes?/.test(signal)) return 'midway';
   if (/kid|family|youth|child/.test(signal)) return 'family';
   if (/music|band|concert|stage|quartet|orchestra/.test(signal)) return 'music';
   if (/food|dinner|lunch|breakfast|taste/.test(signal)) return 'food';
   if (/award|final|winner|prize/.test(signal)) return 'awards';
   return 'community';
+}
+
+const OVERVIEW_CATEGORY_LABELS: Partial<Record<EventScheduleCategory, string>> = {
+  fishing: 'fishing traditions',
+  livestock: 'livestock and showmanship',
+  exhibits: 'fair exhibits',
+  grandstand: 'grandstand action',
+  midway: 'the carnival midway',
+  family: 'family activities',
+  music: 'live music',
+  community: 'community events',
+  food: 'fair food',
+  awards: 'competitions and awards',
+};
+const OVERVIEW_CATEGORY_PRIORITY: EventScheduleCategory[] = [
+  'grandstand',
+  'livestock',
+  'exhibits',
+  'midway',
+  'music',
+  'family',
+  'food',
+  'fishing',
+  'community',
+  'awards',
+];
+
+function joinedList(values: string[]) {
+  if (values.length <= 1) return values[0] ?? '';
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(', ')}, and ${values.at(-1)}`;
+}
+
+function generatedOverviewCopy(args: {
+  name: string;
+  location: string;
+  categories: EventScheduleCategory[];
+}) {
+  const categoryCounts = new Map<EventScheduleCategory, number>();
+  args.categories.forEach((category) => {
+    if (!OVERVIEW_CATEGORY_LABELS[category]) return;
+    categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
+  });
+  const labels = [...categoryCounts.entries()]
+    .sort(([leftCategory, leftCount], [rightCategory, rightCount]) => (
+      rightCount - leftCount
+      || OVERVIEW_CATEGORY_PRIORITY.indexOf(leftCategory) - OVERVIEW_CATEGORY_PRIORITY.indexOf(rightCategory)
+      || leftCategory.localeCompare(rightCategory)
+    ))
+    .slice(0, 3)
+    .map(([category]) => OVERVIEW_CATEGORY_LABELS[category])
+    .filter((label): label is string => Boolean(label));
+  const locationSuffix = args.location ? ` in ${args.location}` : '';
+  if (!labels.length) {
+    return {
+      tagline: `Plan your visit to ${args.name}${locationSuffix}.`,
+      summary: 'Start with the essentials, then make room for the moments that define the event.',
+    };
+  }
+  const experiences = joinedList(labels);
+  return {
+    tagline: `${args.name} brings ${experiences} together${locationSuffix}.`,
+    summary: `Build your visit around ${experiences}.`,
+  };
 }
 
 function scheduleItems(
@@ -448,6 +528,11 @@ function scheduleItems(
   editionYear?: number,
 ) {
   const snapshotMap = new Map(snapshots.map((snapshot) => [snapshot.id, snapshot]));
+  const ticketConcertText = snapshots
+    .filter((snapshot) => snapshot.sourceKind === 'tickets' && /\bconcert\b/i.test(snapshotText(snapshot)))
+    .map(snapshotText)
+    .join(' ')
+    .toLowerCase();
   return candidates
     .filter((candidate) => (
       candidate.reviewStatus !== 'rejected'
@@ -459,7 +544,11 @@ function scheduleItems(
     .sort((left, right) => `${left.startsAt}:${left.id}`.localeCompare(`${right.startsAt}:${right.id}`))
     .map((candidate, index) => {
       const snapshot = snapshotMap.get(candidate.sourceSnapshotId);
-      const category = categoryForCandidate(candidate);
+      const inferredCategory = categoryForCandidate(candidate);
+      const category = inferredCategory === 'community'
+        && ticketConcertText.includes(candidate.title.trim().toLowerCase())
+        ? 'music'
+        : inferredCategory;
       return {
         id: slugify(`${candidate.title}-${candidate.startsAt}-${index + 1}`) || `schedule-item-${index + 1}`,
         title: candidate.title.trim(),
@@ -530,6 +619,407 @@ function sourceIdsForSnapshots(
     const matchingSource = sources.find((source) => source.url === snapshot.canonicalUrl);
     return [typeof matchingSource?.id === 'string' ? matchingSource.id : sourceId(snapshot)];
   }))];
+}
+
+function scheduleItemRecords(proposal: JsonRecord) {
+  return Array.isArray(proposal.scheduleItems)
+    ? proposal.scheduleItems.filter(isRecord)
+    : [];
+}
+
+function sourceIdsForScheduleItems(items: JsonRecord[]) {
+  return [...new Set(items.flatMap((item) => stringArray(item.sourceIds)))];
+}
+
+function snapshotText(snapshot: SynthesisSourceSnapshot | undefined) {
+  return snapshot
+    ? (snapshot.contentSegments ?? []).map((segment) => segment.text).join(' ')
+    : '';
+}
+
+function scheduleWeekday(item: JsonRecord | undefined, timeZone: string) {
+  const startsAt = item ? safeText(item.startsAt) : undefined;
+  if (!startsAt) return '';
+  const date = new Date(startsAt);
+  if (Number.isNaN(date.valueOf())) return '';
+  try {
+    return new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone }).format(date);
+  } catch {
+    return new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: 'UTC' }).format(date);
+  }
+}
+
+function inclusiveDateCount(startsOn: string, endsOn: string) {
+  const start = Date.parse(`${startsOn}T12:00:00Z`);
+  const end = Date.parse(`${endsOn}T12:00:00Z`);
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return 0;
+  return Math.round((end - start) / 86_400_000) + 1;
+}
+
+function uniqueScheduleItems(items: JsonRecord[]) {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const title = safeText(item.title);
+    const key = title?.toLowerCase() ?? '';
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function scheduleHighlightModule(proposal: JsonRecord) {
+  const eventName = safeText(getNestedValue(proposal, 'identity.name')) ?? 'This event';
+  const editionYear = safeText(getNestedValue(proposal, 'identity.startsOn'))?.slice(0, 4);
+  const grouped = new Map<string, JsonRecord[]>();
+  scheduleItemRecords(proposal).forEach((item) => {
+    const category = safeText(item.category);
+    if (!category || category === 'registration') return;
+    const items = grouped.get(category) ?? [];
+    items.push(item);
+    grouped.set(category, items);
+  });
+  const kindForCategory: Record<string, string> = {
+    exhibits: 'contests',
+    food: 'community',
+    grandstand: 'entertainment',
+    livestock: 'community',
+    midway: 'entertainment',
+    music: 'entertainment',
+  };
+  const items = [...grouped.entries()].slice(0, 4).map(([category, categoryItems]) => {
+    const titles = uniqueScheduleItems(categoryItems)
+      .map((item) => safeText(item.title))
+      .filter((title): title is string => Boolean(title))
+      .slice(0, 4);
+    const label = OVERVIEW_CATEGORY_LABELS[category as EventScheduleCategory]
+      ?? category.replace(/-/g, ' ');
+    return {
+      id: `highlight-program-${slugify(category)}`,
+      kind: kindForCategory[category] ?? 'community',
+      kicker: editionYear ? `${editionYear} program` : 'Current program',
+      title: label[0].toUpperCase() + label.slice(1),
+      summary: titles.length
+        ? `Featured listings include ${joinedList(titles)}.`
+        : `This experience is part of the current ${eventName} program.`,
+      ...(editionYear ? { observedEdition: `${editionYear} edition` } : {}),
+      sourceIds: sourceIdsForScheduleItems(categoryItems),
+    };
+  });
+  if (!items.length) return null;
+  return {
+    id: 'highlights',
+    type: 'highlights',
+    title: 'Highlights',
+    eyebrow: 'Inside the experience',
+    headline: `The experiences setting the pace for ${eventName}.`,
+    summary: `See the current program through the experiences that give ${eventName} its character.`,
+    items,
+  };
+}
+
+function fairExperiencePresentation(
+  proposal: JsonRecord,
+  snapshots: SynthesisSourceSnapshot[],
+) {
+  const eventName = safeText(getNestedValue(proposal, 'identity.name')) ?? '';
+  if (!/\bfair\b/i.test(eventName)) return null;
+
+  const items = scheduleItemRecords(proposal);
+  const timeZone = safeText(getNestedValue(proposal, 'identity.timezone')) ?? 'America/Detroit';
+  const startsOn = safeText(getNestedValue(proposal, 'identity.startsOn')) ?? '';
+  const endsOn = safeText(getNestedValue(proposal, 'identity.endsOn')) ?? startsOn;
+  const editionYear = startsOn.slice(0, 4);
+  const dayCount = inclusiveDateCount(startsOn, endsOn);
+  const ticketSnapshot = snapshots.find((snapshot) => snapshot.sourceKind === 'tickets');
+  const carnivalSnapshot = snapshots.find((snapshot) => (
+    /\/carnival(?:\/|$)/i.test(snapshot.canonicalUrl)
+    || /\bcarnival\b/i.test(snapshot.pageTitle ?? '')
+  ));
+  const livestockSnapshot = snapshots.find((snapshot) => (
+    /livestock[-/ ]sale/i.test(`${snapshot.canonicalUrl} ${snapshot.pageTitle ?? ''}`)
+  ));
+  const exhibitSnapshot = snapshots.find((snapshot) => (
+    /\bopen class exhibit\b/i.test(snapshotText(snapshot))
+  ));
+  const ticketText = snapshotText(ticketSnapshot);
+  const carnivalText = snapshotText(carnivalSnapshot);
+  const livestockText = snapshotText(livestockSnapshot);
+  const exhibitText = snapshotText(exhibitSnapshot);
+  const carnivalWeekdayCount = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ].filter((weekday) => new RegExp(`\\b${weekday}\\b`, 'i').test(carnivalText)).length;
+  const hasDailyCarnival = (
+    /\bevery (?:fair )?day\b|\bdaily\b/i.test(carnivalText)
+    || (dayCount > 1 && carnivalWeekdayCount >= Math.min(dayCount, 7))
+  );
+  const hasFairWeekCarnival = /\bthroughout (?:the )?fair week\b|\ball week\b/i.test(carnivalText);
+  const hasMegaRideArmband = /\bmega ride armband\b/i.test(carnivalText);
+
+  const grandstandScheduleItems = items.filter((item) => item.category === 'grandstand');
+  const grandstandItems = uniqueScheduleItems(grandstandScheduleItems);
+  const livestockItems = uniqueScheduleItems(items.filter((item) => item.category === 'livestock'));
+  const concertItem = uniqueScheduleItems(items).find((item) => {
+    const title = safeText(item.title);
+    return Boolean(title && ticketText.toLowerCase().includes(title.toLowerCase()) && /\bconcert\b/i.test(ticketText));
+  });
+  const concertTitle = concertItem ? safeText(concertItem.title) ?? '' : '';
+  const grandstandTitles = grandstandItems
+    .map((item) => safeText(item.title))
+    .filter((title): title is string => Boolean(title));
+  const livestockTitle = safeText(livestockItems[0]?.title);
+  const hasCarnival = Boolean(carnivalSnapshot && /\bcarnival\b|ride armband|mega ride/i.test(carnivalText));
+  const hasFreeGrandstand = /\bfree grandstand seating with paid gate admission\b/i.test(ticketText);
+  if (!grandstandTitles.length || !hasCarnival || (!livestockTitle && !exhibitSnapshot)) return null;
+
+  const concertSources = [...new Set([
+    ...sourceIdsForScheduleItems(concertItem ? [concertItem] : []),
+    ...sourceIdsForSnapshots(ticketSnapshot ? [ticketSnapshot.id] : [], snapshots, proposal.sources),
+  ])];
+  const grandstandSources = sourceIdsForScheduleItems(grandstandItems);
+  const carnivalSources = sourceIdsForSnapshots(
+    carnivalSnapshot ? [carnivalSnapshot.id] : [],
+    snapshots,
+    proposal.sources,
+  );
+  const agricultureSources = [...new Set([
+    ...sourceIdsForScheduleItems(livestockItems),
+    ...sourceIdsForSnapshots(
+      [livestockSnapshot?.id, exhibitSnapshot?.id].filter((id): id is string => Boolean(id)),
+      snapshots,
+      proposal.sources,
+    ),
+  ])];
+  const scheduleSources = sourceIdsForScheduleItems(items);
+
+  const concertWeekday = scheduleWeekday(concertItem, timeZone);
+  const concertSummary = concertTitle
+    ? `${concertTitle} brings live music to ${concertWeekday ? `${concertWeekday} night` : 'fair week'}${hasFreeGrandstand ? ', with free grandstand seating included with paid gate admission.' : '.'}`
+    : '';
+  const grandstandStart = scheduleWeekday(grandstandItems[0], timeZone);
+  const grandstandEnd = scheduleWeekday(grandstandScheduleItems.at(-1), timeZone);
+  const grandstandSummary = `${joinedList(grandstandTitles)} fill the grandstand program${
+    grandstandStart && grandstandEnd ? ` from ${grandstandStart} through ${grandstandEnd}` : ' throughout fair week'
+  }.`;
+  const carnivalSummary = hasDailyCarnival
+    ? (
+      hasMegaRideArmband
+        ? 'The carnival opens every fair day, with daily ride options and a Mega Ride Armband listed by the organizer.'
+        : 'The carnival opens every fair day with daily ride options.'
+    )
+    : (
+      hasFairWeekCarnival
+        ? (
+          hasMegaRideArmband
+            ? 'Carnival midway rides run throughout fair week, with a Mega Ride Armband listed by the organizer.'
+            : 'Carnival midway rides run throughout fair week.'
+        )
+        : (
+          hasMegaRideArmband
+            ? 'The carnival brings midway rides and a Mega Ride Armband listed by the organizer.'
+            : 'The carnival brings midway rides to the fair.'
+        )
+    );
+
+  const livestockTypes = [
+    ['rabbits?', 'rabbits'],
+    ['poultry', 'poultry'],
+    ['dairy', 'dairy'],
+    ['goats?', 'goats'],
+    ['beef', 'beef'],
+    ['swine', 'swine'],
+    ['sheep', 'sheep'],
+  ].flatMap(([pattern, label]) => new RegExp(`\\b${pattern}\\b`, 'i').test(livestockText) ? [label] : []);
+  const exhibitTypes = [
+    ['craft projects?', 'craft projects'],
+    ['fresh produce', 'fresh produce'],
+    ['flowers?', 'flowers'],
+    ['food', 'food'],
+    ['baking', 'baking'],
+    ['canning', 'canning'],
+  ].flatMap(([pattern, label]) => new RegExp(`\\b${pattern}\\b`, 'i').test(exhibitText) ? [label] : []);
+  const livestockWeekday = scheduleWeekday(livestockItems[0], timeZone);
+  const livestockSentence = livestockTitle
+    ? (
+      livestockTypes.length
+        ? `The ${livestockWeekday ? `${livestockWeekday} ` : ''}${livestockTitle} includes ${joinedList(livestockTypes)}.`
+        : `${livestockWeekday ? `${livestockWeekday}'s ` : ''}${livestockTitle} brings livestock competition to the fair.`
+    )
+    : '';
+  const exhibitSentence = exhibitSnapshot
+    ? (
+      exhibitTypes.length
+        ? `Open Class entries add ${joinedList(exhibitTypes)}.`
+        : 'Open Class exhibits add another fair tradition.'
+    )
+    : '';
+  const agricultureSummary = [livestockSentence, exhibitSentence].filter(Boolean).join(' ');
+  const hasLivestockExperience = Boolean(livestockTitle || livestockTypes.length);
+  const agricultureTitle = hasLivestockExperience && exhibitSnapshot
+    ? 'Livestock and Open Class'
+    : hasLivestockExperience
+      ? 'Livestock at the fair'
+      : 'Open Class exhibits';
+
+  const highlights = [
+    ...(concertTitle ? [{
+      id: 'highlight-fair-concert',
+      kind: 'entertainment',
+      kicker: concertWeekday ? `${concertWeekday} night` : 'Live music',
+      title: concertTitle,
+      summary: concertSummary,
+      ...(editionYear ? { observedEdition: `${editionYear} edition` } : {}),
+      sourceIds: concertSources,
+    }] : []),
+    {
+      id: 'highlight-fair-grandstand',
+      kind: 'entertainment',
+      kicker: 'Grandstand thrills',
+      title: 'Action all week',
+      summary: grandstandSummary,
+      ...(editionYear ? { observedEdition: `${editionYear} edition` } : {}),
+      sourceIds: grandstandSources,
+    },
+    {
+      id: 'highlight-fair-midway',
+      kind: 'entertainment',
+      kicker: hasDailyCarnival
+        ? 'Every fair day'
+        : hasFairWeekCarnival
+          ? 'Throughout fair week'
+          : 'Carnival midway',
+      title: 'The carnival midway',
+      summary: carnivalSummary,
+      ...(editionYear ? { observedEdition: `${editionYear} edition` } : {}),
+      sourceIds: carnivalSources,
+    },
+    {
+      id: 'highlight-fair-agriculture',
+      kind: 'community',
+      kicker: 'Fair traditions',
+      title: agricultureTitle,
+      summary: agricultureSummary,
+      ...(editionYear ? { observedEdition: `${editionYear} edition` } : {}),
+      sourceIds: agricultureSources,
+    },
+  ];
+
+  const headlineTitles = [...new Set([
+    ...(concertTitle ? [concertTitle] : []),
+    ...grandstandTitles,
+  ])];
+  const leadTitles = headlineTitles.slice(0, 5);
+  const extraTitles = headlineTitles.slice(5);
+  const extraExperiences = [
+    ...(extraTitles.length ? [joinedList(extraTitles)] : []),
+    ...(livestockTitle ? [`the ${livestockTitle}`] : []),
+    ...(!livestockTitle && exhibitSnapshot ? ['Open Class exhibits'] : []),
+    hasDailyCarnival
+      ? 'a carnival running every fair day'
+      : hasFairWeekCarnival
+        ? 'carnival rides throughout fair week'
+        : 'the carnival midway',
+  ];
+  const whyGoSummary = leadTitles.length && extraExperiences.length
+    ? `${joinedList(leadTitles)} ${leadTitles.length === 1 ? 'leads' : 'lead'} a week that also brings ${joinedList(extraExperiences)}.`
+    : `${eventName} brings together carnival rides, fair traditions, and a full grandstand program.`;
+  const heroExperiences = [
+    'midway lights',
+    ...(concertTitle ? ['live music'] : []),
+    hasLivestockExperience ? 'livestock tradition' : 'Open Class exhibits',
+    'grandstand thrills',
+  ];
+  const heroTagline = dayCount
+    ? `${dayCount === 7 ? 'Seven' : dayCount} days of ${joinedList(heroExperiences)}.`
+    : `${eventName} brings together ${joinedList(heroExperiences)}.`;
+  const whyGoEyebrow = dayCount
+    ? `${dayCount === 1 ? 'One day' : `${dayCount === 7 ? 'Seven' : dayCount} days`} of fair energy`
+    : 'Fair energy from open to close';
+  const scheduleMoments = [
+    ...(concertTitle ? ['live music'] : []),
+    ...(grandstandTitles.length ? ['grandstand action'] : []),
+    ...(livestockTitle ? [`${livestockWeekday ? `${livestockWeekday}'s ` : ''}${livestockTitle}`] : []),
+  ];
+  const scheduleSubtitle = scheduleMoments.length
+    ? `Plan around ${joinedList(scheduleMoments)}.`
+    : 'Pick the fair moments you do not want to miss.';
+  const highlightCountWords: Record<number, string> = {
+    1: 'One',
+    2: 'Two',
+    3: 'Three',
+    4: 'Four',
+  };
+  const highlightThemes = [
+    'midway lights',
+    'grandstand nights',
+    ...(concertTitle ? ['live music'] : []),
+    'agricultural traditions',
+  ];
+  const highlightThemeSummary = joinedList(highlightThemes);
+
+  return {
+    heroTagline,
+    whyGoEyebrow,
+    whyGoHeadline: 'Come for the midway. Stay for the grandstand.',
+    whyGoSummary,
+    scheduleSubtitle,
+    metrics: [
+      ...(dayCount ? [{
+        id: 'metric-fair-days',
+        value: `${dayCount} days`,
+        label: 'Fair week',
+        detail: safeText(getNestedValue(proposal, 'identity.dateText')) ?? 'Current edition',
+        icon: 'calendar',
+        sourceIds: scheduleSources,
+      }] : []),
+      ...(hasDailyCarnival ? [{
+        id: 'metric-fair-carnival',
+        value: 'Daily',
+        label: 'Carnival midway',
+        detail: 'Ride options throughout fair week',
+        icon: 'ticket',
+        sourceIds: carnivalSources,
+      }] : []),
+      ...(hasFreeGrandstand ? [{
+        id: 'metric-fair-grandstand',
+        value: 'Included',
+        label: 'Grandstand seating',
+        detail: 'With paid gate admission',
+        icon: 'ticket',
+        sourceIds: concertSources,
+      }] : []),
+    ],
+    audienceGroups: [
+      {
+        id: 'audience-fair-grandstand',
+        title: 'For grandstand energy',
+        tone: 'water',
+        items: [concertSummary, grandstandSummary].filter(Boolean),
+        sourceIds: [...new Set([...concertSources, ...grandstandSources])],
+      },
+      {
+        id: 'audience-fair-traditions',
+        title: 'For classic fair traditions',
+        tone: 'sunset',
+        items: [carnivalSummary, agricultureSummary].filter(Boolean),
+        sourceIds: [...new Set([...carnivalSources, ...agricultureSources])],
+      },
+    ],
+    highlightsModule: {
+      id: 'highlights',
+      type: 'highlights',
+      title: 'Highlights',
+      eyebrow: `${highlightCountWords[highlights.length] ?? highlights.length} ways to do fair week`,
+      headline: `The experiences that give ${eventName} its energy.`,
+      summary: `${highlightThemeSummary.replace(/^./, (character) => character.toUpperCase())} give fair week its rhythm.`,
+      items: highlights,
+    },
+  };
 }
 
 function applyEditorialPlan(
@@ -658,7 +1148,7 @@ function applyEditorialPlan(
       headline: `The people and experiences that shape ${eventName}.`,
       summary: lifecycle === 'completed' && plan.currentEditionYear
         ? `Explore the artist floor, competitions, and creative program preserved from the completed ${plan.currentEditionYear} edition.`
-        : 'Explore the creative program, participants, and defining experiences gathered from official event information.',
+        : 'Explore the creative program, participants, and defining experiences that give the event its character.',
       items: plan.highlights.map((highlight) => ({
         id: highlight.id,
         kind: highlight.kind,
@@ -853,6 +1343,76 @@ function applyEditorialPlan(
     else navigation.push(traditionNavigation);
   }
 
+  const fairExperience = fairExperiencePresentation(proposal, snapshots);
+  if (fairExperience) {
+    const hero = isRecord(proposal.hero) ? proposal.hero : null;
+    const whyGo = modules.find((module) => module.type === 'whyGo');
+    if (hero) hero.tagline = fairExperience.heroTagline;
+    if (whyGo) {
+      whyGo.eyebrow = fairExperience.whyGoEyebrow;
+      whyGo.headline = fairExperience.whyGoHeadline;
+      whyGo.summary = fairExperience.whyGoSummary;
+      whyGo.metrics = fairExperience.metrics;
+      whyGo.audienceGroups = fairExperience.audienceGroups;
+    }
+    if (schedule) {
+      schedule.eyebrow = 'Fair week at a glance';
+      schedule.subtitle = fairExperience.scheduleSubtitle;
+    }
+
+    if (!hasBaseManifest) {
+      const traditionIndex = modules.findIndex((module) => module.type === 'traditions');
+      if (traditionIndex >= 0) modules.splice(traditionIndex, 1);
+      const traditionNavigationIndex = navigation.findIndex((item) => item.targetModuleId === 'traditions');
+      if (traditionNavigationIndex >= 0) navigation.splice(traditionNavigationIndex, 1);
+    }
+
+    const highlightIndex = modules.findIndex((module) => module.type === 'highlights');
+    if (highlightIndex >= 0) modules.splice(highlightIndex, 1, fairExperience.highlightsModule);
+    else {
+      const planIndex = modules.findIndex((module) => module.type === 'planVisit');
+      if (planIndex >= 0) modules.splice(planIndex, 0, fairExperience.highlightsModule);
+      else modules.push(fairExperience.highlightsModule);
+    }
+    if (!navigation.some((item) => item.targetModuleId === 'highlights')) {
+      const planNavigationIndex = navigation.findIndex((item) => item.targetModuleId === 'plan');
+      const highlightsNavigation = {
+        id: 'nav-highlights',
+        label: 'Highlights',
+        icon: 'artists',
+        targetModuleId: 'highlights',
+      };
+      if (planNavigationIndex >= 0) navigation.splice(planNavigationIndex, 0, highlightsNavigation);
+      else navigation.push(highlightsNavigation);
+    }
+  }
+
+  if (
+    !hasBaseManifest
+    && !modules.some((module) => module.type === 'highlights' || module.type === 'traditions')
+  ) {
+    const fallbackHighlights = scheduleHighlightModule(proposal);
+    if (fallbackHighlights) {
+      const planIndex = modules.findIndex((module) => module.type === 'planVisit');
+      if (planIndex >= 0) modules.splice(planIndex, 0, fallbackHighlights);
+      else modules.push(fallbackHighlights);
+      const planNavigationIndex = navigation.findIndex((item) => item.targetModuleId === 'plan');
+      const highlightsNavigation = {
+        id: 'nav-highlights',
+        label: 'Highlights',
+        icon: 'artists',
+        targetModuleId: 'highlights',
+      };
+      if (planNavigationIndex >= 0) navigation.splice(planNavigationIndex, 0, highlightsNavigation);
+      else navigation.push(highlightsNavigation);
+    }
+  }
+
+  const highlightsModule = modules.find((module) => module.type === 'highlights');
+  const highlightModuleSourceIds = highlightsModule && Array.isArray(highlightsModule.items)
+    ? [...new Set(highlightsModule.items.filter(isRecord).flatMap((item) => stringArray(item.sourceIds)))]
+    : [];
+  const hasHighlightsExperience = Boolean(highlightsModule);
   const suggestions = Array.isArray(proposal.scoutSuggestions)
     ? proposal.scoutSuggestions.filter(isRecord)
     : [];
@@ -904,12 +1464,14 @@ function applyEditorialPlan(
     });
     suggestionIds.add('scout-not-miss');
   }
-  if (canAddHighlights && !suggestionIds.has('scout-highlights')) {
-    const highlightSourceIds = sourceIdsForSnapshots(
-      plan.highlights.flatMap((highlight) => highlight.sourceSnapshotIds),
-      snapshots,
-      proposal.sources,
-    );
+  if (hasHighlightsExperience && !suggestionIds.has('scout-highlights')) {
+    const highlightSourceIds = highlightModuleSourceIds.length
+      ? highlightModuleSourceIds
+      : sourceIdsForSnapshots(
+          plan.highlights.flatMap((highlight) => highlight.sourceSnapshotIds),
+          snapshots,
+          proposal.sources,
+        );
     suggestions.push({
       id: 'scout-highlights',
       label: lifecycle === 'completed' ? 'What defined the latest edition?' : 'What defines this event?',
@@ -926,7 +1488,7 @@ function applyEditorialPlan(
     });
     suggestionIds.add('scout-highlights');
   }
-  if (canAddHighlights && !suggestionIds.has('scout-not-miss')) {
+  if (hasHighlightsExperience && !suggestionIds.has('scout-not-miss')) {
     suggestions.push({
       id: 'scout-not-miss',
       label: 'What should I explore first?',
@@ -935,11 +1497,13 @@ function applyEditorialPlan(
         : 'Start with the event highlights, then use the schedule to choose the experiences that fit your visit.',
       scopeModuleIds: ['why-go', 'highlights'],
       command: { type: 'openModule', moduleId: 'highlights' },
-      sourceIds: sourceIdsForSnapshots(
-        plan.highlights.flatMap((highlight) => highlight.sourceSnapshotIds),
-        snapshots,
-        proposal.sources,
-      ),
+      sourceIds: highlightModuleSourceIds.length
+        ? highlightModuleSourceIds
+        : sourceIdsForSnapshots(
+            plan.highlights.flatMap((highlight) => highlight.sourceSnapshotIds),
+            snapshots,
+            proposal.sources,
+          ),
     });
     suggestionIds.add('scout-not-miss');
   }
@@ -951,6 +1515,30 @@ function applyEditorialPlan(
     ? schedule.filters.filter(isRecord)
     : [];
   for (const categorySuggestion of [
+    {
+      category: 'grandstand',
+      id: 'scout-grandstand',
+      label: "What's happening at the grandstand?",
+      response: 'The Grandstand filter gathers the current official arena and headline-event listings in one place.',
+    },
+    {
+      category: 'livestock',
+      id: 'scout-livestock',
+      label: 'Where can I find livestock events?',
+      response: 'The Livestock filter gathers the current official show, sale, and showmanship listings in one place.',
+    },
+    {
+      category: 'midway',
+      id: 'scout-midway',
+      label: 'Where are the midway listings?',
+      response: 'The Midway filter gathers the current official carnival and ride listings in one place.',
+    },
+    {
+      category: 'exhibits',
+      id: 'scout-exhibits',
+      label: 'Where can I find exhibit events?',
+      response: 'The Exhibits filter gathers the current official exhibit and competition listings in one place.',
+    },
     {
       category: 'family',
       id: 'scout-family',
@@ -1006,10 +1594,17 @@ function buildNewManifest(
     state,
   );
   const planLocation = [venue, location].filter(Boolean).join(', ');
-  const description = safeText(getNestedValue(values, 'identity.description')) ?? '';
+  const description = generalOverviewText(getNestedValue(values, 'identity.description')) ?? '';
   const timezone = safeText(getNestedValue(values, 'timing.timezone')) ?? '';
   const sources = mergedSources(undefined, input.snapshots);
   const generatedSchedule = scheduleItems(input.scheduleCandidates, input.snapshots, Number(startsOn.slice(0, 4)) || undefined);
+  const fallbackOverview = generatedOverviewCopy({
+    name,
+    location,
+    categories: generatedSchedule.map((item) => item.category),
+  });
+  const overviewTagline = description || fallbackOverview.tagline;
+  const overviewSummary = description || fallbackOverview.summary;
   const scheduleCategories = [...new Set(generatedSchedule.map((item) => item.category))];
   const scheduleFilters = [
     { id: 'all', label: 'All', mode: 'all' },
@@ -1060,7 +1655,7 @@ function buildNewManifest(
       imageAlt: visual?.imageAlt ?? '',
       ...(visual?.imagePosition ? { imagePosition: visual.imagePosition } : {}),
       eyebrow: 'Event Hub',
-      tagline: description,
+      tagline: overviewTagline,
       ...(visual?.credit ? { credit: visual.credit } : {}),
     },
     navigation: [
@@ -1073,9 +1668,9 @@ function buildNewManifest(
         id: 'why-go',
         type: 'whyGo',
         title: 'Why Go',
-        eyebrow: 'Official event overview',
-        headline: description || name,
-        summary: description,
+        eyebrow: 'At a glance',
+        headline: `Start with the moments that define ${name}.`,
+        summary: overviewSummary,
         metrics: [],
         audienceGroups: [],
       },
@@ -1083,8 +1678,10 @@ function buildNewManifest(
         id: 'schedule',
         type: 'schedule',
         title: 'Schedule',
-        eyebrow: 'Official program',
-        subtitle: generatedSchedule.length ? 'Source-backed event times.' : 'Schedule details need review.',
+        eyebrow: 'Plan the day',
+        subtitle: generatedSchedule.length
+          ? 'Choose the moments you do not want to miss.'
+          : 'Daily details are still being confirmed.',
         filters: scheduleFilters,
       },
       {
@@ -1133,7 +1730,7 @@ function overlayProfileOnManifest(
   ) || undefined;
   const venue = preferredVenue(input, safeText(getNestedValue(values, 'location.venue')));
   const timezone = safeText(getNestedValue(values, 'timing.timezone'));
-  const description = safeText(getNestedValue(values, 'identity.description'));
+  const description = generalOverviewText(getNestedValue(values, 'identity.description'));
 
   if (name) identity.name = name;
   if (location) identity.location = location;
@@ -1182,7 +1779,14 @@ function proposalMissingFields(
   if (!Array.isArray(sources) || !sources.some((source) => isRecord(source) && hasText(source.url))) {
     missing.push('sources.officialUrl');
   }
-  if (!hasBaseManifest && !input.bundle.eventKey) missing.push('identity.eventKey');
+  if (!hasBaseManifest) {
+    if (!input.bundle.eventKey) missing.push('identity.eventKey');
+    const navigation = Array.isArray(proposal.navigation) ? proposal.navigation.filter(isRecord) : [];
+    const hasExperienceModule = navigation.some((item) => (
+      item.targetModuleId === 'highlights' || item.targetModuleId === 'traditions'
+    ));
+    if (navigation.length !== 4 || !hasExperienceModule) missing.push('modules.experience');
+  }
   return [...new Set(missing)];
 }
 
@@ -1214,8 +1818,16 @@ export function synthesizeEventSourceBundle(
     typeof field.value === 'string' && SPONSOR_LANGUAGE.test(field.value)
   )).length;
   if (excludedSponsorClaimCount) warnings.push(`${excludedSponsorClaimCount} sponsor-bearing field${excludedSponsorClaimCount === 1 ? '' : 's'} remained in evidence but was excluded from generated display copy.`);
+  const excludedOperationalDescriptionCount = profile.fields.filter((field) => (
+    field.fieldPath === 'identity.description'
+    && typeof field.value === 'string'
+    && OPERATIONAL_OVERVIEW_LANGUAGE.test(field.value)
+  )).length;
+  if (excludedOperationalDescriptionCount) {
+    warnings.push('An operational or task-specific identity description remained in evidence but was excluded from general Event Hub copy.');
+  }
 
-  const completeness = Math.max(0, 1 - missingFields.length / 9);
+  const completeness = Math.max(0, 1 - missingFields.length / 10);
   const qualityScore = Math.max(
     0,
     Math.min(1, profile.quality.score * 0.55 + completeness * 0.45 - conflicts.length * 0.02),

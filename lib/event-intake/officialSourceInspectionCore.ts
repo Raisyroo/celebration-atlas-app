@@ -298,7 +298,7 @@ function collectSponsorNames(objects: JsonObject[]) {
   return [...names];
 }
 
-const GENERIC_PAGE_LABEL = /^(?:home|welcome|event detail|events?|all events|calendar|waterfront mainstage events)$/i;
+const GENERIC_PAGE_LABEL = /^(?:home|welcome|event detail|events?|all events|calendar|schedule|full schedule|tickets?|exhibitors?|vendors?|open class book|waterfront mainstage events)$/i;
 
 function repeatedEventLogoIdentity($: cheerio.CheerioAPI) {
   const counts = new Map<string, { value: string; count: number }>();

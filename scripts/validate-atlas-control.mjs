@@ -76,9 +76,11 @@ for (const file of walk('app/api/atlas-control').filter((file) => file.endsWith(
 }
 
 const intakeRoute = read('app/api/atlas-control/candidate-intake/route.ts');
+const candidateIntake = read('lib/atlas-control/candidateIntake.ts');
 assert(intakeRoute.includes('validateCandidateIntake'), 'candidate intake route does not validate payloads');
 assert(intakeRoute.includes('idempotencyKey: parsed.value.idempotencyKey'), 'candidate intake route does not forward the idempotency key');
 assert(!/\.from\([^)]*event_candidates/.test(intakeRoute), 'candidate intake route writes directly to event_candidates');
+assert(candidateIntake.includes('const state = "Michigan"') && candidateIntake.includes('payload.eventKey ?? slugifyCandidate') && candidateIntake.includes('event_type: payload.eventType') && candidateIntake.includes('probable_recurrence: payload.recurrencePattern') && candidateIntake.includes('official_website_candidate: payload.sourceUrl'), 'candidate intake drops canonical state, event identity, recurrence, or official-source metadata');
 
 const sourceInspectionRoute = read('app/api/atlas-control/event-source-inspection/route.ts');
 assert(sourceInspectionRoute.includes('requireAtlasAdmin'), 'event source inspection route does not require Atlas admin authorization');
@@ -206,6 +208,13 @@ assert(sourceBundleRoute.includes('requireAtlasAdmin'), 'source bundle route doe
 assert(sourceBundleRoute.includes("runtime = 'nodejs'"), 'source bundle route is not pinned to the Node runtime');
 assert(sourceBundleRoute.includes("'Cache-Control': 'private, no-store, max-age=0'"), 'source bundle responses are cacheable');
 assert(sourceBundleRoute.includes("action === 'create_and_collect'"), 'source bundle route does not expose bounded official-page collection');
+assert(sourceBundleRoute.includes('includeEventIdentity: optionalBoolean(payload.includeEventIdentity)'), 'source bundle route cannot explicitly retain event identity from a supporting source');
+assert(sourceBundleRoute.includes('includeEventLocation: optionalBoolean(payload.includeEventLocation)'), 'source bundle route cannot explicitly retain event location from a supporting source');
+
+const sourceSynthesisRoute = read('app/api/atlas-control/source-syntheses/route.ts');
+assert(sourceSynthesisRoute.includes("action === 'attach_map'"), 'source synthesis route does not expose sourced map attachment');
+assert(sourceSynthesisRoute.includes('attachEventSourceSynthesisMapRecord'), 'source synthesis route bypasses the audited map-record operation');
+assert(sourceSynthesisRoute.includes("new URL(sourceUrl).protocol !== 'https:'"), 'source synthesis route accepts map provenance without an HTTPS source');
 
 const sourceBundles = read('lib/event-intake/sourceBundles.ts');
 for (const rpc of ['atlas_create_event_source_bundle', 'atlas_add_event_source_snapshot', 'atlas_transition_event_source_bundle', 'atlas_attach_event_source_bundle_candidate', 'atlas_list_event_source_bundles']) {
@@ -308,10 +317,16 @@ assert(editorialPlanning.includes('currentScheduleProtected'), 'editorial planni
 assert(editorialPlanning.includes('cherry queen') && editorialPlanning.includes('festival-parades'), 'editorial planning does not cover general festival royalty and parade traditions');
 
 const synthesisEngine = read('lib/event-intake/synthesisEngine.ts');
-assert(synthesisEngine.includes("DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v10'"), 'the editorial synthesis engine version was not advanced');
+assert(synthesisEngine.includes("DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v19'"), 'the editorial synthesis engine version was not advanced');
 assert(synthesisEngine.includes('applyEditorialPlan'), 'source synthesis does not compose the editorial plan into Event Hub proposals');
 assert(synthesisEngine.includes("candidate.startsAt?.startsWith(`${editionYear}-`)"), 'source synthesis does not filter dated items to the current edition year');
-assert(synthesisEngine.includes('scout-family') && synthesisEngine.includes('scout-best-music'), 'current schedule synthesis does not create source-bound Scout filters');
+assert(
+  synthesisEngine.includes('scout-family')
+    && synthesisEngine.includes('scout-best-music')
+    && synthesisEngine.includes('scout-grandstand')
+    && synthesisEngine.includes('scout-livestock'),
+  'current schedule synthesis does not create source-bound Scout filters',
+);
 
 const synthesisMigration = read('supabase/migrations/007_event_source_synthesis.sql');
 for (const table of ['event_source_syntheses', 'event_source_synthesis_actions']) {
