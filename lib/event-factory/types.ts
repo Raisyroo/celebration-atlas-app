@@ -103,6 +103,8 @@ export type EventVisualQaChecks = {
 
 export type EventVisualWorkflowSummary = {
   id: string;
+  revisionNumber: number;
+  supersedesWorkflowId: string | null;
   candidateId: string;
   eventId: string | null;
   sourceBundleId: string | null;

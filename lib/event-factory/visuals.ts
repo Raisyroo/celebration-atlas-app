@@ -18,6 +18,8 @@ export { buildEventVisualGenerationBrief } from "./visualPrompt";
 
 type VisualWorkflowRow = {
   workflow_id: string;
+  revision_number: number;
+  supersedes_workflow_id: string | null;
   candidate_id: string;
   event_id: string | null;
   source_bundle_id: string | null;
@@ -155,6 +157,8 @@ function mapQaChecks(value: unknown): EventVisualQaChecks {
 function mapWorkflowRow(row: VisualWorkflowRow | StoredVisualWorkflowRow): EventVisualWorkflowSummary {
   return {
     id: "workflow_id" in row ? row.workflow_id : row.id,
+    revisionNumber: Number(row.revision_number ?? 1),
+    supersedesWorkflowId: row.supersedes_workflow_id ?? null,
     candidateId: row.candidate_id,
     eventId: row.event_id,
     sourceBundleId: row.source_bundle_id,
@@ -184,6 +188,26 @@ function contentHash(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
+function workflowPayload(
+  workflow: EventVisualWorkflowSummary,
+  asset: EventVisualAsset | null,
+  qaChecks: EventVisualQaChecks,
+) {
+  return {
+    eventKey: workflow.eventKey,
+    eventName: workflow.eventName,
+    locationLabel: workflow.locationLabel,
+    lane: workflow.lane,
+    searchQuery: workflow.searchQuery,
+    reviewedThumbnailCount: workflow.reviewedThumbnailCount,
+    referenceSources: workflow.referenceSources,
+    visualSignature: workflow.visualSignature,
+    generationBrief: workflow.generationBrief,
+    asset: asset ?? {},
+    qaChecks,
+  };
+}
+
 export async function listEventVisualWorkflows(): Promise<{ items: EventVisualWorkflowSummary[]; error: string | null }> {
   const supabase = createAtlasServiceClient();
   if (!supabase) return { items: [], error: "Atlas Control Plane configuration is incomplete." };
@@ -196,7 +220,7 @@ export async function getEventVisualWorkflow(workflowId: string): Promise<EventV
   const supabase = requireServiceClient();
   const { data, error } = await supabase
     .from("event_visual_workflows")
-    .select("id,candidate_id,event_id,source_bundle_id,target_year,event_key,event_name,location_label,lane,status,search_query,reviewed_thumbnail_count,reference_sources,visual_signature,generation_brief,asset,qa_checks,content_hash,reviewed_by,review_notes,created_at,updated_at,reviewed_at")
+    .select("id,revision_number,supersedes_workflow_id,candidate_id,event_id,source_bundle_id,target_year,event_key,event_name,location_label,lane,status,search_query,reviewed_thumbnail_count,reference_sources,visual_signature,generation_brief,asset,qa_checks,content_hash,reviewed_by,review_notes,created_at,updated_at,reviewed_at")
     .eq("id", workflowId)
     .single();
   if (error || !data) throw new Error(error?.message ?? "Visual workflow was not found.");
@@ -210,9 +234,10 @@ export async function getApprovedEventVisualWorkflow(args: {
   const supabase = requireServiceClient();
   let query = supabase
     .from("event_visual_workflows")
-    .select("id,candidate_id,event_id,source_bundle_id,target_year,event_key,event_name,location_label,lane,status,search_query,reviewed_thumbnail_count,reference_sources,visual_signature,generation_brief,asset,qa_checks,content_hash,reviewed_by,review_notes,created_at,updated_at,reviewed_at")
+    .select("id,revision_number,supersedes_workflow_id,candidate_id,event_id,source_bundle_id,target_year,event_key,event_name,location_label,lane,status,search_query,reviewed_thumbnail_count,reference_sources,visual_signature,generation_brief,asset,qa_checks,content_hash,reviewed_by,review_notes,created_at,updated_at,reviewed_at")
     .eq("status", "approved")
     .order("target_year", { ascending: false })
+    .order("revision_number", { ascending: false })
     .limit(1);
   if (args.candidateId) query = query.eq("candidate_id", args.candidateId);
   else if (args.eventKey) query = query.eq("event_key", args.eventKey);
@@ -220,6 +245,78 @@ export async function getApprovedEventVisualWorkflow(args: {
   const { data, error } = await query.maybeSingle();
   if (error) throw new Error(error.message);
   return data ? mapWorkflowRow(data as StoredVisualWorkflowRow) : null;
+}
+
+export async function createEventVisualWorkflowRevision(args: {
+  workflowId: string;
+  actorIdentity: string;
+  notes?: string;
+}) {
+  const supabase = requireServiceClient();
+  const { data, error } = await supabase.rpc("atlas_create_event_visual_workflow_revision", {
+    p_workflow_id: args.workflowId,
+    p_actor_identity: args.actorIdentity,
+    p_notes: args.notes ?? null,
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || typeof row !== "object") throw new Error("Visual workflow revision returned no result.");
+  return row as Record<string, unknown>;
+}
+
+export async function attachEventVisualWorkflowRevisionAsset(args: {
+  workflowId: string;
+  asset: EventVisualAsset;
+  actorIdentity: string;
+}) {
+  const workflow = await getEventVisualWorkflow(args.workflowId);
+  if (!workflow.supersedesWorkflowId) {
+    throw new Error("Only a visual correction revision can use the revision asset operation.");
+  }
+  const qaChecks: EventVisualQaChecks = {
+    visualElementsVerified: false,
+    independentComposition: false,
+    noInventedTextOrMarks: false,
+    mobileCropVerified: false,
+    publicAssetVerified: true,
+  };
+  const supabase = requireServiceClient();
+  const { data, error } = await supabase.rpc("atlas_attach_event_visual_revision_asset", {
+    p_workflow_id: args.workflowId,
+    p_asset: args.asset,
+    p_content_hash: contentHash(workflowPayload(workflow, args.asset, qaChecks)),
+    p_actor_identity: args.actorIdentity,
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || typeof row !== "object") throw new Error("Visual revision asset operation returned no result.");
+  return row as Record<string, unknown>;
+}
+
+export async function saveEventVisualWorkflowRevisionQa(args: {
+  workflowId: string;
+  qaChecks: Omit<EventVisualQaChecks, "publicAssetVerified">;
+  actorIdentity: string;
+}) {
+  const workflow = await getEventVisualWorkflow(args.workflowId);
+  if (!workflow.supersedesWorkflowId) {
+    throw new Error("Only a visual correction revision can use the revision QA operation.");
+  }
+  const qaChecks: EventVisualQaChecks = {
+    ...args.qaChecks,
+    publicAssetVerified: workflow.qaChecks.publicAssetVerified,
+  };
+  const supabase = requireServiceClient();
+  const { data, error } = await supabase.rpc("atlas_update_event_visual_revision_qa", {
+    p_workflow_id: args.workflowId,
+    p_qa_checks: qaChecks,
+    p_content_hash: contentHash(workflowPayload(workflow, workflow.asset, qaChecks)),
+    p_actor_identity: args.actorIdentity,
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || typeof row !== "object") throw new Error("Visual revision QA operation returned no result.");
+  return row as Record<string, unknown>;
 }
 
 export async function saveEventVisualWorkflow(args: {

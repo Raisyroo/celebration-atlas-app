@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { CELEBRATION_ATLAS_MEDIA_BUCKET } from "@/data/eventMedia";
 import { requireAtlasAdmin } from "@/lib/atlas-control/auth";
 import { createAtlasServiceClient } from "@/lib/atlas-control/service";
-import { getEventVisualWorkflow, saveEventVisualWorkflow } from "@/lib/event-factory/visuals";
+import {
+  attachEventVisualWorkflowRevisionAsset,
+  getEventVisualWorkflow,
+  saveEventVisualWorkflow,
+} from "@/lib/event-factory/visuals";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_HERO_BYTES = 16 * 1024 * 1024;
@@ -65,35 +69,42 @@ export async function POST(request: Request) {
       throw new Error("Uploaded hero art is not publicly reachable yet.");
     }
 
-    const result = await saveEventVisualWorkflow({
-      candidateId: workflow.candidateId,
-      sourceBundleId: workflow.sourceBundleId,
-      targetYear: workflow.targetYear,
-      eventKey: workflow.eventKey,
-      eventName: workflow.eventName,
-      locationLabel: workflow.locationLabel,
-      lane: workflow.lane,
-      searchQuery: workflow.searchQuery,
-      reviewedThumbnailCount: workflow.reviewedThumbnailCount,
-      referenceSources: workflow.referenceSources,
-      motifs: workflow.visualSignature.motifs,
-      heroMoment: workflow.visualSignature.heroMoment,
-      asset: {
-        publicUrl,
-        altText: altText.trim(),
-        credit: "Celebration Atlas artwork",
-        sourceKind: "supabase",
-        storageBucket: CELEBRATION_ATLAS_MEDIA_BUCKET,
-        storagePath,
-        contentType: file.type,
-        byteSize: file.size,
-      },
-      qaChecks: {
-        ...workflow.qaChecks,
-        publicAssetVerified: true,
-      },
-      actorIdentity: auth.admin.email,
-    });
+    const asset = {
+      publicUrl,
+      altText: altText.trim(),
+      credit: "Celebration Atlas artwork",
+      sourceKind: "supabase" as const,
+      storageBucket: CELEBRATION_ATLAS_MEDIA_BUCKET,
+      storagePath,
+      contentType: file.type,
+      byteSize: file.size,
+    };
+    const result = workflow.supersedesWorkflowId
+      ? await attachEventVisualWorkflowRevisionAsset({
+          workflowId: workflow.id,
+          asset,
+          actorIdentity: auth.admin.email,
+        })
+      : await saveEventVisualWorkflow({
+          candidateId: workflow.candidateId,
+          sourceBundleId: workflow.sourceBundleId,
+          targetYear: workflow.targetYear,
+          eventKey: workflow.eventKey,
+          eventName: workflow.eventName,
+          locationLabel: workflow.locationLabel,
+          lane: workflow.lane,
+          searchQuery: workflow.searchQuery,
+          reviewedThumbnailCount: workflow.reviewedThumbnailCount,
+          referenceSources: workflow.referenceSources,
+          motifs: workflow.visualSignature.motifs,
+          heroMoment: workflow.visualSignature.heroMoment,
+          asset,
+          qaChecks: {
+            ...workflow.qaChecks,
+            publicAssetVerified: true,
+          },
+          actorIdentity: auth.admin.email,
+        });
 
     return NextResponse.json({ ok: true, publicUrl, storagePath, result });
   } catch (error) {

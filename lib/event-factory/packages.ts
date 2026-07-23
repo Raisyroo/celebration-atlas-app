@@ -389,6 +389,40 @@ export async function prepareEventFactoryPackage(args: {
     artAsset,
   };
 
+  if (approvedVisual.supersedesWorkflowId) {
+    const sourcePackagesResult = await supabase
+      .from("event_factory_packages")
+      .select("id,content_hash,art_asset")
+      .eq("candidate_id", candidate.id)
+      .eq("target_year", verificationResult.data.target_year)
+      .eq("status", "published")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(20);
+    if (sourcePackagesResult.error) throw new Error(sourcePackagesResult.error.message);
+    const sourcePackage = (sourcePackagesResult.data ?? []).find((item) => (
+      record(item.art_asset)?.visualWorkflowId === approvedVisual.supersedesWorkflowId
+    ));
+    if (!sourcePackage) {
+      throw new Error("The approved visual correction does not match a released Event Factory package.");
+    }
+    const correctionHash = contentHash({
+      sourcePackageId: sourcePackage.id,
+      sourcePackageHash: sourcePackage.content_hash,
+      visualWorkflowId: approvedVisual.id,
+      visualWorkflowHash: approvedVisual.contentHash,
+      scope: "hero_only",
+    });
+    const correction = await supabase.rpc("atlas_create_event_factory_hero_correction", {
+      p_source_package_id: sourcePackage.id,
+      p_visual_workflow_id: approvedVisual.id,
+      p_content_hash: correctionHash,
+      p_actor_identity: args.actorIdentity,
+      p_notes: "Prepared from an approved same-edition hero correction.",
+    });
+    if (correction.error) throw new Error(correction.error.message);
+    return firstRpcRow(correction.data);
+  }
+
   const { data, error } = await supabase.rpc("atlas_upsert_event_factory_package", {
     p_verification_case_id: args.verificationCaseId,
     p_source_bundle_id: bundleResult.data?.id ?? null,

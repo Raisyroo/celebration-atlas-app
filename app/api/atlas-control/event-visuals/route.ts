@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireAtlasAdmin } from "@/lib/atlas-control/auth";
 import {
+  createEventVisualWorkflowRevision,
   getEventVisualWorkflow,
   listEventVisualWorkflows,
   reviewEventVisualWorkflow,
   saveEventVisualWorkflow,
+  saveEventVisualWorkflowRevisionQa,
 } from "@/lib/event-factory/visuals";
 import type { EventVisualLane, EventVisualReference } from "@/lib/event-factory/types";
 
@@ -85,6 +87,19 @@ export async function POST(request: Request) {
       const rawQa = payload.qaChecks && typeof payload.qaChecks === "object" && !Array.isArray(payload.qaChecks)
         ? payload.qaChecks as Record<string, unknown>
         : {};
+      if (existing?.supersedesWorkflowId) {
+        const result = await saveEventVisualWorkflowRevisionQa({
+          workflowId: existing.id,
+          qaChecks: {
+            visualElementsVerified: rawQa.visualElementsVerified === true,
+            independentComposition: rawQa.independentComposition === true,
+            noInventedTextOrMarks: rawQa.noInventedTextOrMarks === true,
+            mobileCropVerified: rawQa.mobileCropVerified === true,
+          },
+          actorIdentity: auth.admin.email,
+        });
+        return noStoreJson({ result });
+      }
       const result = await saveEventVisualWorkflow({
         candidateId,
         sourceBundleId: sourceBundleId || existing?.sourceBundleId || null,
@@ -107,6 +122,16 @@ export async function POST(request: Request) {
           publicAssetVerified: existing?.qaChecks.publicAssetVerified ?? false,
         },
         actorIdentity: auth.admin.email,
+      });
+      return noStoreJson({ result });
+    }
+
+    if (action === "revise") {
+      if (!UUID.test(workflowId)) return noStoreJson({ error: "A valid visual workflow id is required." }, 400);
+      const result = await createEventVisualWorkflowRevision({
+        workflowId,
+        actorIdentity: auth.admin.email,
+        notes: notes || undefined,
       });
       return noStoreJson({ result });
     }

@@ -109,7 +109,7 @@ assert(eventFactoryReadiness.includes('event_visual_workflows') && eventFactoryR
 assert(eventFactoryReadiness.includes('event_page_versions_event_page_id_fkey'), 'event factory readiness does not disambiguate the Event Page version relationship');
 
 const eventFactoryPackages = read('lib/event-factory/packages.ts');
-for (const rpc of ['atlas_upsert_event_factory_package', 'atlas_review_event_factory_package', 'atlas_materialize_event_factory_package', 'atlas_finish_event_factory_publication', 'atlas_list_event_factory_packages']) {
+for (const rpc of ['atlas_upsert_event_factory_package', 'atlas_create_event_factory_hero_correction', 'atlas_review_event_factory_package', 'atlas_materialize_event_factory_package', 'atlas_finish_event_factory_publication', 'atlas_list_event_factory_packages']) {
   assert(eventFactoryPackages.includes(`"${rpc}"`), `event package service does not call fixed RPC ${rpc}`);
 }
 assert(eventFactoryPackages.includes('validateEventPageManifest'), 'event package publication does not revalidate the reviewed Event Hub manifest');
@@ -186,10 +186,18 @@ for (const check of ['visualElementsVerified', 'independentComposition', 'noInve
   assert(visualWorkflowMigration.includes(check), `visual workflow approval is missing ${check}`);
 }
 assert(visualWorkflowMigration.includes("set search_path = ''"), 'visual workflow RPCs do not use a fixed empty search path');
+
+const eventFactoryRevisionMigration = read('supabase/migrations/017_event_factory_revisions.sql');
+assert(eventFactoryRevisionMigration.includes('revision_number'), 'event factory revisions do not version visual workflows');
+assert(eventFactoryRevisionMigration.includes('supersedes_workflow_id'), 'event factory revisions do not retain prior visual workflow provenance');
+assert(eventFactoryRevisionMigration.includes('supersedes_package_id'), 'event factory revisions do not retain prior package provenance');
+assert(eventFactoryRevisionMigration.includes('atlas_create_event_visual_workflow_revision'), 'event factory revisions do not expose the guarded visual correction operation');
+assert(eventFactoryRevisionMigration.includes("set search_path = ''"), 'event factory revision RPCs do not use a fixed empty search path');
+assert(eventFactoryRevisionMigration.includes('from public, anon, authenticated'), 'event factory revision RPCs are not revoked from browser roles');
 assert(visualWorkflowMigration.includes('revoke all on function public.atlas_review_event_visual_workflow'), 'visual workflow review RPC is not revoked from public roles');
 
 const visualWorkflowService = read('lib/event-factory/visuals.ts');
-for (const rpc of ['atlas_upsert_event_visual_workflow', 'atlas_review_event_visual_workflow', 'atlas_list_event_visual_workflows']) {
+for (const rpc of ['atlas_upsert_event_visual_workflow', 'atlas_create_event_visual_workflow_revision', 'atlas_attach_event_visual_revision_asset', 'atlas_update_event_visual_revision_qa', 'atlas_review_event_visual_workflow', 'atlas_list_event_visual_workflows']) {
   assert(visualWorkflowService.includes(`"${rpc}"`), `visual workflow service does not call fixed RPC ${rpc}`);
 }
 assert(!/rpc\([^"'`]/.test(visualWorkflowService), 'visual workflow service appears to accept a dynamic RPC name');
@@ -377,6 +385,7 @@ assert(readiness.includes('Source Synthesis Migration Not Yet Applied'), 'missin
 assert(readiness.includes('Editorial Synthesis Migration Not Yet Applied'), 'missing model-assisted synthesis migration readiness state is absent');
 assert(readiness.includes('Event Factory Package Migration Not Yet Applied'), 'missing Event Factory package migration readiness state is absent');
 assert(readiness.includes('Visual Workflow Migration Not Yet Applied'), 'missing visual workflow migration readiness state is absent');
+assert(readiness.includes('Event Factory Revision Migration Not Yet Applied'), 'missing event factory revision migration readiness state is absent');
 assert(!readiness.includes('head: true'), 'readiness uses HEAD probes, which can mask missing PostgREST relations');
 
 if (failures.length) {

@@ -109,6 +109,8 @@ Event-category exemplars may guide layout or rendering quality, but they are not
 
 New package preparation prefers the approved cloud asset and retains the full visual brief and QA audit. Existing published legacy packages continue to render without retroactive migration.
 
+Migration `017_event_factory_revisions.sql` adds the correction path for a released same-edition event. Approved visual workflows and published packages remain immutable. A corrected hero starts a linked, QA-reset visual revision; once that revision is approved, package preparation freezes a new linked package version for the usual private preview and human publication decision. This is the reusable path for fixing released art without overwriting the earlier cloud object, package, or Event Hub version.
+
 ## Scout Status
 
 Scout's visual identity is implemented. Event Hub Ask Scout is now a single-purpose question composer: suggestion chips, suggested questions, predefined prompt tags, and event-specific keyword response routing are not rendered. Existing source-backed suggestion records remain in published manifests as compatibility data for the reviewed Event Factory lifecycle.

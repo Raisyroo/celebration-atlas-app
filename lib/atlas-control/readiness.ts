@@ -51,5 +51,10 @@ export async function getReadiness(): Promise<Readiness> {
     supabase.storage.getBucket("celebration-atlas-media"),
   ]);
   if (visualWorkflowChecks.some((r) => r.error)) return { state: "missing_migration", title: "Visual Workflow Migration Not Yet Applied", detail: "The Event Factory is connected, but migration 014 for evidence-backed hero briefs and cloud media approval is not reachable yet." };
+  const factoryRevisionChecks = await Promise.all([
+    supabase.from("event_visual_workflows").select("id,revision_number,supersedes_workflow_id").limit(1),
+    supabase.from("event_factory_packages").select("id,supersedes_package_id").limit(1),
+  ]);
+  if (factoryRevisionChecks.some((r) => r.error)) return { state: "missing_migration", title: "Event Factory Revision Migration Not Yet Applied", detail: "The Event Factory is connected, but migration 017 for immutable same-edition visual and package corrections is not reachable yet." };
   return { state: "ready", title: "Control Plane Ready", detail: "Protected service-role bridge can reach discovery evidence, parent-bound editorial proposals, retained verification, visual-signature workflows, complete editorial packages, reviewed publishing, and the private source archive." };
 }
