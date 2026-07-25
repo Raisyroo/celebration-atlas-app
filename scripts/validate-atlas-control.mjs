@@ -192,6 +192,10 @@ assert(eventFactoryRevisionMigration.includes('revision_number'), 'event factory
 assert(eventFactoryRevisionMigration.includes('supersedes_workflow_id'), 'event factory revisions do not retain prior visual workflow provenance');
 assert(eventFactoryRevisionMigration.includes('supersedes_package_id'), 'event factory revisions do not retain prior package provenance');
 assert(eventFactoryRevisionMigration.includes('atlas_create_event_visual_workflow_revision'), 'event factory revisions do not expose the guarded visual correction operation');
+assert(eventFactoryRevisionMigration.includes('workflow.supersedes_workflow_id is null'), 'base visual upserts are not isolated from correction revisions');
+assert(eventFactoryRevisionMigration.includes('package.supersedes_package_id is null'), 'base package upserts are not isolated from correction revisions');
+assert(eventFactoryRevisionMigration.includes('Hero corrections must start from the latest published package.'), 'hero corrections can fork stale published packages');
+assert(eventFactoryRevisionMigration.includes('atlas_guard_frozen_visual_workflow'), 'frozen package visuals can still be reopened');
 assert(eventFactoryRevisionMigration.includes("set search_path = ''"), 'event factory revision RPCs do not use a fixed empty search path');
 assert(eventFactoryRevisionMigration.includes('from public, anon, authenticated'), 'event factory revision RPCs are not revoked from browser roles');
 assert(visualWorkflowMigration.includes('revoke all on function public.atlas_review_event_visual_workflow'), 'visual workflow review RPC is not revoked from public roles');

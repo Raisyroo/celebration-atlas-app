@@ -252,9 +252,18 @@ export async function createEventVisualWorkflowRevision(args: {
   actorIdentity: string;
   notes?: string;
 }) {
+  const workflow = await getEventVisualWorkflow(args.workflowId);
+  const qaChecks: EventVisualQaChecks = {
+    visualElementsVerified: false,
+    independentComposition: false,
+    noInventedTextOrMarks: false,
+    mobileCropVerified: false,
+    publicAssetVerified: false,
+  };
   const supabase = requireServiceClient();
   const { data, error } = await supabase.rpc("atlas_create_event_visual_workflow_revision", {
     p_workflow_id: args.workflowId,
+    p_content_hash: contentHash(workflowPayload(workflow, null, qaChecks)),
     p_actor_identity: args.actorIdentity,
     p_notes: args.notes ?? null,
   });

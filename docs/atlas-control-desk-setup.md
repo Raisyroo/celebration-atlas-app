@@ -49,6 +49,8 @@ Apply the Atlas Control migrations in order through the existing Supabase migrat
 8. `supabase/migrations/012_model_assisted_editorial_synthesis.sql` for parent-bound AI editorial proposals, retained provider metadata, and immutable safeguard audits.
 9. `supabase/migrations/013_source_synthesis_map_record.sql` for source-backed private map records before canonical publication.
 10. `supabase/migrations/014_event_visual_workflows.sql` for visual-signature briefs, cloud hero assets, QA, and audited human art approval.
+11. `supabase/migrations/015_public_rls_hardening.sql` and `016_public_schema_security_guardrails.sql` for closed-by-default public-schema access and deploy-time security assertions.
+12. `supabase/migrations/017_event_factory_revisions.sql` for immutable same-edition hero corrections and linked package revisions.
 
 The readiness panel reports these foundations separately. Public Event Hub routes continue using checked-in manifests when migration 005 is absent or no reviewed database version has been published. See `docs/event-page-publishing.md` for the complete workflow.
 

@@ -92,6 +92,7 @@ type PackageRow = {
 };
 type VisualWorkflowRow = {
   id: string;
+  revision_number: number;
   candidate_id: string;
   event_id: string | null;
   event_key: string;
@@ -375,6 +376,7 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
       visualWorkflowId: visualWorkflow?.id ?? null,
       visualWorkflowStatus: visualWorkflow?.status ?? null,
       visualLane: visualWorkflow?.lane ?? null,
+      visualWorkflowRevisionNumber: visualWorkflow?.revision_number ?? null,
       verificationStatus: verificationCase?.status ?? null,
       name,
       slug,

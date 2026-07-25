@@ -752,6 +752,19 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
                         {factoryPending === `prepare:${item.key}` ? "Assembling..." : "Assemble review package"}
                       </button>
                     )}
+                    {item.verificationStatus === "verified"
+                      && (item.packageStatus === "published" || item.packageStatus === "assembling" || item.packageStatus === "rejected")
+                      && item.visualWorkflowStatus === "approved"
+                      && (item.visualWorkflowRevisionNumber ?? 1) > 1 && (
+                        <button
+                          type="button"
+                          disabled={Boolean(factoryPending)}
+                          onClick={() => eventFactoryAction({ action: "prepare", candidateId: item.candidateId ?? "", verificationCaseId: item.verificationCaseId ?? "" }, `prepare-correction:${item.key}`)}
+                        >
+                          <Sparkles size={14} aria-hidden="true" />
+                          {factoryPending === `prepare-correction:${item.key}` ? "Assembling..." : "Assemble corrected hero"}
+                        </button>
+                      )}
                     {item.packageId && item.packageStatus === "ready_for_review" && (
                       <>
                         <button
@@ -779,6 +792,15 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
                         onClick={() => eventFactoryAction({ action: "approve_and_publish", packageId: item.packageId ?? "" }, `retry:${item.key}`)}
                       >
                         {factoryPending === `retry:${item.key}` ? "Retrying..." : "Retry publication"}
+                      </button>
+                    )}
+                    {item.packageId && item.packageStatus === "rejected" && (
+                      <button
+                        type="button"
+                        disabled={Boolean(factoryPending)}
+                        onClick={() => eventFactoryAction({ action: "reopen", packageId: item.packageId ?? "", notes: "Reopened for a corrected review package." }, `reopen:${item.key}`)}
+                      >
+                        {factoryPending === `reopen:${item.key}` ? "Reopening..." : "Reopen package"}
                       </button>
                     )}
                   </div>
@@ -966,9 +988,11 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
               {selectedVisualWorkflow.status === "approved" && (
                 <>
                   <span>Approved for Event Factory use</span>
-                  <button type="button" className="secondary" disabled={Boolean(visualPending)} onClick={() => visualReviewAction("revise")}>
-                    {visualPending === "revise" ? "Creating revision..." : "Correct approved hero"}
-                  </button>
+                  {(selectedVisualItem?.packageStatus === "published" || selectedVisualItem?.packageStatus === "rejected") && (
+                    <button type="button" className="secondary" disabled={Boolean(visualPending)} onClick={() => visualReviewAction("revise")}>
+                      {visualPending === "revise" ? "Creating revision..." : "Correct approved hero"}
+                    </button>
+                  )}
                 </>
               )}
             </div>

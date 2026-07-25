@@ -153,6 +153,6 @@ export async function POST(request: Request) {
     if (/required|not found|invalid|match|belong|only|complete|reopened|retained|public source/i.test(message)) {
       return noStoreJson({ error: message }, 400);
     }
-    return noStoreJson({ error: "Visual workflow operation failed. Confirm migration 014 is applied." }, 502);
+    return noStoreJson({ error: "Visual workflow operation failed. Confirm migrations 014 and 017 are applied." }, 502);
   }
 }

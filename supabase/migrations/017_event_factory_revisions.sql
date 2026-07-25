@@ -45,8 +45,461 @@ create index event_factory_packages_supersedes
   on public.event_factory_packages (supersedes_package_id)
   where supersedes_package_id is not null;
 
+-- Keep the migration-014 upsert scoped to the editable base workflow. Correction
+-- rows are changed only through the revision-specific RPCs below.
+create or replace function public.atlas_upsert_event_visual_workflow(
+  p_candidate_id uuid,
+  p_source_bundle_id uuid,
+  p_target_year integer,
+  p_event_key text,
+  p_event_name text,
+  p_location_label text,
+  p_lane text,
+  p_search_query text,
+  p_reviewed_thumbnail_count integer,
+  p_reference_sources jsonb,
+  p_visual_signature jsonb,
+  p_generation_brief jsonb,
+  p_asset jsonb,
+  p_qa_checks jsonb,
+  p_content_hash text,
+  p_actor_identity text
+)
+returns table (
+  workflow_id uuid,
+  status text,
+  created boolean
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_candidate public.event_candidates%rowtype;
+  v_workflow public.event_visual_workflows%rowtype;
+  v_previous_status text;
+  v_status text;
+  v_reference_count integer;
+  v_motif_count integer;
+  v_research_ready boolean;
+  v_asset_ready boolean;
+  v_qa_ready boolean;
+  v_created boolean := false;
+begin
+  perform public.atlas_assert_service_role();
+
+  if nullif(btrim(p_actor_identity), '') is null then
+    raise exception 'Actor identity is required.' using errcode = '22023';
+  end if;
+  if p_target_year not between 2000 and 2100 then
+    raise exception 'A valid target year is required.' using errcode = '22023';
+  end if;
+  if p_event_key is null or p_event_key !~ '^[a-z0-9]+(?:-[a-z0-9]+)*$' then
+    raise exception 'A valid event key is required.' using errcode = '22023';
+  end if;
+  if p_lane not in ('fast_visual', 'editorial') then
+    raise exception 'A supported visual lane is required.' using errcode = '22023';
+  end if;
+  if nullif(btrim(p_event_name), '') is null
+     or nullif(btrim(p_location_label), '') is null
+     or nullif(btrim(p_search_query), '') is null then
+    raise exception 'Event name, location, and image search query are required.' using errcode = '22023';
+  end if;
+  if p_content_hash is null or p_content_hash !~ '^[0-9a-f]{64}$' then
+    raise exception 'A SHA-256 visual workflow content hash is required.' using errcode = '22023';
+  end if;
+  if jsonb_typeof(p_reference_sources) is distinct from 'array'
+     or jsonb_typeof(p_visual_signature) is distinct from 'object'
+     or jsonb_typeof(p_generation_brief) is distinct from 'object'
+     or jsonb_typeof(p_asset) is distinct from 'object'
+     or jsonb_typeof(p_qa_checks) is distinct from 'object' then
+    raise exception 'Visual workflow evidence, brief, asset, and checks must use structured JSON.' using errcode = '22023';
+  end if;
+
+  select candidate.* into v_candidate
+  from public.event_candidates as candidate
+  where candidate.id = p_candidate_id;
+  if not found then
+    raise exception 'Event candidate was not found.' using errcode = 'P0002';
+  end if;
+  if v_candidate.slug_candidate is distinct from p_event_key then
+    raise exception 'Visual workflow event key does not match the candidate.' using errcode = '22023';
+  end if;
+  if p_source_bundle_id is not null and not exists (
+    select 1 from public.event_source_bundles as bundle
+    where bundle.id = p_source_bundle_id
+      and (bundle.candidate_id = p_candidate_id or bundle.event_key = p_event_key)
+  ) then
+    raise exception 'Source bundle does not belong to this candidate.' using errcode = '22023';
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_array_elements(p_reference_sources) as reference
+    where jsonb_typeof(reference) <> 'object'
+      or coalesce(reference->>'url', '') !~ '^https?://'
+  ) then
+    raise exception 'Representative visual references must contain public source URLs.' using errcode = '22023';
+  end if;
+
+  v_reference_count := jsonb_array_length(p_reference_sources);
+  v_motif_count := case
+    when jsonb_typeof(p_visual_signature->'motifs') = 'array'
+      then jsonb_array_length(p_visual_signature->'motifs')
+    else 0
+  end;
+  v_research_ready := p_reviewed_thumbnail_count between 15 and 30
+    and v_reference_count between 3 and 12
+    and v_motif_count between 3 and 5
+    and nullif(btrim(p_visual_signature->>'heroMoment'), '') is not null
+    and nullif(btrim(p_generation_brief->>'prompt'), '') is not null
+    and p_generation_brief->>'aspectRatio' = '2:3'
+    and p_generation_brief->>'textPolicy' = 'no_generated_text';
+  v_asset_ready := p_asset->>'sourceKind' = 'supabase'
+    and p_asset->>'storageBucket' = 'celebration-atlas-media'
+    and nullif(btrim(p_asset->>'storagePath'), '') is not null
+    and coalesce(p_asset->>'publicUrl', '') ~ '^https://'
+    and nullif(btrim(p_asset->>'altText'), '') is not null;
+  v_qa_ready := p_qa_checks->>'visualElementsVerified' = 'true'
+    and p_qa_checks->>'independentComposition' = 'true'
+    and p_qa_checks->>'noInventedTextOrMarks' = 'true'
+    and p_qa_checks->>'mobileCropVerified' = 'true'
+    and p_qa_checks->>'publicAssetVerified' = 'true';
+
+  v_status := case
+    when v_research_ready and v_asset_ready and v_qa_ready then 'ready_for_review'
+    when v_research_ready then 'draft'
+    else 'researching'
+  end;
+
+  select workflow.* into v_workflow
+  from public.event_visual_workflows as workflow
+  where workflow.candidate_id = p_candidate_id
+    and workflow.target_year = p_target_year
+    and workflow.supersedes_workflow_id is null
+  for update;
+
+  if found and v_workflow.status in ('approved', 'archived') then
+    if v_workflow.content_hash = p_content_hash then
+      return query select v_workflow.id, v_workflow.status, false;
+      return;
+    end if;
+    raise exception 'Approved or archived visual workflows must be reopened before revision.' using errcode = '22023';
+  end if;
+
+  if v_workflow.id is null then
+    insert into public.event_visual_workflows (
+      candidate_id, event_id, source_bundle_id, target_year, event_key, event_name,
+      location_label, lane, status, search_query, reviewed_thumbnail_count,
+      reference_sources, visual_signature, generation_brief, asset, qa_checks,
+      content_hash, created_by, ready_at, revision_number, supersedes_workflow_id
+    ) values (
+      p_candidate_id, v_candidate.matched_event_id, p_source_bundle_id, p_target_year,
+      p_event_key, btrim(p_event_name), btrim(p_location_label), p_lane, v_status,
+      btrim(p_search_query), p_reviewed_thumbnail_count, p_reference_sources,
+      p_visual_signature, p_generation_brief, p_asset, p_qa_checks, p_content_hash,
+      btrim(p_actor_identity), case when v_status = 'ready_for_review' then now() else null end,
+      1, null
+    ) returning * into v_workflow;
+    v_created := true;
+
+    insert into public.event_visual_workflow_actions (
+      workflow_id, action_type, actor_identity, from_status, to_status, metadata
+    ) values (
+      v_workflow.id, 'created', btrim(p_actor_identity), null, v_status,
+      jsonb_build_object(
+        'reviewed_thumbnail_count', p_reviewed_thumbnail_count,
+        'reference_count', v_reference_count,
+        'motif_count', v_motif_count,
+        'asset_ready', v_asset_ready,
+        'qa_ready', v_qa_ready
+      )
+    );
+  else
+    v_previous_status := v_workflow.status;
+    update public.event_visual_workflows
+      set event_id = coalesce(v_candidate.matched_event_id, event_id),
+          source_bundle_id = p_source_bundle_id,
+          event_key = p_event_key,
+          event_name = btrim(p_event_name),
+          location_label = btrim(p_location_label),
+          lane = p_lane,
+          status = v_status,
+          search_query = btrim(p_search_query),
+          reviewed_thumbnail_count = p_reviewed_thumbnail_count,
+          reference_sources = p_reference_sources,
+          visual_signature = p_visual_signature,
+          generation_brief = p_generation_brief,
+          asset = p_asset,
+          qa_checks = p_qa_checks,
+          content_hash = p_content_hash,
+          reviewed_by = null,
+          review_notes = null,
+          reviewed_at = null,
+          ready_at = case when v_status = 'ready_for_review' then now() else null end,
+          updated_at = now()
+    where id = v_workflow.id
+    returning * into v_workflow;
+
+    insert into public.event_visual_workflow_actions (
+      workflow_id, action_type, actor_identity, from_status, to_status, metadata
+    ) values (
+      v_workflow.id, 'rebuilt', btrim(p_actor_identity), v_previous_status, v_status,
+      jsonb_build_object(
+        'reviewed_thumbnail_count', p_reviewed_thumbnail_count,
+        'reference_count', v_reference_count,
+        'motif_count', v_motif_count,
+        'asset_ready', v_asset_ready,
+        'qa_ready', v_qa_ready
+      )
+    );
+  end if;
+
+  return query select v_workflow.id, v_workflow.status, v_created;
+end;
+$$;
+
+-- Keep the migration-011 upsert scoped to the editable base package. Released
+-- corrections are separate immutable rows created by the hero-correction RPC.
+create or replace function public.atlas_upsert_event_factory_package(
+  p_verification_case_id uuid,
+  p_source_bundle_id uuid,
+  p_synthesis_id uuid,
+  p_event_key text,
+  p_slug text,
+  p_canonical_profile jsonb,
+  p_map_record jsonb,
+  p_page_manifest jsonb,
+  p_scout_context jsonb,
+  p_art_brief jsonb,
+  p_art_asset jsonb,
+  p_content_hash text,
+  p_actor_identity text
+)
+returns table (
+  package_id uuid,
+  status text,
+  readiness_score numeric,
+  created boolean
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_case public.event_verification_cases%rowtype;
+  v_candidate public.event_candidates%rowtype;
+  v_package public.event_factory_packages%rowtype;
+  v_checks jsonb;
+  v_ready_count integer;
+  v_score numeric(4,3);
+  v_status text;
+  v_previous_status text;
+  v_created boolean := false;
+  v_latitude double precision;
+  v_longitude double precision;
+begin
+  perform public.atlas_assert_service_role();
+
+  if nullif(btrim(p_actor_identity), '') is null then
+    raise exception 'Actor identity is required.' using errcode = '22023';
+  end if;
+  if p_event_key is null or p_event_key !~ '^[a-z0-9]+(?:-[a-z0-9]+)*$' then
+    raise exception 'A valid event key is required.' using errcode = '22023';
+  end if;
+  if p_slug is null or p_slug !~ '^[a-z0-9]+(?:-[a-z0-9]+)*$' then
+    raise exception 'A valid event slug is required.' using errcode = '22023';
+  end if;
+  if p_content_hash is null or p_content_hash !~ '^[0-9a-f]{64}$' then
+    raise exception 'A SHA-256 package content hash is required.' using errcode = '22023';
+  end if;
+  if jsonb_typeof(p_canonical_profile) is distinct from 'object'
+     or jsonb_typeof(p_map_record) is distinct from 'object'
+     or jsonb_typeof(p_page_manifest) is distinct from 'object'
+     or jsonb_typeof(p_scout_context) is distinct from 'object'
+     or jsonb_typeof(p_art_brief) is distinct from 'object'
+     or jsonb_typeof(p_art_asset) is distinct from 'object' then
+    raise exception 'Every package output must be a JSON object.' using errcode = '22023';
+  end if;
+  if p_page_manifest->>'eventId' is distinct from p_event_key
+     or p_page_manifest->>'slug' is distinct from p_slug then
+    raise exception 'Event Page manifest identity does not match the package.' using errcode = '22023';
+  end if;
+  if p_page_manifest::text ~* '\msponsor' then
+    raise exception 'Event sponsor references are not allowed in Celebration Atlas package copy.' using errcode = '22023';
+  end if;
+
+  select verification.* into v_case
+  from public.event_verification_cases as verification
+  where verification.id = p_verification_case_id
+  for update;
+  if not found then
+    raise exception 'Verification case was not found.' using errcode = 'P0002';
+  end if;
+  if v_case.status <> 'verified' or v_case.candidate_id is null then
+    raise exception 'A verified candidate case is required before package assembly.' using errcode = '22023';
+  end if;
+
+  select candidate.* into v_candidate
+  from public.event_candidates as candidate
+  where candidate.id = v_case.candidate_id;
+  if not found then
+    raise exception 'Event candidate was not found.' using errcode = 'P0002';
+  end if;
+  if v_candidate.slug_candidate is distinct from p_slug then
+    raise exception 'Package slug does not match the verified candidate.' using errcode = '22023';
+  end if;
+
+  if p_source_bundle_id is not null and not exists (
+    select 1 from public.event_source_bundles as bundle
+    where bundle.id = p_source_bundle_id
+      and (bundle.candidate_id = v_case.candidate_id or bundle.event_key = p_event_key)
+  ) then
+    raise exception 'Source bundle does not belong to this candidate.' using errcode = '22023';
+  end if;
+  if p_synthesis_id is not null and not exists (
+    select 1 from public.event_source_syntheses as synthesis
+    join public.event_source_bundles as bundle on bundle.id = synthesis.bundle_id
+    where synthesis.id = p_synthesis_id
+      and (bundle.candidate_id = v_case.candidate_id or bundle.event_key = p_event_key)
+  ) then
+    raise exception 'Source synthesis does not belong to this candidate.' using errcode = '22023';
+  end if;
+
+  begin
+    v_latitude := (p_map_record->>'latitude')::double precision;
+    v_longitude := (p_map_record->>'longitude')::double precision;
+  exception when others then
+    v_latitude := null;
+    v_longitude := null;
+  end;
+
+  v_checks := jsonb_build_object(
+    'exists', v_case.existence_status = 'confirmed',
+    'annual', v_case.recurrence_status = 'confirmed',
+    'dates', v_case.dates_status = 'announced',
+    'location', v_case.location_status = 'confirmed'
+      and v_latitude between -90 and 90
+      and v_longitude between -180 and 180
+      and nullif(btrim(p_map_record->>'sourceUrl'), '') is not null,
+    'sources', v_case.official_source_count >= 1 and v_case.supporting_source_count >= 1,
+    'map', v_latitude between -90 and 90 and v_longitude between -180 and 180,
+    'page', jsonb_typeof(p_page_manifest->'modules') = 'array'
+      and jsonb_array_length(p_page_manifest->'modules') > 0,
+    'art', nullif(btrim(p_art_asset->>'src'), '') is not null
+      and nullif(btrim(p_art_asset->>'alt'), '') is not null
+  );
+
+  select count(*) into v_ready_count
+  from jsonb_each_text(v_checks) as gate
+  where gate.value = 'true';
+  v_score := round((v_ready_count::numeric / 8), 3);
+  v_status := case when v_ready_count = 8 then 'ready_for_review' else 'assembling' end;
+
+  select package.* into v_package
+  from public.event_factory_packages as package
+  where package.verification_case_id = p_verification_case_id
+    and package.supersedes_package_id is null
+  for update;
+
+  if found and v_package.status in ('approved', 'publishing', 'published', 'archived') then
+    if v_package.content_hash = p_content_hash then
+      return query select v_package.id, v_package.status, v_package.readiness_score, false;
+      return;
+    end if;
+    raise exception 'Approved or published packages cannot be rebuilt.' using errcode = '22023';
+  end if;
+
+  if v_package.id is null then
+    insert into public.event_factory_packages (
+      verification_case_id, candidate_id, event_id, source_bundle_id, synthesis_id,
+      target_year, event_key, slug, status, package_version, canonical_profile, map_record,
+      page_manifest, scout_context, art_brief, art_asset, readiness_checks,
+      readiness_score, content_hash, created_by, ready_at, supersedes_package_id
+    ) values (
+      v_case.id, v_case.candidate_id, v_case.event_id, p_source_bundle_id, p_synthesis_id,
+      v_case.target_year, p_event_key, p_slug, v_status, 1, p_canonical_profile, p_map_record,
+      p_page_manifest, p_scout_context, p_art_brief, p_art_asset, v_checks,
+      v_score, p_content_hash, btrim(p_actor_identity),
+      case when v_status = 'ready_for_review' then now() else null end, null
+    ) returning * into v_package;
+    v_created := true;
+
+    insert into public.event_factory_package_actions (
+      package_id, action_type, actor_identity, from_status, to_status, metadata
+    ) values (
+      v_package.id, 'created', btrim(p_actor_identity), null, v_status,
+      jsonb_build_object('content_hash', p_content_hash, 'readiness_checks', v_checks)
+    );
+  else
+    v_previous_status := v_package.status;
+    update public.event_factory_packages
+      set source_bundle_id = p_source_bundle_id,
+          synthesis_id = p_synthesis_id,
+          event_key = p_event_key,
+          slug = p_slug,
+          status = v_status,
+          package_version = package_version + 1,
+          canonical_profile = p_canonical_profile,
+          map_record = p_map_record,
+          page_manifest = p_page_manifest,
+          scout_context = p_scout_context,
+          art_brief = p_art_brief,
+          art_asset = p_art_asset,
+          readiness_checks = v_checks,
+          readiness_score = v_score,
+          content_hash = p_content_hash,
+          reviewed_by = null,
+          review_notes = null,
+          reviewed_at = null,
+          ready_at = case when v_status = 'ready_for_review' then now() else null end,
+          updated_at = now()
+    where id = v_package.id
+    returning * into v_package;
+
+    insert into public.event_factory_package_actions (
+      package_id, action_type, actor_identity, from_status, to_status, metadata
+    ) values (
+      v_package.id, 'rebuilt', btrim(p_actor_identity), v_previous_status, v_status,
+      jsonb_build_object('content_hash', p_content_hash, 'readiness_checks', v_checks)
+    );
+  end if;
+
+  return query select v_package.id, v_package.status, v_package.readiness_score, v_created;
+end;
+$$;
+
+create or replace function public.atlas_guard_frozen_visual_workflow()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if old.status = 'approved'
+     and new.status <> 'approved'
+     and exists (
+       select 1
+       from public.event_factory_packages as package
+       where package.art_asset->>'visualWorkflowId' = old.id::text
+     ) then
+    raise exception 'This approved visual is retained by a frozen package and cannot be reopened.'
+      using errcode = '22023';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists event_visual_workflow_frozen_guard
+  on public.event_visual_workflows;
+create trigger event_visual_workflow_frozen_guard
+before update on public.event_visual_workflows
+for each row
+execute function public.atlas_guard_frozen_visual_workflow();
+
 create or replace function public.atlas_create_event_visual_workflow_revision(
   p_workflow_id uuid,
+  p_content_hash text,
   p_actor_identity text,
   p_notes text
 )
@@ -69,6 +522,9 @@ begin
   if nullif(btrim(p_actor_identity), '') is null then
     raise exception 'Actor identity is required.' using errcode = '22023';
   end if;
+  if p_content_hash is null or p_content_hash !~ '^[0-9a-f]{64}$' then
+    raise exception 'A SHA-256 visual workflow content hash is required.' using errcode = '22023';
+  end if;
 
   select workflow.* into v_source
   from public.event_visual_workflows as workflow
@@ -79,6 +535,19 @@ begin
   end if;
   if v_source.status <> 'approved' then
     raise exception 'Only an approved visual workflow can start a correction revision.' using errcode = '22023';
+  end if;
+  if not exists (
+    select 1
+    from public.event_factory_packages as package
+    where package.art_asset->>'visualWorkflowId' = v_source.id::text
+  ) or not exists (
+    select 1
+    from public.event_factory_packages as package
+    where package.candidate_id = v_source.candidate_id
+      and package.target_year = v_source.target_year
+      and package.status = 'published'
+  ) then
+    raise exception 'Only a visual retained by a frozen package in a published event can start a correction revision.' using errcode = '22023';
   end if;
 
   perform pg_catalog.pg_advisory_xact_lock(
@@ -150,7 +619,7 @@ begin
       'mobileCropVerified', false,
       'publicAssetVerified', false
     ),
-    v_source.content_hash,
+    p_content_hash,
     btrim(p_actor_identity),
     v_revision_number,
     v_source.id
@@ -520,10 +989,40 @@ begin
     raise exception 'Visual revision and released package identities do not match.' using errcode = '22023';
   end if;
 
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(
+      'event-package-correction:' || v_source.candidate_id::text || ':' || v_source.target_year::text,
+      0
+    )
+  );
+  if v_source.id is distinct from (
+    select package.id
+    from public.event_factory_packages as package
+    where package.candidate_id = v_source.candidate_id
+      and package.target_year = v_source.target_year
+      and package.status = 'published'
+    order by package.published_at desc nulls last, package.id desc
+    limit 1
+  ) then
+    raise exception 'Hero corrections must start from the latest published package.' using errcode = '22023';
+  end if;
+
   v_old_visual_workflow_id := v_source.art_asset->>'visualWorkflowId';
-  if v_old_visual_workflow_id is null
-     or v_old_visual_workflow_id <> v_visual.supersedes_workflow_id::text then
-    raise exception 'Visual revision does not directly supersede the released package art.' using errcode = '22023';
+  if v_old_visual_workflow_id is null or not exists (
+    with recursive visual_lineage as (
+      select workflow.id, workflow.supersedes_workflow_id
+      from public.event_visual_workflows as workflow
+      where workflow.id = v_visual.id
+      union all
+      select parent.id, parent.supersedes_workflow_id
+      from public.event_visual_workflows as parent
+      join visual_lineage as child on child.supersedes_workflow_id = parent.id
+    )
+    select 1
+    from visual_lineage
+    where visual_lineage.id::text = v_old_visual_workflow_id
+  ) then
+    raise exception 'Visual revision does not descend from the released package art.' using errcode = '22023';
   end if;
   v_checks_complete := v_visual.qa_checks->>'visualElementsVerified' = 'true'
     and v_visual.qa_checks->>'independentComposition' = 'true'
@@ -539,10 +1038,6 @@ begin
     raise exception 'The corrected hero must be publicly hosted and fully checked.' using errcode = '22023';
   end if;
 
-  perform pg_catalog.pg_advisory_xact_lock(
-    pg_catalog.hashtextextended('event-package-correction:' || v_source.id::text, 0)
-  );
-
   select package.* into v_package
   from public.event_factory_packages as package
   where package.supersedes_package_id = v_source.id
@@ -550,6 +1045,27 @@ begin
   order by package.package_version desc
   limit 1
   for update;
+  if found and v_package.content_hash <> p_content_hash then
+    raise exception 'The existing hero correction has different frozen content.' using errcode = '22023';
+  end if;
+  if found and v_package.status = 'assembling' then
+    update public.event_factory_packages
+      set status = 'ready_for_review',
+          readiness_checks = v_source.readiness_checks,
+          readiness_score = v_source.readiness_score,
+          ready_at = now(),
+          updated_at = now()
+    where id = v_package.id
+    returning * into v_package;
+
+    insert into public.event_factory_package_actions (
+      package_id, action_type, actor_identity, from_status, to_status, notes, metadata
+    ) values (
+      v_package.id, 'rebuilt', btrim(p_actor_identity), 'assembling', 'ready_for_review',
+      nullif(btrim(p_notes), ''),
+      jsonb_build_object('content_hash', p_content_hash, 'correction_scope', 'hero_only')
+    );
+  end if;
   if found then
     return query
       select v_package.id, v_package.status, v_package.readiness_score,
@@ -680,7 +1196,9 @@ begin
 end;
 $$;
 
-revoke all on function public.atlas_create_event_visual_workflow_revision(uuid, text, text)
+revoke all on function public.atlas_create_event_visual_workflow_revision(uuid, text, text, text)
+  from public, anon, authenticated;
+revoke all on function public.atlas_guard_frozen_visual_workflow()
   from public, anon, authenticated;
 revoke all on function public.atlas_attach_event_visual_revision_asset(uuid, jsonb, text, text)
   from public, anon, authenticated;
@@ -691,7 +1209,7 @@ revoke all on function public.atlas_list_event_visual_workflows(integer)
 revoke all on function public.atlas_create_event_factory_hero_correction(uuid, uuid, text, text, text)
   from public, anon, authenticated;
 
-grant execute on function public.atlas_create_event_visual_workflow_revision(uuid, text, text)
+grant execute on function public.atlas_create_event_visual_workflow_revision(uuid, text, text, text)
   to service_role;
 grant execute on function public.atlas_attach_event_visual_revision_asset(uuid, jsonb, text, text)
   to service_role;

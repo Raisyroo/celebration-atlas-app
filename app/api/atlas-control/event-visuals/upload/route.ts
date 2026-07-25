@@ -32,6 +32,7 @@ export async function POST(request: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.message }, { status: auth.status });
   const supabase = createAtlasServiceClient();
   if (!supabase) return NextResponse.json({ error: "Atlas Supabase service configuration is incomplete." }, { status: 503 });
+  let uploadedStoragePath: string | null = null;
 
   const formData = await request.formData().catch(() => null);
   const workflowId = formData?.get("workflowId");
@@ -60,12 +61,14 @@ export async function POST(request: Request) {
       upsert: false,
     });
     if (upload.error) throw new Error(`Hero upload failed: ${upload.error.message}`);
+    uploadedStoragePath = storagePath;
 
     const { data: publicUrlData } = supabase.storage.from(CELEBRATION_ATLAS_MEDIA_BUCKET).getPublicUrl(storagePath);
     const publicUrl = publicUrlData.publicUrl;
     const publicResponse = await fetch(publicUrl, { method: "HEAD", cache: "no-store" }).catch(() => null);
     if (!publicResponse?.ok || !publicResponse.headers.get("content-type")?.startsWith("image/")) {
       await supabase.storage.from(CELEBRATION_ATLAS_MEDIA_BUCKET).remove([storagePath]).catch(() => undefined);
+      uploadedStoragePath = null;
       throw new Error("Uploaded hero art is not publicly reachable yet.");
     }
 
@@ -108,6 +111,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, publicUrl, storagePath, result });
   } catch (error) {
+    if (uploadedStoragePath) {
+      await supabase.storage.from(CELEBRATION_ATLAS_MEDIA_BUCKET).remove([uploadedStoragePath]).catch(() => undefined);
+    }
     const message = error instanceof Error ? error.message : "Hero upload failed.";
     return NextResponse.json({ error: message }, { status: /required|reopen|not found/i.test(message) ? 400 : 502 });
   }
