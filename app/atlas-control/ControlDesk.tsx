@@ -200,6 +200,7 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
   const selectedVisualWorkflow = visualWorkflows.find((workflow) => workflow.id === visualDraft.workflowId)
     ?? visualWorkflows.find((workflow) => workflow.candidateId === selectedVisualCandidateId);
   const visualLocked = selectedVisualWorkflow?.status === "approved" || selectedVisualWorkflow?.status === "archived";
+  const visualResearchLocked = visualLocked || Boolean(selectedVisualWorkflow?.supersedesWorkflowId);
   const selectedVisualBundle = sourceBundles.find((bundle) => bundle.candidateId === selectedVisualCandidateId);
   const selectedVisualLocation = [selectedVisualItem?.city, "Michigan"].filter(Boolean).join(", ");
   const visualPrompt = buildEventVisualGenerationBrief({
@@ -350,12 +351,19 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
     await refresh();
   }
 
-  async function visualReviewAction(decision: "approve" | "reject" | "reopen") {
+  async function visualReviewAction(decision: "approve" | "reject" | "reopen" | "revise") {
     const workflowId = selectedVisualWorkflow?.id ?? visualDraft.workflowId;
     if (!workflowId) return;
     if (decision === "approve" && !window.confirm("Approve this visual signature, mobile crop, and cloud hero asset for Event Factory use?")) return;
+    if (decision === "revise" && !window.confirm("Create a new visual revision for corrected artwork? The released workflow and hero will remain in the audit history.")) return;
     setVisualPending(decision);
-    setVisualResult(decision === "approve" ? "Approving the hero workflow..." : "Updating the visual review state...");
+    setVisualResult(
+      decision === "approve"
+        ? "Approving the hero workflow..."
+        : decision === "revise"
+          ? "Creating a QA-reset visual revision..."
+          : "Updating the visual review state...",
+    );
     const response = await fetch("/api/atlas-control/event-visuals", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -367,7 +375,23 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
       setVisualResult(body.error ?? "Visual review could not be updated.");
       return;
     }
-    setVisualResult(decision === "approve" ? "Hero workflow approved for Event Factory use." : "Visual workflow review updated.");
+    if (decision === "revise") {
+      const revisionId = String(body.result?.workflow_id ?? "");
+      setVisualDraft((current) => ({
+        ...current,
+        workflowId: revisionId,
+        altText: "",
+        qaChecks: {
+          visualElementsVerified: false,
+          independentComposition: false,
+          noInventedTextOrMarks: false,
+          mobileCropVerified: false,
+        },
+      }));
+      setVisualResult("Visual revision created. Upload the corrected hero and rerun every release check.");
+    } else {
+      setVisualResult(decision === "approve" ? "Hero workflow approved for Event Factory use." : "Visual workflow review updated.");
+    }
     await refresh();
   }
 
@@ -728,6 +752,19 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
                         {factoryPending === `prepare:${item.key}` ? "Assembling..." : "Assemble review package"}
                       </button>
                     )}
+                    {item.verificationStatus === "verified"
+                      && (item.packageStatus === "published" || item.packageStatus === "assembling" || item.packageStatus === "rejected")
+                      && item.visualWorkflowStatus === "approved"
+                      && (item.visualWorkflowRevisionNumber ?? 1) > 1 && (
+                        <button
+                          type="button"
+                          disabled={Boolean(factoryPending)}
+                          onClick={() => eventFactoryAction({ action: "prepare", candidateId: item.candidateId ?? "", verificationCaseId: item.verificationCaseId ?? "" }, `prepare-correction:${item.key}`)}
+                        >
+                          <Sparkles size={14} aria-hidden="true" />
+                          {factoryPending === `prepare-correction:${item.key}` ? "Assembling..." : "Assemble corrected hero"}
+                        </button>
+                      )}
                     {item.packageId && item.packageStatus === "ready_for_review" && (
                       <>
                         <button
@@ -755,6 +792,15 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
                         onClick={() => eventFactoryAction({ action: "approve_and_publish", packageId: item.packageId ?? "" }, `retry:${item.key}`)}
                       >
                         {factoryPending === `retry:${item.key}` ? "Retrying..." : "Retry publication"}
+                      </button>
+                    )}
+                    {item.packageId && item.packageStatus === "rejected" && (
+                      <button
+                        type="button"
+                        disabled={Boolean(factoryPending)}
+                        onClick={() => eventFactoryAction({ action: "reopen", packageId: item.packageId ?? "", notes: "Reopened for a corrected review package." }, `reopen:${item.key}`)}
+                      >
+                        {factoryPending === `reopen:${item.key}` ? "Reopening..." : "Reopen package"}
                       </button>
                     )}
                   </div>
@@ -796,7 +842,7 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
             Art lane
             <select
               value={visualDraft.lane}
-              disabled={visualLocked}
+              disabled={visualResearchLocked}
               onChange={(event) => setVisualDraft((current) => ({ ...current, lane: event.target.value as EventVisualLane }))}
             >
               <option value="fast_visual">Fast visual</option>
@@ -808,7 +854,7 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
             <input
               type="text"
               value={visualDraft.searchQuery}
-              disabled={visualLocked}
+              disabled={visualResearchLocked}
               onChange={(event) => setVisualDraft((current) => ({ ...current, searchQuery: event.target.value }))}
             />
           </label>
@@ -819,7 +865,7 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
               min="0"
               max="60"
               value={visualDraft.reviewedThumbnailCount}
-              disabled={visualLocked}
+              disabled={visualResearchLocked}
               onChange={(event) => setVisualDraft((current) => ({ ...current, reviewedThumbnailCount: event.target.value }))}
             />
           </label>
@@ -828,7 +874,7 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
             <textarea
               rows={4}
               value={visualDraft.referenceSources}
-              disabled={visualLocked}
+              disabled={visualResearchLocked}
               placeholder="One public source URL per line"
               onChange={(event) => setVisualDraft((current) => ({ ...current, referenceSources: event.target.value }))}
             />
@@ -838,7 +884,7 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
             <textarea
               rows={5}
               value={visualDraft.motifs}
-              disabled={visualLocked}
+              disabled={visualResearchLocked}
               placeholder="One recurring element per line"
               onChange={(event) => setVisualDraft((current) => ({ ...current, motifs: event.target.value }))}
             />
@@ -848,7 +894,7 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
             <textarea
               rows={3}
               value={visualDraft.heroMoment}
-              disabled={visualLocked}
+              disabled={visualResearchLocked}
               onChange={(event) => setVisualDraft((current) => ({ ...current, heroMoment: event.target.value }))}
             />
           </label>
@@ -939,7 +985,16 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
               {selectedVisualWorkflow.status === "rejected" && (
                 <button type="button" disabled={Boolean(visualPending)} onClick={() => visualReviewAction("reopen")}>Reopen visual</button>
               )}
-              {selectedVisualWorkflow.status === "approved" && <span>Approved for Event Factory use</span>}
+              {selectedVisualWorkflow.status === "approved" && (
+                <>
+                  <span>Approved for Event Factory use</span>
+                  {(selectedVisualItem?.packageStatus === "published" || selectedVisualItem?.packageStatus === "rejected") && (
+                    <button type="button" className="secondary" disabled={Boolean(visualPending)} onClick={() => visualReviewAction("revise")}>
+                      {visualPending === "revise" ? "Creating revision..." : "Correct approved hero"}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}

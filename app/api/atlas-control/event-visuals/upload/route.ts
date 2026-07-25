@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { CELEBRATION_ATLAS_MEDIA_BUCKET } from "@/data/eventMedia";
 import { requireAtlasAdmin } from "@/lib/atlas-control/auth";
 import { createAtlasServiceClient } from "@/lib/atlas-control/service";
-import { getEventVisualWorkflow, saveEventVisualWorkflow } from "@/lib/event-factory/visuals";
+import {
+  attachEventVisualWorkflowRevisionAsset,
+  getEventVisualWorkflow,
+  saveEventVisualWorkflow,
+} from "@/lib/event-factory/visuals";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_HERO_BYTES = 16 * 1024 * 1024;
@@ -28,6 +32,7 @@ export async function POST(request: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.message }, { status: auth.status });
   const supabase = createAtlasServiceClient();
   if (!supabase) return NextResponse.json({ error: "Atlas Supabase service configuration is incomplete." }, { status: 503 });
+  let uploadedStoragePath: string | null = null;
 
   const formData = await request.formData().catch(() => null);
   const workflowId = formData?.get("workflowId");
@@ -56,47 +61,59 @@ export async function POST(request: Request) {
       upsert: false,
     });
     if (upload.error) throw new Error(`Hero upload failed: ${upload.error.message}`);
+    uploadedStoragePath = storagePath;
 
     const { data: publicUrlData } = supabase.storage.from(CELEBRATION_ATLAS_MEDIA_BUCKET).getPublicUrl(storagePath);
     const publicUrl = publicUrlData.publicUrl;
     const publicResponse = await fetch(publicUrl, { method: "HEAD", cache: "no-store" }).catch(() => null);
     if (!publicResponse?.ok || !publicResponse.headers.get("content-type")?.startsWith("image/")) {
       await supabase.storage.from(CELEBRATION_ATLAS_MEDIA_BUCKET).remove([storagePath]).catch(() => undefined);
+      uploadedStoragePath = null;
       throw new Error("Uploaded hero art is not publicly reachable yet.");
     }
 
-    const result = await saveEventVisualWorkflow({
-      candidateId: workflow.candidateId,
-      sourceBundleId: workflow.sourceBundleId,
-      targetYear: workflow.targetYear,
-      eventKey: workflow.eventKey,
-      eventName: workflow.eventName,
-      locationLabel: workflow.locationLabel,
-      lane: workflow.lane,
-      searchQuery: workflow.searchQuery,
-      reviewedThumbnailCount: workflow.reviewedThumbnailCount,
-      referenceSources: workflow.referenceSources,
-      motifs: workflow.visualSignature.motifs,
-      heroMoment: workflow.visualSignature.heroMoment,
-      asset: {
-        publicUrl,
-        altText: altText.trim(),
-        credit: "Celebration Atlas artwork",
-        sourceKind: "supabase",
-        storageBucket: CELEBRATION_ATLAS_MEDIA_BUCKET,
-        storagePath,
-        contentType: file.type,
-        byteSize: file.size,
-      },
-      qaChecks: {
-        ...workflow.qaChecks,
-        publicAssetVerified: true,
-      },
-      actorIdentity: auth.admin.email,
-    });
+    const asset = {
+      publicUrl,
+      altText: altText.trim(),
+      credit: "Celebration Atlas artwork",
+      sourceKind: "supabase" as const,
+      storageBucket: CELEBRATION_ATLAS_MEDIA_BUCKET,
+      storagePath,
+      contentType: file.type,
+      byteSize: file.size,
+    };
+    const result = workflow.supersedesWorkflowId
+      ? await attachEventVisualWorkflowRevisionAsset({
+          workflowId: workflow.id,
+          asset,
+          actorIdentity: auth.admin.email,
+        })
+      : await saveEventVisualWorkflow({
+          candidateId: workflow.candidateId,
+          sourceBundleId: workflow.sourceBundleId,
+          targetYear: workflow.targetYear,
+          eventKey: workflow.eventKey,
+          eventName: workflow.eventName,
+          locationLabel: workflow.locationLabel,
+          lane: workflow.lane,
+          searchQuery: workflow.searchQuery,
+          reviewedThumbnailCount: workflow.reviewedThumbnailCount,
+          referenceSources: workflow.referenceSources,
+          motifs: workflow.visualSignature.motifs,
+          heroMoment: workflow.visualSignature.heroMoment,
+          asset,
+          qaChecks: {
+            ...workflow.qaChecks,
+            publicAssetVerified: true,
+          },
+          actorIdentity: auth.admin.email,
+        });
 
     return NextResponse.json({ ok: true, publicUrl, storagePath, result });
   } catch (error) {
+    if (uploadedStoragePath) {
+      await supabase.storage.from(CELEBRATION_ATLAS_MEDIA_BUCKET).remove([uploadedStoragePath]).catch(() => undefined);
+    }
     const message = error instanceof Error ? error.message : "Hero upload failed.";
     return NextResponse.json({ error: message }, { status: /required|reopen|not found/i.test(message) ? 400 : 502 });
   }

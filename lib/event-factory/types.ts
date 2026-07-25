@@ -40,6 +40,7 @@ export type EventFactoryItem = {
   visualWorkflowId: string | null;
   visualWorkflowStatus: EventVisualWorkflowStatus | null;
   visualLane: EventVisualLane | null;
+  visualWorkflowRevisionNumber: number | null;
   verificationStatus: "collecting" | "needs_review" | "verified" | "rejected" | "stale" | null;
   name: string;
   slug: string;
@@ -103,6 +104,8 @@ export type EventVisualQaChecks = {
 
 export type EventVisualWorkflowSummary = {
   id: string;
+  revisionNumber: number;
+  supersedesWorkflowId: string | null;
   candidateId: string;
   eventId: string | null;
   sourceBundleId: string | null;

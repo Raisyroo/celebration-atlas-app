@@ -72,6 +72,7 @@ type VerifiedMapRecord = {
 
 type PackageRow = {
   id: string;
+  supersedes_package_id: string | null;
   verification_case_id: string;
   candidate_id: string;
   event_id: string | null;
@@ -219,6 +220,46 @@ export async function prepareEventFactoryPackage(args: {
   }
 
   const candidate = candidateResult.data as CandidateRow;
+  const approvedVisual = await getApprovedEventVisualWorkflow({
+    candidateId: candidate.id,
+    eventKey: candidate.slug_candidate,
+  });
+  if (!approvedVisual?.asset) {
+    throw new Error("An approved visual-signature workflow with cloud-hosted hero art is required before package review.");
+  }
+  if (approvedVisual.supersedesWorkflowId) {
+    const sourcePackageResult = await supabase
+      .from("event_factory_packages")
+      .select("id,content_hash")
+      .eq("candidate_id", candidate.id)
+      .eq("target_year", verificationResult.data.target_year)
+      .eq("status", "published")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (sourcePackageResult.error) throw new Error(sourcePackageResult.error.message);
+    if (!sourcePackageResult.data) {
+      throw new Error("The approved visual correction does not match the current released Event Factory package.");
+    }
+    const correctionHash = contentHash({
+      sourcePackageId: sourcePackageResult.data.id,
+      sourcePackageHash: sourcePackageResult.data.content_hash,
+      visualWorkflowId: approvedVisual.id,
+      visualWorkflowHash: approvedVisual.contentHash,
+      scope: "hero_only",
+    });
+    const correction = await supabase.rpc("atlas_create_event_factory_hero_correction", {
+      p_source_package_id: sourcePackageResult.data.id,
+      p_visual_workflow_id: approvedVisual.id,
+      p_content_hash: correctionHash,
+      p_actor_identity: args.actorIdentity,
+      p_notes: "Prepared from an approved same-edition hero correction.",
+    });
+    if (correction.error) throw new Error(correction.error.message);
+    return firstRpcRow(correction.data);
+  }
+
   const localEvent = ATLAS_EVENTS.find(
     (event) => event.id === candidate.slug_candidate || event.name.toLowerCase() === candidate.candidate_name.toLowerCase(),
   );
@@ -271,13 +312,6 @@ export async function prepareEventFactoryPackage(args: {
   const manifestSource = acceptedManifest ?? localManifest;
   if (!manifestSource) {
     throw new Error("An accepted source synthesis or a complete local Event Hub manifest is required before package review.");
-  }
-  const approvedVisual = await getApprovedEventVisualWorkflow({
-    candidateId: candidate.id,
-    eventKey: candidate.slug_candidate,
-  });
-  if (!approvedVisual?.asset) {
-    throw new Error("An approved visual-signature workflow with cloud-hosted hero art is required before package review.");
   }
   const manifest = structuredClone(manifestSource);
   manifest.hero.imageSrc = approvedVisual.asset.publicUrl;
@@ -412,7 +446,7 @@ async function getPackage(packageId: string): Promise<PackageRow> {
   const supabase = requireServiceClient();
   const { data, error } = await supabase
     .from("event_factory_packages")
-    .select("id,verification_case_id,candidate_id,event_id,event_key,slug,status,package_version,page_manifest,art_asset")
+    .select("id,supersedes_package_id,verification_case_id,candidate_id,event_id,event_key,slug,status,package_version,page_manifest,art_asset")
     .eq("id", packageId)
     .single();
   if (error || !data) throw new Error(error?.message ?? "Event package was not found.");
@@ -564,18 +598,32 @@ function assertReviewedVisualAsset(artAsset: Record<string, unknown>) {
   }
 }
 
-async function publishReviewedManifest(manifest: EventPageManifest, actorIdentity: string) {
+async function publishReviewedManifest(
+  manifest: EventPageManifest,
+  actorIdentity: string,
+  correction: boolean,
+) {
+  const changeSummary = correction
+    ? "Approved hero-only Event Factory correction"
+    : "Approved complete Event Factory package";
   const draft = await createEventPageDraftFromManifest({
     manifest,
     actorIdentity,
     sourceKind: "ai_assisted",
-    changeSummary: "Approved complete Event Factory package",
+    changeSummary,
   });
   const versionId = String(draft.version_id ?? "");
   let status = String(draft.status ?? "");
   if (!versionId) throw new Error("The Event Hub draft did not return a version id.");
   if (status === "draft") status = String((await submitEventPageVersion(versionId, actorIdentity)).status ?? "");
-  if (status === "in_review") status = String((await reviewEventPageVersion({ versionId, actorIdentity, decision: "approve", notes: "Approved with the complete Event Factory package." })).status ?? "");
+  if (status === "in_review") status = String((await reviewEventPageVersion({
+    versionId,
+    actorIdentity,
+    decision: "approve",
+    notes: correction
+      ? "Approved as a human-reviewed hero-only correction."
+      : "Approved with the complete Event Factory package.",
+  })).status ?? "");
   if (status === "approved") status = String((await publishEventPageVersion(versionId, actorIdentity)).status ?? "");
   if (status !== "published") throw new Error(`Event Hub publication stopped in ${status || "an unknown state"}.`);
   return versionId;
@@ -611,7 +659,7 @@ export async function approveAndPublishEventFactoryPackage(args: {
     const eventId = String(materialization.event_id ?? "");
     if (!eventId) throw new Error("Canonical event materialization did not return an event id.");
     const [versionId, mediaId] = await Promise.all([
-      publishReviewedManifest(validation.value, args.actorIdentity),
+      publishReviewedManifest(validation.value, args.actorIdentity, Boolean(packageRow.supersedes_package_id)),
       registerApprovedPackageArt(eventId, packageRow.event_key, packageRow.art_asset),
     ]);
     const finished = await finishEventFactoryPublication({

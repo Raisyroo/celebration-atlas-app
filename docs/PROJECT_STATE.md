@@ -74,7 +74,7 @@ Canonical implementation notes live in:
 - `docs/event-page-publishing.md`
 - `docs/source-intelligence-schema.md`
 
-The Armada Fair timing trial is complete. Its reviewed bundle retains eight explicit official snapshots, eleven claims, and eight 2026 schedule rows; its five-item verification case is verified at 100 percent. Ray's supplied text-free 2:3 hero is approved and publicly stored. Accepted deterministic synthesis `c94f5934-efea-4b2b-8012-fb4cab10f47f` uses engine v19, is valid at 95 percent quality, has no factual conflicts or missing fields, and retains the sourced OpenStreetMap fairgrounds record. Its visitor-facing Event Hub uses Why Go, Schedule, Highlights, and Plan; the revised Why Go and Schedule copy sells the experience without exposing factory provenance language. Package `cca41beb-ddc5-4cb0-a168-b38c27affb69` published canonical event `46d7e6ff-bec5-4801-80da-2d21aa131092` and immutable Event Hub version `faadd134-33c6-4d5b-8265-d419207ead29`. The public page is live at `https://celebration-atlas-app.vercel.app/events/armada-fair`.
+The Armada Fair timing trial is complete. Its reviewed bundle retains eight explicit official snapshots, eleven claims, and eight 2026 schedule rows; its five-item verification case is verified at 100 percent. Ray's supplied text-free 2:3 hero is approved and publicly stored. Accepted deterministic synthesis `c94f5934-efea-4b2b-8012-fb4cab10f47f` uses engine v19, is valid at 95 percent quality, has no factual conflicts or missing fields, and retains the sourced OpenStreetMap fairgrounds record. Its visitor-facing Event Hub uses Why Go, Schedule, Highlights, and Plan; the revised Why Go and Schedule copy sells the experience without exposing factory provenance language. The corrected hero revision `ebd0c53a-538a-43cb-8492-041110e0f470` removes the inaccurate water tower and is retained by published package v6 `f8aa5fd0-30a7-4197-b6ee-9ce12b84a299`, immutable Event Hub version `7ce8c474-3577-4ee4-8edf-7ed1f5a68f98`, and media record `4751504b-6cd7-489a-91df-8165ece9806c` for canonical event `46d7e6ff-bec5-4801-80da-2d21aa131092`. The public page is live at `https://celebration-atlas-app.vercel.app/events/armada-fair`.
 
 This trial also hardened the reusable path before more fairs enter the queue:
 
@@ -109,6 +109,8 @@ Event-category exemplars may guide layout or rendering quality, but they are not
 
 New package preparation prefers the approved cloud asset and retains the full visual brief and QA audit. Existing published legacy packages continue to render without retroactive migration.
 
+Migration `017_event_factory_revisions.sql` adds the correction path for a released same-edition event. Visual workflows retained by frozen packages and published packages remain immutable. A corrected hero starts a linked, QA-reset visual revision; once that revision is approved, package preparation freezes a new linked package version for the usual private preview and human publication decision. This is the reusable path for fixing released art without overwriting the earlier cloud object, package, or Event Hub version.
+
 ## Scout Status
 
 Scout's visual identity is implemented. Event Hub Ask Scout is now a single-purpose question composer: suggestion chips, suggested questions, predefined prompt tags, and event-specific keyword response routing are not rendered. Existing source-backed suggestion records remain in published manifests as compatibility data for the reviewed Event Factory lifecycle.
@@ -121,7 +123,7 @@ Do not build one-off deep-question logic into individual event pages. The future
 
 ## Supabase And Atlas Control
 
-- Remote migrations `005` through `014` are applied.
+- Remote migrations `005` through `017` are applied.
 - Atlas Control is protected and uses server-side service-role routes for editorial mutations.
 - Public pages never receive the service-role key.
 - The Control Desk supports source inspection, bundle collection, synthesis, verification, package review, publication, and visual workflow approval.
