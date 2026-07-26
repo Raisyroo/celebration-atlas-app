@@ -1,0 +1,318 @@
+.card {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(245, 232, 199, 0.14);
+  color: #f7ead0;
+  background:
+    radial-gradient(circle at 100% 0, rgba(206, 146, 65, 0.1), transparent 32%),
+    linear-gradient(160deg, rgba(18, 20, 25, 0.99), rgba(7, 9, 13, 0.99));
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 245, 218, 0.045);
+}
+
+.active {
+  min-height: 278px;
+  border-radius: 21px;
+}
+
+.compressed {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  height: 70px;
+  border-radius: 16px;
+  box-shadow:
+    0 9px 22px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 245, 218, 0.04);
+}
+
+.media {
+  position: relative;
+  overflow: hidden;
+  background: #11151b;
+}
+
+.active .media {
+  height: 158px;
+}
+
+.compressed .media {
+  height: 70px;
+}
+
+.image {
+  object-fit: cover;
+}
+
+.imageFallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  color: rgba(226, 185, 105, 0.72);
+  background:
+    radial-gradient(circle at 50% 38%, rgba(212, 175, 55, 0.2), transparent 48%),
+    linear-gradient(140deg, #17202a, #080b10);
+}
+
+.imageFallback span {
+  font-size: 26px;
+}
+
+.imageFallback small {
+  font-size: 8px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.compressed .imageFallback small {
+  display: none;
+}
+
+.imageVeil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.04) 45%, rgba(5, 7, 10, 0.75)),
+    linear-gradient(90deg, transparent 65%, rgba(4, 6, 9, 0.15));
+}
+
+.compressed .imageVeil {
+  background: linear-gradient(90deg, transparent 42%, rgba(6, 8, 12, 0.58));
+}
+
+.badge,
+.distance {
+  position: absolute;
+  top: 12px;
+  z-index: 2;
+  min-height: 22px;
+  padding: 5px 8px 4px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.badge {
+  left: 12px;
+  color: #fff7ea;
+  background: rgba(85, 89, 94, 0.82);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.34);
+}
+
+.badge[data-tone='live'],
+.badge[data-tone='today'],
+.listBadge[data-tone='live'],
+.listBadge[data-tone='today'] {
+  background: #b9332e;
+}
+
+.badge[data-tone='upcoming'],
+.listBadge[data-tone='upcoming'] {
+  color: #f8ead1;
+  background: rgba(31, 34, 39, 0.9);
+}
+
+.distance {
+  right: 12px;
+  color: rgba(255, 245, 220, 0.88);
+  background: rgba(5, 7, 10, 0.5);
+}
+
+.compressed .badge {
+  top: 7px;
+  left: 7px;
+  min-height: 18px;
+  padding: 4px 6px 3px;
+  font-size: 7px;
+}
+
+.compressed .distance {
+  display: none;
+}
+
+.content {
+  min-width: 0;
+}
+
+.active .content {
+  padding: 13px 16px 15px;
+}
+
+.compressed .content {
+  align-self: end;
+  padding: 0 12px 6px 11px;
+}
+
+.eventTitle,
+.location,
+.date,
+.category {
+  margin: 0;
+}
+
+.eventTitle {
+  overflow: hidden;
+  color: #fff4dc;
+  font-weight: 700;
+}
+
+.active .eventTitle {
+  overflow: visible;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(19px, 5.4vw, 23px);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.03;
+  text-wrap: balance;
+}
+
+.compressed .eventTitle {
+  max-width: 100%;
+  font-size: 12.5px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location {
+  color: rgba(245, 232, 199, 0.78);
+}
+
+.active .location {
+  margin-top: 6px;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compressed .location {
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: 9.5px;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date {
+  color: rgba(255, 241, 210, 0.96);
+  font-size: 12.5px;
+}
+
+.active .date {
+  margin-top: 4px;
+}
+
+.compressed .date {
+  display: inline;
+  margin-left: 5px;
+  color: rgba(255, 241, 210, 0.76);
+  font-size: 9.5px;
+}
+
+.compressed .location::after {
+  content: ' ·';
+}
+
+.category {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: rgba(229, 194, 124, 0.82);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+
+.compressed .category {
+  display: none;
+}
+
+.listItem {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 7px 11px;
+}
+
+.listNumber {
+  color: rgba(225, 184, 105, 0.52);
+  font-family: Georgia, serif;
+  font-size: 14px;
+}
+
+.listIdentity {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.listIdentity strong,
+.listIdentity small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listIdentity strong {
+  color: #f8ecd2;
+  font-size: 12.5px;
+}
+
+.listIdentity small {
+  color: rgba(245, 232, 199, 0.68);
+  font-size: 9.5px;
+}
+
+.listBadge {
+  padding: 4px 6px;
+  border-radius: 999px;
+  color: #fff4df;
+  background: rgba(75, 78, 84, 0.8);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+@media (max-height: 520px) {
+  .active {
+    min-height: 228px;
+  }
+
+  .active .media {
+    height: 116px;
+  }
+
+  .active .content {
+    padding: 10px 12px 12px;
+  }
+
+  .active .eventTitle {
+    font-size: 18px;
+  }
+
+  .active .location {
+    margin-top: 3px;
+    font-size: 10px;
+  }
+
+  .active .date {
+    margin-top: 3px;
+    font-size: 10px;
+  }
+
+  .active .category {
+    margin-top: 5px;
+    font-size: 9px;
+  }
+}

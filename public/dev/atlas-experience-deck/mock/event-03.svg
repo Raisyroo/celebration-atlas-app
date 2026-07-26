@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0e3240"/><stop offset="1" stop-color="#080b10"/></linearGradient>
+    <radialGradient id="r"><stop stop-color="#d7bd73" stop-opacity=".75"/><stop offset="1" stop-color="#d7bd73" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#g)"/>
+  <circle cx="590" cy="155" r="185" fill="url(#r)"/>
+  <path d="M0 330 C120 270 210 380 340 310 S560 250 800 320 V450 H0Z" fill="#05070a" opacity=".72"/>
+  <path d="M0 360 C160 300 260 405 420 330 S650 300 800 350" fill="none" stroke="#d7bd73" stroke-opacity=".38" stroke-width="4"/>
+  <text x="70" y="155" font-size="94" fill="#d7bd73" font-family="Georgia, serif">△</text>
+  <text x="70" y="355" font-size="34" fill="#f5ead8" font-family="Arial, sans-serif" font-weight="700">Waterfront</text>
+  <text x="70" y="395" font-size="20" fill="#d1c5b3" font-family="Arial, sans-serif">Celebration Atlas mock asset</text>
+</svg>

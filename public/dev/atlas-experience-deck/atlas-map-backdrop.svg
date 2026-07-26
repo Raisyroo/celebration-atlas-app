@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 960" role="img" aria-labelledby="title desc">
+  <title id="title">Celebration Atlas prototype map backdrop</title>
+  <desc id="desc">An illustrative map-style view of Michigan and the Great Lakes.</desc>
+  <defs>
+    <radialGradient id="water" cx="48%" cy="34%" r="78%">
+      <stop offset="0" stop-color="#123c48"/>
+      <stop offset=".56" stop-color="#071d29"/>
+      <stop offset="1" stop-color="#030a12"/>
+    </radialGradient>
+    <linearGradient id="land" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#314b35"/>
+      <stop offset=".55" stop-color="#1d352d"/>
+      <stop offset="1" stop-color="#11231f"/>
+    </linearGradient>
+    <filter id="landShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#001018" flood-opacity=".75"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#d5a54e" flood-opacity=".16"/>
+    </filter>
+    <pattern id="contours" width="46" height="46" patternUnits="userSpaceOnUse">
+      <path d="M-8 17 Q15 -1 48 11 M-4 39 Q20 21 54 34" fill="none" stroke="#a9c3b0" stroke-opacity=".07" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="720" height="960" fill="url(#water)"/>
+  <path d="M0 0h720v960H0z" fill="url(#contours)" opacity=".58"/>
+
+  <g fill="none" stroke="#e4b75c" stroke-opacity=".11" stroke-width="1.2">
+    <path d="M46 145C192 250 232 394 211 592S236 828 430 921"/>
+    <path d="M675 96C574 233 521 349 541 510s-31 297-158 422"/>
+    <path d="M86 772c146-80 306-103 546-76"/>
+    <path d="M63 324c156 61 344 76 591 6"/>
+  </g>
+
+  <g filter="url(#landShadow)">
+    <path d="M144 180c74-67 154-89 248-63 52 15 97 18 146 4 26-8 52-1 66 19-34 37-89 57-150 63-55 6-97 26-133 62-45 44-106 54-184 28-33-11-45-34-36-68 9-17 23-32 43-45Z" fill="url(#land)" stroke="#c7a560" stroke-opacity=".33" stroke-width="2"/>
+    <path d="M441 290c42-15 77 2 91 47 14 44 5 87-25 129-23 32-27 61-13 91 18 39 16 76-5 112-18 31-22 66-11 105 9 31 0 59-27 83-26 23-56 28-89 14-33-14-57-37-73-70-14-29-32-50-53-62-30-17-44-42-42-75 2-29 15-57 40-83 31-33 45-70 42-111-2-36 9-69 35-99 27-31 55-50 84-58 14-4 29-12 46-23Z" fill="url(#land)" stroke="#c7a560" stroke-opacity=".36" stroke-width="2"/>
+    <path d="M236 742c27 5 47 18 60 39 12 18 6 34-16 48-25 16-51 13-77-8-21-17-23-35-7-54 10-13 24-21 40-25Z" fill="#1a3029" stroke="#c7a560" stroke-opacity=".28"/>
+  </g>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M412 340c-28 93-22 180 19 261 28 56 29 121 2 196" stroke="#d1a650" stroke-opacity=".28" stroke-width="3"/>
+    <path d="M317 402c45 26 95 42 151 48M287 555c55-20 117-18 188 5M269 681c57 8 113 31 169 69" stroke="#d1a650" stroke-opacity=".23" stroke-width="2"/>
+    <path d="M184 207c91 17 186 11 287-17M222 246c68-6 130-23 187-51" stroke="#d1a650" stroke-opacity=".22" stroke-width="2"/>
+    <path d="M434 360c-13 76-2 137 32 183M309 461c49 15 97 17 143 4M312 626c42 4 83 20 122 48" stroke="#d7e2d2" stroke-opacity=".12" stroke-width="1"/>
+  </g>
+
+  <g fill="#f7d58d" opacity=".78">
+    <circle cx="452" cy="365" r="4"/>
+    <circle cx="388" cy="446" r="3.5"/>
+    <circle cx="337" cy="565" r="4"/>
+    <circle cx="421" cy="687" r="3.5"/>
+    <circle cx="405" cy="805" r="4"/>
+    <circle cx="300" cy="217" r="3.5"/>
+    <circle cx="479" cy="175" r="3"/>
+  </g>
+  <g fill="#f7d58d" opacity=".14">
+    <circle cx="452" cy="365" r="16"/>
+    <circle cx="337" cy="565" r="19"/>
+    <circle cx="405" cy="805" r="18"/>
+    <circle cx="300" cy="217" r="15"/>
+  </g>
+</svg>

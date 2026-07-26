@@ -9,11 +9,20 @@ export type HomeDiscoveryExactNavigationState =
   | 'pending'
   | 'suppressed';
 
+export type HomeDiscoveryMapTransform = {
+  scale: number;
+  translateX: number;
+  translateY: number;
+};
+
 export type HomeDiscoveryHistoryEntry = {
   version: 1;
   scrollY: number;
   railScrollLeft: number;
   openClusterId: string | null;
+  experienceDeckOpen: boolean;
+  experienceDeckIndex: number;
+  mapTransform: HomeDiscoveryMapTransform;
   selectedResultId: string | null;
   exactNavigation: HomeDiscoveryExactNavigationState;
 };
@@ -23,6 +32,13 @@ const DEFAULT_HISTORY_ENTRY: HomeDiscoveryHistoryEntry = {
   scrollY: 0,
   railScrollLeft: 0,
   openClusterId: null,
+  experienceDeckOpen: false,
+  experienceDeckIndex: 0,
+  mapTransform: {
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+  },
   selectedResultId: null,
   exactNavigation: 'idle',
 };
@@ -40,6 +56,25 @@ const normalizePosition = (value: unknown) =>
 
 const normalizeOptionalId = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : null;
+
+const normalizeDeckIndex = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? Math.floor(value)
+    : 0;
+
+const normalizeFiniteNumber = (value: unknown, fallback: number) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+const normalizeMapTransform = (value: unknown): HomeDiscoveryMapTransform => {
+  if (!isRecord(value)) return DEFAULT_HISTORY_ENTRY.mapTransform;
+
+  const scale = normalizeFiniteNumber(value.scale, 1);
+  return {
+    scale: scale >= 1 ? scale : 1,
+    translateX: normalizeFiniteNumber(value.translateX, 0),
+    translateY: normalizeFiniteNumber(value.translateY, 0),
+  };
+};
 
 const normalizeExactNavigation = (
   value: unknown,
@@ -78,11 +113,18 @@ export function readHomeDiscoveryHistoryEntry(
   const candidate = historyState[HOME_DISCOVERY_HISTORY_KEY];
   if (!isRecord(candidate) || candidate.version !== 1) return null;
 
+  const openClusterId = normalizeOptionalId(candidate.openClusterId);
   return {
     version: 1,
     scrollY: normalizePosition(candidate.scrollY),
     railScrollLeft: normalizePosition(candidate.railScrollLeft),
-    openClusterId: normalizeOptionalId(candidate.openClusterId),
+    openClusterId,
+    experienceDeckOpen:
+      typeof candidate.experienceDeckOpen === 'boolean'
+        ? candidate.experienceDeckOpen
+        : Boolean(openClusterId),
+    experienceDeckIndex: normalizeDeckIndex(candidate.experienceDeckIndex),
+    mapTransform: normalizeMapTransform(candidate.mapTransform),
     selectedResultId: normalizeOptionalId(candidate.selectedResultId),
     exactNavigation: normalizeExactNavigation(candidate.exactNavigation),
   };
@@ -105,6 +147,16 @@ export function mergeHomeDiscoveryHistoryEntry(
       patch.openClusterId === undefined
         ? currentEntry.openClusterId
         : normalizeOptionalId(patch.openClusterId),
+    experienceDeckOpen:
+      patch.experienceDeckOpen === undefined
+        ? currentEntry.experienceDeckOpen
+        : patch.experienceDeckOpen === true,
+    experienceDeckIndex: normalizeDeckIndex(
+      patch.experienceDeckIndex ?? currentEntry.experienceDeckIndex,
+    ),
+    mapTransform: normalizeMapTransform(
+      patch.mapTransform ?? currentEntry.mapTransform,
+    ),
     selectedResultId:
       patch.selectedResultId === undefined
         ? currentEntry.selectedResultId
