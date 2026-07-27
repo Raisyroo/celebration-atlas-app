@@ -26,6 +26,16 @@ export const BATCH_1_CLEAN_IDS = [
   "MAC-049",
 ] as const;
 
+export const MACOMB_FIRST_EVENT_PILOT_CLEAN_IDS = [
+  "MAC-042",
+  "MAC-049",
+  "MAC-026",
+] as const;
+
+export type CountySeedReviewedSelection =
+  | "phase_c1_batch_1"
+  | "macomb_first_event_pilot_v2";
+
 export type CountySeedRpcSource = {
   source_name: string;
   source_url: string;
@@ -106,8 +116,10 @@ export type CountySeedRpcCandidate = {
     geocoding: NormalizedCountySeed["geocoding"];
     source_row_values: NormalizedCountySeed["raw"];
     resolved_decision: {
-      phase_b_classification: "New candidate";
-      phase_c1_disposition: "provisional_batch_1_manifest_only";
+      phase_b_classification: "New candidate" | "Insufficient information";
+      phase_c1_disposition:
+        | "provisional_batch_1_manifest_only"
+        | "revised_three_event_pilot_manifest_only";
       execution_approval: "not_authorized";
     };
     payload_hash?: string;
@@ -235,6 +247,30 @@ export type CountySeedManifestRecord = PreparedCountySeedRecord & {
     state: "manifest_prepared" | "preflight_completed";
     detail: string;
   }>;
+  pilot_review?: {
+    seed_summary: {
+      official_source: string;
+      municipality: string;
+      organizer: string | null;
+      venue: string | null;
+      address: string | null;
+    };
+    identity_result: {
+      canonical_event: "not_found" | "collision_detected";
+      candidate: "not_found" | "equivalent_found" | "collision_detected";
+      proposed_action: CountySeedRecordPreflight["action"];
+    };
+    future_work: {
+      current_edition_verification: "pending";
+      geocoding_or_address_resolution: "pending";
+      evidence: "pending";
+      event_hub: "pending";
+      art: "Waiting for Ray-provided image.";
+    };
+    imagery_included: false;
+    publication: "blocked";
+    warnings: string[];
+  };
 };
 
 export type CountySeedBatchManifest = {
@@ -276,6 +312,22 @@ export type CountySeedBatchManifest = {
     equivalence_conflicts_rejected: true;
   };
   records: CountySeedManifestRecord[];
+  pilot_scope?: {
+    designation: "macomb_first_event_pilot_v2";
+    selected_clean_ids: string[];
+    selected_event_names: string[];
+    replaces_initial_pilot_selection: true;
+    historical_preparation_retained: {
+      path: string;
+      manifest_sha256: string;
+    };
+    imagery_policy: {
+      automated_visual_workflow: "prohibited";
+      generated_or_placeholder_art: "prohibited";
+      ray_provided_approved_image_required_for_publication: true;
+      missing_art_during_research_or_drafting: "not_an_error";
+    };
+  };
   integrity: {
     algorithm: "sha256";
     manifest_sha256: string;
@@ -327,10 +379,15 @@ export function prepareCountySeedRecord(args: {
   batchId: string;
   actorIdentity?: string;
   cohortRelationships?: CountySeedRpcCandidate["county_seed"]["cohort_relationships"];
+  reviewedSelection?: CountySeedReviewedSelection;
 }): PreparedCountySeedRecord {
   const { seed } = args;
-  if (!BATCH_1_CLEAN_IDS.includes(seed.cleanId as (typeof BATCH_1_CLEAN_IDS)[number])) {
-    throw new Error(`County seed ${seed.cleanId} is not in the reviewed provisional Batch 1 selection.`);
+  const reviewedSelection = args.reviewedSelection ?? "phase_c1_batch_1";
+  const reviewedCleanIds = reviewedSelection === "macomb_first_event_pilot_v2"
+    ? MACOMB_FIRST_EVENT_PILOT_CLEAN_IDS
+    : BATCH_1_CLEAN_IDS;
+  if (!(reviewedCleanIds as readonly string[]).includes(seed.cleanId)) {
+    throw new Error(`County seed ${seed.cleanId} is not in the reviewed ${reviewedSelection} selection.`);
   }
   if (!seed.officialEventUrl.original) {
     throw new Error(`County seed ${seed.cleanId} has no official event URL and is insufficient for staging.`);
@@ -384,8 +441,13 @@ export function prepareCountySeedRecord(args: {
     geocoding: seed.geocoding,
     source_row_values: seed.raw,
     resolved_decision: {
-      phase_b_classification: "New candidate",
-      phase_c1_disposition: "provisional_batch_1_manifest_only",
+      phase_b_classification: reviewedSelection === "macomb_first_event_pilot_v2"
+        && seed.cleanId === "MAC-026"
+        ? "Insufficient information"
+        : "New candidate",
+      phase_c1_disposition: reviewedSelection === "macomb_first_event_pilot_v2"
+        ? "revised_three_event_pilot_manifest_only"
+        : "provisional_batch_1_manifest_only",
       execution_approval: "not_authorized",
     },
   };
@@ -899,6 +961,97 @@ export function buildBatch1Manifest(args: {
       manifest_sha256: "",
     },
   };
+  manifest.integrity.manifest_sha256 = manifestHash(manifest);
+  return manifest;
+}
+
+export function buildMacombFirstEventPilotManifest(args: {
+  workbookFileName: string;
+  workbookFingerprint: string;
+  approvedSheetFingerprint: string;
+  inventoryName: string;
+  batchId: string;
+  preparedAt: string;
+  records: PreparedCountySeedRecord[];
+  preflights: CountySeedRecordPreflight[];
+  schemaGuardDeployed: boolean;
+  snapshotSummary: CountySeedBatchManifest["read_only_snapshot"];
+  historicalManifest: {
+    path: string;
+    manifestSha256: string;
+  };
+  warningsByCleanId: Record<string, string[]>;
+}): CountySeedBatchManifest {
+  const selectedIds = [...MACOMB_FIRST_EVENT_PILOT_CLEAN_IDS].sort();
+  const receivedIds = args.records.map((record) => record.clean_id).sort();
+  if (stableJson(receivedIds) !== stableJson(selectedIds)) {
+    throw new Error(
+      `The revised Macomb first-event pilot must contain only ${selectedIds.join(", ")}.`,
+    );
+  }
+  const manifest = buildBatch1Manifest(args);
+  manifest.pilot_scope = {
+    designation: "macomb_first_event_pilot_v2",
+    selected_clean_ids: [...MACOMB_FIRST_EVENT_PILOT_CLEAN_IDS],
+    selected_event_names: [
+      "Bay-Rama Fishfly Festival",
+      "Richmond Good Old Days Festival",
+      "Memphis Festival Days",
+    ],
+    replaces_initial_pilot_selection: true,
+    historical_preparation_retained: {
+      path: args.historicalManifest.path,
+      manifest_sha256: args.historicalManifest.manifestSha256,
+    },
+    imagery_policy: {
+      automated_visual_workflow: "prohibited",
+      generated_or_placeholder_art: "prohibited",
+      ray_provided_approved_image_required_for_publication: true,
+      missing_art_during_research_or_drafting: "not_an_error",
+    },
+  };
+  manifest.records = manifest.records.map((record) => {
+    const candidate = record.args.p_candidate;
+    const seed = candidate.county_seed;
+    const candidateCollision = record.preflight.checks.candidate_identity === "blocked"
+      || record.preflight.checks.slug_collision === "blocked"
+      || record.preflight.checks.name_municipality === "blocked"
+      || record.preflight.checks.alias_location === "blocked"
+      || record.preflight.checks.official_source_elsewhere === "blocked";
+    return {
+      ...record,
+      pilot_review: {
+        seed_summary: {
+          official_source: candidate.official_website_candidate,
+          municipality: seed.municipality,
+          organizer: seed.organizer.original,
+          venue: seed.venue.original,
+          address: seed.full_address,
+        },
+        identity_result: {
+          canonical_event: record.preflight.checks.canonical_match === "blocked"
+            ? "collision_detected"
+            : "not_found",
+          candidate: record.preflight.equivalent_candidate_id
+            ? "equivalent_found"
+            : candidateCollision
+              ? "collision_detected"
+              : "not_found",
+          proposed_action: record.preflight.action,
+        },
+        future_work: {
+          current_edition_verification: "pending",
+          geocoding_or_address_resolution: "pending",
+          evidence: "pending",
+          event_hub: "pending",
+          art: "Waiting for Ray-provided image.",
+        },
+        imagery_included: false,
+        publication: "blocked",
+        warnings: args.warningsByCleanId[record.clean_id] ?? [],
+      },
+    };
+  });
   manifest.integrity.manifest_sha256 = manifestHash(manifest);
   return manifest;
 }

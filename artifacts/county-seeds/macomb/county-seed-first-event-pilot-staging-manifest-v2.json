@@ -1,0 +1,890 @@
+{
+  "contract_version": 1,
+  "mode": "immutable_non_executed_batch_1_manifest",
+  "batch_id": "county-seed:macomb:first-event-pilot:72ca71ed633d8a8d:v2",
+  "inventory_name": "Macomb County Seed Inventory v1",
+  "workbook_file_name": "Macomb_County_Event_Inventory_Finalized.xlsx",
+  "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+  "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc",
+  "prepared_at": "2026-07-27T10:50:33.474Z",
+  "required_schema_guard": {
+    "migration": "018_guard_county_seed_candidate_staging.sql",
+    "guarded_rpc": "public.atlas_stage_county_seed_candidate",
+    "deployed": false
+  },
+  "read_only_snapshot": {
+    "captured_at": "2026-07-27T10:50:33.474Z",
+    "method": "PostgREST GET only",
+    "inspected_counts": {
+      "event_candidates": 23,
+      "event_candidate_sources": 40,
+      "atlas_operation_runs": 7,
+      "events": 19
+    },
+    "duplicate_candidate_slugs": 0,
+    "duplicate_candidate_source_associations": 0,
+    "duplicate_operation_identities": 0,
+    "duplicate_county_seed_identities": 0
+  },
+  "execution": {
+    "authorized": false,
+    "default_command_mode": "preflight",
+    "confirmation_requirement": "exact_manifest_sha256",
+    "batch_0_rejected": true,
+    "dirty_manifest_rejected": true,
+    "unresolved_matches_rejected": true,
+    "insufficient_information_rejected": true,
+    "equivalence_conflicts_rejected": true
+  },
+  "records": [
+    {
+      "clean_id": "MAC-026",
+      "rpc": "public.atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+      "guarded_rpc": "public.atlas_stage_county_seed_candidate(text,text,text,text,text,jsonb,jsonb)",
+      "args": {
+        "p_actor_type": "human",
+        "p_actor_identity": "<authenticated allowlisted Atlas administrator email>",
+        "p_idempotency_key": "county:macomb:MAC-026:72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+        "p_candidate": {
+          "candidate_name": "Memphis Festival Days",
+          "normalized_name": "memphis festival days",
+          "slug_candidate": "memphis-festival-days-memphis-mi",
+          "event_type": "unknown",
+          "category": null,
+          "subcategory": null,
+          "city": "Memphis",
+          "county": "Macomb",
+          "state": "Michigan",
+          "country": "USA",
+          "venue_name": "Memphis Jr/Sr High School and community locations",
+          "start_date": null,
+          "end_date": null,
+          "typical_month": null,
+          "typical_season": null,
+          "probable_recurrence": "annual",
+          "description": null,
+          "official_website_candidate": "https://cityofmemphismi.gov/event/memphis-festival-days-4/",
+          "social_links": [],
+          "discovery_confidence": 0.6,
+          "duplicate_status": "unchecked",
+          "semantic_notes": "County seed MAC-026; 03_IMPORT_READY row 27; workbook 72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27.",
+          "county_seed": {
+            "contract_version": 1,
+            "adapter_version": "county-seed-staging-adapter/1",
+            "parser_version": "county-seed-parser/1",
+            "batch_id": "county-seed:macomb:first-event-pilot:72ca71ed633d8a8d:v2",
+            "county_code": "macomb",
+            "clean_id": "MAC-026",
+            "inventory_identity": {
+              "inventory_name": "Macomb County Seed Inventory v1",
+              "workbook_file_name": "Macomb_County_Event_Inventory_Finalized.xlsx",
+              "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+              "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc"
+            },
+            "source_sheet": "03_IMPORT_READY",
+            "source_row": 27,
+            "seed_name": "Memphis Festival Days",
+            "normalized_name": "memphis festival days",
+            "aliases": [
+              "Duck Days"
+            ],
+            "normalized_aliases": [
+              "duck days"
+            ],
+            "municipality": "Memphis",
+            "normalized_municipality": "memphis",
+            "organizer": {
+              "original": "City of Memphis / Memphis Chamber community partners",
+              "normalized": "city of memphis memphis chamber community partners"
+            },
+            "venue": {
+              "original": "Memphis Jr/Sr High School and community locations",
+              "normalized": "memphis jr sr high school and community locations"
+            },
+            "full_address": null,
+            "urls": {
+              "official_event": {
+                "original": "https://cityofmemphismi.gov/event/memphis-festival-days-4/",
+                "normalized": "https://cityofmemphismi.gov/event/memphis-festival-days-4",
+                "identityKey": "cityofmemphismi.gov/event/memphis-festival-days-4"
+              },
+              "official_organizer": {
+                "original": null,
+                "normalized": null,
+                "identityKey": null
+              },
+              "supporting": []
+            },
+            "cohort_relationships": {
+              "shared_official_url_clean_ids": [
+                "MAC-026"
+              ],
+              "shared_organizer_clean_ids": [
+                "MAC-026"
+              ],
+              "shared_venue_clean_ids": [
+                "MAC-026"
+              ]
+            },
+            "category": null,
+            "tags": [],
+            "date_information": {
+              "kind": "unresolved",
+              "original": null
+            },
+            "spreadsheet": {
+              "activityStatus": "Active — Current Dates Not Yet Announced",
+              "qualificationStatus": "Qualifies",
+              "confidence": "Needs Review",
+              "reviewDecision": "Keep",
+              "existingAtlasMatch": "Not Checked"
+            },
+            "cleanup_provenance": {
+              "researchDate": null,
+              "sourceSchema": "Short appended schema",
+              "sourceRows": "QUALIFIED_EVENT_SERIES!35",
+              "duplicateGroup": null,
+              "decisionId": null,
+              "notes": "Detailed research fields were absent from the shorter appended schema."
+            },
+            "geocoding": {
+              "spreadsheetValue": "yes",
+              "addressResolutionRequired": true,
+              "coordinatesPresent": false,
+              "requiresVerifiedCoordinates": true
+            },
+            "source_row_values": {
+              "Clean ID": "MAC-026",
+              "Canonical Event Name": "Memphis Festival Days",
+              "Alternate Names": "Duck Days",
+              "County": "Macomb County",
+              "Municipality": "Memphis",
+              "Organizer": "City of Memphis / Memphis Chamber community partners",
+              "Venue": "Memphis Jr/Sr High School and community locations",
+              "Full Address": null,
+              "Official Event Source": "https://cityofmemphismi.gov/event/memphis-festival-days-4/",
+              "Official Organizer Source": null,
+              "Primary Category": null,
+              "Secondary Tags": null,
+              "Most Recent Confirmed Edition": null,
+              "Next Announced Edition": null,
+              "Typical Month / Season": null,
+              "Earliest Confirmed Edition": null,
+              "Confirmed Years": null,
+              "Annual Recurrence Evidence": null,
+              "Public Participation Evidence": null,
+              "Distinctive Experience": null,
+              "Planning Evidence": null,
+              "Admission Type": null,
+              "Age Restrictions": null,
+              "Setting": null,
+              "Supporting Source 1": null,
+              "Supporting Source 2": null,
+              "Activity Status": "Active — Current Dates Not Yet Announced",
+              "Qualification Status": "Qualifies",
+              "Confidence": "Needs Review",
+              "Research Date": null,
+              "Source Schema": "Short appended schema",
+              "Source Rows": "QUALIFIED_EVENT_SERIES!35",
+              "Duplicate Group": null,
+              "Review Decision": "Keep",
+              "Decision ID": null,
+              "Existing Atlas Match": "Not Checked",
+              "Needs Geocoding": "Yes",
+              "Latitude": null,
+              "Longitude": null,
+              "Cleanup Notes": "Detailed research fields were absent from the shorter appended schema."
+            },
+            "resolved_decision": {
+              "phase_b_classification": "Insufficient information",
+              "phase_c1_disposition": "revised_three_event_pilot_manifest_only",
+              "execution_approval": "not_authorized"
+            },
+            "payload_hash": "228abca5f6a99a7332209babd2f5e53207c51893dbdf83519f76647b35c28fb2"
+          }
+        },
+        "p_sources": [
+          {
+            "source_name": "Memphis Festival Days official event source",
+            "source_url": "https://cityofmemphismi.gov/event/memphis-festival-days-4/",
+            "source_type": "official",
+            "source_excerpt": null,
+            "is_official": true,
+            "trust_score": 0.9
+          }
+        ]
+      },
+      "payload_sha256": "228abca5f6a99a7332209babd2f5e53207c51893dbdf83519f76647b35c28fb2",
+      "preflight": {
+        "clean_id": "MAC-026",
+        "checked_at": "2026-07-27T10:50:33.474Z",
+        "method": "PostgREST GET only",
+        "action": "stage_new_candidate",
+        "equivalent_candidate_id": null,
+        "findings": [],
+        "blockers": [],
+        "warnings": [],
+        "checks": {
+          "canonical_match": "clear",
+          "exact_official_url": "clear",
+          "name_municipality": "clear",
+          "alias_location": "clear",
+          "slug_collision": "clear",
+          "idempotency_collision": "clear",
+          "candidate_identity": "clear",
+          "official_source_elsewhere": "clear",
+          "organizer_venue_shared": "clear",
+          "promoted_candidate": "clear",
+          "fuzzy_name": "clear"
+        }
+      },
+      "intended_action": "stage_new_candidate",
+      "status": "not_executed",
+      "eligibility": {
+        "preflight_eligible": true,
+        "execution_eligible": false,
+        "blockers": [
+          "required_schema_guard_not_deployed",
+          "batch_1_execution_not_human_approved"
+        ]
+      },
+      "eventual_candidate_id": null,
+      "error": null,
+      "retry": {
+        "attempts": 0,
+        "allowed_after": "fresh_preflight_and_explicit_human_approval",
+        "uncertain_outcome_policy": "stop_and_reconcile_before_retry"
+      },
+      "approval": {
+        "staging_execution": "not_authorized",
+        "publication": "not_authorized"
+      },
+      "audit": [
+        {
+          "at": "2026-07-27T10:50:33.474Z",
+          "state": "manifest_prepared",
+          "detail": "Immutable Batch 1 record prepared; no RPC executed."
+        },
+        {
+          "at": "2026-07-27T10:50:33.474Z",
+          "state": "preflight_completed",
+          "detail": "Read-only PostgREST GET preflight completed."
+        }
+      ],
+      "pilot_review": {
+        "seed_summary": {
+          "official_source": "https://cityofmemphismi.gov/event/memphis-festival-days-4/",
+          "municipality": "Memphis",
+          "organizer": "City of Memphis / Memphis Chamber community partners",
+          "venue": "Memphis Jr/Sr High School and community locations",
+          "address": null
+        },
+        "identity_result": {
+          "canonical_event": "not_found",
+          "candidate": "not_found",
+          "proposed_action": "stage_new_candidate"
+        },
+        "future_work": {
+          "current_edition_verification": "pending",
+          "geocoding_or_address_resolution": "pending",
+          "evidence": "pending",
+          "event_hub": "pending",
+          "art": "Waiting for Ray-provided image."
+        },
+        "imagery_included": false,
+        "publication": "blocked",
+        "warnings": [
+          "Current-edition verification is pending.",
+          "Verified coordinates or address resolution are pending.",
+          "Phase B classified this approved seed as Insufficient information; identity evidence must be resolved before staging approval.",
+          "The approved seed inventory does not contain a full address.",
+          "The approved seed inventory does not contain a separate official organizer URL."
+        ]
+      }
+    },
+    {
+      "clean_id": "MAC-042",
+      "rpc": "public.atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+      "guarded_rpc": "public.atlas_stage_county_seed_candidate(text,text,text,text,text,jsonb,jsonb)",
+      "args": {
+        "p_actor_type": "human",
+        "p_actor_identity": "<authenticated allowlisted Atlas administrator email>",
+        "p_idempotency_key": "county:macomb:MAC-042:72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+        "p_candidate": {
+          "candidate_name": "Bay-Rama Fishfly Festival",
+          "normalized_name": "bay rama fishfly festival",
+          "slug_candidate": "bay-rama-fishfly-festival-new-baltimore-mi",
+          "event_type": "unknown",
+          "category": "Community, civic and heritage events",
+          "subcategory": null,
+          "city": "New Baltimore",
+          "county": "Macomb",
+          "state": "Michigan",
+          "country": "USA",
+          "venue_name": "Walter & Mary Burke Park and Downtown",
+          "start_date": null,
+          "end_date": null,
+          "typical_month": "June",
+          "typical_season": null,
+          "probable_recurrence": "annual",
+          "description": null,
+          "official_website_candidate": "https://www.bay-rama.com/",
+          "social_links": [],
+          "discovery_confidence": 0.8,
+          "duplicate_status": "unchecked",
+          "semantic_notes": "County seed MAC-042; 03_IMPORT_READY row 43; workbook 72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27.",
+          "county_seed": {
+            "contract_version": 1,
+            "adapter_version": "county-seed-staging-adapter/1",
+            "parser_version": "county-seed-parser/1",
+            "batch_id": "county-seed:macomb:first-event-pilot:72ca71ed633d8a8d:v2",
+            "county_code": "macomb",
+            "clean_id": "MAC-042",
+            "inventory_identity": {
+              "inventory_name": "Macomb County Seed Inventory v1",
+              "workbook_file_name": "Macomb_County_Event_Inventory_Finalized.xlsx",
+              "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+              "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc"
+            },
+            "source_sheet": "03_IMPORT_READY",
+            "source_row": 43,
+            "seed_name": "Bay-Rama Fishfly Festival",
+            "normalized_name": "bay rama fishfly festival",
+            "aliases": [],
+            "normalized_aliases": [],
+            "municipality": "New Baltimore",
+            "normalized_municipality": "new baltimore",
+            "organizer": {
+              "original": "Bay-Rama, Inc.",
+              "normalized": "bay rama inc"
+            },
+            "venue": {
+              "original": "Walter & Mary Burke Park and Downtown",
+              "normalized": "walter and mary burke park and downtown"
+            },
+            "full_address": "36300 Front St, New Baltimore, MI 48047",
+            "urls": {
+              "official_event": {
+                "original": "https://www.bay-rama.com/",
+                "normalized": "https://bay-rama.com",
+                "identityKey": "bay-rama.com"
+              },
+              "official_organizer": {
+                "original": "https://www.bay-rama.com/",
+                "normalized": "https://bay-rama.com",
+                "identityKey": "bay-rama.com"
+              },
+              "supporting": [
+                {
+                  "original": "https://www.cityofnewbaltimore.org/Calendar.aspx?EID=2263",
+                  "normalized": "https://cityofnewbaltimore.org/Calendar.aspx?EID=2263",
+                  "identityKey": "cityofnewbaltimore.org/calendar.aspx?eid=2263"
+                },
+                {
+                  "original": "https://www.oaklandcountymoms.com/macomb-county-fireworks-37102",
+                  "normalized": "https://oaklandcountymoms.com/macomb-county-fireworks-37102",
+                  "identityKey": "oaklandcountymoms.com/macomb-county-fireworks-37102"
+                }
+              ]
+            },
+            "cohort_relationships": {
+              "shared_official_url_clean_ids": [
+                "MAC-042"
+              ],
+              "shared_organizer_clean_ids": [
+                "MAC-042"
+              ],
+              "shared_venue_clean_ids": [
+                "MAC-042"
+              ]
+            },
+            "category": "Community, civic and heritage events",
+            "tags": [
+              "Carnivals",
+              "Fireworks",
+              "Parades",
+              "Pageants"
+            ],
+            "date_information": {
+              "kind": "year_only",
+              "original": "2026",
+              "year": 2026
+            },
+            "spreadsheet": {
+              "activityStatus": "Upcoming Edition Announced",
+              "qualificationStatus": "Qualifies",
+              "confidence": "High",
+              "reviewDecision": "Keep",
+              "existingAtlasMatch": "Not Checked"
+            },
+            "cleanup_provenance": {
+              "researchDate": "2026-07-22",
+              "sourceSchema": "Full research",
+              "sourceRows": "QUALIFIED_EVENT_SERIES!3",
+              "duplicateGroup": null,
+              "decisionId": null,
+              "notes": null
+            },
+            "geocoding": {
+              "spreadsheetValue": "no",
+              "addressResolutionRequired": false,
+              "coordinatesPresent": false,
+              "requiresVerifiedCoordinates": true
+            },
+            "source_row_values": {
+              "Clean ID": "MAC-042",
+              "Canonical Event Name": "Bay-Rama Fishfly Festival",
+              "Alternate Names": null,
+              "County": "Macomb County",
+              "Municipality": "New Baltimore",
+              "Organizer": "Bay-Rama, Inc.",
+              "Venue": "Walter & Mary Burke Park and Downtown",
+              "Full Address": "36300 Front St, New Baltimore, MI 48047",
+              "Official Event Source": "https://www.bay-rama.com/",
+              "Official Organizer Source": "https://www.bay-rama.com/",
+              "Primary Category": "Community, civic and heritage events",
+              "Secondary Tags": "Carnivals; Fireworks; Parades; Pageants",
+              "Most Recent Confirmed Edition": "2026",
+              "Next Announced Edition": "2026",
+              "Typical Month / Season": "June",
+              "Earliest Confirmed Edition": "1965",
+              "Confirmed Years": "2012; 2016; 2018; 2021; 2024; 2026",
+              "Annual Recurrence Evidence": "Official site notes the 61st anniversary in 2026",
+              "Public Participation Evidence": "General public can attend the festival, midway, and parade",
+              "Distinctive Experience": "Large midway; Miss Bay-Rama pageant; waterfront fireworks display; festival tent",
+              "Planning Evidence": "Attendees reserve ride wristbands and navigate multi-day schedule",
+              "Admission Type": "Free",
+              "Age Restrictions": "All Ages",
+              "Setting": "Outdoor",
+              "Supporting Source 1": "https://www.cityofnewbaltimore.org/Calendar.aspx?EID=2263",
+              "Supporting Source 2": "https://www.oaklandcountymoms.com/macomb-county-fireworks-37102",
+              "Activity Status": "Upcoming Edition Announced",
+              "Qualification Status": "Qualifies",
+              "Confidence": "High",
+              "Research Date": 46225,
+              "Source Schema": "Full research",
+              "Source Rows": "QUALIFIED_EVENT_SERIES!3",
+              "Duplicate Group": null,
+              "Review Decision": "Keep",
+              "Decision ID": null,
+              "Existing Atlas Match": "Not Checked",
+              "Needs Geocoding": "No",
+              "Latitude": null,
+              "Longitude": null,
+              "Cleanup Notes": null
+            },
+            "resolved_decision": {
+              "phase_b_classification": "New candidate",
+              "phase_c1_disposition": "revised_three_event_pilot_manifest_only",
+              "execution_approval": "not_authorized"
+            },
+            "payload_hash": "8672985d675e18749bec93030b4b2f13eda7df7a4f73d398e453d5a2fc3f6594"
+          }
+        },
+        "p_sources": [
+          {
+            "source_name": "Bay-Rama Fishfly Festival official event source",
+            "source_url": "https://www.bay-rama.com/",
+            "source_type": "official",
+            "source_excerpt": null,
+            "is_official": true,
+            "trust_score": 0.9
+          }
+        ]
+      },
+      "payload_sha256": "8672985d675e18749bec93030b4b2f13eda7df7a4f73d398e453d5a2fc3f6594",
+      "preflight": {
+        "clean_id": "MAC-042",
+        "checked_at": "2026-07-27T10:50:33.474Z",
+        "method": "PostgREST GET only",
+        "action": "stage_new_candidate",
+        "equivalent_candidate_id": null,
+        "findings": [],
+        "blockers": [],
+        "warnings": [],
+        "checks": {
+          "canonical_match": "clear",
+          "exact_official_url": "clear",
+          "name_municipality": "clear",
+          "alias_location": "clear",
+          "slug_collision": "clear",
+          "idempotency_collision": "clear",
+          "candidate_identity": "clear",
+          "official_source_elsewhere": "clear",
+          "organizer_venue_shared": "clear",
+          "promoted_candidate": "clear",
+          "fuzzy_name": "clear"
+        }
+      },
+      "intended_action": "stage_new_candidate",
+      "status": "not_executed",
+      "eligibility": {
+        "preflight_eligible": true,
+        "execution_eligible": false,
+        "blockers": [
+          "required_schema_guard_not_deployed",
+          "batch_1_execution_not_human_approved"
+        ]
+      },
+      "eventual_candidate_id": null,
+      "error": null,
+      "retry": {
+        "attempts": 0,
+        "allowed_after": "fresh_preflight_and_explicit_human_approval",
+        "uncertain_outcome_policy": "stop_and_reconcile_before_retry"
+      },
+      "approval": {
+        "staging_execution": "not_authorized",
+        "publication": "not_authorized"
+      },
+      "audit": [
+        {
+          "at": "2026-07-27T10:50:33.474Z",
+          "state": "manifest_prepared",
+          "detail": "Immutable Batch 1 record prepared; no RPC executed."
+        },
+        {
+          "at": "2026-07-27T10:50:33.474Z",
+          "state": "preflight_completed",
+          "detail": "Read-only PostgREST GET preflight completed."
+        }
+      ],
+      "pilot_review": {
+        "seed_summary": {
+          "official_source": "https://www.bay-rama.com/",
+          "municipality": "New Baltimore",
+          "organizer": "Bay-Rama, Inc.",
+          "venue": "Walter & Mary Burke Park and Downtown",
+          "address": "36300 Front St, New Baltimore, MI 48047"
+        },
+        "identity_result": {
+          "canonical_event": "not_found",
+          "candidate": "not_found",
+          "proposed_action": "stage_new_candidate"
+        },
+        "future_work": {
+          "current_edition_verification": "pending",
+          "geocoding_or_address_resolution": "pending",
+          "evidence": "pending",
+          "event_hub": "pending",
+          "art": "Waiting for Ray-provided image."
+        },
+        "imagery_included": false,
+        "publication": "blocked",
+        "warnings": [
+          "Current-edition verification is pending.",
+          "Verified coordinates or address resolution are pending."
+        ]
+      }
+    },
+    {
+      "clean_id": "MAC-049",
+      "rpc": "public.atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+      "guarded_rpc": "public.atlas_stage_county_seed_candidate(text,text,text,text,text,jsonb,jsonb)",
+      "args": {
+        "p_actor_type": "human",
+        "p_actor_identity": "<authenticated allowlisted Atlas administrator email>",
+        "p_idempotency_key": "county:macomb:MAC-049:72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+        "p_candidate": {
+          "candidate_name": "Richmond Good Old Days Festival",
+          "normalized_name": "richmond good old days festival",
+          "slug_candidate": "richmond-good-old-days-festival-richmond-mi",
+          "event_type": "unknown",
+          "category": "Community, civic and heritage events",
+          "subcategory": null,
+          "city": "Richmond",
+          "county": "Macomb",
+          "state": "Michigan",
+          "country": "USA",
+          "venue_name": "Festival Grounds",
+          "start_date": null,
+          "end_date": null,
+          "typical_month": "September",
+          "typical_season": null,
+          "probable_recurrence": "annual",
+          "description": null,
+          "official_website_candidate": "https://www.richmondgoodolddaysfestival.com/",
+          "social_links": [],
+          "discovery_confidence": 0.8,
+          "duplicate_status": "unchecked",
+          "semantic_notes": "County seed MAC-049; 03_IMPORT_READY row 50; workbook 72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27.",
+          "county_seed": {
+            "contract_version": 1,
+            "adapter_version": "county-seed-staging-adapter/1",
+            "parser_version": "county-seed-parser/1",
+            "batch_id": "county-seed:macomb:first-event-pilot:72ca71ed633d8a8d:v2",
+            "county_code": "macomb",
+            "clean_id": "MAC-049",
+            "inventory_identity": {
+              "inventory_name": "Macomb County Seed Inventory v1",
+              "workbook_file_name": "Macomb_County_Event_Inventory_Finalized.xlsx",
+              "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+              "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc"
+            },
+            "source_sheet": "03_IMPORT_READY",
+            "source_row": 50,
+            "seed_name": "Richmond Good Old Days Festival",
+            "normalized_name": "richmond good old days festival",
+            "aliases": [
+              "Richmond Area Good Old Days"
+            ],
+            "normalized_aliases": [
+              "richmond area good old days"
+            ],
+            "municipality": "Richmond",
+            "normalized_municipality": "richmond",
+            "organizer": {
+              "original": "Richmond Good Old Days Festival Committee",
+              "normalized": "richmond good old days festival committee"
+            },
+            "venue": {
+              "original": "Festival Grounds",
+              "normalized": "festival grounds"
+            },
+            "full_address": "69500 Beebe St, Richmond, MI 48062",
+            "urls": {
+              "official_event": {
+                "original": "https://www.richmondgoodolddaysfestival.com/",
+                "normalized": "https://richmondgoodolddaysfestival.com",
+                "identityKey": "richmondgoodolddaysfestival.com"
+              },
+              "official_organizer": {
+                "original": "https://www.cityofrichmond.net/",
+                "normalized": "https://cityofrichmond.net",
+                "identityKey": "cityofrichmond.net"
+              },
+              "supporting": [
+                {
+                  "original": "https://michiganfireworks.com/events/richmond-good-old-days-festival",
+                  "normalized": "https://michiganfireworks.com/events/richmond-good-old-days-festival",
+                  "identityKey": "michiganfireworks.com/events/richmond-good-old-days-festival"
+                },
+                {
+                  "original": "https://www.skerbeckcarnival.com/events/festivals",
+                  "normalized": "https://skerbeckcarnival.com/events/festivals",
+                  "identityKey": "skerbeckcarnival.com/events/festivals"
+                }
+              ]
+            },
+            "cohort_relationships": {
+              "shared_official_url_clean_ids": [
+                "MAC-049"
+              ],
+              "shared_organizer_clean_ids": [
+                "MAC-049"
+              ],
+              "shared_venue_clean_ids": [
+                "MAC-049"
+              ]
+            },
+            "category": "Community, civic and heritage events",
+            "tags": [
+              "Carnivals",
+              "Fireworks",
+              "Parades",
+              "Demolition derbies",
+              "Car shows"
+            ],
+            "date_information": {
+              "kind": "year_only",
+              "original": "2026",
+              "year": 2026
+            },
+            "spreadsheet": {
+              "activityStatus": "Upcoming Edition Announced",
+              "qualificationStatus": "Qualifies",
+              "confidence": "High",
+              "reviewDecision": "Keep",
+              "existingAtlasMatch": "Not Checked"
+            },
+            "cleanup_provenance": {
+              "researchDate": "2026-07-22",
+              "sourceSchema": "Full research + short appended schema",
+              "sourceRows": "QUALIFIED_EVENT_SERIES!8; QUALIFIED_EVENT_SERIES!47",
+              "duplicateGroup": "DUP-004",
+              "decisionId": null,
+              "notes": "Automatically merged 2 source rows representing the same event identity. Short-schema duplicate was absorbed into the richer research record."
+            },
+            "geocoding": {
+              "spreadsheetValue": "no",
+              "addressResolutionRequired": false,
+              "coordinatesPresent": false,
+              "requiresVerifiedCoordinates": true
+            },
+            "source_row_values": {
+              "Clean ID": "MAC-049",
+              "Canonical Event Name": "Richmond Good Old Days Festival",
+              "Alternate Names": "Richmond Area Good Old Days",
+              "County": "Macomb County",
+              "Municipality": "Richmond",
+              "Organizer": "Richmond Good Old Days Festival Committee",
+              "Venue": "Festival Grounds",
+              "Full Address": "69500 Beebe St, Richmond, MI 48062",
+              "Official Event Source": "https://www.richmondgoodolddaysfestival.com/",
+              "Official Organizer Source": "https://www.cityofrichmond.net/",
+              "Primary Category": "Community, civic and heritage events",
+              "Secondary Tags": "Carnivals; Fireworks; Parades; Demolition derbies; Car shows",
+              "Most Recent Confirmed Edition": "2026",
+              "Next Announced Edition": "2026",
+              "Typical Month / Season": "September",
+              "Earliest Confirmed Edition": "2014",
+              "Confirmed Years": "2024; 2025; 2026",
+              "Annual Recurrence Evidence": "Explicitly described as an annual festival held the weekend after Labor Day",
+              "Public Participation Evidence": "General public can attend; open vendor sales",
+              "Distinctive Experience": "Great Michigan Parade, motor sports, Skerbeck family carnival, fireworks",
+              "Planning Evidence": "Reviewing multi-day schedule; planning around parade and fireworks times",
+              "Admission Type": "Free",
+              "Age Restrictions": "All Ages",
+              "Setting": "Outdoor",
+              "Supporting Source 1": "https://michiganfireworks.com/events/richmond-good-old-days-festival",
+              "Supporting Source 2": "https://www.skerbeckcarnival.com/events/festivals",
+              "Activity Status": "Upcoming Edition Announced",
+              "Qualification Status": "Qualifies",
+              "Confidence": "High",
+              "Research Date": 46225,
+              "Source Schema": "Full research + short appended schema",
+              "Source Rows": "QUALIFIED_EVENT_SERIES!8; QUALIFIED_EVENT_SERIES!47",
+              "Duplicate Group": "DUP-004",
+              "Review Decision": "Keep",
+              "Decision ID": null,
+              "Existing Atlas Match": "Not Checked",
+              "Needs Geocoding": "No",
+              "Latitude": null,
+              "Longitude": null,
+              "Cleanup Notes": "Automatically merged 2 source rows representing the same event identity. Short-schema duplicate was absorbed into the richer research record."
+            },
+            "resolved_decision": {
+              "phase_b_classification": "New candidate",
+              "phase_c1_disposition": "revised_three_event_pilot_manifest_only",
+              "execution_approval": "not_authorized"
+            },
+            "payload_hash": "c85634b8812b1018ca03583262dc9ac015950a456c10eee2fecdd06deef6f5c3"
+          }
+        },
+        "p_sources": [
+          {
+            "source_name": "Richmond Good Old Days Festival official event source",
+            "source_url": "https://www.richmondgoodolddaysfestival.com/",
+            "source_type": "official",
+            "source_excerpt": null,
+            "is_official": true,
+            "trust_score": 0.9
+          }
+        ]
+      },
+      "payload_sha256": "c85634b8812b1018ca03583262dc9ac015950a456c10eee2fecdd06deef6f5c3",
+      "preflight": {
+        "clean_id": "MAC-049",
+        "checked_at": "2026-07-27T10:50:33.474Z",
+        "method": "PostgREST GET only",
+        "action": "stage_new_candidate",
+        "equivalent_candidate_id": null,
+        "findings": [],
+        "blockers": [],
+        "warnings": [],
+        "checks": {
+          "canonical_match": "clear",
+          "exact_official_url": "clear",
+          "name_municipality": "clear",
+          "alias_location": "clear",
+          "slug_collision": "clear",
+          "idempotency_collision": "clear",
+          "candidate_identity": "clear",
+          "official_source_elsewhere": "clear",
+          "organizer_venue_shared": "clear",
+          "promoted_candidate": "clear",
+          "fuzzy_name": "clear"
+        }
+      },
+      "intended_action": "stage_new_candidate",
+      "status": "not_executed",
+      "eligibility": {
+        "preflight_eligible": true,
+        "execution_eligible": false,
+        "blockers": [
+          "required_schema_guard_not_deployed",
+          "batch_1_execution_not_human_approved"
+        ]
+      },
+      "eventual_candidate_id": null,
+      "error": null,
+      "retry": {
+        "attempts": 0,
+        "allowed_after": "fresh_preflight_and_explicit_human_approval",
+        "uncertain_outcome_policy": "stop_and_reconcile_before_retry"
+      },
+      "approval": {
+        "staging_execution": "not_authorized",
+        "publication": "not_authorized"
+      },
+      "audit": [
+        {
+          "at": "2026-07-27T10:50:33.474Z",
+          "state": "manifest_prepared",
+          "detail": "Immutable Batch 1 record prepared; no RPC executed."
+        },
+        {
+          "at": "2026-07-27T10:50:33.474Z",
+          "state": "preflight_completed",
+          "detail": "Read-only PostgREST GET preflight completed."
+        }
+      ],
+      "pilot_review": {
+        "seed_summary": {
+          "official_source": "https://www.richmondgoodolddaysfestival.com/",
+          "municipality": "Richmond",
+          "organizer": "Richmond Good Old Days Festival Committee",
+          "venue": "Festival Grounds",
+          "address": "69500 Beebe St, Richmond, MI 48062"
+        },
+        "identity_result": {
+          "canonical_event": "not_found",
+          "candidate": "not_found",
+          "proposed_action": "stage_new_candidate"
+        },
+        "future_work": {
+          "current_edition_verification": "pending",
+          "geocoding_or_address_resolution": "pending",
+          "evidence": "pending",
+          "event_hub": "pending",
+          "art": "Waiting for Ray-provided image."
+        },
+        "imagery_included": false,
+        "publication": "blocked",
+        "warnings": [
+          "Current-edition verification is pending.",
+          "Verified coordinates or address resolution are pending.",
+          "Spreadsheet duplicate group DUP-004 is resolved provenance and must not be re-merged automatically."
+        ]
+      }
+    }
+  ],
+  "integrity": {
+    "algorithm": "sha256",
+    "manifest_sha256": "d2d1c245c1c8ac4abea3a1fef1e21a9ab8da2adf7a05d0db6c8bfbaba3079fd8"
+  },
+  "pilot_scope": {
+    "designation": "macomb_first_event_pilot_v2",
+    "selected_clean_ids": [
+      "MAC-042",
+      "MAC-049",
+      "MAC-026"
+    ],
+    "selected_event_names": [
+      "Bay-Rama Fishfly Festival",
+      "Richmond Good Old Days Festival",
+      "Memphis Festival Days"
+    ],
+    "replaces_initial_pilot_selection": true,
+    "historical_preparation_retained": {
+      "path": "artifacts/county-seeds/macomb/county-seed-batch-1-staging-manifest.json",
+      "manifest_sha256": "d0203c6b9141f068a3a4c25ad6449ed641877117d7010fefabc535fb25bae9f2"
+    },
+    "imagery_policy": {
+      "automated_visual_workflow": "prohibited",
+      "generated_or_placeholder_art": "prohibited",
+      "ray_provided_approved_image_required_for_publication": true,
+      "missing_art_during_research_or_drafting": "not_an_error"
+    }
+  }
+}
