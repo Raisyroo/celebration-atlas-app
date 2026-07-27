@@ -1,8 +1,22 @@
 # County Seed Guarded Staging Readiness
 
-Status: **Phase C1 machinery and non-executed artifacts only. No county batch is authorized. Migration 018 is proposed and review-only, is not deployed, and is not authorized for application.**
+Status: **Phase C2C verified. Migrations 018 and 019 are deployed. Only the separately authorized `MAC-042` Bay-Rama canary was staged; no batch or additional pilot record is authorized.**
 
-Baseline: Phase C0 commit `64ebd81360535e7dfd671d98d34d324b764c373d`. The Phase C1 preparation and validation commands use the approved Macomb County Seed Inventory v1 workbook and PostgREST `GET` requests only. No candidate-intake RPC, DML, DDL, migration apply, discovery run, candidate, source, match, verification case, or canonical event was created.
+Baseline: Phase C0 commit `64ebd81360535e7dfd671d98d34d324b764c373d` established the narrow schema contract; Phase C1 commit `74cfc29c205e664a6b9ae18d80ac978003b585f1` added guarded staging readiness. Migration 018 was deployed in Phase C2B. Phase C2C deployed migration 019 and executed one expressly authorized candidate-intake transaction for Bay-Rama. The historical seven-event manifest and immutable three-event pilot manifest remain unchanged.
+
+## Phase C2C execution record
+
+- Deployed project: `hmytrcorqkqvoaedvgbf` (`us-east-2`, `ACTIVE_HEALTHY`).
+- Migration 018 SHA-256: `b96691f274c93a5e9b08d93e44a51cc836411f263ce780ab1b3b002826879675`.
+- Migration 019 SHA-256: `be97b94019b19b1ae55fbfc01e525de62703c316a6b4e64055afb187f8cead08`.
+- Migration 019 modifies only the manifest-disposition predicate in `atlas_stage_county_seed_candidate`. It accepts exactly `provisional_batch_1_manifest_only` and `revised_three_event_pilot_manifest_only`.
+- Null, suffixed, prefixed, and other scope values remain rejected. Anonymous and authenticated roles have no execute privilege; service-role execution remains required.
+- The separate canary authorization SHA-256 is `69056a627914edfd258711773afd7eafd0563ba2a452129cb0fefae38b0d4dad`. It authorizes staging only `MAC-042` with payload SHA-256 `8672985d675e18749bec93030b4b2f13eda7df7a4f73d398e453d5a2fc3f6594` from immutable manifest SHA-256 `d2d1c245c1c8ac4abea3a1fef1e21a9ab8da2adf7a05d0db6c8bfbaba3079fd8`.
+- Candidate `6da5b04d-013f-45d0-acc1-9bbc782de02f` was created with discovery run `e18e6ec8-53e1-4336-aec1-44c74650b7fd`, source `5f75ef27-16d8-437e-a85f-5178d3364ebb`, operation run `38cef64b-28c3-4df2-98f2-5d2c952aa6f5`, and action `48ba7bb2-6fd0-4a19-84aa-98a74a88a5c0`.
+- Before/after counts were 10→11 discovery runs, 23→24 candidates, 40→41 sources, 7→8 operation runs, and 7→8 actions. Canonical events remained 19; matched candidates remained 18.
+- Exact replay returned the same candidate and operation with `idempotent_replay: true`. A different payload hash on the same idempotency key returned SQLSTATE `23505` and rolled back.
+- Richmond `MAC-049` and Memphis `MAC-026` remain unstaged. No canonical event, Event Factory package, Event Hub, publication, visual workflow, image, or placeholder art was created.
+- The authorization, append-only JSONL audit, and integrity-hashed verification artifact are retained under `artifacts/county-seeds/macomb/`.
 
 ## Deliverables
 
@@ -14,7 +28,9 @@ Baseline: Phase C0 commit `64ebd81360535e7dfd671d98d34d324b764c373d`. The Phase 
 - `scripts/validate-county-seed-staging.ts` exercises hashes, manifests, collision handling, authorization, resumability, and failure audit with local fixtures and injected RPC stubs.
 - `artifacts/county-seeds/macomb/county-seed-batch-0-crosswalk.json` is the approved no-write Batch 0 result.
 - `artifacts/county-seeds/macomb/county-seed-batch-1-staging-manifest.json` is the immutable, non-executed seven-record Batch 1 manifest.
-- `supabase/migrations/018_guard_county_seed_candidate_staging.sql` is a **review-only, unapplied** migration proposal. Its production guard is not weakened by the existence of the file.
+- `supabase/migrations/018_guard_county_seed_candidate_staging.sql` is deployed and provides the candidate/source/county-identity uniqueness guards plus the service-role-only staging wrapper.
+- `supabase/migrations/019_allow_revised_county_seed_pilot_manifest.sql` is deployed and adds only the second exact approved scope value.
+- `lib/county-seeds/canary.ts` and the three canary scripts bind authorization, preflight, execution, replay, audit, and verification to MAC-042.
 
 ## Exact adapter contract
 
@@ -81,11 +97,11 @@ The 2026-07-27 artifact snapshot read 23 candidates, 40 candidate-source associa
 - zero duplicate exact county-seed identities;
 - zero Batch 1 deterministic canonical, candidate, slug, source, or idempotency collisions.
 
-All seven Batch 1 records are preflight-clear for the proposed `stage_new_candidate` action. None is execution-eligible because migration 018 is not deployed and no staging approval exists.
+All seven historical Batch 1 records were preflight-clear when prepared, but the full manifest remains non-executed and unauthorized. Migration deployment does not grant execution approval.
 
 ## Constraint decision
 
-The fresh scan makes three narrowly scoped uniqueness guards safe to **prepare for review**:
+The fresh scan made three narrowly scoped uniqueness guards safe to deploy:
 
 - a partial unique index for non-empty `event_candidates.slug_candidate`;
 - a unique index for `event_candidate_sources(candidate_id, source_url)`;
@@ -93,7 +109,7 @@ The fresh scan makes three narrowly scoped uniqueness guards safe to **prepare f
 
 The deployed operation identity already has the authoritative unique index on `(operation_type, idempotency_key)`; no duplicate constraint is proposed there.
 
-Migration 018 begins with deployment-time duplicate preconditions, so it fails before changing the schema if deployed data changes. It also proposes a service-role-only `atlas_stage_county_seed_candidate` wrapper that:
+Migration 018 begins with deployment-time duplicate preconditions, so it fails before changing the schema if deployed data changes. It deploys a service-role-only `atlas_stage_county_seed_candidate` wrapper that:
 
 - serializes an idempotency identity with a transaction-scoped advisory lock;
 - validates batch, manifest, payload, county, Clean ID, slug, name, city, and reviewed disposition;
@@ -102,7 +118,7 @@ Migration 018 begins with deployment-time duplicate preconditions, so it fails b
 - returns an equivalent unpromoted county candidate as a no-op;
 - delegates to the existing deployed intake RPC only after all guards pass.
 
-The migration is not applied in Phase C1 and is required before any Batch 1 execution. Its rollback comments drop the wrapper and the three indexes in reverse dependency order. A separately approved schema task must re-run the read-only scan, review the SQL, apply it, verify remote migration parity and generated types, and confirm the wrapper in PostgREST OpenAPI before any apply manifest can be approved.
+Migration 018 was applied only after a separately approved Phase C2B read-only scan and remote verification. Migration 019 was then applied in Phase C2C after verifying it replaced exactly one scope predicate. Remote parity is aligned through 019, and the wrapper remains visible in PostgREST OpenAPI. Neither deployment authorizes any manifest by itself.
 
 ## Batch 0 exact plan
 
@@ -137,7 +153,7 @@ Every status is `not_executed`; every eventual candidate ID and error is null; e
 
 The manifest preserves reviewed cohort warnings rather than merging identities. `MAC-003` and `MAC-004` share an organizer and venue. `MAC-008` and `MAC-011` are the Batch 1 members of the workbook cohort `MAC-008` through `MAC-011`, which shares the Chesterfield Historical Society event-listing URL; the two selected records also share a venue. The known Clean IDs are retained with each payload so the shared listing remains a warning for those reviewed siblings; an unrelated candidate owning the same source remains a blocker.
 
-The exact payloads are compatible with the deployed base RPC columns and constraints. They are **not safe to send through the unguarded RPC today** because deployed slug/source races and request-overwrite hash behavior remain. Future execution must use the reviewed guarded wrapper after migration 018 is separately approved and deployed.
+The exact payloads are compatible with the deployed base RPC columns and constraints. They must never be sent through the unguarded RPC. Any later execution requires a separate single-purpose authorization and the deployed guarded wrapper; the seven-event manifest remains historical preparation only.
 
 ## Transactions, retry, rollback, and audit
 
@@ -154,8 +170,8 @@ The exact payloads are compatible with the deployed base RPC columns and constra
 
 Future apply requires all of the following:
 
-1. reviewed and deployed migration 018 with remote parity confirmed;
-2. regenerated current database types and visible guarded RPC signature;
+1. deployed migrations 018 and 019 with remote parity reconfirmed;
+2. current schema-contract types and visible guarded RPC signature;
 3. a fresh GET-only preflight;
 4. no Batch 0 record, insufficient-information seed, unresolved deterministic match, promoted candidate, dirty manifest, or equivalence conflict;
 5. an immutable manifest explicitly changed to human-authorized execution;
@@ -174,4 +190,4 @@ The future shape is documented but was not executed:
 npm run stage:county-seeds -- <human-approved-manifest.json> --apply --confirm <manifest-sha256> --actor <allowlisted-admin-email>
 ```
 
-No staging, research, publication, imagery, or clustering follows from this readiness milestone.
+The Bay-Rama staging canary is complete. No further staging, research, publication, imagery, Event Hub generation, canonical promotion, or clustering follows from it without a new explicit approval.

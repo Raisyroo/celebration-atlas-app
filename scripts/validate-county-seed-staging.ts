@@ -443,6 +443,25 @@ assert.match(migration, /atlas_stage_county_seed_candidate/);
 assert.match(migration, /idempotency key has a different payload hash/);
 assert.match(migration, /revoke execute[\s\S]+from public, anon, authenticated/i);
 
+const compatibilityMigration = await readFile(
+  path.resolve("supabase/migrations/019_allow_revised_county_seed_pilot_manifest.sql"),
+  "utf8",
+);
+assert.match(compatibilityMigration, /v_match_count <> 1/);
+assert.match(
+  compatibilityMigration,
+  /not in \(\s*'provisional_batch_1_manifest_only',\s*'revised_three_event_pilot_manifest_only'\s*\)/,
+);
+assert.match(compatibilityMigration, /execute v_definition/);
+assert.match(
+  compatibilityMigration,
+  /revoke execute[\s\S]+from public, anon, authenticated/i,
+);
+assert.doesNotMatch(
+  compatibilityMigration,
+  /\b(create|alter|drop)\s+(table|index|policy|type|trigger)\b/i,
+);
+
 console.log(JSON.stringify({
   ok: true,
   tests: {
@@ -464,6 +483,7 @@ console.log(JSON.stringify({
     preflight_transport_get_only: true,
     committed_artifact_integrity: true,
     proposed_migration_guards: true,
+    migration_019_exact_scope_compatibility: true,
   },
   supabase_writes: 0,
 }, null, 2));

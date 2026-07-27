@@ -1,0 +1,57 @@
+{
+  "contract_version": 1,
+  "mode": "bay_rama_county_seed_canary_verification",
+  "verified_at": "2026-07-27T11:44:48.361Z",
+  "authorization_sha256": "69056a627914edfd258711773afd7eafd0563ba2a452129cb0fefae38b0d4dad",
+  "manifest_sha256": "d2d1c245c1c8ac4abea3a1fef1e21a9ab8da2adf7a05d0db6c8bfbaba3079fd8",
+  "payload_sha256": "8672985d675e18749bec93030b4b2f13eda7df7a4f73d398e453d5a2fc3f6594",
+  "conflict_probe_payload_sha256": "aaaba4bc8cd4fcc0e036d595a8a2a4cca2b30421329b8ae49c4069f6015c4b4a",
+  "records": {
+    "discovery_run_id": "e18e6ec8-53e1-4336-aec1-44c74650b7fd",
+    "event_candidate_id": "6da5b04d-013f-45d0-acc1-9bbc782de02f",
+    "event_candidate_source_id": "5f75ef27-16d8-437e-a85f-5178d3364ebb",
+    "atlas_operation_run_id": "38cef64b-28c3-4df2-98f2-5d2c952aa6f5",
+    "atlas_operation_action_id": "48ba7bb2-6fd0-4a19-84aa-98a74a88a5c0"
+  },
+  "before_counts": {
+    "discovery_runs": 10,
+    "event_candidates": 23,
+    "event_candidate_sources": 40,
+    "atlas_operation_runs": 7,
+    "atlas_operation_actions": 7,
+    "events": 19,
+    "matched_candidates": 18
+  },
+  "after_counts": {
+    "discovery_runs": 11,
+    "event_candidates": 24,
+    "event_candidate_sources": 41,
+    "atlas_operation_runs": 8,
+    "atlas_operation_actions": 8,
+    "events": 19,
+    "matched_candidates": 18
+  },
+  "exact_replay": {
+    "idempotent_replay": true,
+    "candidate_id_unchanged": true,
+    "operation_run_id_unchanged": true,
+    "duplicate_rows_created": false
+  },
+  "conflicting_replay": {
+    "rejected": true,
+    "transaction_rolled_back": true,
+    "duplicate_rows_created": false
+  },
+  "protected_outcomes": {
+    "richmond_mac_049_unstaged": true,
+    "memphis_mac_026_unstaged": true,
+    "canonical_event_created": false,
+    "publication_created": false,
+    "event_hub_or_factory_package_created": false,
+    "image_or_placeholder_art_created": false
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "verification_sha256": "2e66322cd15f17d55e42929381c6dbd641e7f9311d94aa4342ba2037db642836"
+  }
+}

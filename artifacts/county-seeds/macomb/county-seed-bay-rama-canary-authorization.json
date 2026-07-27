@@ -1,0 +1,61 @@
+{
+  "contract_version": 1,
+  "mode": "single_record_county_seed_canary_authorization",
+  "authorization_id": "county-seed:macomb:canary:MAC-042:v1",
+  "authorized_at": "2026-07-27T11:44:21.776Z",
+  "manifest": {
+    "path": "artifacts/county-seeds/macomb/county-seed-first-event-pilot-staging-manifest-v2.json",
+    "sha256": "d2d1c245c1c8ac4abea3a1fef1e21a9ab8da2adf7a05d0db6c8bfbaba3079fd8",
+    "immutable": true
+  },
+  "canary": {
+    "clean_id": "MAC-042",
+    "event_name": "Bay-Rama Fishfly Festival",
+    "payload_sha256": "8672985d675e18749bec93030b4b2f13eda7df7a4f73d398e453d5a2fc3f6594"
+  },
+  "deployed_guards": [
+    {
+      "version": "018",
+      "file": "018_guard_county_seed_candidate_staging.sql",
+      "sha256": "b96691f274c93a5e9b08d93e44a51cc836411f263ce780ab1b3b002826879675"
+    },
+    {
+      "version": "019",
+      "file": "019_allow_revised_county_seed_pilot_manifest.sql",
+      "sha256": "be97b94019b19b1ae55fbfc01e525de62703c316a6b4e64055afb187f8cead08"
+    }
+  ],
+  "baseline_counts": {
+    "discovery_runs": 10,
+    "event_candidates": 23,
+    "event_candidate_sources": 40,
+    "atlas_operation_runs": 7,
+    "atlas_operation_actions": 7,
+    "events": 19,
+    "matched_candidates": 18
+  },
+  "authorization": {
+    "staging": "authorized",
+    "allowed_clean_ids": [
+      "MAC-042"
+    ],
+    "full_manifest_execution": false,
+    "exact_replay_verification": true,
+    "conflicting_replay_verification": true,
+    "uncertain_result_policy": "stop_and_reconcile_before_retry"
+  },
+  "prohibited": {
+    "richmond_staging": true,
+    "memphis_staging": true,
+    "event_research": true,
+    "current_edition_synthesis": true,
+    "event_hub_generation": true,
+    "image_generation_or_search": true,
+    "canonical_promotion": true,
+    "publication": true
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "authorization_sha256": "69056a627914edfd258711773afd7eafd0563ba2a452129cb0fefae38b0d4dad"
+  }
+}
