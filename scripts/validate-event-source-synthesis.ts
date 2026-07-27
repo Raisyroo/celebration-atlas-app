@@ -728,8 +728,8 @@ assert.equal(countyFairManifest.identity.venue, 'Goodells County Park', 'A real 
 assert(countyFairManifest.navigation.some((item) => item.targetModuleId === 'highlights'));
 assert.deepEqual(
   countyFairManifest.navigation.map((item) => item.label),
-  ['Why Go', 'Schedule', 'Highlights', 'Plan'],
-  'New Event Hubs should preserve the four-column Why Go, Schedule, experience, and Plan structure.',
+  ['Experience', 'Schedule', 'Highlights', 'Next Time'],
+  'Completed Event Hubs should preserve the four-column structure with lifecycle-appropriate labels.',
 );
 assert.equal(
   countyFairManifest.hero.tagline.includes('official'),
