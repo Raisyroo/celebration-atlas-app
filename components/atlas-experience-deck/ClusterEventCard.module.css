@@ -1,44 +1,45 @@
 .card {
   position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
   width: 100%;
+  height: var(--deck-card-height, 70px);
   overflow: hidden;
   border: 1px solid rgba(245, 232, 199, 0.14);
+  border-radius: var(--deck-card-radius, 16px);
   color: #f7ead0;
   background:
     radial-gradient(circle at 100% 0, rgba(206, 146, 65, 0.1), transparent 32%),
-    linear-gradient(160deg, rgba(18, 20, 25, 0.99), rgba(7, 9, 13, 0.99));
+    linear-gradient(160deg, #121419, #07090d);
   box-shadow:
     0 18px 40px rgba(0, 0, 0, 0.38),
     inset 0 1px 0 rgba(255, 245, 218, 0.045);
 }
 
 .active {
-  min-height: 278px;
-  border-radius: 21px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(206, 146, 65, 0.1), transparent 32%),
+    linear-gradient(160deg, #121419, #07090d);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 245, 218, 0.045);
 }
 
 .compressed {
-  display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  height: 70px;
-  border-radius: 16px;
   box-shadow:
     0 9px 22px rgba(0, 0, 0, 0.44),
     inset 0 1px 0 rgba(255, 245, 218, 0.04);
 }
 
 .media {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: var(--deck-card-media-width, 92px);
+  height: var(--deck-card-media-height, 70px);
   overflow: hidden;
   background: #11151b;
-}
-
-.active .media {
-  height: 158px;
-}
-
-.compressed .media {
-  height: 70px;
 }
 
 .image {
@@ -137,15 +138,27 @@
 }
 
 .content {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: var(--deck-card-content-left, 92px);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  height: var(--deck-card-content-height, 70px);
   min-width: 0;
+  overflow: hidden;
 }
 
 .active .content {
-  padding: 13px 16px 15px;
+  padding: 8px 16px 10px;
+  background: linear-gradient(180deg, #0c0f14, #07090d);
+  box-shadow: 0 -1px 0 rgba(255, 245, 218, 0.025);
 }
 
 .compressed .content {
-  align-self: end;
   padding: 0 12px 6px 11px;
 }
 
@@ -157,37 +170,38 @@
 }
 
 .eventTitle {
+  flex: 0 0 auto;
   overflow: hidden;
   color: #fff4dc;
+  font-size: var(--deck-card-title-size, 12.5px);
   font-weight: 700;
 }
 
 .active .eventTitle {
   overflow: visible;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(19px, 5.4vw, 23px);
   font-weight: 500;
   letter-spacing: -0.015em;
-  line-height: 1.03;
+  line-height: 0.98;
   text-wrap: balance;
 }
 
 .compressed .eventTitle {
   max-width: 100%;
-  font-size: 12.5px;
   line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .location {
+  flex: 0 0 auto;
   color: rgba(245, 232, 199, 0.78);
+  font-size: var(--deck-card-location-size, 9.5px);
 }
 
 .active .location {
-  margin-top: 6px;
+  margin-top: 3px;
   overflow: hidden;
-  font-size: 12.5px;
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -196,26 +210,26 @@
 .compressed .location {
   margin-top: 3px;
   overflow: hidden;
-  font-size: 9.5px;
   line-height: 1.05;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .date {
+  flex: 0 0 auto;
   color: rgba(255, 241, 210, 0.96);
-  font-size: 12.5px;
+  font-size: var(--deck-card-date-size, 9.5px);
 }
 
 .active .date {
-  margin-top: 4px;
+  margin-top: 2px;
+  line-height: 1.15;
 }
 
 .compressed .date {
   display: inline;
   margin-left: 5px;
   color: rgba(255, 241, 210, 0.76);
-  font-size: 9.5px;
 }
 
 .compressed .location::after {
@@ -223,17 +237,29 @@
 }
 
 .category {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 5px;
+  max-height: var(--deck-card-category-height, 0);
+  overflow: hidden;
   color: rgba(229, 194, 124, 0.82);
   font-size: 10px;
   letter-spacing: 0.03em;
+  line-height: 1.2;
+  opacity: var(--deck-card-category-opacity, 0);
+}
+
+.categoryHidden {
+  max-height: 0;
+  margin-top: 0;
+  opacity: 0;
+  visibility: hidden;
 }
 
 .compressed .category {
-  display: none;
+  margin-top: 0;
 }
 
 .listItem {
@@ -285,12 +311,12 @@
 }
 
 @media (max-height: 520px) {
-  .active {
-    min-height: 228px;
+  .card {
+    height: min(var(--deck-card-height, 70px), 228px);
   }
 
-  .active .media {
-    height: 116px;
+  .media {
+    height: min(var(--deck-card-media-height, 70px), 116px);
   }
 
   .active .content {

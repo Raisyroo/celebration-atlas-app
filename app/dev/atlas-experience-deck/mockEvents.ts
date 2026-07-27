@@ -28,7 +28,7 @@ function cloneMockEvent(item: EventDeckItem, index: number): EventDeckItem {
     ...item,
     id: `${item.id}-${index + 1}`,
     title: isLongTitleFixture
-      ? 'Great Lakes Heritage, Lantern & Waterfront Celebration'
+      ? 'Great Lakes Heritage, Lantern & Waterfront Celebration Weekend'
       : cycle > 1
         ? `${item.title} · Discovery ${cycle}`
         : item.title,
@@ -39,7 +39,7 @@ function cloneMockEvent(item: EventDeckItem, index: number): EventDeckItem {
     distanceLabel: isSparseFixture ? undefined : item.distanceLabel,
     categoryLabel: isSparseFixture ? undefined : item.categoryLabel,
     href: `/dev/atlas-experience-deck/open/${item.id}-${index + 1}`,
-    accessibilityLabel: `Open ${isLongTitleFixture ? 'Great Lakes Heritage, Lantern & Waterfront Celebration' : item.title}`,
+    accessibilityLabel: `Open ${isLongTitleFixture ? 'Great Lakes Heritage, Lantern & Waterfront Celebration Weekend' : item.title}`,
   };
 }
 

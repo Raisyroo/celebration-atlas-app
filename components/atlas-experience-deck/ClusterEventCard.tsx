@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import styles from './ClusterEventCard.module.css';
 import type {
   AtlasDeckCardRenderState,
@@ -15,10 +15,67 @@ type ClusterEventCardProps = {
 
 export function ClusterEventCard({ item, state }: ClusterEventCardProps) {
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const [hideOptionalMetadata, setHideOptionalMetadata] = useState(false);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const locationRef = useRef<HTMLParagraphElement | null>(null);
+  const dateRef = useRef<HTMLParagraphElement | null>(null);
+  const categoryRef = useRef<HTMLParagraphElement | null>(null);
   const showImage = Boolean(
     item.imageUrl && item.imageUrl !== failedImageUrl,
   );
   const tone = item.badge?.tone ?? 'neutral';
+
+  useLayoutEffect(() => {
+    if (!state.active) return;
+
+    const content = contentRef.current;
+    const title = titleRef.current;
+    const location = locationRef.current;
+    const date = dateRef.current;
+    if (!content || !title || !location || !date) return;
+
+    const measure = () => {
+      const contentStyle = window.getComputedStyle(content);
+      const titleStyle = window.getComputedStyle(title);
+      const lineHeight = Number.parseFloat(titleStyle.lineHeight);
+      const titleLines =
+        Number.isFinite(lineHeight) && lineHeight > 0
+          ? Math.round(title.scrollHeight / lineHeight)
+          : 1;
+      const availableHeight =
+        content.clientHeight -
+        Number.parseFloat(contentStyle.paddingTop) -
+        Number.parseFloat(contentStyle.paddingBottom);
+      const requiredCoreHeight =
+        title.scrollHeight +
+        location.scrollHeight +
+        date.scrollHeight +
+        5;
+      const categoryHeight = categoryRef.current
+        ? Math.max(12, categoryRef.current.scrollHeight) + 5
+        : 0;
+      const shouldHideCategory =
+        Boolean(categoryRef.current) &&
+        (titleLines >= 3 ||
+          requiredCoreHeight + categoryHeight > availableHeight + 0.5);
+
+      setHideOptionalMetadata((current) =>
+        current === shouldHideCategory ? current : shouldHideCategory,
+      );
+    };
+
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(content);
+    resizeObserver.observe(title);
+    return () => resizeObserver.disconnect();
+  }, [
+    item.categoryLabel,
+    item.dateLabel,
+    item.location,
+    item.title,
+    state.active,
+  ]);
 
   return (
     <article
@@ -56,12 +113,19 @@ export function ClusterEventCard({ item, state }: ClusterEventCardProps) {
         ) : null}
       </div>
 
-      <div className={styles.content}>
-        <h2 className={styles.eventTitle}>{item.title}</h2>
-        <p className={styles.location}>{item.location}</p>
-        <p className={styles.date}>{item.dateLabel}</p>
+      <div ref={contentRef} className={styles.content}>
+        <h2 ref={titleRef} className={styles.eventTitle}>{item.title}</h2>
+        <p ref={locationRef} className={styles.location}>{item.location}</p>
+        <p ref={dateRef} className={styles.date}>{item.dateLabel}</p>
         {item.categoryLabel ? (
-          <p className={styles.category}>
+          <p
+            ref={categoryRef}
+            className={`${styles.category} ${
+              hideOptionalMetadata ? styles.categoryHidden : ''
+            }`}
+            aria-hidden={hideOptionalMetadata || undefined}
+            data-category-visible={hideOptionalMetadata ? 'false' : 'true'}
+          >
             <span aria-hidden="true">✦</span>
             {item.categoryLabel}
           </p>
