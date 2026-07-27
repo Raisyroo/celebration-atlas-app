@@ -1,0 +1,72 @@
+{
+  "contract_version": 1,
+  "mode": "batch_0_crosswalk_only_no_write",
+  "inventory_name": "Macomb County Seed Inventory v1",
+  "workbook_file_name": "Macomb_County_Event_Inventory_Finalized.xlsx",
+  "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+  "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc",
+  "reviewed_at": "2026-07-27T09:12:31.654Z",
+  "approval": {
+    "status": "human_approved_no_write_disposition",
+    "scope": "crosswalk_only",
+    "candidate_creation": false,
+    "rpc_execution": false,
+    "canonical_update": false
+  },
+  "records": [
+    {
+      "clean_id": "MAC-001",
+      "seed_name": "Armada Fair",
+      "canonical_event_id": "46d7e6ff-bec5-4801-80da-2d21aa131092",
+      "canonical_event_slug": "armada-fair",
+      "existing_candidate_id": "f6c3fb7b-0d31-4c97-b335-3cffc3cd202d",
+      "reviewed_match_signals": [
+        {
+          "kind": "exact_official_url",
+          "value": "armadafair.org"
+        },
+        {
+          "kind": "exact_name_municipality",
+          "value": "armada fair|armada"
+        },
+        {
+          "kind": "promoted_candidate_link",
+          "value": "46d7e6ff-bec5-4801-80da-2d21aa131092"
+        }
+      ],
+      "human_approved_disposition": "retain_seed_to_canonical_crosswalk_only",
+      "action": "retain_seed_to_canonical_crosswalk_only",
+      "rpc": null,
+      "database_writes": []
+    },
+    {
+      "clean_id": "MAC-050",
+      "seed_name": "Romeo Peach Festival",
+      "canonical_event_id": "79fab78b-0a08-4439-8cc0-470281d69fb6",
+      "canonical_event_slug": "romeo-peach-festival",
+      "existing_candidate_id": "f8e47b34-0187-45c3-99b9-b919ee4faf62",
+      "reviewed_match_signals": [
+        {
+          "kind": "exact_official_url",
+          "value": "romeopeachfestival.com"
+        },
+        {
+          "kind": "exact_name_municipality",
+          "value": "romeo peach festival|romeo"
+        },
+        {
+          "kind": "promoted_candidate_link",
+          "value": "79fab78b-0a08-4439-8cc0-470281d69fb6"
+        }
+      ],
+      "human_approved_disposition": "retain_seed_to_canonical_crosswalk_only",
+      "action": "retain_seed_to_canonical_crosswalk_only",
+      "rpc": null,
+      "database_writes": []
+    }
+  ],
+  "integrity": {
+    "algorithm": "sha256",
+    "artifact_sha256": "bae4741855155d7ebb4cf1fffa6d6dcf910fb581c23fe53ce6847fb480ed9c23"
+  }
+}
