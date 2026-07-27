@@ -91,6 +91,12 @@ This trial also hardened the reusable path before more fairs enter the queue:
 
 Armada publication is complete. The next Event Factory trial should begin from the generalized v19 rules and measure how much editorial intervention remains, rather than adding Armada-specific code.
 
+The reusable county-seed parser and deterministic matching crosswalk are implemented as read-only Event Factory infrastructure. Macomb County Seed Inventory v1 reads only the finalized workbook's `03_IMPORT_READY` sheet, enforces the 40-column contract and 83 approved unique Clean IDs, preserves complete row provenance, fingerprints both the workbook and approved sheet, normalizes seed fields without treating spreadsheet qualification as publication approval, and compares every seed with the deployed Michigan canonical-event and candidate records. Its primary dry-run classifications are 2 existing canonical likely matches, 46 provisional new candidates, and 35 insufficient-information seeds. Armada Fair and Romeo Peach Festival are the two likely canonical matches. All 83 seeds still require current-edition verification and verified coordinates or address resolution.
+
+The dry run creates no discovery run or candidate and performs no Supabase writes. No candidate staging, event research, publication, or clustering has begun. Human-readable, machine-readable, and schema-parity outputs live under `artifacts/county-seeds/macomb/`, and the focused commands are `npm run dry-run:county-seeds -- <workbook.xlsx> --county-code macomb --output artifacts/county-seeds/macomb` and `npm run validate:county-seeds -- <workbook.xlsx>`.
+
+Read-only deployed-schema inspection confirms that `discovery_runs`, `event_candidates`, `event_candidate_sources`, `events`, `atlas_operation_runs`, and `atlas_operation_actions` expose the columns expected by the current operational contract. The repository still lacks foundational migration `004_atlas_control_plane.sql` and generated database types; PostgREST OpenAPI does not expose every check constraint or unique index. This remains a write-readiness blocker that must be resolved or independently verified before a later database-writing county-intake phase. No migration is generated or applied by the dry-run tooling. Mount Clemens is the intended first municipality-scale clustering pilot after its event records are completed; no clustering implementation is part of this milestone.
+
 ## Hero Image Factory
 
 Migration `014_event_visual_workflows.sql` and the Control Desk Hero Image Factory implement the fast visual workflow:
