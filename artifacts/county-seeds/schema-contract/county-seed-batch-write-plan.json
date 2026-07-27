@@ -1,0 +1,811 @@
+{
+  "contract_version": 1,
+  "mode": "plan_only_zero_write",
+  "created_on": "2026-07-27",
+  "source": {
+    "phase_b_commit": "e913c26e2d33851952aa60fe07eebbc1a1b7e183",
+    "dry_run_artifact": "artifacts/county-seeds/macomb/county-seed-dry-run.json",
+    "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+    "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc"
+  },
+  "safeguards": {
+    "supabase_writes": false,
+    "batches_executed": false,
+    "candidates_created": false,
+    "canonical_events_modified": false
+  },
+  "batch0": {
+    "decision": "crosswalk_only_no_rpc_no_database_write",
+    "records": [
+      {
+        "clean_id": "MAC-001",
+        "action": "retain_seed_to_canonical_crosswalk_only",
+        "canonical_event_id": "46d7e6ff-bec5-4801-80da-2d21aa131092",
+        "canonical_event_slug": "armada-fair",
+        "existing_candidate_id": "f6c3fb7b-0d31-4c97-b335-3cffc3cd202d",
+        "expected_candidate_state": {
+          "verification_status": "promoted",
+          "duplicate_status": "unique_candidate",
+          "matched_event_id": "46d7e6ff-bec5-4801-80da-2d21aa131092"
+        },
+        "rpc": null,
+        "database_writes": []
+      },
+      {
+        "clean_id": "MAC-050",
+        "action": "retain_seed_to_canonical_crosswalk_only",
+        "canonical_event_id": "79fab78b-0a08-4439-8cc0-470281d69fb6",
+        "canonical_event_slug": "romeo-peach-festival",
+        "existing_candidate_id": "f8e47b34-0187-45c3-99b9-b919ee4faf62",
+        "expected_candidate_state": {
+          "verification_status": "promoted",
+          "duplicate_status": "unique_candidate",
+          "matched_event_id": "79fab78b-0a08-4439-8cc0-470281d69fb6"
+        },
+        "rpc": null,
+        "database_writes": []
+      }
+    ]
+  },
+  "batch1": {
+    "decision": "payloads_prepared_not_approved_for_execution",
+    "rpc_transaction_scope": "one independent database transaction per RPC call",
+    "records": [
+      {
+        "clean_id": "MAC-003",
+        "rpc": "public.atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+        "args": {
+          "p_actor_type": "human",
+          "p_actor_identity": "<authenticated allowlisted Atlas administrator email>",
+          "p_idempotency_key": "county:macomb:MAC-003:72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+          "p_candidate": {
+            "candidate_name": "Blake's Lavender Festival",
+            "normalized_name": "blakes lavender festival",
+            "slug_candidate": "blake-s-lavender-festival-armada-mi",
+            "event_type": "unknown",
+            "category": "Food and beverage events",
+            "subcategory": null,
+            "city": "Armada",
+            "county": "Macomb",
+            "state": "Michigan",
+            "country": "USA",
+            "venue_name": "Blake's Orchard and Cider Mill",
+            "start_date": null,
+            "end_date": null,
+            "typical_month": "July",
+            "typical_season": null,
+            "probable_recurrence": "annual",
+            "description": null,
+            "official_website_candidate": "https://blakefarms.com/lavender-festival/",
+            "social_links": [],
+            "discovery_confidence": 0.8,
+            "duplicate_status": "unchecked",
+            "semantic_notes": "County seed MAC-003; 03_IMPORT_READY row 4; workbook 72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27.",
+            "county_seed": {
+              "contract_version": 1,
+              "clean_id": "MAC-003",
+              "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+              "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc",
+              "source_sheet": "03_IMPORT_READY",
+              "source_row": 4,
+              "alternate_names": [
+                "The Original Michigan Lavender Festival"
+              ],
+              "organizer": "Blake Farms",
+              "full_address": "17985 Armada Center Road, Armada, MI 48005",
+              "official_event_url": {
+                "original": "https://blakefarms.com/lavender-festival/",
+                "normalized": "https://blakefarms.com/lavender-festival",
+                "identityKey": "blakefarms.com/lavender-festival"
+              },
+              "official_organizer_url": {
+                "original": "https://blakefarms.com/",
+                "normalized": "https://blakefarms.com",
+                "identityKey": "blakefarms.com"
+              },
+              "supporting_urls": [
+                {
+                  "original": "https://beesinthed.com/event/lavenderfest2026b",
+                  "normalized": "https://beesinthed.com/event/lavenderfest2026b",
+                  "identityKey": "beesinthed.com/event/lavenderfest2026b"
+                },
+                {
+                  "original": "https://heymichigan.com/summer-festivals-in-michigan",
+                  "normalized": "https://heymichigan.com/summer-festivals-in-michigan",
+                  "identityKey": "heymichigan.com/summer-festivals-in-michigan"
+                }
+              ],
+              "secondary_tags": [
+                "Flower festivals",
+                "Craft fairs",
+                "Wellness expos",
+                "Farm events"
+              ],
+              "date_information": {
+                "kind": "year_only",
+                "original": "2026",
+                "year": 2026
+              },
+              "spreadsheet": {
+                "activityStatus": "Upcoming Edition Announced",
+                "qualificationStatus": "Qualifies",
+                "confidence": "High",
+                "reviewDecision": "Keep",
+                "existingAtlasMatch": "Not Checked"
+              },
+              "cleanup_provenance": {
+                "researchDate": "2026-07-22",
+                "sourceSchema": "Full research",
+                "sourceRows": "QUALIFIED_EVENT_SERIES!7",
+                "duplicateGroup": null,
+                "decisionId": null,
+                "notes": null
+              }
+            }
+          },
+          "p_sources": [
+            {
+              "source_name": "Blake's Lavender Festival official event source",
+              "source_url": "https://blakefarms.com/lavender-festival/",
+              "source_type": "official",
+              "source_excerpt": null,
+              "is_official": true,
+              "trust_score": 0.9
+            }
+          ]
+        },
+        "request_sha256": "ef074c24d1380aa483230bf3e55dd7c7cad30c7a1060e19c588da9660ee229d1",
+        "execution_status": "not_executed"
+      },
+      {
+        "clean_id": "MAC-004",
+        "rpc": "public.atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+        "args": {
+          "p_actor_type": "human",
+          "p_actor_identity": "<authenticated allowlisted Atlas administrator email>",
+          "p_idempotency_key": "county:macomb:MAC-004:72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+          "p_candidate": {
+            "candidate_name": "Blake's Pickle Festival",
+            "normalized_name": "blakes pickle festival",
+            "slug_candidate": "blake-s-pickle-festival-armada-mi",
+            "event_type": "unknown",
+            "category": "Food and beverage",
+            "subcategory": null,
+            "city": "Armada",
+            "county": "Macomb",
+            "state": "Michigan",
+            "country": "USA",
+            "venue_name": "Blake's Orchard & Cider Mill",
+            "start_date": "2026-08-08",
+            "end_date": "2026-08-16",
+            "typical_month": "August",
+            "typical_season": null,
+            "probable_recurrence": "annual",
+            "description": null,
+            "official_website_candidate": "https://blakefarms.com/pickle-fest/",
+            "social_links": [],
+            "discovery_confidence": 0.8,
+            "duplicate_status": "unchecked",
+            "semantic_notes": "County seed MAC-004; 03_IMPORT_READY row 5; workbook 72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27.",
+            "county_seed": {
+              "contract_version": 1,
+              "clean_id": "MAC-004",
+              "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+              "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc",
+              "source_sheet": "03_IMPORT_READY",
+              "source_row": 5,
+              "alternate_names": [
+                "Pickle Fest"
+              ],
+              "organizer": "Blake Farms",
+              "full_address": "17985 Armada Center Road, Armada, MI 48005",
+              "official_event_url": {
+                "original": "https://blakefarms.com/pickle-fest/",
+                "normalized": "https://blakefarms.com/pickle-fest",
+                "identityKey": "blakefarms.com/pickle-fest"
+              },
+              "official_organizer_url": {
+                "original": "https://blakefarms.com/",
+                "normalized": "https://blakefarms.com",
+                "identityKey": "blakefarms.com"
+              },
+              "supporting_urls": [
+                {
+                  "original": "https://blakefarms.com/events/category/festivals/2025-08",
+                  "normalized": "https://blakefarms.com/events/category/festivals/2025-08",
+                  "identityKey": "blakefarms.com/events/category/festivals/2025-08"
+                },
+                {
+                  "original": "https://blakefarms.ticketspice.com/blakes-pickle-festival",
+                  "normalized": "https://blakefarms.ticketspice.com/blakes-pickle-festival",
+                  "identityKey": "blakefarms.ticketspice.com/blakes-pickle-festival"
+                }
+              ],
+              "secondary_tags": [
+                "Pickles",
+                "U-pick",
+                "Workshops",
+                "Artisan markets",
+                "Live music",
+                "Contests",
+                "Agritourism"
+              ],
+              "date_information": {
+                "kind": "exact_range",
+                "original": "2026-08-08 to 2026-08-16",
+                "startDate": "2026-08-08",
+                "endDate": "2026-08-16"
+              },
+              "spreadsheet": {
+                "activityStatus": "Upcoming Edition Announced",
+                "qualificationStatus": "Qualifies",
+                "confidence": "High",
+                "reviewDecision": "Keep",
+                "existingAtlasMatch": "Not Checked"
+              },
+              "cleanup_provenance": {
+                "researchDate": "2026-07-22",
+                "sourceSchema": "Full research",
+                "sourceRows": "QUALIFIED_EVENT_SERIES!98",
+                "duplicateGroup": null,
+                "decisionId": null,
+                "notes": null
+              }
+            }
+          },
+          "p_sources": [
+            {
+              "source_name": "Blake's Pickle Festival official event source",
+              "source_url": "https://blakefarms.com/pickle-fest/",
+              "source_type": "official",
+              "source_excerpt": null,
+              "is_official": true,
+              "trust_score": 0.9
+            }
+          ]
+        },
+        "request_sha256": "80a961149946d49cb34599dbf88a467e0b0d6b68845d7e3ed174de3346cc2a21",
+        "execution_status": "not_executed"
+      },
+      {
+        "clean_id": "MAC-008",
+        "rpc": "public.atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+        "args": {
+          "p_actor_type": "human",
+          "p_actor_identity": "<authenticated allowlisted Atlas administrator email>",
+          "p_idempotency_key": "county:macomb:MAC-008:72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+          "p_candidate": {
+            "candidate_name": "Chesterfield Heritage Days",
+            "normalized_name": "chesterfield heritage days",
+            "slug_candidate": "chesterfield-heritage-days-chesterfield-township-mi",
+            "event_type": "unknown",
+            "category": "Community, civic, and heritage",
+            "subcategory": null,
+            "city": "Chesterfield Township",
+            "county": "Macomb",
+            "state": "Michigan",
+            "country": "USA",
+            "venue_name": "Chesterfield Historical Village",
+            "start_date": null,
+            "end_date": null,
+            "typical_month": "September",
+            "typical_season": null,
+            "probable_recurrence": "annual",
+            "description": null,
+            "official_website_candidate": "https://www.chesterfieldhistoricalsociety.org/events",
+            "social_links": [],
+            "discovery_confidence": 0.8,
+            "duplicate_status": "unchecked",
+            "semantic_notes": "County seed MAC-008; 03_IMPORT_READY row 9; workbook 72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27.",
+            "county_seed": {
+              "contract_version": 1,
+              "clean_id": "MAC-008",
+              "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+              "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc",
+              "source_sheet": "03_IMPORT_READY",
+              "source_row": 9,
+              "alternate_names": [
+                "Heritage Days"
+              ],
+              "organizer": "Chesterfield Historical Society",
+              "full_address": "47275 Sugarbush Road, Chesterfield Township, MI 48047",
+              "official_event_url": {
+                "original": "https://www.chesterfieldhistoricalsociety.org/events",
+                "normalized": "https://chesterfieldhistoricalsociety.org/events",
+                "identityKey": "chesterfieldhistoricalsociety.org/events"
+              },
+              "official_organizer_url": {
+                "original": "https://www.chesterfieldhistoricalsociety.org/",
+                "normalized": "https://chesterfieldhistoricalsociety.org",
+                "identityKey": "chesterfieldhistoricalsociety.org"
+              },
+              "supporting_urls": [
+                {
+                  "original": "https://liblists.org/hyperkitty/list/michlib-l%40liblists.org/2018/6/?count=50",
+                  "normalized": "https://liblists.org/hyperkitty/list/michlib-l%40liblists.org/2018/6?count=50",
+                  "identityKey": "liblists.org/hyperkitty/list/michlib-l%40liblists.org/2018/6?count=50"
+                },
+                {
+                  "original": "https://www.chesterfieldtwp.org",
+                  "normalized": "https://chesterfieldtwp.org",
+                  "identityKey": "chesterfieldtwp.org"
+                }
+              ],
+              "secondary_tags": [
+                "Pioneer history",
+                "Historic villages",
+                "Family activities",
+                "Hands-on demonstrations"
+              ],
+              "date_information": {
+                "kind": "year_only",
+                "original": "2026",
+                "year": 2026
+              },
+              "spreadsheet": {
+                "activityStatus": "Upcoming Edition Announced",
+                "qualificationStatus": "Qualifies",
+                "confidence": "High",
+                "reviewDecision": "Keep",
+                "existingAtlasMatch": "Not Checked"
+              },
+              "cleanup_provenance": {
+                "researchDate": "2026-07-22",
+                "sourceSchema": "Full research",
+                "sourceRows": "QUALIFIED_EVENT_SERIES!92",
+                "duplicateGroup": null,
+                "decisionId": null,
+                "notes": null
+              }
+            }
+          },
+          "p_sources": [
+            {
+              "source_name": "Chesterfield Heritage Days official event source",
+              "source_url": "https://www.chesterfieldhistoricalsociety.org/events",
+              "source_type": "official",
+              "source_excerpt": null,
+              "is_official": true,
+              "trust_score": 0.9
+            }
+          ]
+        },
+        "request_sha256": "feffc19f548ab383f4fee166f4c9207d133555119574f6bb4668c84a188e4ebf",
+        "execution_status": "not_executed"
+      },
+      {
+        "clean_id": "MAC-011",
+        "rpc": "public.atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+        "args": {
+          "p_actor_type": "human",
+          "p_actor_identity": "<authenticated allowlisted Atlas administrator email>",
+          "p_idempotency_key": "county:macomb:MAC-011:72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+          "p_candidate": {
+            "candidate_name": "Chesterfield Vietnam Era Reenactment",
+            "normalized_name": "chesterfield vietnam era reenactment",
+            "slug_candidate": "chesterfield-vietnam-era-reenactment-chesterfield-township-mi",
+            "event_type": "unknown",
+            "category": "Historical, educational, family and animal events",
+            "subcategory": null,
+            "city": "Chesterfield Township",
+            "county": "Macomb",
+            "state": "Michigan",
+            "country": "USA",
+            "venue_name": "Chesterfield Historical Village",
+            "start_date": null,
+            "end_date": null,
+            "typical_month": "August",
+            "typical_season": null,
+            "probable_recurrence": "annual",
+            "description": null,
+            "official_website_candidate": "https://www.chesterfieldhistoricalsociety.org/events",
+            "social_links": [],
+            "discovery_confidence": 0.8,
+            "duplicate_status": "unchecked",
+            "semantic_notes": "County seed MAC-011; 03_IMPORT_READY row 12; workbook 72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27.",
+            "county_seed": {
+              "contract_version": 1,
+              "clean_id": "MAC-011",
+              "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+              "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc",
+              "source_sheet": "03_IMPORT_READY",
+              "source_row": 12,
+              "alternate_names": [
+                "Vietnam Era Reenactment",
+                "Vietnam Reenactment"
+              ],
+              "organizer": "Chesterfield Historical Society / Michigan Military Technical & Historical Society",
+              "full_address": "47275 Sugarbush Road, Chesterfield Township, MI 48047",
+              "official_event_url": {
+                "original": "https://www.chesterfieldhistoricalsociety.org/events",
+                "normalized": "https://chesterfieldhistoricalsociety.org/events",
+                "identityKey": "chesterfieldhistoricalsociety.org/events"
+              },
+              "official_organizer_url": {
+                "original": "https://www.chesterfieldhistoricalsociety.org/",
+                "normalized": "https://chesterfieldhistoricalsociety.org",
+                "identityKey": "chesterfieldhistoricalsociety.org"
+              },
+              "supporting_urls": [
+                {
+                  "original": "https://www.readkong.com/page/the-chesterfield-connection-winter-2022-the-official-1556603",
+                  "normalized": "https://readkong.com/page/the-chesterfield-connection-winter-2022-the-official-1556603",
+                  "identityKey": "readkong.com/page/the-chesterfield-connection-winter-2022-the-official-1556603"
+                },
+                {
+                  "original": "https://www.chesterfieldtwp.org",
+                  "normalized": "https://chesterfieldtwp.org",
+                  "identityKey": "chesterfieldtwp.org"
+                }
+              ],
+              "secondary_tags": [
+                "Vietnam War",
+                "Living history",
+                "Military reenactments",
+                "Historic vehicles"
+              ],
+              "date_information": {
+                "kind": "year_only",
+                "original": "2026",
+                "year": 2026
+              },
+              "spreadsheet": {
+                "activityStatus": "Upcoming Edition Announced",
+                "qualificationStatus": "Qualifies",
+                "confidence": "High",
+                "reviewDecision": "Keep",
+                "existingAtlasMatch": "Not Checked"
+              },
+              "cleanup_provenance": {
+                "researchDate": "2026-07-22",
+                "sourceSchema": "Full research",
+                "sourceRows": "QUALIFIED_EVENT_SERIES!89",
+                "duplicateGroup": null,
+                "decisionId": null,
+                "notes": null
+              }
+            }
+          },
+          "p_sources": [
+            {
+              "source_name": "Chesterfield Vietnam Era Reenactment official event source",
+              "source_url": "https://www.chesterfieldhistoricalsociety.org/events",
+              "source_type": "official",
+              "source_excerpt": null,
+              "is_official": true,
+              "trust_score": 0.9
+            }
+          ]
+        },
+        "request_sha256": "a57a430cdbab97c0bbe55b56dacc739fbb1580249dfb7b0f3cb288697805eeb9",
+        "execution_status": "not_executed"
+      },
+      {
+        "clean_id": "MAC-041",
+        "rpc": "public.atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+        "args": {
+          "p_actor_type": "human",
+          "p_actor_identity": "<authenticated allowlisted Atlas administrator email>",
+          "p_idempotency_key": "county:macomb:MAC-041:72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+          "p_candidate": {
+            "candidate_name": "Art on the Bay",
+            "normalized_name": "art on the bay",
+            "slug_candidate": "art-on-the-bay-new-baltimore-mi",
+            "event_type": "unknown",
+            "category": "Arts, crafts, fashion and body art",
+            "subcategory": null,
+            "city": "New Baltimore",
+            "county": "Macomb",
+            "state": "Michigan",
+            "country": "USA",
+            "venue_name": "Walter & Mary Burke Park",
+            "start_date": "2026-09-05",
+            "end_date": "2026-09-06",
+            "typical_month": null,
+            "typical_season": "Labor Day weekend",
+            "probable_recurrence": "annual",
+            "description": null,
+            "official_website_candidate": "https://www.artonthebay.com/",
+            "social_links": [],
+            "discovery_confidence": 0.8,
+            "duplicate_status": "unchecked",
+            "semantic_notes": "County seed MAC-041; 03_IMPORT_READY row 42; workbook 72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27.",
+            "county_seed": {
+              "contract_version": 1,
+              "clean_id": "MAC-041",
+              "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+              "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc",
+              "source_sheet": "03_IMPORT_READY",
+              "source_row": 42,
+              "alternate_names": [],
+              "organizer": "Art on the Bay / Laurie Huff",
+              "full_address": "36300 Front Street, New Baltimore, MI 48047",
+              "official_event_url": {
+                "original": "https://www.artonthebay.com/",
+                "normalized": "https://artonthebay.com",
+                "identityKey": "artonthebay.com"
+              },
+              "official_organizer_url": {
+                "original": "https://www.artonthebay.com/",
+                "normalized": "https://artonthebay.com",
+                "identityKey": "artonthebay.com"
+              },
+              "supporting_urls": [
+                {
+                  "original": "https://www.cityofnewbaltimore.org/Calendar.aspx?EID=2235",
+                  "normalized": "https://cityofnewbaltimore.org/Calendar.aspx?EID=2235",
+                  "identityKey": "cityofnewbaltimore.org/calendar.aspx?eid=2235"
+                },
+                {
+                  "original": "https://www.lakestclairguide.com/service/art-bay-baltimore",
+                  "normalized": "https://lakestclairguide.com/service/art-bay-baltimore",
+                  "identityKey": "lakestclairguide.com/service/art-bay-baltimore"
+                }
+              ],
+              "secondary_tags": [
+                "Fine art fairs",
+                "Craft shows",
+                "Waterfront events",
+                "Artisan markets"
+              ],
+              "date_information": {
+                "kind": "exact_range",
+                "original": "2026-09-05 to 2026-09-06",
+                "startDate": "2026-09-05",
+                "endDate": "2026-09-06"
+              },
+              "spreadsheet": {
+                "activityStatus": "Upcoming Edition Announced",
+                "qualificationStatus": "Qualifies",
+                "confidence": "High",
+                "reviewDecision": "Keep",
+                "existingAtlasMatch": "Not Checked"
+              },
+              "cleanup_provenance": {
+                "researchDate": "2026-07-22",
+                "sourceSchema": "Full research",
+                "sourceRows": "QUALIFIED_EVENT_SERIES!102",
+                "duplicateGroup": null,
+                "decisionId": null,
+                "notes": null
+              }
+            }
+          },
+          "p_sources": [
+            {
+              "source_name": "Art on the Bay official event source",
+              "source_url": "https://www.artonthebay.com/",
+              "source_type": "official",
+              "source_excerpt": null,
+              "is_official": true,
+              "trust_score": 0.9
+            }
+          ]
+        },
+        "request_sha256": "63e5fd6ddd3422e2242023856f201a94821b46c2855552a0496f0d750efa81fd",
+        "execution_status": "not_executed"
+      },
+      {
+        "clean_id": "MAC-042",
+        "rpc": "public.atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+        "args": {
+          "p_actor_type": "human",
+          "p_actor_identity": "<authenticated allowlisted Atlas administrator email>",
+          "p_idempotency_key": "county:macomb:MAC-042:72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+          "p_candidate": {
+            "candidate_name": "Bay-Rama Fishfly Festival",
+            "normalized_name": "bay rama fishfly festival",
+            "slug_candidate": "bay-rama-fishfly-festival-new-baltimore-mi",
+            "event_type": "unknown",
+            "category": "Community, civic and heritage events",
+            "subcategory": null,
+            "city": "New Baltimore",
+            "county": "Macomb",
+            "state": "Michigan",
+            "country": "USA",
+            "venue_name": "Walter & Mary Burke Park and Downtown",
+            "start_date": null,
+            "end_date": null,
+            "typical_month": "June",
+            "typical_season": null,
+            "probable_recurrence": "annual",
+            "description": null,
+            "official_website_candidate": "https://www.bay-rama.com/",
+            "social_links": [],
+            "discovery_confidence": 0.8,
+            "duplicate_status": "unchecked",
+            "semantic_notes": "County seed MAC-042; 03_IMPORT_READY row 43; workbook 72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27.",
+            "county_seed": {
+              "contract_version": 1,
+              "clean_id": "MAC-042",
+              "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+              "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc",
+              "source_sheet": "03_IMPORT_READY",
+              "source_row": 43,
+              "alternate_names": [],
+              "organizer": "Bay-Rama, Inc.",
+              "full_address": "36300 Front St, New Baltimore, MI 48047",
+              "official_event_url": {
+                "original": "https://www.bay-rama.com/",
+                "normalized": "https://bay-rama.com",
+                "identityKey": "bay-rama.com"
+              },
+              "official_organizer_url": {
+                "original": "https://www.bay-rama.com/",
+                "normalized": "https://bay-rama.com",
+                "identityKey": "bay-rama.com"
+              },
+              "supporting_urls": [
+                {
+                  "original": "https://www.cityofnewbaltimore.org/Calendar.aspx?EID=2263",
+                  "normalized": "https://cityofnewbaltimore.org/Calendar.aspx?EID=2263",
+                  "identityKey": "cityofnewbaltimore.org/calendar.aspx?eid=2263"
+                },
+                {
+                  "original": "https://www.oaklandcountymoms.com/macomb-county-fireworks-37102",
+                  "normalized": "https://oaklandcountymoms.com/macomb-county-fireworks-37102",
+                  "identityKey": "oaklandcountymoms.com/macomb-county-fireworks-37102"
+                }
+              ],
+              "secondary_tags": [
+                "Carnivals",
+                "Fireworks",
+                "Parades",
+                "Pageants"
+              ],
+              "date_information": {
+                "kind": "year_only",
+                "original": "2026",
+                "year": 2026
+              },
+              "spreadsheet": {
+                "activityStatus": "Upcoming Edition Announced",
+                "qualificationStatus": "Qualifies",
+                "confidence": "High",
+                "reviewDecision": "Keep",
+                "existingAtlasMatch": "Not Checked"
+              },
+              "cleanup_provenance": {
+                "researchDate": "2026-07-22",
+                "sourceSchema": "Full research",
+                "sourceRows": "QUALIFIED_EVENT_SERIES!3",
+                "duplicateGroup": null,
+                "decisionId": null,
+                "notes": null
+              }
+            }
+          },
+          "p_sources": [
+            {
+              "source_name": "Bay-Rama Fishfly Festival official event source",
+              "source_url": "https://www.bay-rama.com/",
+              "source_type": "official",
+              "source_excerpt": null,
+              "is_official": true,
+              "trust_score": 0.9
+            }
+          ]
+        },
+        "request_sha256": "5105f4442576ac76c65e6828680ef30047bb558c27d01a4947fba552a4c487c5",
+        "execution_status": "not_executed"
+      },
+      {
+        "clean_id": "MAC-049",
+        "rpc": "public.atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+        "args": {
+          "p_actor_type": "human",
+          "p_actor_identity": "<authenticated allowlisted Atlas administrator email>",
+          "p_idempotency_key": "county:macomb:MAC-049:72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+          "p_candidate": {
+            "candidate_name": "Richmond Good Old Days Festival",
+            "normalized_name": "richmond good old days festival",
+            "slug_candidate": "richmond-good-old-days-festival-richmond-mi",
+            "event_type": "unknown",
+            "category": "Community, civic and heritage events",
+            "subcategory": null,
+            "city": "Richmond",
+            "county": "Macomb",
+            "state": "Michigan",
+            "country": "USA",
+            "venue_name": "Festival Grounds",
+            "start_date": null,
+            "end_date": null,
+            "typical_month": "September",
+            "typical_season": null,
+            "probable_recurrence": "annual",
+            "description": null,
+            "official_website_candidate": "https://www.richmondgoodolddaysfestival.com/",
+            "social_links": [],
+            "discovery_confidence": 0.8,
+            "duplicate_status": "unchecked",
+            "semantic_notes": "County seed MAC-049; 03_IMPORT_READY row 50; workbook 72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27.",
+            "county_seed": {
+              "contract_version": 1,
+              "clean_id": "MAC-049",
+              "workbook_fingerprint": "72ca71ed633d8a8dc309955fe37df971acd1b5f27fd4f581ff32ab47a2c07a27",
+              "approved_sheet_fingerprint": "4fd822cb6c261a433f2b8942c57027cbce714d363caec689ae7a573241f6a6fc",
+              "source_sheet": "03_IMPORT_READY",
+              "source_row": 50,
+              "alternate_names": [
+                "Richmond Area Good Old Days"
+              ],
+              "organizer": "Richmond Good Old Days Festival Committee",
+              "full_address": "69500 Beebe St, Richmond, MI 48062",
+              "official_event_url": {
+                "original": "https://www.richmondgoodolddaysfestival.com/",
+                "normalized": "https://richmondgoodolddaysfestival.com",
+                "identityKey": "richmondgoodolddaysfestival.com"
+              },
+              "official_organizer_url": {
+                "original": "https://www.cityofrichmond.net/",
+                "normalized": "https://cityofrichmond.net",
+                "identityKey": "cityofrichmond.net"
+              },
+              "supporting_urls": [
+                {
+                  "original": "https://michiganfireworks.com/events/richmond-good-old-days-festival",
+                  "normalized": "https://michiganfireworks.com/events/richmond-good-old-days-festival",
+                  "identityKey": "michiganfireworks.com/events/richmond-good-old-days-festival"
+                },
+                {
+                  "original": "https://www.skerbeckcarnival.com/events/festivals",
+                  "normalized": "https://skerbeckcarnival.com/events/festivals",
+                  "identityKey": "skerbeckcarnival.com/events/festivals"
+                }
+              ],
+              "secondary_tags": [
+                "Carnivals",
+                "Fireworks",
+                "Parades",
+                "Demolition derbies",
+                "Car shows"
+              ],
+              "date_information": {
+                "kind": "year_only",
+                "original": "2026",
+                "year": 2026
+              },
+              "spreadsheet": {
+                "activityStatus": "Upcoming Edition Announced",
+                "qualificationStatus": "Qualifies",
+                "confidence": "High",
+                "reviewDecision": "Keep",
+                "existingAtlasMatch": "Not Checked"
+              },
+              "cleanup_provenance": {
+                "researchDate": "2026-07-22",
+                "sourceSchema": "Full research + short appended schema",
+                "sourceRows": "QUALIFIED_EVENT_SERIES!8; QUALIFIED_EVENT_SERIES!47",
+                "duplicateGroup": "DUP-004",
+                "decisionId": null,
+                "notes": "Automatically merged 2 source rows representing the same event identity. Short-schema duplicate was absorbed into the richer research record."
+              }
+            }
+          },
+          "p_sources": [
+            {
+              "source_name": "Richmond Good Old Days Festival official event source",
+              "source_url": "https://www.richmondgoodolddaysfestival.com/",
+              "source_type": "official",
+              "source_excerpt": null,
+              "is_official": true,
+              "trust_score": 0.9
+            }
+          ]
+        },
+        "request_sha256": "97e0aba151e5993e899c14bbafb2e503fcf1d101ebba192693181896f58afc1a",
+        "execution_status": "not_executed"
+      }
+    ]
+  },
+  "read_only_preflight": {
+    "checked_on": "2026-07-27",
+    "method": "PostgREST GET only",
+    "batch0_existing_candidates_confirmed": 2,
+    "batch0_matched_event_ids_confirmed": true,
+    "batch1_slug_collisions": [],
+    "batch1_idempotency_key_collisions": [],
+    "batch1_canonical_name_or_official_url_collisions": [],
+    "batch1_candidate_name_or_official_url_collisions": []
+  }
+}

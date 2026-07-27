@@ -1,0 +1,3430 @@
+{
+  "contractVersion": 1,
+  "retrievedAt": "2026-07-27T08:10:57.553Z",
+  "retrieval": {
+    "method": "PostgreSQL catalog queries in BEGIN READ ONLY",
+    "database": {
+      "database": "postgres",
+      "server_version": "17.6",
+      "transaction_read_only": "on"
+    }
+  },
+  "targets": {
+    "tables": [
+      "atlas_operation_runs",
+      "atlas_operation_actions",
+      "discovery_runs",
+      "event_candidates",
+      "event_candidate_sources",
+      "events",
+      "discovery_sources"
+    ],
+    "functions": [
+      "atlas_intake_event_candidate",
+      "atlas_assert_service_role",
+      "atlas_require_source_evidence",
+      "atlas_start_operation",
+      "set_atlas_control_plane_updated_at"
+    ]
+  },
+  "tables": [
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "row_security": true,
+      "force_row_security": false,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "row_security": true,
+      "force_row_security": false,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "row_security": true,
+      "force_row_security": false,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "row_security": true,
+      "force_row_security": false,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "row_security": true,
+      "force_row_security": false,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "row_security": true,
+      "force_row_security": false,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "row_security": true,
+      "force_row_security": false,
+      "comment": null
+    }
+  ],
+  "columns": [
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "column_default": "gen_random_uuid()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 2,
+      "column_name": "operation_run_id",
+      "data_type": "uuid",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 3,
+      "column_name": "action_type",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 4,
+      "column_name": "target_entity_type",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 5,
+      "column_name": "target_entity_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 6,
+      "column_name": "lifecycle_state",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'proposed'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 7,
+      "column_name": "source_references",
+      "data_type": "jsonb",
+      "not_null": true,
+      "column_default": "'[]'::jsonb",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 8,
+      "column_name": "requested_payload",
+      "data_type": "jsonb",
+      "not_null": true,
+      "column_default": "'{}'::jsonb",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 9,
+      "column_name": "before_snapshot",
+      "data_type": "jsonb",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 10,
+      "column_name": "applied_payload",
+      "data_type": "jsonb",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 11,
+      "column_name": "after_snapshot",
+      "data_type": "jsonb",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 12,
+      "column_name": "reason",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 13,
+      "column_name": "warnings",
+      "data_type": "jsonb",
+      "not_null": true,
+      "column_default": "'[]'::jsonb",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 14,
+      "column_name": "failure",
+      "data_type": "jsonb",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 15,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 16,
+      "column_name": "applied_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "ordinal_position": 17,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "column_default": "gen_random_uuid()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 2,
+      "column_name": "operation_type",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 3,
+      "column_name": "actor_type",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 4,
+      "column_name": "actor_identity",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 5,
+      "column_name": "status",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'planned'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 6,
+      "column_name": "idempotency_key",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 7,
+      "column_name": "request",
+      "data_type": "jsonb",
+      "not_null": true,
+      "column_default": "'{}'::jsonb",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 8,
+      "column_name": "summary",
+      "data_type": "jsonb",
+      "not_null": true,
+      "column_default": "'{}'::jsonb",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 9,
+      "column_name": "error",
+      "data_type": "jsonb",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 10,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 11,
+      "column_name": "started_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 12,
+      "column_name": "completed_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "ordinal_position": 13,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "column_default": "gen_random_uuid()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 2,
+      "column_name": "run_type",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 3,
+      "column_name": "source_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 4,
+      "column_name": "status",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'pending'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 5,
+      "column_name": "started_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 6,
+      "column_name": "completed_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 7,
+      "column_name": "items_found",
+      "data_type": "integer",
+      "not_null": true,
+      "column_default": "0",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 8,
+      "column_name": "candidates_created",
+      "data_type": "integer",
+      "not_null": true,
+      "column_default": "0",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 9,
+      "column_name": "duplicates_flagged",
+      "data_type": "integer",
+      "not_null": true,
+      "column_default": "0",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 10,
+      "column_name": "estimated_cost",
+      "data_type": "numeric(12,2)",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 11,
+      "column_name": "actual_cost",
+      "data_type": "numeric(12,2)",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 12,
+      "column_name": "approval_required",
+      "data_type": "boolean",
+      "not_null": true,
+      "column_default": "false",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 13,
+      "column_name": "approval_status",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'not_required'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 14,
+      "column_name": "error_message",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 15,
+      "column_name": "notes",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 16,
+      "column_name": "run_metadata",
+      "data_type": "jsonb",
+      "not_null": true,
+      "column_default": "'{}'::jsonb",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "ordinal_position": 17,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "column_default": "gen_random_uuid()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 2,
+      "column_name": "name",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 3,
+      "column_name": "source_url",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 4,
+      "column_name": "source_type",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 5,
+      "column_name": "region",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 6,
+      "column_name": "city",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 7,
+      "column_name": "county",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 8,
+      "column_name": "state",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'Michigan'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 9,
+      "column_name": "priority",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'medium'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 10,
+      "column_name": "trust_score",
+      "data_type": "numeric(3,2)",
+      "not_null": true,
+      "column_default": "0.50",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 11,
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "not_null": true,
+      "column_default": "true",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 12,
+      "column_name": "notes",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 13,
+      "column_name": "last_checked_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 14,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "ordinal_position": 15,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "column_default": "gen_random_uuid()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "ordinal_position": 2,
+      "column_name": "candidate_id",
+      "data_type": "uuid",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "ordinal_position": 3,
+      "column_name": "source_name",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "ordinal_position": 4,
+      "column_name": "source_url",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "ordinal_position": 5,
+      "column_name": "source_type",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "ordinal_position": 6,
+      "column_name": "source_excerpt",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "ordinal_position": 7,
+      "column_name": "trust_score",
+      "data_type": "numeric(3,2)",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "ordinal_position": 8,
+      "column_name": "last_accessed",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "ordinal_position": 9,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "column_default": "gen_random_uuid()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 2,
+      "column_name": "discovery_run_id",
+      "data_type": "uuid",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 3,
+      "column_name": "candidate_name",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 4,
+      "column_name": "normalized_name",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 5,
+      "column_name": "slug_candidate",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 6,
+      "column_name": "event_type",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'unknown'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 7,
+      "column_name": "category",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 8,
+      "column_name": "subcategory",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 9,
+      "column_name": "city",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 10,
+      "column_name": "county",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 11,
+      "column_name": "state",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'Michigan'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 12,
+      "column_name": "country",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'USA'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 13,
+      "column_name": "venue_name",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 14,
+      "column_name": "start_date",
+      "data_type": "date",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 15,
+      "column_name": "end_date",
+      "data_type": "date",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 16,
+      "column_name": "typical_month",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 17,
+      "column_name": "typical_season",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 18,
+      "column_name": "probable_recurrence",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 19,
+      "column_name": "description",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 20,
+      "column_name": "official_website_candidate",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 21,
+      "column_name": "social_links",
+      "data_type": "jsonb",
+      "not_null": true,
+      "column_default": "'[]'::jsonb",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 22,
+      "column_name": "source_urls",
+      "data_type": "jsonb",
+      "not_null": true,
+      "column_default": "'[]'::jsonb",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 23,
+      "column_name": "discovery_confidence",
+      "data_type": "numeric(3,2)",
+      "not_null": true,
+      "column_default": "0.50",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 24,
+      "column_name": "verification_status",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'needs_review'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 25,
+      "column_name": "duplicate_status",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'unique_candidate'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 26,
+      "column_name": "matched_event_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 27,
+      "column_name": "needs_review",
+      "data_type": "boolean",
+      "not_null": true,
+      "column_default": "true",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 28,
+      "column_name": "semantic_notes",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 29,
+      "column_name": "raw_payload",
+      "data_type": "jsonb",
+      "not_null": true,
+      "column_default": "'{}'::jsonb",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 30,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "ordinal_position": 31,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "column_default": "gen_random_uuid()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 2,
+      "column_name": "name",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 3,
+      "column_name": "slug",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 4,
+      "column_name": "event_type",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 5,
+      "column_name": "category",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 6,
+      "column_name": "subcategory",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 7,
+      "column_name": "city",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 8,
+      "column_name": "county",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 9,
+      "column_name": "state",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'Michigan'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 10,
+      "column_name": "country",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'USA'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 11,
+      "column_name": "venue_name",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 12,
+      "column_name": "official_website",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 13,
+      "column_name": "facebook_url",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 14,
+      "column_name": "instagram_url",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 15,
+      "column_name": "typical_month",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 16,
+      "column_name": "typical_season",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 17,
+      "column_name": "recurrence_pattern",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 18,
+      "column_name": "short_description",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 19,
+      "column_name": "long_description",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 20,
+      "column_name": "status",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'active'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 21,
+      "column_name": "verification_status",
+      "data_type": "text",
+      "not_null": true,
+      "column_default": "'verified'::text",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 22,
+      "column_name": "confidence_score",
+      "data_type": "numeric(3,2)",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 23,
+      "column_name": "first_discovered_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 24,
+      "column_name": "last_verified_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 25,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 26,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "column_default": "now()",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 27,
+      "column_name": "latitude",
+      "data_type": "double precision",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 28,
+      "column_name": "longitude",
+      "data_type": "double precision",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 29,
+      "column_name": "location_confidence",
+      "data_type": "numeric(3,2)",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 30,
+      "column_name": "location_source",
+      "data_type": "text",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 31,
+      "column_name": "geocoded_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "column_default": null,
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "ordinal_position": 32,
+      "column_name": "location_verified",
+      "data_type": "boolean",
+      "not_null": true,
+      "column_default": "false",
+      "identity_kind": null,
+      "generated_kind": null,
+      "comment": null
+    }
+  ],
+  "constraints": [
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "constraint_name": "atlas_operation_actions_action_type_check",
+      "constraint_type": "c",
+      "definition": "CHECK (NULLIF(btrim(action_type), ''::text) IS NOT NULL)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "constraint_name": "atlas_operation_actions_lifecycle_state_check",
+      "constraint_type": "c",
+      "definition": "CHECK (lifecycle_state = ANY (ARRAY['proposed'::text, 'applied'::text, 'skipped'::text, 'blocked'::text, 'failed'::text]))",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "constraint_name": "atlas_operation_actions_operation_run_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (operation_run_id) REFERENCES atlas_operation_runs(id) ON DELETE CASCADE",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": "public",
+      "referenced_table": "atlas_operation_runs"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "constraint_name": "atlas_operation_actions_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "constraint_name": "atlas_operation_actions_source_references_array_check",
+      "constraint_type": "c",
+      "definition": "CHECK (jsonb_typeof(source_references) = 'array'::text)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "constraint_name": "atlas_operation_actions_warnings_array_check",
+      "constraint_type": "c",
+      "definition": "CHECK (jsonb_typeof(warnings) = 'array'::text)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "constraint_name": "atlas_operation_runs_actor_identity_check",
+      "constraint_type": "c",
+      "definition": "CHECK (NULLIF(btrim(actor_identity), ''::text) IS NOT NULL)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "constraint_name": "atlas_operation_runs_actor_type_check",
+      "constraint_type": "c",
+      "definition": "CHECK (actor_type = ANY (ARRAY['human'::text, 'automation'::text, 'system'::text]))",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "constraint_name": "atlas_operation_runs_idempotency_key_check",
+      "constraint_type": "c",
+      "definition": "CHECK (NULLIF(btrim(idempotency_key), ''::text) IS NOT NULL)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "constraint_name": "atlas_operation_runs_operation_type_check",
+      "constraint_type": "c",
+      "definition": "CHECK (NULLIF(btrim(operation_type), ''::text) IS NOT NULL)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "constraint_name": "atlas_operation_runs_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "constraint_name": "atlas_operation_runs_started_completed_check",
+      "constraint_type": "c",
+      "definition": "CHECK (completed_at IS NULL OR started_at IS NULL OR completed_at >= started_at)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "constraint_name": "atlas_operation_runs_status_check",
+      "constraint_type": "c",
+      "definition": "CHECK (status = ANY (ARRAY['planned'::text, 'running'::text, 'succeeded'::text, 'partial'::text, 'failed'::text, 'cancelled'::text]))",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "constraint_name": "discovery_runs_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "constraint_name": "discovery_runs_source_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (source_id) REFERENCES discovery_sources(id) ON DELETE SET NULL",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": "public",
+      "referenced_table": "discovery_sources"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "constraint_name": "discovery_sources_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "constraint_name": "discovery_sources_source_url_key",
+      "constraint_type": "u",
+      "definition": "UNIQUE (source_url)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "constraint_name": "discovery_sources_trust_score_check",
+      "constraint_type": "c",
+      "definition": "CHECK (trust_score >= 0::numeric AND trust_score <= 1::numeric)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "constraint_name": "event_candidate_sources_candidate_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (candidate_id) REFERENCES event_candidates(id) ON DELETE CASCADE",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": "public",
+      "referenced_table": "event_candidates"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "constraint_name": "event_candidate_sources_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "constraint_name": "event_candidate_sources_trust_score_check",
+      "constraint_type": "c",
+      "definition": "CHECK (trust_score >= 0::numeric AND trust_score <= 1::numeric)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "constraint_name": "event_candidates_discovery_confidence_check",
+      "constraint_type": "c",
+      "definition": "CHECK (discovery_confidence >= 0::numeric AND discovery_confidence <= 1::numeric)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "constraint_name": "event_candidates_discovery_run_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (discovery_run_id) REFERENCES discovery_runs(id) ON DELETE CASCADE",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": "public",
+      "referenced_table": "discovery_runs"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "constraint_name": "event_candidates_matched_event_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (matched_event_id) REFERENCES events(id) ON DELETE SET NULL",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": "public",
+      "referenced_table": "events"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "constraint_name": "event_candidates_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "constraint_name": "events_confidence_score_check",
+      "constraint_type": "c",
+      "definition": "CHECK (confidence_score >= 0::numeric AND confidence_score <= 1::numeric)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "constraint_name": "events_latitude_range_check",
+      "constraint_type": "c",
+      "definition": "CHECK (latitude IS NULL OR latitude >= '-90'::integer::double precision AND latitude <= 90::double precision)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "constraint_name": "events_location_confidence_range_check",
+      "constraint_type": "c",
+      "definition": "CHECK (location_confidence IS NULL OR location_confidence >= 0::numeric AND location_confidence <= 1::numeric)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "constraint_name": "events_longitude_range_check",
+      "constraint_type": "c",
+      "definition": "CHECK (longitude IS NULL OR longitude >= '-180'::integer::double precision AND longitude <= 180::double precision)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "constraint_name": "events_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "constraint_name": "events_slug_key",
+      "constraint_type": "u",
+      "definition": "UNIQUE (slug)",
+      "validated": true,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_schema": null,
+      "referenced_table": null
+    }
+  ],
+  "indexes": [
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "index_name": "atlas_operation_actions_pkey",
+      "primary_index": true,
+      "unique_index": true,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX atlas_operation_actions_pkey ON public.atlas_operation_actions USING btree (id)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "index_name": "atlas_operation_actions_run_idx",
+      "primary_index": false,
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX atlas_operation_actions_run_idx ON public.atlas_operation_actions USING btree (operation_run_id, created_at)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "index_name": "atlas_operation_actions_state_idx",
+      "primary_index": false,
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX atlas_operation_actions_state_idx ON public.atlas_operation_actions USING btree (lifecycle_state, created_at DESC)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "index_name": "atlas_operation_actions_target_idx",
+      "primary_index": false,
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX atlas_operation_actions_target_idx ON public.atlas_operation_actions USING btree (target_entity_type, target_entity_id) WHERE (target_entity_id IS NOT NULL)",
+      "predicate": "(target_entity_id IS NOT NULL)"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "index_name": "atlas_operation_runs_operation_idempotency_uidx",
+      "primary_index": false,
+      "unique_index": true,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX atlas_operation_runs_operation_idempotency_uidx ON public.atlas_operation_runs USING btree (operation_type, idempotency_key)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "index_name": "atlas_operation_runs_pkey",
+      "primary_index": true,
+      "unique_index": true,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX atlas_operation_runs_pkey ON public.atlas_operation_runs USING btree (id)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "index_name": "atlas_operation_runs_status_created_idx",
+      "primary_index": false,
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX atlas_operation_runs_status_created_idx ON public.atlas_operation_runs USING btree (status, created_at DESC)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_runs",
+      "index_name": "discovery_runs_pkey",
+      "primary_index": true,
+      "unique_index": true,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX discovery_runs_pkey ON public.discovery_runs USING btree (id)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "index_name": "discovery_sources_pkey",
+      "primary_index": true,
+      "unique_index": true,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX discovery_sources_pkey ON public.discovery_sources USING btree (id)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "discovery_sources",
+      "index_name": "discovery_sources_source_url_key",
+      "primary_index": false,
+      "unique_index": true,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX discovery_sources_source_url_key ON public.discovery_sources USING btree (source_url)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidate_sources",
+      "index_name": "event_candidate_sources_pkey",
+      "primary_index": true,
+      "unique_index": true,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX event_candidate_sources_pkey ON public.event_candidate_sources USING btree (id)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "index_name": "event_candidates_pkey",
+      "primary_index": true,
+      "unique_index": true,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX event_candidates_pkey ON public.event_candidates USING btree (id)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "event_candidates",
+      "index_name": "idx_event_candidates_run",
+      "primary_index": false,
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX idx_event_candidates_run ON public.event_candidates USING btree (discovery_run_id)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "index_name": "events_pkey",
+      "primary_index": true,
+      "unique_index": true,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX events_pkey ON public.events USING btree (id)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "index_name": "events_slug_key",
+      "primary_index": false,
+      "unique_index": true,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE UNIQUE INDEX events_slug_key ON public.events USING btree (slug)",
+      "predicate": null
+    },
+    {
+      "schema_name": "public",
+      "table_name": "events",
+      "index_name": "idx_events_map_coordinates",
+      "primary_index": false,
+      "unique_index": false,
+      "valid": true,
+      "ready": true,
+      "definition": "CREATE INDEX idx_events_map_coordinates ON public.events USING btree (latitude, longitude) WHERE ((latitude IS NOT NULL) AND (longitude IS NOT NULL))",
+      "predicate": "((latitude IS NOT NULL) AND (longitude IS NOT NULL))"
+    }
+  ],
+  "triggers": [
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_actions",
+      "trigger_name": "set_atlas_operation_actions_updated_at",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER set_atlas_operation_actions_updated_at BEFORE UPDATE ON atlas_operation_actions FOR EACH ROW EXECUTE FUNCTION set_atlas_control_plane_updated_at()"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "atlas_operation_runs",
+      "trigger_name": "set_atlas_operation_runs_updated_at",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER set_atlas_operation_runs_updated_at BEFORE UPDATE ON atlas_operation_runs FOR EACH ROW EXECUTE FUNCTION set_atlas_control_plane_updated_at()"
+    }
+  ],
+  "policies": [],
+  "functions": [
+    {
+      "schema_name": "public",
+      "function_name": "atlas_assert_service_role",
+      "identity": "atlas_assert_service_role()",
+      "identity_arguments": "",
+      "arguments": "",
+      "result_type": "void",
+      "language": "plpgsql",
+      "volatility": "s",
+      "security_definer": true,
+      "strict": false,
+      "parallel_safety": "u",
+      "leakproof": false,
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "definition": "CREATE OR REPLACE FUNCTION public.atlas_assert_service_role()\n RETURNS void\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_legacy_role text := coalesce(current_setting('request.jwt.claim.role', true), '');\n  v_claims_text text := coalesce(current_setting('request.jwt.claims', true), '');\n  v_claims_role text := '';\nbegin\n  if v_claims_text <> '' then\n    begin\n      v_claims_role := coalesce((v_claims_text::jsonb)->>'role', '');\n    exception when others then\n      v_claims_role := '';\n    end;\n  end if;\n\n  if session_user in ('postgres', 'service_role')\n     or v_legacy_role = 'service_role'\n     or v_claims_role = 'service_role' then\n    return;\n  end if;\n\n  raise exception 'Atlas Control Plane mutations require server-side service role access'\n    using errcode = '42501';\nend;\n$function$\n"
+    },
+    {
+      "schema_name": "public",
+      "function_name": "atlas_intake_event_candidate",
+      "identity": "atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+      "identity_arguments": "p_actor_type text, p_actor_identity text, p_idempotency_key text, p_candidate jsonb, p_sources jsonb",
+      "arguments": "p_actor_type text, p_actor_identity text, p_idempotency_key text, p_candidate jsonb, p_sources jsonb",
+      "result_type": "jsonb",
+      "language": "plpgsql",
+      "volatility": "v",
+      "security_definer": true,
+      "strict": false,
+      "parallel_safety": "u",
+      "leakproof": false,
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "definition": "CREATE OR REPLACE FUNCTION public.atlas_intake_event_candidate(p_actor_type text, p_actor_identity text, p_idempotency_key text, p_candidate jsonb, p_sources jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_run public.atlas_operation_runs;\n  v_action_id uuid;\n  v_candidate_id uuid;\n  v_discovery_run_id uuid;\n  v_source jsonb;\n  v_source_urls jsonb;\n  v_status text;\nbegin\n  perform public.atlas_assert_service_role();\n  perform public.atlas_require_source_evidence(p_sources);\n\n  if p_actor_type not in ('human', 'automation', 'system') then\n    raise exception 'Unsupported Atlas actor type.' using errcode = '22023';\n  end if;\n\n  v_run := public.atlas_start_operation(\n    'candidate_intake',\n    p_actor_type,\n    p_actor_identity,\n    p_idempotency_key,\n    jsonb_build_object('candidate', p_candidate, 'sources', p_sources)\n  );\n\n  if v_run.completed_at is not null and v_run.status = 'succeeded' then\n    return v_run.summary || jsonb_build_object(\n      'operation_run_id', v_run.id,\n      'idempotent_replay', true\n    );\n  end if;\n\n  insert into public.atlas_operation_actions (\n    operation_run_id,\n    action_type,\n    lifecycle_state,\n    source_references,\n    requested_payload,\n    reason\n  ) values (\n    v_run.id,\n    'candidate_intake',\n    'proposed',\n    p_sources,\n    p_candidate,\n    'Source-backed candidate intake requested.'\n  ) returning id into v_action_id;\n\n  select coalesce(jsonb_agg(source->>'source_url'), '[]'::jsonb)\n    into v_source_urls\n  from jsonb_array_elements(p_sources) as source;\n\n  select candidate.id\n    into v_candidate_id\n  from public.event_candidates as candidate\n  where candidate.slug_candidate = p_candidate->>'slug_candidate'\n  order by candidate.created_at desc\n  limit 1;\n\n  if v_candidate_id is null then\n    insert into public.discovery_runs (\n      run_type,\n      status,\n      started_at,\n      completed_at,\n      items_found,\n      candidates_created,\n      duplicates_flagged,\n      approval_required,\n      approval_status,\n      notes,\n      run_metadata\n    ) values (\n      'control_plane_intake',\n      'completed',\n      now(),\n      now(),\n      1,\n      1,\n      0,\n      false,\n      'not_required',\n      'Source-backed candidate created through Atlas Control.',\n      jsonb_build_object(\n        'operation_run_id', v_run.id,\n        'actor_type', p_actor_type,\n        'actor_identity', p_actor_identity,\n        'state', coalesce(p_candidate->>'state', 'Michigan')\n      )\n    ) returning id into v_discovery_run_id;\n\n    insert into public.event_candidates (\n      discovery_run_id,\n      candidate_name,\n      normalized_name,\n      slug_candidate,\n      event_type,\n      category,\n      subcategory,\n      city,\n      county,\n      state,\n      country,\n      venue_name,\n      start_date,\n      end_date,\n      typical_month,\n      typical_season,\n      probable_recurrence,\n      description,\n      official_website_candidate,\n      social_links,\n      source_urls,\n      discovery_confidence,\n      verification_status,\n      duplicate_status,\n      needs_review,\n      semantic_notes,\n      raw_payload\n    ) values (\n      v_discovery_run_id,\n      p_candidate->>'candidate_name',\n      coalesce(nullif(p_candidate->>'normalized_name', ''), lower(p_candidate->>'candidate_name')),\n      p_candidate->>'slug_candidate',\n      coalesce(nullif(p_candidate->>'event_type', ''), 'unknown'),\n      nullif(p_candidate->>'category', ''),\n      nullif(p_candidate->>'subcategory', ''),\n      nullif(p_candidate->>'city', ''),\n      nullif(p_candidate->>'county', ''),\n      coalesce(nullif(p_candidate->>'state', ''), 'Michigan'),\n      coalesce(nullif(p_candidate->>'country', ''), 'USA'),\n      nullif(p_candidate->>'venue_name', ''),\n      nullif(p_candidate->>'start_date', '')::date,\n      nullif(p_candidate->>'end_date', '')::date,\n      nullif(p_candidate->>'typical_month', ''),\n      nullif(p_candidate->>'typical_season', ''),\n      nullif(p_candidate->>'probable_recurrence', ''),\n      nullif(p_candidate->>'description', ''),\n      nullif(p_candidate->>'official_website_candidate', ''),\n      coalesce(p_candidate->'social_links', '[]'::jsonb),\n      v_source_urls,\n      coalesce((p_candidate->>'discovery_confidence')::numeric, 0.70),\n      'needs_review',\n      coalesce(nullif(p_candidate->>'duplicate_status', ''), 'unchecked'),\n      true,\n      nullif(p_candidate->>'semantic_notes', ''),\n      p_candidate\n    ) returning id into v_candidate_id;\n    v_status := 'created';\n  else\n    update public.event_candidates as candidate\n      set candidate_name = coalesce(nullif(p_candidate->>'candidate_name', ''), candidate.candidate_name),\n          normalized_name = coalesce(nullif(p_candidate->>'normalized_name', ''), candidate.normalized_name),\n          event_type = coalesce(nullif(p_candidate->>'event_type', ''), candidate.event_type),\n          category = coalesce(nullif(p_candidate->>'category', ''), candidate.category),\n          subcategory = coalesce(nullif(p_candidate->>'subcategory', ''), candidate.subcategory),\n          city = coalesce(nullif(p_candidate->>'city', ''), candidate.city),\n          county = coalesce(nullif(p_candidate->>'county', ''), candidate.county),\n          venue_name = coalesce(nullif(p_candidate->>'venue_name', ''), candidate.venue_name),\n          start_date = coalesce(nullif(p_candidate->>'start_date', '')::date, candidate.start_date),\n          end_date = coalesce(nullif(p_candidate->>'end_date', '')::date, candidate.end_date),\n          typical_month = coalesce(nullif(p_candidate->>'typical_month', ''), candidate.typical_month),\n          typical_season = coalesce(nullif(p_candidate->>'typical_season', ''), candidate.typical_season),\n          probable_recurrence = coalesce(nullif(p_candidate->>'probable_recurrence', ''), candidate.probable_recurrence),\n          description = coalesce(nullif(p_candidate->>'description', ''), candidate.description),\n          official_website_candidate = coalesce(nullif(p_candidate->>'official_website_candidate', ''), candidate.official_website_candidate),\n          social_links = case when p_candidate ? 'social_links' then p_candidate->'social_links' else candidate.social_links end,\n          source_urls = coalesce(candidate.source_urls, '[]'::jsonb) || v_source_urls,\n          discovery_confidence = greatest(candidate.discovery_confidence, coalesce((p_candidate->>'discovery_confidence')::numeric, candidate.discovery_confidence)),\n          raw_payload = coalesce(candidate.raw_payload, '{}'::jsonb) || p_candidate,\n          needs_review = true,\n          updated_at = now()\n    where candidate.id = v_candidate_id;\n    v_status := 'updated';\n  end if;\n\n  for v_source in select * from jsonb_array_elements(p_sources) loop\n    insert into public.event_candidate_sources (\n      candidate_id,\n      source_name,\n      source_url,\n      source_type,\n      source_excerpt,\n      trust_score,\n      last_accessed\n    )\n    select\n      v_candidate_id,\n      v_source->>'source_name',\n      v_source->>'source_url',\n      coalesce(v_source->>'source_type', 'official'),\n      v_source->>'source_excerpt',\n      coalesce((v_source->>'trust_score')::numeric, 0.90),\n      now()\n    where not exists (\n      select 1\n      from public.event_candidate_sources as existing\n      where existing.candidate_id = v_candidate_id\n        and existing.source_url = v_source->>'source_url'\n    );\n  end loop;\n\n  update public.atlas_operation_actions\n    set lifecycle_state = 'applied',\n        target_entity_type = 'event_candidate',\n        target_entity_id = v_candidate_id,\n        applied_payload = jsonb_build_object('candidate_id', v_candidate_id, 'status', v_status),\n        after_snapshot = (\n          select to_jsonb(candidate)\n          from public.event_candidates as candidate\n          where candidate.id = v_candidate_id\n        ),\n        applied_at = now()\n  where id = v_action_id;\n\n  update public.atlas_operation_runs\n    set status = 'succeeded',\n        summary = jsonb_build_object('candidate_id', v_candidate_id, 'status', v_status),\n        completed_at = now()\n  where id = v_run.id;\n\n  return jsonb_build_object(\n    'operation_run_id', v_run.id,\n    'action_id', v_action_id,\n    'candidate_id', v_candidate_id,\n    'status', v_status\n  );\nexception when others then\n  if v_run.id is not null then\n    update public.atlas_operation_runs\n      set status = 'failed',\n          error = jsonb_build_object('message', sqlerrm, 'sqlstate', sqlstate),\n          completed_at = now()\n    where id = v_run.id;\n  end if;\n  raise;\nend;\n$function$\n"
+    },
+    {
+      "schema_name": "public",
+      "function_name": "atlas_require_source_evidence",
+      "identity": "atlas_require_source_evidence(jsonb)",
+      "identity_arguments": "p_sources jsonb",
+      "arguments": "p_sources jsonb",
+      "result_type": "void",
+      "language": "plpgsql",
+      "volatility": "i",
+      "security_definer": false,
+      "strict": false,
+      "parallel_safety": "u",
+      "leakproof": false,
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "definition": "CREATE OR REPLACE FUNCTION public.atlas_require_source_evidence(p_sources jsonb)\n RETURNS void\n LANGUAGE plpgsql\n IMMUTABLE\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  if jsonb_typeof(p_sources) <> 'array' or jsonb_array_length(p_sources) < 1 then\r\n    raise exception 'At least one source evidence record is required';\r\n  end if;\r\n  if exists (\r\n    select 1 from jsonb_array_elements(p_sources) s\r\n    where nullif(btrim(coalesce(s->>'source_url', '')), '') is null\r\n       or nullif(btrim(coalesce(s->>'source_name', '')), '') is null\r\n       or coalesce((s->>'is_official')::boolean, false) is not true\r\n  ) then\r\n    raise exception 'Each intake source must include source_name, source_url, and is_official=true';\r\n  end if;\r\nend;\r\n$function$\n"
+    },
+    {
+      "schema_name": "public",
+      "function_name": "atlas_start_operation",
+      "identity": "atlas_start_operation(text,text,text,text,jsonb)",
+      "identity_arguments": "p_operation_type text, p_actor_type text, p_actor_identity text, p_idempotency_key text, p_request jsonb",
+      "arguments": "p_operation_type text, p_actor_type text, p_actor_identity text, p_idempotency_key text, p_request jsonb DEFAULT '{}'::jsonb",
+      "result_type": "atlas_operation_runs",
+      "language": "plpgsql",
+      "volatility": "v",
+      "security_definer": true,
+      "strict": false,
+      "parallel_safety": "u",
+      "leakproof": false,
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "definition": "CREATE OR REPLACE FUNCTION public.atlas_start_operation(p_operation_type text, p_actor_type text, p_actor_identity text, p_idempotency_key text, p_request jsonb DEFAULT '{}'::jsonb)\n RETURNS atlas_operation_runs\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\ndeclare v_run public.atlas_operation_runs;\r\nbegin\r\n  perform public.atlas_assert_service_role();\r\n  insert into public.atlas_operation_runs (operation_type, actor_type, actor_identity, status, idempotency_key, request, started_at)\r\n  values (p_operation_type, p_actor_type, p_actor_identity, 'running', p_idempotency_key, coalesce(p_request, '{}'::jsonb), now())\r\n  on conflict (operation_type, idempotency_key) do update\r\n    set request = excluded.request,\r\n        status = case when public.atlas_operation_runs.status in ('failed', 'cancelled') then 'running' else public.atlas_operation_runs.status end,\r\n        started_at = coalesce(public.atlas_operation_runs.started_at, now())\r\n  returning * into v_run;\r\n  return v_run;\r\nend;\r\n$function$\n"
+    },
+    {
+      "schema_name": "public",
+      "function_name": "set_atlas_control_plane_updated_at",
+      "identity": "set_atlas_control_plane_updated_at()",
+      "identity_arguments": "",
+      "arguments": "",
+      "result_type": "trigger",
+      "language": "plpgsql",
+      "volatility": "v",
+      "security_definer": false,
+      "strict": false,
+      "parallel_safety": "u",
+      "leakproof": false,
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "definition": "CREATE OR REPLACE FUNCTION public.set_atlas_control_plane_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nbegin\r\n  new.updated_at = now();\r\n  return new;\r\nend;\r\n$function$\n"
+    }
+  ],
+  "enums": [],
+  "effectiveTablePrivileges": [
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "DELETE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "INSERT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "MAINTAIN",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "REFERENCES",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "SELECT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "TRIGGER",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "TRUNCATE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_actions",
+      "privilege_type": "UPDATE",
+      "allowed": true
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "DELETE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "INSERT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "MAINTAIN",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "REFERENCES",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "SELECT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "TRIGGER",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "TRUNCATE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "atlas_operation_runs",
+      "privilege_type": "UPDATE",
+      "allowed": true
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_runs",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_runs",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_runs",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_runs",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_runs",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_runs",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_runs",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_runs",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_runs",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_runs",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_runs",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_runs",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_runs",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_runs",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_runs",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_runs",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_runs",
+      "privilege_type": "DELETE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_runs",
+      "privilege_type": "INSERT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_runs",
+      "privilege_type": "MAINTAIN",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_runs",
+      "privilege_type": "REFERENCES",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_runs",
+      "privilege_type": "SELECT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_runs",
+      "privilege_type": "TRIGGER",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_runs",
+      "privilege_type": "TRUNCATE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_runs",
+      "privilege_type": "UPDATE",
+      "allowed": true
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_sources",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_sources",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_sources",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_sources",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_sources",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_sources",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_sources",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "discovery_sources",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_sources",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_sources",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_sources",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_sources",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_sources",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_sources",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_sources",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "discovery_sources",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_sources",
+      "privilege_type": "DELETE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_sources",
+      "privilege_type": "INSERT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_sources",
+      "privilege_type": "MAINTAIN",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_sources",
+      "privilege_type": "REFERENCES",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_sources",
+      "privilege_type": "SELECT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_sources",
+      "privilege_type": "TRIGGER",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_sources",
+      "privilege_type": "TRUNCATE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "discovery_sources",
+      "privilege_type": "UPDATE",
+      "allowed": true
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "DELETE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "INSERT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "MAINTAIN",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "REFERENCES",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "SELECT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "TRIGGER",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "TRUNCATE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidate_sources",
+      "privilege_type": "UPDATE",
+      "allowed": true
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidates",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidates",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidates",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidates",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidates",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidates",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidates",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "event_candidates",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidates",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidates",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidates",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidates",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidates",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidates",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidates",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "event_candidates",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidates",
+      "privilege_type": "DELETE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidates",
+      "privilege_type": "INSERT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidates",
+      "privilege_type": "MAINTAIN",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidates",
+      "privilege_type": "REFERENCES",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidates",
+      "privilege_type": "SELECT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidates",
+      "privilege_type": "TRIGGER",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidates",
+      "privilege_type": "TRUNCATE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "event_candidates",
+      "privilege_type": "UPDATE",
+      "allowed": true
+    },
+    {
+      "role_name": "anon",
+      "table_name": "events",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "events",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "events",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "events",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "events",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "events",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "events",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "anon",
+      "table_name": "events",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "events",
+      "privilege_type": "DELETE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "events",
+      "privilege_type": "INSERT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "events",
+      "privilege_type": "MAINTAIN",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "events",
+      "privilege_type": "REFERENCES",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "events",
+      "privilege_type": "SELECT",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "events",
+      "privilege_type": "TRIGGER",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "events",
+      "privilege_type": "TRUNCATE",
+      "allowed": false
+    },
+    {
+      "role_name": "authenticated",
+      "table_name": "events",
+      "privilege_type": "UPDATE",
+      "allowed": false
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "events",
+      "privilege_type": "DELETE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "events",
+      "privilege_type": "INSERT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "events",
+      "privilege_type": "MAINTAIN",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "events",
+      "privilege_type": "REFERENCES",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "events",
+      "privilege_type": "SELECT",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "events",
+      "privilege_type": "TRIGGER",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "events",
+      "privilege_type": "TRUNCATE",
+      "allowed": true
+    },
+    {
+      "role_name": "service_role",
+      "table_name": "events",
+      "privilege_type": "UPDATE",
+      "allowed": true
+    }
+  ],
+  "effectiveRoutinePrivileges": [
+    {
+      "role_name": "anon",
+      "identity": "atlas_assert_service_role()",
+      "execute": false
+    },
+    {
+      "role_name": "authenticated",
+      "identity": "atlas_assert_service_role()",
+      "execute": false
+    },
+    {
+      "role_name": "service_role",
+      "identity": "atlas_assert_service_role()",
+      "execute": true
+    },
+    {
+      "role_name": "anon",
+      "identity": "atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+      "execute": false
+    },
+    {
+      "role_name": "authenticated",
+      "identity": "atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+      "execute": false
+    },
+    {
+      "role_name": "service_role",
+      "identity": "atlas_intake_event_candidate(text,text,text,jsonb,jsonb)",
+      "execute": true
+    },
+    {
+      "role_name": "anon",
+      "identity": "atlas_require_source_evidence(jsonb)",
+      "execute": false
+    },
+    {
+      "role_name": "authenticated",
+      "identity": "atlas_require_source_evidence(jsonb)",
+      "execute": false
+    },
+    {
+      "role_name": "service_role",
+      "identity": "atlas_require_source_evidence(jsonb)",
+      "execute": true
+    },
+    {
+      "role_name": "anon",
+      "identity": "atlas_start_operation(text,text,text,text,jsonb)",
+      "execute": false
+    },
+    {
+      "role_name": "authenticated",
+      "identity": "atlas_start_operation(text,text,text,text,jsonb)",
+      "execute": false
+    },
+    {
+      "role_name": "service_role",
+      "identity": "atlas_start_operation(text,text,text,text,jsonb)",
+      "execute": true
+    },
+    {
+      "role_name": "anon",
+      "identity": "set_atlas_control_plane_updated_at()",
+      "execute": false
+    },
+    {
+      "role_name": "authenticated",
+      "identity": "set_atlas_control_plane_updated_at()",
+      "execute": false
+    },
+    {
+      "role_name": "service_role",
+      "identity": "set_atlas_control_plane_updated_at()",
+      "execute": true
+    }
+  ]
+}
