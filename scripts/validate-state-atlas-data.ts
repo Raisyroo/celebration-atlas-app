@@ -254,30 +254,40 @@ const publishedResolverSource = readFileSync(
   resolve('lib/events/publishedAtlasEvents.ts'),
   'utf8',
 );
+const publishedDiscoveryMigration = readFileSync(
+  resolve('supabase/migrations/022_batched_published_atlas_discovery.sql'),
+  'utf8',
+);
 const profileAdapterSource = readFileSync(resolve('data/eventProfileAdapter.ts'), 'utf8');
 assert(
   profileAdapterSource.includes('resolveReviewedAtlasEventTiming') &&
     profileAdapterSource.includes('?? EVENT_TIMING_METADATA[event.id]'),
   'event profiles do not prefer reviewed exact timing over estimated fallback metadata',
 );
-const eventQueryIndex = publishedResolverSource.indexOf('.from("events")');
-const packageQueryIndex = publishedResolverSource.indexOf('.from("event_factory_packages")');
-assert(eventQueryIndex >= 0 && packageQueryIndex > eventQueryIndex, 'published resolver does not scope canonical events before loading packages');
 assert(
-  publishedResolverSource.includes('.in("state", [...config.identity.databaseStateValues])'),
+  publishedResolverSource.includes("rpc('atlas_get_published_event_discovery'") &&
+    publishedResolverSource.includes(
+      'p_state_values: [...config.identity.databaseStateValues]',
+    ),
   'published resolver does not filter by explicit state database values',
 );
 assert.equal(
-  publishedResolverSource.match(/\.range\(/g)?.length,
-  2,
-  'state events and published packages are not both loaded with pagination',
+  publishedResolverSource.match(/\.rpc\(/g)?.length,
+  1,
+  'published resolver does not use exactly one database request',
 );
 assert(
-  publishedResolverSource.includes('target_year,published_at') &&
-    publishedResolverSource.includes('groupPublishedAtlasPackagesByEvent'),
-  'published editions are not selected with explicit version metadata',
+  publishedDiscoveryMigration.includes('event.state = any (p_state_values)') &&
+    publishedDiscoveryMigration.includes('package.target_year desc') &&
+    publishedDiscoveryMigration.includes('package.published_at desc nulls last') &&
+    publishedDiscoveryMigration.includes('package.id desc'),
+  'published editions are not state-scoped and selected with explicit version metadata',
 );
-assert(!publishedResolverSource.includes('.limit(2000)'), 'state event resolution still has a silent fixed row cap');
+assert(
+  publishedDiscoveryMigration.includes("'items',") &&
+    publishedDiscoveryMigration.includes('jsonb_agg'),
+  'published discovery does not return one uncapped JSON document',
+);
 assert(!publishedResolverSource.includes('ATLAS_EVENTS'), 'published resolver still owns a global Michigan fallback');
 
 console.log('State Atlas data validations passed.');

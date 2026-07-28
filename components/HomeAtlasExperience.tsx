@@ -2,7 +2,6 @@
 
 import AtlasMap from './AtlasMap';
 import type { AtlasEvent } from '../data/events';
-import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes';
 import type { HomeAtlasSearchRules } from '../data/homeAtlasSearch';
 import type { StateAtlasConfig } from '../data/stateAtlasConfig';
 
@@ -10,14 +9,12 @@ export type HomeAtlasExperienceProps = {
   stateConfig: StateAtlasConfig;
   searchRules: HomeAtlasSearchRules;
   events: readonly AtlasEvent[];
-  flyerResolutions?: EventFlyerResolutionMap;
 };
 
 export default function HomeAtlasExperience({
   stateConfig,
   searchRules,
   events,
-  flyerResolutions = {},
 }: HomeAtlasExperienceProps) {
   return (
     <>
@@ -25,7 +22,6 @@ export default function HomeAtlasExperience({
         stateConfig={stateConfig}
         searchRules={searchRules}
         events={events}
-        flyerResolutions={flyerResolutions}
         enableAtlasDebug
       />
       {/*

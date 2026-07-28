@@ -141,7 +141,7 @@ Do not build one-off deep-question logic into individual event pages. The future
 
 ## Supabase And Atlas Control
 
-- Remote migrations `005` through `021` are applied.
+- Remote migrations `005` through `022` are applied.
 - Atlas Control is protected and uses server-side service-role routes for editorial mutations.
 - Public pages never receive the service-role key.
 - The Control Desk supports source inspection, bundle collection, synthesis, verification, package review, publication, and visual workflow approval.
@@ -156,6 +156,7 @@ Never place Supabase or Vercel credentials in documentation, source code, prompt
 
 The Michigan Atlas homepage completed its search-first public discovery checkpoint on July 16, 2026, building on the rail, deterministic discovery, and shared responsive-shell work completed July 15.
 
+- Homepage publication discovery now uses the service-role-only `atlas_get_published_event_discovery` RPC from migration `022`. One state-scoped database round trip returns only the canonical identity, place, coordinates, reviewed dates/timezone, lifecycle/publication identities, official URL, and lightweight thumbnail fields needed by map markers, search, the dated rail, Experience Deck entry cards, and Event Hub links. The RPC requires an active verified located canonical event plus the exact published Event Factory package and published valid Event Hub version bound to the same frozen manifest. Checked-in transition events still reconcile through the existing state catalog. Full manifests and media decks are absent from the initial payload; approved flyer/source resolution is requested only after an event is selected.
 - The homepage now receives an explicit serializable Michigan state configuration and state-local event catalog; `AtlasMap` no longer owns a silent global Michigan fallback.
 - Published database overlays are scoped to canonical `MI`/`Michigan` events before published packages are loaded, so another state cannot leak into or replace a Michigan fallback event by name.
 - The bottom rail now contains only exact-dated live or upcoming public events, evaluated in the Michigan time zone and sorted live-first then chronologically.

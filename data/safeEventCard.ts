@@ -84,7 +84,7 @@ export function deriveSafeAtlasEventCard(
     category: event.category,
     cardTag: event.cardTag,
     flyerSrc,
-    officialUrl: flyerResolutions[event.id]?.officialUrl,
+    officialUrl: event.officialUrl ?? flyerResolutions[event.id]?.officialUrl,
     description: event.blurb,
     atmosphereLabel: event.cardMedia?.atmosphereTitle ?? event.atmosphereLabel,
     media,

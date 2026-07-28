@@ -133,8 +133,10 @@ const atlasHomePage = read('app/page.tsx');
 const michiganAtlasExperience = read('components/MichiganAtlasExperience.tsx');
 const homeAtlasExperience = read('components/HomeAtlasExperience.tsx');
 const atlasMap = read('components/AtlasMap.tsx');
-assert(publishedAtlasEvents.includes('.eq("status", "published")') && publishedAtlasEvents.includes('event_factory_packages'), 'public map catalog is not gated by published Event Factory packages');
-assert(publishedAtlasEvents.includes('validateEventPageManifest'), 'public map catalog does not validate the approved Event Hub manifest');
+assert(publishedAtlasEvents.includes("rpc('atlas_get_published_event_discovery'"), 'public map catalog does not use the batched publication-gated discovery RPC');
+assert((publishedAtlasEvents.match(/\.rpc\(/g) ?? []).length === 1 && !publishedAtlasEvents.includes('.from('), 'public map catalog performs more than one database request');
+assert(!atlasHomePage.includes('resolveEventFlyerMediaMapServer'), 'home page still resolves media separately for every event');
+assert(atlasHomePage.includes('await connection()'), 'home page published discovery can become a stale prerender');
 assert(atlasHomePage.includes('resolvePublishedAtlasEvents(MICHIGAN_STATE_ATLAS_CONFIG)') && atlasHomePage.includes('<MichiganAtlasExperience events={events}'), 'home page does not resolve and supply the explicit Michigan catalog');
 assert(michiganAtlasExperience.includes('stateConfig={MICHIGAN_STATE_ATLAS_CONFIG}') && michiganAtlasExperience.includes('events={events}'), 'Michigan atlas wrapper does not bind the Michigan state configuration and supplied catalog');
 assert(homeAtlasExperience.includes('stateConfig: StateAtlasConfig') && homeAtlasExperience.includes('events: readonly AtlasEvent[]') && homeAtlasExperience.includes('stateConfig={stateConfig}') && homeAtlasExperience.includes('events={events}'), 'state atlas experience does not require and forward explicit state data');
@@ -191,6 +193,14 @@ assert(atomicEventPackageMigration.includes('Successful publication requires the
 assert(atomicEventPackageMigration.includes('atlas_guard_event_factory_page_activation'), 'independent Event Page publication is not guarded for factory manifests');
 assert(atomicEventPackageMigration.includes("set search_path = ''"), 'atomic Event Factory publication RPCs do not use a fixed empty search path');
 assert(atomicEventPackageMigration.includes('from public, anon, authenticated'), 'atomic Event Factory publication RPCs are not revoked from browser roles');
+
+const publishedDiscoveryMigration = read('supabase/migrations/022_batched_published_atlas_discovery.sql');
+assert(publishedDiscoveryMigration.includes('atlas_get_published_event_discovery'), 'batched published discovery RPC is missing');
+assert(publishedDiscoveryMigration.includes("package.status = 'published'") && publishedDiscoveryMigration.includes("version.status = 'published'"), 'batched discovery does not require published package and Event Hub state');
+assert(publishedDiscoveryMigration.includes('version.manifest = package.page_manifest'), 'batched discovery does not bind the exact frozen package manifest');
+assert(publishedDiscoveryMigration.includes("event.status = 'active'") && publishedDiscoveryMigration.includes("event.verification_status = 'verified'"), 'batched discovery does not require a public canonical event');
+assert(publishedDiscoveryMigration.includes("set search_path = ''"), 'batched published discovery RPC does not use a fixed empty search path');
+assert(publishedDiscoveryMigration.includes('from public, anon, authenticated'), 'batched published discovery RPC is not revoked from browser roles');
 
 const visualWorkflowMigration = read('supabase/migrations/014_event_visual_workflows.sql');
 for (const table of ['event_visual_workflows', 'event_visual_workflow_actions']) {

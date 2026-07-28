@@ -27,6 +27,19 @@ export type AtlasEvent = {
   blurb: string;
   category: AtlasCategory;
   cardTag?: string;
+  officialUrl?: `https://${string}`;
+  publishedDiscovery?: {
+    canonicalEventId: string;
+    lifecycleState: 'active';
+    verificationState: 'verified';
+    packageId: string;
+    packageVersion: number;
+    targetYear: number;
+    packagePublishedAt?: string;
+    eventPageVersionId: string;
+    eventPageVersionNumber: number;
+    eventPagePublishedAt?: string;
+  };
   flyerSrc?: `/event-media/${string}` | `https://${string}`;
   x: number;
   y: number;

@@ -9,7 +9,10 @@ import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, ReactNode, RefObject, SyntheticEvent } from 'react';
 import type { AtlasEvent } from '../data/events';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
-import type { EventFlyerResolutionMap } from '../data/eventMediaResolutionTypes';
+import type {
+  EventFlyerResolution,
+  EventFlyerResolutionMap,
+} from '../data/eventMediaResolutionTypes';
 import { getFlyerEventPresentation } from '../data/flyerEventPresentation';
 import { toEventProfiles } from '../data/eventProfileAdapter';
 import { getEventMarkerPresentation } from '../data/eventMarkerPresentation';
@@ -1122,6 +1125,8 @@ type AtlasMapProps = {
   enableAtlasDebug?: boolean;
 };
 
+const EMPTY_FLYER_RESOLUTIONS: EventFlyerResolutionMap = {};
+
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
@@ -1451,7 +1456,7 @@ export default function AtlasMap({
   activeConstellationTitle = null,
   onSearchActivate,
   presentationPlan,
-  flyerResolutions = {},
+  flyerResolutions = EMPTY_FLYER_RESOLUTIONS,
   enableAtlasDebug = false,
 }: AtlasMapProps) {
   const router = useRouter();
@@ -1465,6 +1470,13 @@ export default function AtlasMap({
   const [displayedQuery, setDisplayedQuery] = useState('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [lazyFlyerResolutions, setLazyFlyerResolutions] =
+    useState<EventFlyerResolutionMap>({});
+  const requestedFlyerResolutionIdsRef = useRef<Set<string>>(new Set());
+  const effectiveFlyerResolutions = useMemo(
+    () => ({ ...flyerResolutions, ...lazyFlyerResolutions }),
+    [flyerResolutions, lazyFlyerResolutions],
+  );
   const [viewportMode, setViewportMode] =
     useState<AtlasViewportMode>('portrait');
   const [hasResolvedResponsiveState, setHasResolvedResponsiveState] = useState(false);
@@ -1615,6 +1627,37 @@ export default function AtlasMap({
   const calibrationCopyStatusTimerRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
+  useEffect(() => {
+    if (
+      !selectedId
+      || effectiveFlyerResolutions[selectedId]
+      || requestedFlyerResolutionIdsRef.current.has(selectedId)
+    ) {
+      return;
+    }
+
+    requestedFlyerResolutionIdsRef.current.add(selectedId);
+
+    void fetch(`/api/events/${encodeURIComponent(selectedId)}/homepage-media`, {
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const body = await response.json() as { resolution?: EventFlyerResolution | null };
+        const resolution = body.resolution;
+        return resolution?.eventId === selectedId ? resolution : null;
+      })
+      .then((resolution) => {
+        if (!resolution) return;
+        setLazyFlyerResolutions((current) => ({
+          ...current,
+          [selectedId]: resolution,
+        }));
+      })
+      .catch(() => {
+        // The lightweight discovery thumbnail remains the safe selected-card fallback.
+      });
+  }, [effectiveFlyerResolutions, selectedId]);
   const replaceSubmittedDiscoveryQuery = useCallback(
     (
       nextQuery: string,
@@ -2084,7 +2127,7 @@ export default function AtlasMap({
             adaptSearchClusterEventToDeckItem({
               event,
               clusterId: openExperienceDeckCluster.id,
-              flyerResolutions,
+              flyerResolutions: effectiveFlyerResolutions,
               now: discoveryNow,
               timeZone: stateConfig.defaultTimeZone,
             }),
@@ -2094,7 +2137,7 @@ export default function AtlasMap({
   }, [
     atlasEventById,
     discoveryNow,
-    flyerResolutions,
+    effectiveFlyerResolutions,
     openExperienceDeckCluster,
     stateConfig.defaultTimeZone,
   ]);
@@ -2164,7 +2207,7 @@ export default function AtlasMap({
     ? (events.find((event) => event.id === selectedId) ?? null)
     : null;
   const safeEventCard = renderedEvent
-    ? deriveSafeAtlasEventCard(renderedEvent, flyerResolutions)
+    ? deriveSafeAtlasEventCard(renderedEvent, effectiveFlyerResolutions)
     : null;
   const selectedMedia = safeEventCard?.media;
   const flyerDeck = selectedMedia?.flyerDeck?.length
@@ -2232,7 +2275,9 @@ export default function AtlasMap({
     : displayedLargeCardImageSrc?.startsWith('/')
       ? 'local'
       : 'none';
-  const selectedFlyerResolution = safeEventCard ? flyerResolutions[safeEventCard.id] : undefined;
+  const selectedFlyerResolution = safeEventCard
+    ? effectiveFlyerResolutions[safeEventCard.id]
+    : undefined;
   const officialUrlDebug = selectedFlyerResolution?.officialUrlDebug;
   const isFlyerMediaDebug = Boolean(isMediaDebugMode && isFlyerCard);
 
