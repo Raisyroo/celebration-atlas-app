@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run validate:flyers:local && npm run validate:event-pages && npm run validate:event-source-inspection && npm run validate:event-source-synthesis && npm run validate:event-factory-identity && npm run validate:scout-composer && npm run validate:state-atlas-data && npm run validate:atlas-viewport-mode && npm run validate:home-atlas-search && npm run validate:home-atlas-discovery && npm run validate:home-discovery-navigation && npm run validate:home-landing-identity && npm run validate:map-artwork-readiness && npm run validate:universal-event-interface && npm run validate:result-label-layout && npm run validate:atlas-control-css-scope && npm run validate:atlas-control && npm run validate:public-schema-security && next build",
+    "build": "npm run validate:flyers:local && npm run validate:event-pages && npm run validate:event-source-inspection && npm run validate:event-source-synthesis && npm run validate:event-source-synthesis-lifecycle && npm run validate:event-factory-identity && npm run validate:scout-composer && npm run validate:state-atlas-data && npm run validate:atlas-viewport-mode && npm run validate:home-atlas-search && npm run validate:home-atlas-discovery && npm run validate:home-discovery-navigation && npm run validate:home-landing-identity && npm run validate:map-artwork-readiness && npm run validate:universal-event-interface && npm run validate:result-label-layout && npm run validate:atlas-control-css-scope && npm run validate:atlas-control && npm run validate:public-schema-security && next build",
     "start": "next start",
     "lint": "eslint",
     "atlas:check": "npm run lint && npm run build",
@@ -32,6 +32,7 @@
     "validate:event-pages": "node --experimental-strip-types scripts/validate-event-page-manifests.ts",
     "validate:event-source-inspection": "node --experimental-strip-types scripts/validate-event-source-inspection.ts",
     "validate:event-source-synthesis": "node --experimental-strip-types scripts/validate-event-source-synthesis.ts",
+    "validate:event-source-synthesis-lifecycle": "node scripts/validate-event-source-synthesis-lifecycle.mjs",
     "validate:event-factory-identity": "node --experimental-strip-types scripts/validate-event-factory-identity.ts",
     "validate:county-seeds": "node --experimental-strip-types scripts/validate-county-seed-dry-run.ts",
     "validate:county-seed-staging": "node --experimental-strip-types scripts/validate-county-seed-staging.ts",
@@ -67,6 +68,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

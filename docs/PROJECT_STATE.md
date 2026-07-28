@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: July 27, 2026
+Last updated: July 28, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -88,6 +88,7 @@ This trial also hardened the reusable path before more fairs enter the queue:
 - Every new Event Hub must materialize four primary sections: Why Go, Schedule, one evidence-backed experience section such as Highlights, and Plan. Missing third-section evidence is a completeness failure rather than permission to ship a three-tab page.
 - Visitor headlines, summaries, and module introductions must invite attendance. Factory phrases such as `official program` and `source-backed event times` belong in retained provenance and review surfaces, not public-facing promotional copy.
 - A protected fixed API action exposes the existing audited source-synthesis map-record operation.
+- Forward-only migration `020_preserve_deterministic_editorial_parent.sql` keeps a deterministic synthesis `generated` while its model-assisted editorial child is generated, reviewed, or rejected. A rejected child may be retried without defeating deterministic replay; only acceptance supersedes the parent, and accepted uniqueness remains enforced per evidence bundle. The migration appends a compensating `restored` action for any legacy parent that was superseded only by a non-accepted editorial child.
 
 Armada publication is complete. The next Event Factory trial should begin from the generalized v19 rules and measure how much editorial intervention remains, rather than adding Armada-specific code.
 
@@ -139,13 +140,14 @@ Do not build one-off deep-question logic into individual event pages. The future
 
 ## Supabase And Atlas Control
 
-- Remote migrations `005` through `017` are applied.
+- Remote migrations `005` through `020` are applied.
 - Atlas Control is protected and uses server-side service-role routes for editorial mutations.
 - Public pages never receive the service-role key.
 - The Control Desk supports source inspection, bundle collection, synthesis, verification, package review, publication, and visual workflow approval.
 - Production authentication remains required. An existing signed-in browser session reaches `/atlas-control`; unauthenticated requests redirect to `/atlas-login`.
 - Migration `014` creates the public media bucket and service-only visual workflow tables and RPCs.
 - The first migration-014 visual workflow is approved for the Coast Guard Festival private package. Its supplied 1024x1536 hero is stored in `celebration-atlas-media`; package approval remains separate.
+- Migration `020` replaces the early editorial-child supersession transition, keeps deterministic replay unique, permits a new editorial attempt after rejection, and supersedes the deterministic parent only when its editorial child is accepted. Deployment restored one legacy deterministic parent from `superseded` to `generated` with an append-only compensating action; it changed no accepted synthesis.
 
 Never place Supabase or Vercel credentials in documentation, source code, prompts, or commits.
 

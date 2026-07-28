@@ -1,6 +1,6 @@
 # Event source synthesis
 
-Migration `supabase/migrations/007_event_source_synthesis.sql` adds the review-gated layer between source bundles and Event Hub page versions. Migration `012_model_assisted_editorial_synthesis.sql` adds evidence-bound editorial children without weakening that boundary.
+Migration `supabase/migrations/007_event_source_synthesis.sql` adds the review-gated layer between source bundles and Event Hub page versions. Migration `012_model_assisted_editorial_synthesis.sql` adds evidence-bound editorial children. Forward-only migration `020_preserve_deterministic_editorial_parent.sql` corrects their lifecycle so creating or rejecting an editorial child cannot consume its deterministic parent.
 
 Synthesis creates an immutable proposal. It does not create an `event_page_version`, change a public URL, approve content, or publish an Event Hub page.
 
@@ -27,7 +27,7 @@ Sponsor-bearing evidence remains in the reconciled profile for audit but is not 
 
 ## Evidence-bound editorial pass
 
-The optional `model_assisted` pass is a child of one unsubmitted deterministic proposal. It receives a bounded package of official source excerpts, current schedule rows, the deterministic editorial plan, and an allowlist of prose targets. It may:
+The optional `model_assisted` pass is a child of one unsubmitted deterministic proposal. The deterministic parent remains `generated` while the editorial child is `generated`, `in_review`, or `rejected`; it becomes `superseded` only in the same accepted transition that accepts the child. It receives a bounded package of official source excerpts, current schedule rows, the deterministic editorial plan, and an allowlist of prose targets. It may:
 
 1. Rewrite the hero tagline and existing module copy.
 2. Rewrite existing Scout prompt labels and responses.
@@ -44,7 +44,7 @@ Vercel AI Gateway supplies the production model call through `VERCEL_OIDC_TOKEN`
 
 ### `event_source_syntheses`
 
-Each row stores a version number, input hash, engine identity, reconciled profile, conflicts, manifest proposal, validation report, quality score, and review state. The input hash makes generation idempotent for the same bundle evidence and engine version.
+Each row stores a version number, input hash, engine identity, reconciled profile, conflicts, manifest proposal, validation report, quality score, and review state. The input hash makes deterministic generation idempotent for the same bundle evidence and engine version. Active or accepted model-assisted proposals are also idempotent, while a rejected editorial child no longer prevents a later editorial attempt with the same deterministic input.
 
 Lifecycle states are:
 
@@ -60,7 +60,7 @@ The protected fact generator is deterministic and requires no model API key. A r
 
 ### `event_source_synthesis_actions`
 
-This append-only audit ledger records generation, review submission, acceptance, rejection, and supersession with the actor and transition states.
+This append-only audit ledger records generation, review submission, acceptance, rejection, supersession, and the migration-020 restoration of any deterministic parent that the former creation transition superseded prematurely. The compensating action preserves the original supersession record rather than rewriting audit history.
 
 ## Mutation boundary
 
@@ -88,6 +88,7 @@ The evidence-bound editorial pass also keeps research narration out of visitor-f
 8. Reopen the bundle and add or correct evidence when the proposal is incomplete.
 9. Submit a valid proposal for review.
 10. Accept or reject it with review notes.
+11. After rejection, either submit the still-generated deterministic proposal or generate a fresh editorial child. Accepting an editorial child supersedes its deterministic parent atomically.
 
 An accepted proposal can be frozen into a private Event Factory package. Acceptance still does not create an Event Hub page version or publish a URL. Only final package approval invokes the existing migration 005 draft, review, and publication gates.
 
@@ -100,3 +101,11 @@ npm run validate:event-source-synthesis
 ```
 
 The fixtures cover accepted-claim precedence, conflict preservation, rejected-claim exclusion, sponsor-copy filtering, incomplete new-event proposals, valid checked-in scaffolds, stable input hashes, historical schedule separation, editorial source classification, general festival traditions, source-bound rewrites, unsupported numeric rejection, immutable-fact locking, Scout enrichment, and model provenance.
+
+Run the database-backed lifecycle fixture:
+
+```powershell
+npm run validate:event-source-synthesis-lifecycle
+```
+
+It executes migrations 007, 012, and 020 in an isolated PostgreSQL-compatible database and verifies legacy repair, parent preservation through editorial generation/review/rejection, deterministic replay, replacement editorial generation after rejection, acceptance-time parent supersession, accepted uniqueness, audit continuity, and RPC privileges.

@@ -355,6 +355,23 @@ assert(modelSynthesisMigration.includes('parent_synthesis_id'), 'model-assisted 
 assert(modelSynthesisMigration.includes('revoke all on function public.atlas_create_model_assisted_synthesis'), 'model-assisted synthesis RPC is exposed to public roles');
 assert(!modelSynthesisMigration.includes('atlas_publish_event_page_version'), 'model-assisted synthesis can publish an Event Hub version directly');
 
+const synthesisLifecycleMigration = read('supabase/migrations/020_preserve_deterministic_editorial_parent.sql');
+assert(synthesisLifecycleMigration.includes("and synthesis.status <> 'rejected'"), 'rejected editorial synthesis replay still blocks a replacement child');
+assert(synthesisLifecycleMigration.includes("v_parent_status in ('generated', 'in_review')"), 'editorial acceptance does not supersede its deterministic parent');
+assert(synthesisLifecycleMigration.includes("'restored'"), 'prematurely superseded deterministic parents do not receive a compensating audit action');
+assert(
+  synthesisMigration.includes('event_source_syntheses_one_accepted_per_bundle')
+    && !synthesisLifecycleMigration.includes('drop index event_source_syntheses_one_accepted_per_bundle'),
+  'migration 020 does not preserve accepted-synthesis uniqueness',
+);
+assert(synthesisLifecycleMigration.includes('perform public.atlas_assert_service_role()'), 'corrected synthesis RPCs are not restricted to service-role execution');
+assert(synthesisLifecycleMigration.includes("set search_path = ''"), 'corrected synthesis RPCs do not use a fixed empty search path');
+for (const rpc of ['atlas_create_model_assisted_synthesis', 'atlas_transition_event_source_synthesis']) {
+  assert(synthesisLifecycleMigration.includes(`revoke all on function public.${rpc}`), `corrected synthesis RPC ${rpc} is exposed to public roles`);
+  assert(synthesisLifecycleMigration.includes(`grant execute on function public.${rpc}`), `corrected synthesis RPC ${rpc} is unavailable to the service role`);
+}
+assert(!synthesisLifecycleMigration.includes('atlas_publish_event_page_version'), 'corrected synthesis lifecycle can publish an Event Hub version directly');
+
 const synthesisMapMigration = read('supabase/migrations/013_source_synthesis_map_record.sql');
 assert(synthesisMapMigration.includes('atlas_attach_source_synthesis_map_record'), 'map provenance migration does not expose the guarded attachment RPC');
 assert(synthesisMapMigration.includes("v_status <> 'generated'"), 'map provenance can be attached after synthesis review has begun');
