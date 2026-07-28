@@ -109,7 +109,7 @@ assert(eventFactoryReadiness.includes('event_visual_workflows') && eventFactoryR
 assert(eventFactoryReadiness.includes('event_page_versions_event_page_id_fkey'), 'event factory readiness does not disambiguate the Event Page version relationship');
 
 const eventFactoryPackages = read('lib/event-factory/packages.ts');
-for (const rpc of ['atlas_upsert_event_factory_package', 'atlas_create_event_factory_hero_correction', 'atlas_review_event_factory_package', 'atlas_materialize_event_factory_package', 'atlas_finish_event_factory_publication', 'atlas_list_event_factory_packages']) {
+for (const rpc of ['atlas_upsert_event_factory_package', 'atlas_create_event_factory_hero_correction', 'atlas_review_event_factory_package', 'atlas_materialize_event_factory_package', 'atlas_activate_event_factory_publication', 'atlas_finish_event_factory_publication', 'atlas_list_event_factory_packages']) {
   assert(eventFactoryPackages.includes(`"${rpc}"`), `event package service does not call fixed RPC ${rpc}`);
 }
 assert(eventFactoryPackages.includes('validateEventPageManifest'), 'event package publication does not revalidate the reviewed Event Hub manifest');
@@ -119,6 +119,12 @@ assert(eventFactoryPackages.includes('manifest_proposal'), 'event package prepar
 assert(eventFactoryPackages.includes('location_verified'), 'event package preparation cannot consume verified canonical coordinates');
 assert(eventFactoryPackages.includes('getApprovedEventVisualWorkflow'), 'event package preparation does not consume approved visual workflows');
 assert(eventFactoryPackages.includes('visual-signature-v1') && eventFactoryPackages.includes('assertReviewedVisualAsset'), 'event package publication does not retain and recheck the approved visual workflow');
+assert(!eventFactoryPackages.includes('publishEventPageVersion'), 'event package service still activates the Event Hub before atomic package finalization');
+assert(
+  eventFactoryPackages.indexOf('const versionId = await prepareReviewedManifest(') < eventFactoryPackages.indexOf('const mediaId = await registerApprovedPackageArt(')
+    && eventFactoryPackages.indexOf('const mediaId = await registerApprovedPackageArt(') < eventFactoryPackages.indexOf('const activated = await activateEventFactoryPublication('),
+  'event package publication does not prepare page, register media, and activate in order',
+);
 assert(!eventFactoryPackages.includes('window'), 'server-owned event package service references the browser');
 assert(!/rpc\([^"'`]/.test(eventFactoryPackages), 'event package service appears to accept a dynamic RPC name');
 
@@ -173,6 +179,18 @@ assert(eventPackageMigration.includes('A verified candidate case is required bef
 assert(eventPackageMigration.includes('A published Event Hub version is required.'), 'event package publication can finish without a published page');
 assert(eventPackageMigration.includes("set search_path = ''"), 'event package RPCs do not use a fixed empty search path');
 assert(eventPackageMigration.includes('revoke all on function public.atlas_materialize_event_factory_package'), 'event package materialization RPC is not revoked from public roles');
+
+const atomicEventPackageMigration = read('supabase/migrations/021_atomic_event_factory_publication.sql');
+assert(atomicEventPackageMigration.includes('atlas_activate_event_factory_publication'), 'atomic Event Factory activation RPC is missing');
+assert(atomicEventPackageMigration.includes('for update'), 'atomic Event Factory activation does not lock publication records');
+assert(atomicEventPackageMigration.includes("v_version.manifest is distinct from v_package.page_manifest"), 'atomic Event Factory activation does not bind the exact frozen manifest');
+assert(atomicEventPackageMigration.includes("v_media.status <> 'approved'"), 'atomic Event Factory activation does not require approved media');
+assert(atomicEventPackageMigration.includes("v_package.status = 'published'"), 'atomic Event Factory activation has no idempotent published replay path');
+assert(atomicEventPackageMigration.includes('previous_event_page_version_id'), 'atomic Event Factory activation does not audit the replaced page version');
+assert(atomicEventPackageMigration.includes('Successful publication requires the atomic Event Factory activation RPC.'), 'legacy package finalization can still report non-atomic success');
+assert(atomicEventPackageMigration.includes('atlas_guard_event_factory_page_activation'), 'independent Event Page publication is not guarded for factory manifests');
+assert(atomicEventPackageMigration.includes("set search_path = ''"), 'atomic Event Factory publication RPCs do not use a fixed empty search path');
+assert(atomicEventPackageMigration.includes('from public, anon, authenticated'), 'atomic Event Factory publication RPCs are not revoked from browser roles');
 
 const visualWorkflowMigration = read('supabase/migrations/014_event_visual_workflows.sql');
 for (const table of ['event_visual_workflows', 'event_visual_workflow_actions']) {

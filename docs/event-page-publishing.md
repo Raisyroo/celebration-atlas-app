@@ -52,6 +52,10 @@ Use `/atlas-control` as an authorized administrator:
 
 Publication occurs in one database transaction. The prior published version is archived and the stable page pointer moves only when the approved replacement can be published successfully.
 
+Event Factory publication adds a wider package-level transaction in migration 021. Its server flow creates or reuses a draft, submits and approves it without changing the public pointer, registers or reuses the reviewed hero media, and then calls `atlas_activate_event_factory_publication`. That final RPC verifies the package, canonical event, exact frozen manifest, approved version, and approved hero record before it archives the old version, publishes the replacement, moves `event_pages.published_version_id`, marks the package `published`, and appends both audit transitions in one commit.
+
+The general Event Page publish RPC remains available for versions that are not owned by an Event Factory package. A database trigger rejects independent activation of an exact factory-backed manifest until its package is published, and the public resolver requires the exact factory package to be `published`. Checked-in transition manifests remain the application fallback when no eligible database publication resolves.
+
 Lifecycle states are `draft`, `in_review`, `approved`, `published`, `rejected`, and `archived`. Rejected and archived records remain available for audit; corrections are created as a new draft.
 
 ## Source synthesis boundary

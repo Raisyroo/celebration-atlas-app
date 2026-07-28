@@ -7,7 +7,6 @@ import { getEventPageManifest } from "@/data/eventPageManifests";
 import { createAtlasServiceClient } from "@/lib/atlas-control/service";
 import {
   createEventPageDraftFromManifest,
-  publishEventPageVersion,
   reviewEventPageVersion,
   submitEventPageVersion,
 } from "@/lib/event-pages/publishing";
@@ -544,6 +543,25 @@ async function finishEventFactoryPublication(args: {
   return firstRpcRow(data);
 }
 
+async function activateEventFactoryPublication(args: {
+  packageId: string;
+  versionId: string;
+  mediaId: string;
+  actorIdentity: string;
+  notes?: string;
+}) {
+  const supabase = requireServiceClient();
+  const { data, error } = await supabase.rpc("atlas_activate_event_factory_publication", {
+    p_package_id: args.packageId,
+    p_version_id: args.versionId,
+    p_media_id: args.mediaId,
+    p_actor_identity: args.actorIdentity,
+    p_notes: args.notes ?? null,
+  });
+  if (error) throw new Error(error.message);
+  return firstRpcRow(data);
+}
+
 async function registerApprovedPackageArt(eventId: string, eventKey: string, artAsset: Record<string, unknown>) {
   const supabase = requireServiceClient();
   const src = typeof artAsset.src === "string" ? artAsset.src : "";
@@ -598,7 +616,7 @@ function assertReviewedVisualAsset(artAsset: Record<string, unknown>) {
   }
 }
 
-async function publishReviewedManifest(
+async function prepareReviewedManifest(
   manifest: EventPageManifest,
   actorIdentity: string,
   correction: boolean,
@@ -624,8 +642,9 @@ async function publishReviewedManifest(
       ? "Approved as a human-reviewed hero-only correction."
       : "Approved with the complete Event Factory package.",
   })).status ?? "");
-  if (status === "approved") status = String((await publishEventPageVersion(versionId, actorIdentity)).status ?? "");
-  if (status !== "published") throw new Error(`Event Hub publication stopped in ${status || "an unknown state"}.`);
+  if (!["approved", "published"].includes(status)) {
+    throw new Error(`Event Hub preparation stopped in ${status || "an unknown state"}.`);
+  }
   return versionId;
 }
 
@@ -644,7 +663,7 @@ export async function approveAndPublishEventFactoryPackage(args: {
     });
     packageRow = await getPackage(args.packageId);
   }
-  if (!["approved", "publishing", "failed"].includes(packageRow.status)) {
+  if (!["approved", "publishing", "published", "failed"].includes(packageRow.status)) {
     throw new Error("This package is not ready for approval and publication.");
   }
 
@@ -652,23 +671,32 @@ export async function approveAndPublishEventFactoryPackage(args: {
   if (!validation.ok) throw new Error(`Reviewed Event Hub manifest is invalid: ${validation.errors.join(" ")}`);
   assertReviewedVisualAsset(packageRow.art_asset);
 
-  let materialized = packageRow.status === "publishing";
+  let materialized = ["publishing", "published"].includes(packageRow.status);
   try {
-    const materialization = await materializeEventFactoryPackage(args.packageId, args.actorIdentity);
+    const materialization = ["approved", "failed"].includes(packageRow.status)
+      ? await materializeEventFactoryPackage(args.packageId, args.actorIdentity)
+      : packageRow;
     materialized = true;
     const eventId = String(materialization.event_id ?? "");
     if (!eventId) throw new Error("Canonical event materialization did not return an event id.");
-    const [versionId, mediaId] = await Promise.all([
-      publishReviewedManifest(validation.value, args.actorIdentity, Boolean(packageRow.supersedes_package_id)),
-      registerApprovedPackageArt(eventId, packageRow.event_key, packageRow.art_asset),
-    ]);
-    const finished = await finishEventFactoryPublication({
+    const versionId = await prepareReviewedManifest(
+      validation.value,
+      args.actorIdentity,
+      Boolean(packageRow.supersedes_package_id),
+    );
+    const mediaId = await registerApprovedPackageArt(
+      eventId,
+      packageRow.event_key,
+      packageRow.art_asset,
+    );
+    const activated = await activateEventFactoryPublication({
       packageId: args.packageId,
-      succeeded: true,
+      versionId,
+      mediaId,
       actorIdentity: args.actorIdentity,
       notes: args.notes,
     });
-    return { ...finished, versionId, mediaId };
+    return { ...activated, versionId, mediaId };
   } catch (error) {
     if (materialized) {
       await finishEventFactoryPublication({

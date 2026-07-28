@@ -43,7 +43,7 @@ An extracted `identity.description` is not automatically suitable as a general o
 
 AI may discover events, inspect sources, archive evidence, reconcile facts, classify the event, geocode the location, generate a manifest, prepare Scout context, create an art brief, generate artwork, and assemble a private preview.
 
-During the Michigan pilot, only a human approval may release a package publicly. Approval is a single package-level decision after all blockers are visible and the mobile preview has been reviewed. Canonical materialization, map publication, Event Hub publication, and art registration remain separate audited effects underneath that decision so any failed effect can be retried safely.
+During the Michigan pilot, only a human approval may release a package publicly. Approval is a single package-level decision after all blockers are visible and the mobile preview has been reviewed. Canonical materialization, approved Event Hub preparation, and approved art registration remain retryable private effects underneath that decision. Migration 021 places the public boundary in one final transaction: it locks the package and Event Hub records, verifies the exact canonical event, frozen manifest, and approved hero media, archives any prior public version, activates the replacement, finalizes the package, and appends both audit histories before committing.
 
 Package preparation never creates or updates a public canonical event. Migration 011 stores packages and their action history behind service-role-only access. The `Approve and publish` control is the first action allowed to materialize the candidate into `events` and publish the reviewed Event Hub version.
 
@@ -52,6 +52,10 @@ Package assembly prefers a valid, accepted `event_source_syntheses.manifest_prop
 Every assembled package has an authenticated preview at `/atlas-control/event-preview/[packageId]`. This route renders the exact frozen manifest under review and is marked non-indexable. The public `/events/[slug]` route continues to resolve only published Event Hub versions.
 
 The homepage resolves database events only from packages whose final status is `published`, validates the retained page manifest again, and merges those records over the checked-in Michigan pilot catalog. This lets newly approved packages appear without expanding the hardcoded map array while preserving local fallbacks during the transition.
+
+The direct Event Hub resolver uses the same package boundary for factory-backed manifests. A prepared or independently activated factory version is not returned unless the exact frozen package is also `published`. Standalone Event Page versions and checked-in transition fallbacks remain compatible.
+
+If media registration or final activation fails, a new page version remains approved and private. A revision leaves its prior published version and pointer unchanged. Retrying an uncertain successful response reuses the same manifest version and media record; the activation RPC returns the already-published result without adding another page transition or package publication action.
 
 ## Discovery Coverage
 

@@ -65,6 +65,7 @@ Key boundaries:
 - Private package previews render the exact package under review.
 - Human package approval is the only Michigan-pilot action that may publish a new event and add it to the public map.
 - Published package events overlay the checked-in catalog so the map can grow without expanding a hardcoded array for every event.
+- Deployed forward-only migration `021_atomic_event_factory_publication.sql` moves the Event Factory public boundary into one service-role-only transaction after canonical materialization, Event Hub approval, and hero registration. The transaction locks and verifies the package, canonical event, exact frozen manifest, approved version, and approved hero record; then it archives the prior version, activates the replacement, marks the package published, and appends both audit histories atomically. Failed media or activation leaves a new version private and preserves the old public version during revisions. Exact replay is a no-op. Until the matching server-service change in this working tree is deployed through the normal Git workflow, production package publication fails closed at the database guard; the private review queue is empty.
 
 Canonical implementation notes live in:
 
@@ -140,7 +141,7 @@ Do not build one-off deep-question logic into individual event pages. The future
 
 ## Supabase And Atlas Control
 
-- Remote migrations `005` through `020` are applied.
+- Remote migrations `005` through `021` are applied.
 - Atlas Control is protected and uses server-side service-role routes for editorial mutations.
 - Public pages never receive the service-role key.
 - The Control Desk supports source inspection, bundle collection, synthesis, verification, package review, publication, and visual workflow approval.
