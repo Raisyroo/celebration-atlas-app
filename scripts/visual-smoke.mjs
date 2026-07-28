@@ -8,6 +8,8 @@ const homepageScreenshotPath = path.join(outputDir, 'homepage-mobile.png');
 const resultCloudScreenshotPath = path.join(outputDir, 'map-search-result-text-cloud-desktop.png');
 const exactEventScreenshotPath = path.join(outputDir, 'exact-event-hub-desktop.png');
 const resultCloudMobileScreenshotPath = path.join(outputDir, 'map-search-result-text-cloud-mobile.png');
+const noResultsMobileScreenshotPath = path.join(outputDir, 'map-search-no-results-mobile.png');
+const experienceDeckMobileScreenshotPath = path.join(outputDir, 'atlas-experience-deck-mobile.png');
 const eventHubMobileTabsScreenshotPath = path.join(outputDir, 'event-hub-mobile-tabs.png');
 const scoutComposerPhonePortraitScreenshotPath = path.join(
   outputDir,
@@ -32,11 +34,14 @@ const scoutComposerDesktopScreenshotPath = path.join(
 const atlasControlScreenshotPath = path.join(outputDir, 'atlas-control-unauthenticated.png');
 const baseUrl = process.env.VISUAL_SMOKE_BASE_URL || 'http://127.0.0.1:3000';
 const shouldStartServer = !process.env.VISUAL_SMOKE_BASE_URL;
+const shouldRunExperienceDeck = process.env.VISUAL_SMOKE_EXPERIENCE_DECK === '1';
 const homepageUrl = new URL('/', baseUrl).toString();
 const atlasLoginUrl = new URL('/atlas-login', baseUrl).toString();
 const atlasControlUrl = new URL('/atlas-control', baseUrl).toString();
 const npmExecPath = process.env.npm_execpath;
 const visualSmokeTime = new Date('2026-07-15T16:00:00Z');
+const scoutGenericResponse =
+  'Thanks for asking. This is a generic Scout response so you can review how answers will appear here. The universal Scout intelligence service is not connected yet.';
 const atlasRootSelector =
   '[data-state-slug="michigan"][data-presentation-profile="michigan-illustrated-map-v1"]';
 const atlasViewportFixtures = Object.freeze([
@@ -74,6 +79,44 @@ const scoutComposerReviewFixtures = Object.freeze([
     screenshotPath: scoutComposerTabletScreenshotPath,
   },
 ]);
+const searchReviewFixtures = Object.freeze([
+  {
+    label: 'category',
+    query: 'music festivals',
+    expectedEventIds: [
+      'common-ground-lansing',
+      'detroit-jazz',
+      'electric-forest',
+      'faster-horses',
+      'muskegon-summer-celebration',
+    ],
+  },
+  { label: 'city', query: 'events in Detroit', expectedEventIds: ['detroit-jazz'] },
+  {
+    label: 'month',
+    query: 'events in September',
+    expectedEventIds: ['detroit-jazz', 'romeo-peach-festival'],
+  },
+  {
+    label: 'Michigan region',
+    query: 'events in Detroit Metro',
+    expectedEventIds: ['armada-fair', 'detroit-jazz', 'romeo-peach-festival'],
+  },
+  {
+    label: 'live or upcoming status',
+    query: 'upcoming events',
+    expectedRailResults: true,
+  },
+  {
+    label: 'combined intent',
+    query: 'music events in Detroit in September',
+    expectedEventIds: ['detroit-jazz'],
+  },
+]);
+const noResultsSearchFixture = Object.freeze({
+  label: 'no results',
+  query: 'events in Kalamazoo in February',
+});
 
 let server;
 let browser;
@@ -215,19 +258,23 @@ async function assertEssentialHomepageControls(page, fixture) {
   await page.getByLabel('Ask Celebration Atlas').waitFor({ state: 'visible', timeout: 45_000 });
   await page.getByRole('button', { name: 'Submit Atlas question' }).waitFor({ state: 'visible', timeout: 45_000 });
 
-  if (fixture.mode === 'desktop') {
-    for (const field of ['date', 'category', 'region', 'city']) {
-      await page.locator(`#desktop-atlas-filter-${field}`).waitFor({ state: 'visible', timeout: 45_000 });
-    }
-    return;
+  const obsoleteFilterControls = page.locator(
+    [
+      '[id^="desktop-atlas-filter-"]',
+      '[id^="mobile-atlas-filter-"]',
+      'button[aria-label^="Open atlas filters"]',
+      '[role="dialog"][aria-label="Filters"]',
+    ].join(','),
+  );
+  if (await obsoleteFilterControls.count()) {
+    throw new Error(`${fixture.label}: search-first homepage rendered obsolete filter controls.`);
   }
 
-  await page
-    .getByRole('button', { name: /^Open Michigan atlas menu$/ })
-    .waitFor({ state: 'visible', timeout: 45_000 });
-  await page
-    .getByRole('button', { name: /^Open atlas filters/ })
-    .waitFor({ state: 'visible', timeout: 45_000 });
+  if (fixture.mode !== 'desktop') {
+    await page
+      .getByRole('button', { name: /^Open Michigan atlas menu$/ })
+      .waitFor({ state: 'visible', timeout: 45_000 });
+  }
 }
 
 async function assertNoHorizontalOverflow(page, label) {
@@ -305,72 +352,6 @@ async function assertHomepageViewport(page, fixture, { checkRail = true } = {}) 
   console.log(
     `Homepage viewport contract passed at ${fixture.width}x${fixture.height}: ${fixture.mode}/${fixture.artworkVariant}.`,
   );
-}
-
-async function openMobileFilters(page) {
-  const trigger = page.getByRole('button', { name: /^Open atlas filters/ });
-  await trigger.click();
-  const dialog = page.getByRole('dialog', { name: 'Filters' });
-  await dialog.waitFor({ state: 'visible', timeout: 45_000 });
-
-  for (const field of ['date', 'category', 'region', 'city']) {
-    await dialog.locator(`#mobile-atlas-filter-${field}`).waitFor({ state: 'visible', timeout: 45_000 });
-  }
-
-  return { dialog, trigger };
-}
-
-async function assertFilterOnlyDiscovery(page) {
-  const initialRail = await assertLiveUpcomingRail(page, 'portrait filter flow');
-  const { dialog, trigger } = await openMobileFilters(page);
-  const categorySelect = dialog.locator('#mobile-atlas-filter-category');
-  const categoryValue = await categorySelect.evaluate((select) => {
-    if (!(select instanceof HTMLSelectElement)) return null;
-    return Array.from(select.options).find((option) => option.value && !option.disabled)?.value ?? null;
-  });
-
-  if (!categoryValue) {
-    throw new Error('Expected at least one enabled reviewed category filter option.');
-  }
-
-  await categorySelect.selectOption(categoryValue);
-  const resultList = page.locator('[data-testid="discovery-results"]');
-  await resultList.waitFor({ state: 'visible', timeout: 45_000 });
-  const filterOnlyResultCount = await resultList.locator('[data-search-event-id]').count();
-  if (filterOnlyResultCount < 1) {
-    throw new Error(`Expected filter-only discovery results, received ${filterOnlyResultCount}.`);
-  }
-
-  const rootSearchMode = await page.locator(atlasRootSelector).getAttribute('data-search-mode');
-  const currentPath = new URL(page.url()).pathname;
-  const searchInputValue = await page.getByLabel('Ask Celebration Atlas').inputValue();
-  if (rootSearchMode !== 'results' || currentPath !== '/' || searchInputValue !== '') {
-    throw new Error(
-      `Filter-only discovery must remain a query-free homepage result interaction; received mode=${rootSearchMode}, path=${currentPath}, query=${JSON.stringify(searchInputValue)}.`,
-    );
-  }
-
-  const filteredRail = await assertLiveUpcomingRail(page, 'filtered portrait flow');
-  if (JSON.stringify(filteredRail) !== JSON.stringify(initialRail)) {
-    throw new Error('Structured discovery filters must not repurpose or mutate the live/upcoming event rail.');
-  }
-
-  await dialog.getByRole('button', { name: 'Clear filters' }).click();
-  await page.waitForFunction(() => !document.querySelector('[data-testid="discovery-results"]'), undefined, {
-    timeout: 45_000,
-  });
-  await page.keyboard.press('Escape');
-  await dialog.waitFor({ state: 'detached', timeout: 45_000 });
-  await page.waitForFunction(
-    () => document.activeElement?.getAttribute('aria-label')?.startsWith('Open atlas filters') === true,
-    undefined,
-    { timeout: 45_000 },
-  );
-  if (!(await trigger.isVisible())) {
-    throw new Error('Filter trigger did not remain visible after the filter-only flow closed.');
-  }
-
-  console.log(`Filter-only discovery returned ${filterOnlyResultCount} reviewed result(s) without changing the event rail.`);
 }
 
 async function assertEventHubTabContract(page, label) {
@@ -490,6 +471,13 @@ async function assertScoutComposerContract(
   if (await composer.getByText(/Composer preview:|Question kept in this composer\./).count()) {
     throw new Error(`${label}: Scout composer rendered additional status copy.`);
   }
+  if (
+    await composer.locator(
+      '[data-testid*="suggest" i], [data-scout-prompt], [data-prompt-tag], [class*="suggestionChip"]',
+    ).count()
+  ) {
+    throw new Error(`${label}: Scout composer rendered removed suggestion or prompt controls.`);
+  }
 
   const composerButtonCount = await composer.getByRole('button').count();
   if (composerButtonCount !== 1) {
@@ -597,8 +585,8 @@ async function assertScoutComposerContract(
 
   await assertNoHorizontalOverflow(page, `${label} Scout composer`);
 
+  const question = 'What should I know before I go?';
   if (exerciseKeyboard) {
-    const question = 'What should I know before I go?';
     await input.focus();
     await page.waitForFunction(
       () => document.querySelector('#scout-event-question')?.getAttribute('placeholder') === '',
@@ -618,24 +606,40 @@ async function assertScoutComposerContract(
     if (!(await input.evaluate((element) => element === document.activeElement))) {
       throw new Error(`${label}: reverse keyboard navigation did not return to the question field.`);
     }
-    await input.fill(question);
-    await page.keyboard.press('Enter');
-    if ((await input.inputValue()) !== question) {
-      throw new Error(`${label}: the disconnected composer discarded the visitor question.`);
-    }
-    if (!(await input.evaluate((element) => element === document.activeElement))) {
-      throw new Error(`${label}: submitting the disconnected composer did not preserve input focus.`);
-    }
-    if (await composer.getByText(/Composer preview:|Question kept in this composer\./).count()) {
-      throw new Error(`${label}: activating Scout added status copy.`);
-    }
-    await input.fill('');
+  } else {
     await input.focus();
-    if ((await input.getAttribute('placeholder')) !== '' || (await input.inputValue()) !== '') {
-      throw new Error(`${label}: focused Scout review state was not completely blank.`);
-    }
-    await input.press('End');
   }
+
+  await input.fill(question);
+  await input.press('Enter');
+  const history = composer.getByRole('list', { name: 'Scout conversation history' });
+  await history.waitFor({ state: 'visible', timeout: 45_000 });
+  const turns = history.locator('li');
+  if (
+    (await turns.count()) !== 1 ||
+    (await history.getAttribute('data-scout-response-mode')) !== 'demo' ||
+    (await history.getAttribute('data-scout-turn-count')) !== '1' ||
+    !(await turns.nth(0).getByText(question, { exact: true }).isVisible()) ||
+    !(await turns.nth(0).getByText(scoutGenericResponse, { exact: true }).isVisible())
+  ) {
+    throw new Error(`${label}: Scout did not append the ordered generic conversation turn.`);
+  }
+  if ((await composer.getAttribute('data-scout-history-visible')) !== 'true') {
+    throw new Error(`${label}: Scout conversation history did not become visible.`);
+  }
+  if ((await input.inputValue()) !== '') {
+    throw new Error(`${label}: Scout did not clear the submitted question.`);
+  }
+  if (await input.evaluate((element) => element === document.activeElement)) {
+    throw new Error(`${label}: Scout input retained focus after submission.`);
+  }
+  if (!(await sendButton.evaluate((element) => element === document.activeElement))) {
+    throw new Error(`${label}: Scout send button did not receive focus after submission.`);
+  }
+  if ((await composer.getByRole('button').count()) !== 2) {
+    throw new Error(`${label}: expanded Scout should expose only send and history-close buttons.`);
+  }
+  await assertNoHorizontalOverflow(page, `${label} expanded Scout history`);
 
   console.log(`${label}: Scout composer contract passed for ${expectedEventId}.`);
 }
@@ -649,16 +653,252 @@ async function assertSamePageRotation(page) {
   await assertEssentialHomepageControls(page, compactLandscape);
   await assertNoHorizontalOverflow(page, 'same-page portrait-to-landscape rotation');
 
-  const { dialog } = await openMobileFilters(page);
-  await page.keyboard.press('Escape');
-  await dialog.waitFor({ state: 'detached', timeout: 45_000 });
-
   await page.setViewportSize({ width: portrait.width, height: portrait.height });
   await waitForViewportContract(page, portrait);
   await assertEssentialHomepageControls(page, portrait);
   await assertNoHorizontalOverflow(page, 'same-page landscape-to-portrait rotation');
 
-  console.log('Same-page portrait/compact-landscape rotation preserved menu, filters, and search controls.');
+  console.log('Same-page portrait/compact-landscape rotation preserved menu and search controls.');
+}
+
+async function readMapSearchEventIds(page) {
+  return page
+    .locator('.atlas-result-text-field[data-search-mode="results"] button')
+    .evaluateAll((buttons) =>
+      buttons.flatMap((button) => {
+        const singleId = button.getAttribute('data-search-event-id');
+        if (singleId) return [singleId];
+        return (button.getAttribute('data-search-event-ids') ?? '')
+          .split(',')
+          .map((eventId) => eventId.trim())
+          .filter(Boolean);
+      }),
+    );
+}
+
+function assertSameEventIdSet(actualIds, expectedIds, label) {
+  const actual = [...new Set(actualIds)].sort();
+  const expected = [...new Set(expectedIds)].sort();
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(
+      `${label}: expected map results ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}.`,
+    );
+  }
+}
+
+async function assertSearchFirstCoverage(page) {
+  for (const fixture of searchReviewFixtures) {
+    await page.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+    await waitForViewportContract(page, atlasViewportFixtures[0]);
+    const initialRail = await assertLiveUpcomingRail(page, `${fixture.label} initial rail`);
+    await submitAtlasSearch(page, fixture.query);
+
+    const atlasRoot = page.locator(
+      `${atlasRootSelector}[data-search-mode="results"][data-search-presentation="title-tags"]`,
+    );
+    await atlasRoot.waitFor({ state: 'visible', timeout: 45_000 });
+    const resultField = page.locator('.atlas-result-text-field[data-search-mode="results"]');
+    await resultField.waitFor({ state: 'visible', timeout: 45_000 });
+
+    const url = new URL(page.url());
+    if (
+      url.pathname !== '/' ||
+      url.searchParams.get('q') !== fixture.query
+    ) {
+      throw new Error(`${fixture.label}: submitted query was not retained in homepage route state.`);
+    }
+
+    const rootResultCount = Number(await atlasRoot.getAttribute('data-search-result-count'));
+    const expectedResultCount = fixture.expectedRailResults
+      ? initialRail.length
+      : fixture.expectedEventIds.length;
+    if (rootResultCount !== expectedResultCount) {
+      throw new Error(
+        `${fixture.label}: expected ${expectedResultCount} deterministic results, received ${rootResultCount}.`,
+      );
+    }
+    const mapSearchEventIds = await readMapSearchEventIds(page);
+    if (fixture.expectedRailResults) {
+      if (mapSearchEventIds.length < 1) {
+        throw new Error(`${fixture.label}: status query did not expose an interactive map title tag.`);
+      }
+    } else {
+      assertSameEventIdSet(mapSearchEventIds, fixture.expectedEventIds, fixture.label);
+    }
+    if (await page.locator('.atlas-discovery-panel [data-testid="discovery-results"]').count()) {
+      throw new Error(`${fixture.label}: query-only search duplicated map results in a panel.`);
+    }
+
+    const searchedRail = await assertLiveUpcomingRail(page, `${fixture.label} searched rail`);
+    if (JSON.stringify(searchedRail) !== JSON.stringify(initialRail)) {
+      throw new Error(`${fixture.label}: query results repurposed the live/upcoming rail.`);
+    }
+    await assertNoHorizontalOverflow(page, `${fixture.label} search`);
+    console.log(`${fixture.label} search-first contract passed for ${fixture.query}.`);
+  }
+
+  await page.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+  const initialRail = await assertLiveUpcomingRail(page, 'no-results initial rail');
+  await submitAtlasSearch(page, noResultsSearchFixture.query);
+  const noResultsRoot = page.locator(
+    `${atlasRootSelector}[data-search-mode="none"][data-search-presentation="query-status"]`,
+  );
+  await noResultsRoot.waitFor({ state: 'visible', timeout: 45_000 });
+  await page
+    .getByText(/No Michigan celebrations match/i)
+    .first()
+    .waitFor({ state: 'visible', timeout: 45_000 });
+  if (
+    Number(await noResultsRoot.getAttribute('data-search-result-count')) !== 0 ||
+    (await page.locator('.atlas-result-text-field').count()) !== 0 ||
+    (await page.locator('.marker-pulse--broad-highlighted, .marker-pulse--highlighted').count()) !== 0
+  ) {
+    throw new Error('No-results search left contradictory map result markers.');
+  }
+  const emptyRail = await assertLiveUpcomingRail(page, 'no-results searched rail');
+  if (JSON.stringify(emptyRail) !== JSON.stringify(initialRail)) {
+    throw new Error('No-results search repurposed the live/upcoming rail.');
+  }
+  await assertNoHorizontalOverflow(page, 'no-results search');
+  await page.screenshot({
+    path: noResultsMobileScreenshotPath,
+    fullPage: true,
+    caret: 'initial',
+  });
+  console.log(`No-results screenshot written to ${path.relative(process.cwd(), noResultsMobileScreenshotPath)}`);
+
+  await page.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
+  await submitAtlasSearch(page, 'music festivals');
+  const detroitJazzTitleTag = page.locator(
+    '.atlas-result-text-field button[data-search-event-id="detroit-jazz"]',
+  );
+  await detroitJazzTitleTag.waitFor({ state: 'visible', timeout: 45_000 });
+  await Promise.all([
+    page.waitForURL('**/events/detroit-jazz', { timeout: 45_000 }),
+    detroitJazzTitleTag.click(),
+  ]);
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await page.waitForURL((url) => url.pathname === '/' && url.searchParams.get('q') === 'music festivals');
+  await page
+    .locator(`${atlasRootSelector}[data-search-mode="results"]`)
+    .waitFor({ state: 'visible', timeout: 45_000 });
+  assertSameEventIdSet(
+    await readMapSearchEventIds(page),
+    searchReviewFixtures[0].expectedEventIds,
+    'browser Back search restoration',
+  );
+  await page.goForward({ waitUntil: 'domcontentloaded' });
+  await page.waitForURL('**/events/detroit-jazz', { timeout: 45_000 });
+  console.log('Homepage query route and browser Back/Forward restoration contract passed.');
+}
+
+async function assertExperienceDeckCoverage(page) {
+  const deckFixtureUrl = new URL('/', baseUrl);
+  deckFixtureUrl.searchParams.set('q', 'music festivals');
+  deckFixtureUrl.searchParams.set('atlasDebug', '1');
+  deckFixtureUrl.searchParams.set('atlasDeckFixture', 'multi');
+  await page.goto(deckFixtureUrl.toString(), { waitUntil: 'domcontentloaded' });
+  await waitForHomepageRailReady(page);
+
+  const clusterTrigger = page.getByRole('button', {
+    name: 'Open Development multi-event fixture',
+    exact: true,
+  });
+  await clusterTrigger.waitFor({ state: 'visible', timeout: 45_000 });
+  await clusterTrigger.evaluate((element) => element.click());
+
+  const dialog = page.getByRole('dialog', { name: /Events in this area/ });
+  await dialog.waitFor({ state: 'visible', timeout: 45_000 });
+  const deckRoot = page.locator(
+    '[data-atlas-experience-deck-host="search-result-cluster"] [data-deck-view="stack"]',
+  );
+  await deckRoot.waitFor({ state: 'visible', timeout: 45_000 });
+  await page.waitForFunction(
+    () => {
+      const panel = document.querySelector(
+        '[data-atlas-experience-deck-host="search-result-cluster"] [role="dialog"]',
+      );
+      if (!(panel instanceof HTMLElement)) return false;
+      const rect = panel.getBoundingClientRect();
+      return (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.top >= -1 &&
+        rect.bottom <= window.innerHeight + 1
+      );
+    },
+    undefined,
+    { timeout: 10_000 },
+  );
+  const geometry = await dialog.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      bottom: rect.bottom,
+      height: rect.height,
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
+    };
+  });
+  if (
+    geometry.left < -1 ||
+    geometry.right > geometry.viewportWidth + 1 ||
+    geometry.top < -1 ||
+    geometry.bottom > geometry.viewportHeight + 1 ||
+    geometry.height < 1
+  ) {
+    throw new Error(`Experience Deck was clipped by the transformed map: ${JSON.stringify(geometry)}.`);
+  }
+  await assertNoHorizontalOverflow(page, 'open Experience Deck');
+
+  const stack = dialog.getByRole('list', { name: 'Event card stack' });
+  await stack.locator('[data-card-index="1"] button[data-deck-card="true"]').click();
+  await page.waitForFunction(
+    () => document.querySelector('[aria-label="Event card stack"]')?.getAttribute('data-selected-index') === '1',
+    undefined,
+    { timeout: 45_000 },
+  );
+  await page.keyboard.press('ArrowDown');
+  await page.waitForFunction(
+    () =>
+      document.querySelector('[aria-label="Event card stack"]')?.getAttribute('data-selected-index') === '2' &&
+      document.querySelector('[data-deck-view="stack"]')?.getAttribute('data-deck-motion') === 'settled',
+    undefined,
+    { timeout: 45_000 },
+  );
+  await page.screenshot({
+    path: experienceDeckMobileScreenshotPath,
+    fullPage: true,
+    caret: 'initial',
+  });
+
+  const activeCard = stack.locator('[data-card-active="true"] button[data-deck-card="true"]');
+  await Promise.all([
+    page.waitForURL('**/events/detroit-jazz', { timeout: 45_000 }),
+    activeCard.click(),
+  ]);
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await page.waitForURL((url) => url.pathname === '/' && url.searchParams.get('atlasDeckFixture') === 'multi');
+  const restoredDialog = page.getByRole('dialog', { name: /Events in this area/ });
+  await restoredDialog.waitFor({ state: 'visible', timeout: 45_000 });
+  if ((await restoredDialog.getByRole('list', { name: 'Event card stack' }).getAttribute('data-selected-index')) !== '2') {
+    throw new Error('Browser Back did not restore the active Experience Deck index.');
+  }
+  await page.goForward({ waitUntil: 'domcontentloaded' });
+  await page.waitForURL('**/events/detroit-jazz', { timeout: 45_000 });
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await page.getByRole('dialog', { name: /Events in this area/ }).waitFor({ state: 'visible', timeout: 45_000 });
+  await page
+    .getByRole('dialog', { name: /Events in this area/ })
+    .getByRole('button', { name: 'Close event deck' })
+    .click();
+  await page.getByRole('dialog', { name: /Events in this area/ }).waitFor({ state: 'detached', timeout: 45_000 });
+  await assertNoHorizontalOverflow(page, 'closed Experience Deck');
+  console.log(
+    `Experience Deck navigation/restoration screenshot written to ${path.relative(process.cwd(), experienceDeckMobileScreenshotPath)}`,
+  );
 }
 
 function createServerExitPromise(childProcess) {
@@ -753,7 +993,6 @@ async function main() {
     await assertHomepageViewport(page, fixture);
 
     if (index === 0) {
-      await assertFilterOnlyDiscovery(page);
       await assertSamePageRotation(page);
     }
   }
@@ -841,6 +1080,15 @@ async function main() {
   await mobilePage.clock.setFixedTime(visualSmokeTime);
   captureBrowserErrors(mobilePage, 'mobile');
   await mobilePage.setViewportSize({ width: 390, height: 844 });
+  await assertSearchFirstCoverage(mobilePage);
+  if (shouldRunExperienceDeck) {
+    const deckPage = await mobileContext.newPage();
+    await deckPage.clock.setFixedTime(visualSmokeTime);
+    await deckPage.setViewportSize({ width: 390, height: 844 });
+    captureBrowserErrors(deckPage, 'experience-deck');
+    await assertExperienceDeckCoverage(deckPage);
+    await deckPage.close();
+  }
   await mobilePage.goto(homepageUrl, { waitUntil: 'domcontentloaded' });
   await mobilePage.locator(atlasRootSelector).waitFor({ state: 'visible', timeout: 45_000 });
   await mobilePage.locator('.atlas-map-frame').waitFor({ state: 'visible', timeout: 45_000 });
