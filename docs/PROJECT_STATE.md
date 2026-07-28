@@ -109,6 +109,20 @@ Migrations `018_guard_county_seed_candidate_staging.sql` and `019_allow_revised_
 
 The separate Bay-Rama canary authorization binds only `MAC-042` to manifest SHA-256 `d2d1c245c1c8ac4abea3a1fef1e21a9ab8da2adf7a05d0db6c8bfbaba3079fd8` and payload SHA-256 `8672985d675e18749bec93030b4b2f13eda7df7a4f73d398e453d5a2fc3f6594`. The guarded execution created candidate `6da5b04d-013f-45d0-acc1-9bbc782de02f` plus exactly one discovery run, official source association, operation run, and applied operation action. Counts moved from 10/23/40/7/7 to 11/24/41/8/8 for discovery runs/candidates/sources/operation runs/actions; canonical events remained 19 and matched candidates remained 18. An exact replay returned the same candidate and operation without duplication; a different-hash replay was rejected and rolled back. `MAC-049` and `MAC-026` remain unstaged. No canonical event, package, Event Hub, publication, visual workflow, image, or placeholder art was created. The append-only audit and verification artifacts are retained beside the authorization under `artifacts/county-seeds/macomb/`. No further pilot record is authorized. See `docs/COUNTY_SEED_STAGING_READINESS.md`.
 
+## Michigan Completion Operating Layer v1
+
+The Michigan Completion Operating Layer is implemented in the current working tree as an eleven-stage, deterministic-first coordinator around the existing county intake, identity, source-evidence, synthesis, Event Factory, visual-readiness, and publication-readiness capabilities. Publication is intentionally absent from its stage registry and command interface.
+
+Persistent completion state reuses `atlas_operation_runs`, append-only `atlas_operation_actions`, and `atlas_review_items`. Migration `023_michigan_completion_operating_layer.sql` adds fixed service-role-only completion RPCs, exact replay and conflicting-replay guards, atomic model-budget reservation and usage recording, and the single genuinely missing `atlas_review_item_actions` exception-transition ledger. It does not add a parallel run, event, stage, model, identity, synthesis, package, or publication table family.
+
+The command `npm run atlas:complete-michigan-batch` defaults to dry-run, requires `--authorize-private-writes` for existing private workflow mutations, supports bounded concurrency, deterministic-only execution, explicit run and per-event model budgets, exact resume, and a structured report. It exposes no publication option. Model assistance is reserved only after deterministic processing and records its route, reason, preconditions, configured model, attempt cap, usage, budgets, fallback, and terminal outcome.
+
+Content and art readiness are independent. Complete source-bound Event Hub content can remain in a private `art_pending` package and preview without a hero URL; missing or unapproved art creates or preserves a publication-blocking exception. The completion layer never searches for, generates, copies, edits, uploads, selects, substitutes, or approves imagery, and strict public Event Hub validation remains unchanged.
+
+Atlas Control gains only a protected compact completion-run projection and linked completion-exception context. The full architecture and operating contract are in `docs/MICHIGAN_COMPLETION_ARCHITECTURE.md`; the bounded county rollout and first-proof procedure are in `docs/MICHIGAN_COMPLETION_EXECUTION_PLAN.md`.
+
+Migrations 023 and 024 passed the required release gate and are deployed. Migration 024 is the forward-only correction for the PostgreSQL-specific run-list limit expression found during read-only verification; migration 023 was not edited in place. Local and remote migration history is aligned through 024. The service-role run list returns an empty array, the completion exception-action table is empty, and anonymous access to both is denied. Before/after verification retained 19 canonical events, 18 matched candidates, eight published package rows, seven published page pointers and versions, and nine approved media records with identical public-state hashes. No production completion run has been started, and this implementation has not staged, canonicalized, packaged, or published any production event. The existing Bay-Rama candidate is unchanged; Richmond and Memphis remain unstaged; no image action has occurred.
+
 ## Hero Image Factory
 
 Migration `014_event_visual_workflows.sql` and the Control Desk Hero Image Factory implement the fast visual workflow:
@@ -210,11 +224,11 @@ The package, canonical event, immutable Event Hub v1, approved media record, and
 
 ## Current Next Milestone
 
-The state-scoped catalog/configuration, deterministic search, live/upcoming rail, shared viewport model, and search-first public discovery surface are complete checkpoints. Filter and facet data contracts remain retained beneath the public UI.
+The Michigan Completion release gate and migrations 023-024 are complete. The exact next checkpoint is to prepare and independently review the one-record `MAC-042` Macomb private-proof manifest described in `docs/MICHIGAN_COMPLETION_EXECUTION_PLAN.md`, then run only its deterministic, zero-model-budget dry-run. The proof manifest does not yet exist and the dry-run was not started in this implementation task.
 
-The next focused checkpoint is a shared `StateMapPresentationProfile` and one versioned position resolver for stars, labels, atmosphere, constellation lines, and audits. It must account for artwork fit/crop, keep Upper and Lower Peninsula calibration regions separate, render one accessible coded-star control per reachable event on every supported viewport, and preserve verified coordinates as source truth while treating illustrated offsets as presentation data. Pre-aggregate discovery facet counts before catalogs grow to national scale.
+After migration parity and unchanged publication state are verified, the exact next task is to prepare and independently review the one-record `MAC-042` Macomb private-proof manifest described in `docs/MICHIGAN_COMPLETION_EXECUTION_PLAN.md`, then run its deterministic, zero-model-budget dry-run only. That later proof is a separate authorization boundary: do not canonicalize or publish Bay-Rama, and do not stage Richmond or Memphis.
 
-The anonymous public hamburger cleanup is also complete. Public accounts and synchronized favorites remain a separate, unselected milestone defined in `docs/PUBLIC_ACCOUNT_FAVORITES_FOLLOW_UP.md`; do not expose account menu controls until that complete public system exists.
+The state-map presentation resolver, anonymous public-account follow-up, and broader product checkpoints remain separately queued and are not part of the completion-layer release.
 
 ## Required Verification
 

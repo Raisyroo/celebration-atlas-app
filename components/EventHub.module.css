@@ -201,6 +201,42 @@
   filter: saturate(0.94) contrast(1.03) brightness(0.86);
 }
 
+.artPending {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 32%, rgba(218, 163, 83, 0.12), transparent 48%),
+    linear-gradient(155deg, #102934, #07151c 72%);
+  color: rgba(255, 240, 210, 0.72);
+  text-align: center;
+}
+
+.artPending span {
+  color: var(--hub-gold);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.artPending strong {
+  color: #fff0d2;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+
+.artPending small {
+  font-size: 0.76rem;
+}
+
 .heroScrim {
   position: absolute;
   inset: 0;

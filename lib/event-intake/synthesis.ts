@@ -509,13 +509,22 @@ async function persistModelAssistedEditorialSynthesis(args: {
     p_actor_identity: args.actorIdentity,
   });
   if (error) throw new Error(error.message);
+  const result = firstRpcRow(data);
   return {
-    result: firstRpcRow(data),
+    result,
     proposal: {
+      synthesisId:
+        typeof result.synthesis_id === 'string'
+          ? result.synthesis_id
+          : null,
       isManifestValid: validation.ok,
       qualityScore: Number(parent.quality_score),
       missingFields: parentValidation.missingFields,
       editorial: editorial.report,
+      manifestProposal: validation.ok ? validation.value : editorial.manifest,
+      reconciledProfile: parent.reconciled_profile,
+      conflicts: Array.isArray(parent.conflicts) ? parent.conflicts : [],
+      validationReport: report,
     },
   };
 }
@@ -538,10 +547,18 @@ export async function createModelAssistedEditorialSynthesisFromOutput(args: {
 export async function generateModelAssistedEditorialSynthesis(args: {
   synthesisId: string;
   actorIdentity: string;
+  configuredModel?: string;
+  maxCompletionTokens?: number;
 }) {
   const { input, manifest, plan } = await prepareEventSourceEditorialWorkspace(args.synthesisId);
-  const generated = await generateEditorialModelDraft({ input, manifest, plan });
-  return persistModelAssistedEditorialSynthesis({
+  const generated = await generateEditorialModelDraft({
+    input,
+    manifest,
+    plan,
+    configuredModel: args.configuredModel,
+    maxCompletionTokens: args.maxCompletionTokens,
+  });
+  const persisted = await persistModelAssistedEditorialSynthesis({
     synthesisId: args.synthesisId,
     actorIdentity: args.actorIdentity,
     provider: generated.provider,
@@ -550,6 +567,17 @@ export async function generateModelAssistedEditorialSynthesis(args: {
     responseId: generated.responseId,
     output: generated.output,
   });
+  return {
+    ...persisted,
+    modelAction: {
+      provider: generated.provider,
+      model: generated.model,
+      requestedModel: generated.requestedModel,
+      responseId: generated.responseId,
+      inputTokens: generated.usage.inputTokens,
+      outputTokens: generated.usage.outputTokens,
+    },
+  };
 }
 
 export async function attachEventSourceSynthesisMapRecord(args: {

@@ -24,8 +24,23 @@ import { buildEventVisualGenerationBrief } from "@/lib/event-factory/visualPromp
 type Ready = { title: string; detail: string; state: string };
 type OperationRun = { id: string; operation_type: string; actor_identity: string; status: string; summary?: { candidate_id?: string } | null; created_at: string };
 type OperationAction = { id: string; action_type: string; target_entity_type?: string | null; target_entity_id?: string | null; lifecycle_state: string; reason?: string | null; created_at: string };
-type ReviewItem = { id: string; review_type: string; candidate_id?: string | null; event_id?: string | null; priority: number; status: string; recommended_action: string };
-type Ops = { runs: OperationRun[]; actions: OperationAction[] };
+type ReviewItem = { id: string; operation_run_id?: string | null; review_type: string; candidate_id?: string | null; event_id?: string | null; priority: number; status: string; recommended_action: string; evidence?: { eventKey?: string; stageId?: string; exceptionCode?: string } | null };
+type CompletionRunSummary = {
+  runId: string;
+  status: string;
+  countyIdentity?: string | null;
+  batchIdentity: string;
+  dryRun: boolean;
+  deterministicOnly: boolean;
+  exceptionCount: number;
+  publicationEligibilityCount: number;
+  modelUsage?: {
+    actualInputUsage?: number;
+    actualOutputUsage?: number;
+  } | null;
+  createdAt: string;
+};
+type Ops = { runs: OperationRun[]; actions: OperationAction[]; completionRuns: CompletionRunSummary[] };
 type EventPageOption = { eventId: string; name: string; location: string };
 type EventPageVersion = {
   id: string;
@@ -1425,6 +1440,30 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
 
       <section className="control-panel wide">
         <p className="eyebrow">Operational visibility</p>
+        <h2>Michigan completion runs</h2>
+        <div className="record-list">
+          {ops.completionRuns.map((run) => (
+            <article key={run.runId}>
+              <b>{run.countyIdentity ?? "Michigan"} / {run.batchIdentity}</b>
+              <span>{run.status} - {formatControlTimestamp(run.createdAt)}</span>
+              <small>Run: {run.runId}</small>
+              <small>
+                {run.dryRun ? "Dry run" : "Private writes authorized"}
+                {" · "}
+                {run.deterministicOnly ? "Deterministic only" : "Budgeted model routing"}
+              </small>
+              <small>
+                Exceptions: {run.exceptionCount}
+                {" · "}
+                Publication eligible: {run.publicationEligibilityCount}
+                {" · "}
+                Model usage: {(run.modelUsage?.actualInputUsage ?? 0) + (run.modelUsage?.actualOutputUsage ?? 0)} tokens
+              </small>
+            </article>
+          ))}
+          {!ops.completionRuns.length && <p>No Michigan completion runs visible yet.</p>}
+        </div>
+
         <h2>Recent operation runs</h2>
         <div className="record-list">
           {ops.runs.map((run) => (
@@ -1457,7 +1496,12 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
             <article key={item.id}>
               <b>{item.review_type}</b>
               <span>{item.status} - priority {item.priority}</span>
-              <small>Target: {item.candidate_id ?? item.event_id ?? "-"}</small>
+              <small>Run: {item.operation_run_id ?? "-"}</small>
+              <small>
+                Target: {item.evidence?.eventKey ?? item.candidate_id ?? item.event_id ?? "-"}
+                {item.evidence?.stageId ? ` / ${item.evidence.stageId}` : ""}
+              </small>
+              {item.evidence?.exceptionCode && <small>Exception: {item.evidence.exceptionCode}</small>}
               <small>Recommended: {item.recommended_action}</small>
             </article>
           ))}

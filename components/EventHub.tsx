@@ -164,6 +164,7 @@ type EventHubProps = {
   manifest: EventPageManifest;
   scoutContentReference?: ScoutContentReference;
   homeLink?: EventHubHomeLink;
+  artPending?: boolean;
 };
 
 function getTodayKey(timeZone: string): string {
@@ -781,7 +782,7 @@ function PlanVisitModule({
   );
 }
 
-export default function EventHub({ manifest, scoutContentReference, homeLink }: EventHubProps) {
+export default function EventHub({ manifest, scoutContentReference, homeLink, artPending = false }: EventHubProps) {
   const initialModuleId = manifest.navigation[0]?.targetModuleId ?? manifest.modules[0]?.id;
   const [activeModuleId, setActiveModuleId] = useState(initialModuleId);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>(() =>
@@ -1032,16 +1033,24 @@ export default function EventHub({ manifest, scoutContentReference, homeLink }: 
       </header>
 
       <section className={styles.hero} aria-labelledby="event-hub-title">
-        <Image
-          className={styles.heroImage}
-          src={manifest.hero.imageSrc}
-          alt={manifest.hero.imageAlt}
-          style={heroImagePosition ? { objectPosition: heroImagePosition } : undefined}
-          fill
-          loading="eager"
-          unoptimized
-          sizes="100vw"
-        />
+        {artPending ? (
+          <div className={styles.artPending} role="status">
+            <span>Private content preview</span>
+            <strong>Approved hero art pending</strong>
+            <small>No image has been generated or substituted.</small>
+          </div>
+        ) : (
+          <Image
+            className={styles.heroImage}
+            src={manifest.hero.imageSrc}
+            alt={manifest.hero.imageAlt}
+            style={heroImagePosition ? { objectPosition: heroImagePosition } : undefined}
+            fill
+            loading="eager"
+            unoptimized
+            sizes="100vw"
+          />
+        )}
         <div className={styles.heroScrim} aria-hidden="true" />
         <div className={styles.heroContent}>
           <p className={styles.edition}>{manifest.identity.edition}</p>

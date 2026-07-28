@@ -35,6 +35,7 @@ export default async function EventPackagePreviewPage({ params }: EventPackagePr
       manifest={preview.manifest}
       scoutContentReference={preview.scoutContentReference}
       homeLink={{ href: "/atlas-control", label: "Atlas Control" }}
+      artPending={preview.artPending}
     />
   );
 }

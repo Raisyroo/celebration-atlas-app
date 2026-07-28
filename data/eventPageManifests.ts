@@ -1,5 +1,5 @@
-import { BROWN_TROUT_EVENT_PAGE_MANIFEST } from './brownTroutEventPageManifest';
-import { DETROIT_JAZZ_EVENT_PAGE_MANIFEST } from './detroitJazzEventPageManifest';
+import { BROWN_TROUT_EVENT_PAGE_MANIFEST } from './brownTroutEventPageManifest.ts';
+import { DETROIT_JAZZ_EVENT_PAGE_MANIFEST } from './detroitJazzEventPageManifest.ts';
 import type { EventPageManifest } from './eventPageManifestTypes';
 
 export const EVENT_PAGE_MANIFESTS: EventPageManifest[] = [

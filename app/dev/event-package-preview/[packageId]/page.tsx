@@ -26,6 +26,7 @@ export default async function DevelopmentPackagePreview({ params }: DevelopmentP
       manifest={preview.manifest}
       scoutContentReference={preview.scoutContentReference}
       homeLink={{ href: '/atlas-control', label: 'Atlas Control' }}
+      artPending={preview.artPending}
     />
   );
 }

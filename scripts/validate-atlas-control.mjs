@@ -114,7 +114,8 @@ for (const rpc of ['atlas_upsert_event_factory_package', 'atlas_create_event_fac
 }
 assert(eventFactoryPackages.includes('validateEventPageManifest'), 'event package publication does not revalidate the reviewed Event Hub manifest');
 assert(eventFactoryPackages.includes('Remove event sponsor references'), 'event package preparation does not reject sponsor references');
-assert(eventFactoryPackages.includes('.eq("status", "accepted")'), 'event package preparation does not require an accepted source synthesis');
+assert(eventFactoryPackages.includes('item.status === "accepted"') && eventFactoryPackages.includes('validateEventPageManifest(item.manifest_proposal)'), 'event package preparation does not prefer a strictly valid accepted source synthesis');
+assert(eventFactoryPackages.includes('item.status === "generated"') && eventFactoryPackages.includes('validateEventPageContentReadiness(item.manifest_proposal)') && eventFactoryPackages.includes('content.artPending'), 'event package preparation does not permit a source-bound generated proposal for private art-pending review');
 assert(eventFactoryPackages.includes('manifest_proposal'), 'event package preparation cannot consume a retained synthesis manifest');
 assert(eventFactoryPackages.includes('location_verified'), 'event package preparation cannot consume verified canonical coordinates');
 assert(eventFactoryPackages.includes('getApprovedEventVisualWorkflow'), 'event package preparation does not consume approved visual workflows');

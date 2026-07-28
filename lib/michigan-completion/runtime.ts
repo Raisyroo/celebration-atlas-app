@@ -1,0 +1,1217 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getEventPageManifest } from "../../data/eventPageManifests.ts";
+import { validateEventPageContentReadiness } from "../../data/eventPageContentReadiness.ts";
+import { prepareEventFactoryPackage } from "../event-factory/packages.ts";
+import { synthesizeEventSourceBundle } from "../event-intake/synthesisEngine.ts";
+import type {
+  EventSourceSynthesisInput,
+  SourceClaimConfidence,
+  SourceClaimReviewStatus,
+  SynthesisContentSegment,
+} from "../event-intake/synthesisTypes.ts";
+import { completionSha256 } from "./manifest.ts";
+import type {
+  CompletionExceptionInput,
+  CompletionStageExecutionResult,
+  CompletionStageExecutor,
+  CompletionStageExecutorContext,
+} from "./types.ts";
+
+type CompletionSupabaseClient = Pick<SupabaseClient, "from" | "rpc">;
+
+type RecordValue = Record<string, unknown>;
+
+function isRecord(value: unknown): value is RecordValue {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function firstRpcRow(value: unknown) {
+  const row = Array.isArray(value) ? value[0] : value;
+  if (!isRecord(row)) throw new Error("The canonical service returned no result.");
+  return row;
+}
+
+function text(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function numberValue(value: unknown, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function stringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function outputFor(
+  context: CompletionStageExecutorContext,
+  stageId: string,
+) {
+  return context.priorOutputs.get(stageId) ?? {};
+}
+
+function references(context: CompletionStageExecutorContext) {
+  return {
+    ...context.event.references,
+    ...context.runEvent.references,
+  };
+}
+
+function exception(
+  code: CompletionExceptionInput["code"],
+  classification: CompletionExceptionInput["classification"],
+  message: string,
+  details: RecordValue = {},
+): CompletionExceptionInput {
+  return {
+    code,
+    classification,
+    message,
+    details,
+    retryable: classification === "retryable",
+    modelReviewEligible: classification === "model_review_eligible",
+    humanReviewRequired: classification === "human_review_required",
+    publicationBlocking:
+      classification === "publication_blocking" ||
+      classification === "fatal" ||
+      classification === "human_review_required",
+    fatal: classification === "fatal",
+  };
+}
+
+function inspectionContentSegments(value: unknown): SynthesisContentSegment[] {
+  if (!isRecord(value) || !Array.isArray(value.contentSegments)) return [];
+  return value.contentSegments.slice(0, 240).flatMap((segment) => {
+    if (!isRecord(segment)) return [];
+    if (
+      !["heading", "paragraph", "listItem", "detail", "time"].includes(
+        String(segment.kind),
+      )
+    ) {
+      return [];
+    }
+    const segmentText = text(segment.text);
+    if (!segmentText) return [];
+    return [
+      {
+        kind: segment.kind as SynthesisContentSegment["kind"],
+        text: segmentText.slice(0, 1_000),
+      },
+    ];
+  });
+}
+
+async function resolveBundle(
+  client: CompletionSupabaseClient,
+  context: CompletionStageExecutorContext,
+) {
+  const retained = references(context).sourceBundleId;
+  let query = client
+    .from("event_source_bundles")
+    .select(
+      "id,name,status,event_key,canonical_event_id,candidate_id,ready_at,updated_at",
+    );
+  if (retained) {
+    query = query.eq("id", retained);
+  } else {
+    const candidateId = references(context).candidateId;
+    query = candidateId
+      ? query.or(
+          `candidate_id.eq.${candidateId},event_key.eq.${context.event.eventKey}`,
+        )
+      : query.eq("event_key", context.event.eventKey);
+  }
+  const result = await query
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (result.error) throw new Error(result.error.message);
+  return result.data as RecordValue | null;
+}
+
+async function loadSynthesisInput(
+  client: CompletionSupabaseClient,
+  bundle: RecordValue,
+): Promise<EventSourceSynthesisInput> {
+  const bundleId = text(bundle.id);
+  const [snapshotResult, claimResult, scheduleResult, visualResult] =
+    await Promise.all([
+      client
+        .from("event_source_snapshots")
+        .select(
+          "id,sequence_number,source_kind,canonical_url,page_title,content_hash,fetched_at,inspection",
+        )
+        .eq("bundle_id", bundleId)
+        .order("sequence_number", { ascending: true }),
+      client
+        .from("event_source_claims")
+        .select(
+          "id,source_snapshot_id,field_path,value,normalized_text,confidence,confidence_score,extraction_method,review_status,created_at",
+        )
+        .eq("bundle_id", bundleId)
+        .order("field_path", { ascending: true })
+        .order("id", { ascending: true }),
+      client
+        .from("event_schedule_candidates")
+        .select(
+          "id,source_snapshot_id,dedupe_key,title,starts_at,ends_at,date_text,timezone,venue,category,tags,details,confidence,confidence_score,review_status",
+        )
+        .eq("bundle_id", bundleId)
+        .order("starts_at", { ascending: true, nullsFirst: false })
+        .order("id", { ascending: true }),
+      client
+        .from("event_visual_workflows")
+        .select("id,status,asset,content_hash")
+        .or(
+          [
+            text(bundle.candidate_id)
+              ? `candidate_id.eq.${text(bundle.candidate_id)}`
+              : "",
+            text(bundle.event_key)
+              ? `event_key.eq.${text(bundle.event_key)}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(","),
+        )
+        .eq("status", "approved")
+        .order("revision_number", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+  if (snapshotResult.error || claimResult.error || scheduleResult.error) {
+    throw new Error("The retained source evidence could not be loaded.");
+  }
+  const snapshots = (snapshotResult.data ?? []) as RecordValue[];
+  if (!snapshots.length) {
+    throw new Error("The retained source bundle contains no snapshots.");
+  }
+  const visual = visualResult.error ? null : (visualResult.data as RecordValue | null);
+  const asset = isRecord(visual?.asset) ? visual.asset : null;
+  const publicUrl = text(asset?.publicUrl);
+  const altText = text(asset?.altText);
+  return {
+    bundle: {
+      id: bundleId,
+      name: text(bundle.name),
+      status: text(bundle.status),
+      eventKey: text(bundle.event_key) || null,
+      canonicalEventId: text(bundle.canonical_event_id) || null,
+      candidateId: text(bundle.candidate_id) || null,
+      readyAt: text(bundle.ready_at) || null,
+    },
+    snapshots: snapshots.map((row) => ({
+      id: text(row.id),
+      sequenceNumber: numberValue(row.sequence_number),
+      sourceKind: text(row.source_kind),
+      canonicalUrl: text(row.canonical_url),
+      pageTitle: text(row.page_title) || null,
+      contentHash: text(row.content_hash),
+      fetchedAt: text(row.fetched_at),
+      contentSegments: inspectionContentSegments(row.inspection),
+    })),
+    claims: ((claimResult.data ?? []) as RecordValue[]).map((row) => ({
+      id: text(row.id),
+      sourceSnapshotId: text(row.source_snapshot_id),
+      fieldPath: text(row.field_path),
+      value: row.value,
+      normalizedText: text(row.normalized_text),
+      confidence: text(row.confidence) as SourceClaimConfidence,
+      confidenceScore:
+        row.confidence_score === null
+          ? null
+          : numberValue(row.confidence_score),
+      extractionMethod: text(row.extraction_method),
+      reviewStatus: text(row.review_status) as SourceClaimReviewStatus,
+      createdAt: text(row.created_at),
+    })),
+    scheduleCandidates: ((scheduleResult.data ?? []) as RecordValue[]).map(
+      (row) => ({
+        id: text(row.id),
+        sourceSnapshotId: text(row.source_snapshot_id),
+        dedupeKey: text(row.dedupe_key),
+        title: text(row.title),
+        startsAt: text(row.starts_at) || null,
+        endsAt: text(row.ends_at) || null,
+        dateText: text(row.date_text) || null,
+        timezone: text(row.timezone) || null,
+        venue: text(row.venue) || null,
+        category: text(row.category) || null,
+        tags: stringArray(row.tags),
+        details: text(row.details) || null,
+        confidence: text(row.confidence) as SourceClaimConfidence,
+        confidenceScore:
+          row.confidence_score === null
+            ? null
+            : numberValue(row.confidence_score),
+        reviewStatus: text(row.review_status) as SourceClaimReviewStatus,
+      }),
+    ),
+    ...(visual && asset && publicUrl && altText
+      ? {
+          approvedVisual: {
+            workflowId: text(visual.id),
+            imageSrc: publicUrl,
+            imageAlt: altText,
+            credit: text(asset.credit) || undefined,
+            contentHash: text(visual.content_hash),
+          },
+        }
+      : {}),
+  };
+}
+
+function sourceConflicts(claims: RecordValue[]) {
+  const active = claims.filter(
+    (claim) =>
+      ["timing.startDate", "timing.endDate"].includes(text(claim.field_path)) &&
+      !["rejected", "superseded"].includes(text(claim.review_status)),
+  );
+  const grouped = new Map<string, RecordValue[]>();
+  for (const claim of active) {
+    const key = text(claim.field_path);
+    grouped.set(key, [...(grouped.get(key) ?? []), claim]);
+  }
+  return [...grouped.entries()].flatMap(([fieldPath, fieldClaims]) => {
+    const values = new Set(
+      fieldClaims.map((claim) =>
+        text(claim.normalized_text) || JSON.stringify(claim.value),
+      ),
+    );
+    return values.size > 1
+      ? [
+          {
+            fieldPath,
+            values: [...values],
+            claims: fieldClaims.map((claim) => ({
+              claimId: text(claim.id),
+              sourceSnapshotId: text(claim.source_snapshot_id),
+              value: claim.value,
+            })),
+          },
+        ]
+      : [];
+  });
+}
+
+async function stageCandidate(
+  client: CompletionSupabaseClient,
+  context: CompletionStageExecutorContext,
+): Promise<CompletionStageExecutionResult> {
+  const retained = references(context);
+  if (retained.candidateId) {
+    const result = await client
+      .from("event_candidates")
+      .select("id,matched_event_id")
+      .eq("id", retained.candidateId)
+      .maybeSingle();
+    if (result.error || !result.data) {
+      return {
+        outcome: "blocked",
+        exceptions: [
+          exception(
+            "identity_security_mismatch",
+            "publication_blocking",
+            "The referenced event candidate is unavailable.",
+            { candidateId: retained.candidateId },
+          ),
+        ],
+      };
+    }
+    return {
+      outcome: "succeeded",
+      output: { candidateStaged: false, existingCandidate: true },
+      links: {
+        candidateId: retained.candidateId,
+        canonicalEventId: result.data.matched_event_id,
+      },
+    };
+  }
+  if (retained.canonicalEventId) {
+    const result = await client
+      .from("events")
+      .select("id")
+      .eq("id", retained.canonicalEventId)
+      .maybeSingle();
+    if (result.error || !result.data) {
+      return {
+        outcome: "blocked",
+        exceptions: [
+          exception(
+            "identity_security_mismatch",
+            "publication_blocking",
+            "The referenced canonical event is unavailable.",
+          ),
+        ],
+      };
+    }
+    return {
+      outcome: "succeeded",
+      output: { candidateStaged: false, canonicalReference: true },
+      links: { canonicalEventId: retained.canonicalEventId },
+    };
+  }
+  if (!context.event.countySeed) {
+    return {
+      outcome: "blocked",
+      exceptions: [
+        exception(
+          "invalid_manifest_record",
+          "publication_blocking",
+          "No guarded county-seed input or retained identity was supplied.",
+        ),
+      ],
+    };
+  }
+  if (context.dryRun) {
+    return {
+      outcome: "succeeded",
+      output: {
+        candidateStaged: false,
+        dryRun: true,
+        guardedRpc: "atlas_stage_county_seed_candidate",
+      },
+    };
+  }
+  const seed = context.event.countySeed;
+  const result = await client.rpc("atlas_stage_county_seed_candidate", {
+    p_actor_identity: context.actorIdentity,
+    p_batch_id: seed.batchId,
+    p_manifest_hash: seed.manifestHash,
+    p_payload_hash: seed.payloadHash,
+    p_idempotency_key: seed.idempotencyKey,
+    p_candidate: seed.candidate,
+    p_sources: seed.sources,
+  });
+  if (result.error) throw new Error(result.error.message);
+  const row = firstRpcRow(result.data);
+  return {
+    outcome: "succeeded",
+    output: {
+      candidateStaged: true,
+      idempotentReplay: row.idempotent_replay === true,
+      operationRunId: row.operation_run_id ?? null,
+    },
+    links: { candidateId: text(row.candidate_id) },
+  };
+}
+
+async function stageIdentity(
+  client: CompletionSupabaseClient,
+  context: CompletionStageExecutorContext,
+): Promise<CompletionStageExecutionResult> {
+  const retained = references(context);
+  if (retained.canonicalEventId) {
+    return {
+      outcome: "succeeded",
+      output: { disposition: "matched_existing" },
+      links: { canonicalEventId: retained.canonicalEventId },
+    };
+  }
+  const candidateId = retained.candidateId;
+  if (!candidateId) {
+    return context.dryRun
+      ? {
+          outcome: "succeeded",
+          output: { disposition: "dry_run_new_candidate" },
+        }
+      : {
+          outcome: "blocked",
+          exceptions: [
+            exception(
+              "uncertain_identity_match",
+              "human_review_required",
+              "Candidate identity is unavailable after staging.",
+            ),
+          ],
+        };
+  }
+  const candidateResult = await client
+    .from("event_candidates")
+    .select(
+      "id,candidate_name,normalized_name,city,official_website_candidate,matched_event_id,duplicate_status,needs_review",
+    )
+    .eq("id", candidateId)
+    .maybeSingle();
+  if (candidateResult.error || !candidateResult.data) {
+    throw new Error(candidateResult.error?.message ?? "Candidate was not found.");
+  }
+  const candidate = candidateResult.data;
+  if (candidate.matched_event_id) {
+    return {
+      outcome: "succeeded",
+      output: { disposition: "matched_existing" },
+      links: {
+        candidateId,
+        canonicalEventId: candidate.matched_event_id,
+      },
+    };
+  }
+  if (
+    candidate.needs_review ||
+    ["possible_duplicate", "duplicate", "merged"].includes(
+      text(candidate.duplicate_status),
+    )
+  ) {
+    return {
+      outcome: "blocked",
+      exceptions: [
+        exception(
+          "uncertain_identity_match",
+          "human_review_required",
+          "The retained candidate requires identity review; no merge was attempted.",
+          { candidateId, duplicateStatus: candidate.duplicate_status },
+        ),
+      ],
+    };
+  }
+
+  const normalizedName =
+    text(candidate.normalized_name) || text(candidate.candidate_name).toLowerCase();
+  const city = text(candidate.city).toLowerCase();
+  const website = text(candidate.official_website_candidate);
+  const collisionResults = await Promise.all([
+    website
+      ? client
+          .from("event_candidates")
+          .select("id,candidate_name,matched_event_id")
+          .neq("id", candidateId)
+          .eq("official_website_candidate", website)
+          .limit(2)
+      : Promise.resolve({ data: [], error: null }),
+    normalizedName && city
+      ? client
+          .from("event_candidates")
+          .select("id,candidate_name,matched_event_id")
+          .neq("id", candidateId)
+          .eq("normalized_name", normalizedName)
+          .ilike("city", city)
+          .limit(2)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  const collisionError = collisionResults.find((result) => result.error)?.error;
+  if (collisionError) throw new Error(collisionError.message);
+  const collisions = [
+    ...new Map(
+      collisionResults
+        .flatMap((result) => result.data ?? [])
+        .map((row) => [row.id, row]),
+    ).values(),
+  ];
+  if (collisions.length) {
+    return {
+      outcome: "blocked",
+      exceptions: [
+        exception(
+          "duplicate_candidate",
+          "human_review_required",
+          "A deterministic candidate collision was retained for human review.",
+          {
+            candidateId,
+            collisionIds: collisions.map((row) => row.id),
+          },
+        ),
+      ],
+    };
+  }
+  return {
+    outcome: "succeeded",
+    output: { disposition: "unique_candidate", mergeAttempted: false },
+    links: { candidateId },
+  };
+}
+
+async function stageEvidence(
+  client: CompletionSupabaseClient,
+  context: CompletionStageExecutorContext,
+): Promise<CompletionStageExecutionResult> {
+  const bundle = await resolveBundle(client, context);
+  if (!bundle) {
+    return {
+      outcome: "blocked",
+      exceptions: [
+        exception(
+          "missing_official_source",
+          "publication_blocking",
+          "No retained source bundle is attached to this event.",
+        ),
+      ],
+    };
+  }
+  const bundleId = text(bundle.id);
+  const [snapshotResult, claimResult, scheduleResult] = await Promise.all([
+    client
+      .from("event_source_snapshots")
+      .select("id,source_kind,canonical_url")
+      .eq("bundle_id", bundleId),
+    client
+      .from("event_source_claims")
+      .select(
+        "id,source_snapshot_id,field_path,value,normalized_text,review_status,confidence",
+      )
+      .eq("bundle_id", bundleId),
+    client
+      .from("event_schedule_candidates")
+      .select("id,source_snapshot_id,starts_at,date_text,review_status")
+      .eq("bundle_id", bundleId),
+  ]);
+  if (snapshotResult.error || claimResult.error || scheduleResult.error) {
+    throw new Error("Retained source evidence could not be inspected.");
+  }
+  const snapshots = (snapshotResult.data ?? []) as RecordValue[];
+  const claims = (claimResult.data ?? []) as RecordValue[];
+  const official = snapshots.filter(
+    (snapshot) => text(snapshot.source_kind) === "official_home",
+  );
+  const conflicts = sourceConflicts(claims);
+  if (!official.length) {
+    return {
+      outcome: "blocked",
+      links: { sourceBundleId: bundleId },
+      exceptions: [
+        exception(
+          "missing_official_source",
+          "publication_blocking",
+          "The retained bundle has no official-home snapshot.",
+          { bundleId, snapshotIds: snapshots.map((row) => row.id) },
+        ),
+      ],
+    };
+  }
+  if (conflicts.length) {
+    return {
+      outcome: "blocked",
+      output: { conflicts },
+      links: { sourceBundleId: bundleId },
+      exceptions: [
+        exception(
+          "conflicting_event_dates",
+          "human_review_required",
+          "Distinct active date claims remain in retained evidence.",
+          { bundleId, conflicts },
+        ),
+      ],
+    };
+  }
+  if (
+    !["ready_for_synthesis", "draft_ready"].includes(text(bundle.status)) ||
+    claims.length < 2
+  ) {
+    return {
+      outcome: "blocked",
+      links: { sourceBundleId: bundleId },
+      exceptions: [
+        exception(
+          "weak_source_evidence",
+          "publication_blocking",
+          "The retained bundle is not ready for deterministic synthesis.",
+          {
+            bundleId,
+            status: bundle.status,
+            snapshotCount: snapshots.length,
+            claimCount: claims.length,
+          },
+        ),
+      ],
+    };
+  }
+  return {
+    outcome: "succeeded",
+    output: {
+      bundleId,
+      bundleStatus: bundle.status,
+      snapshotCount: snapshots.length,
+      claimCount: claims.length,
+      scheduleCandidateCount: (scheduleResult.data ?? []).length,
+      officialSnapshotIds: official.map((row) => row.id),
+      dateConflicts: [],
+    },
+    links: { sourceBundleId: bundleId },
+  };
+}
+
+async function stageSynthesis(
+  client: CompletionSupabaseClient,
+  context: CompletionStageExecutorContext,
+): Promise<CompletionStageExecutionResult> {
+  const bundle = await resolveBundle(client, context);
+  if (!bundle) {
+    return {
+      outcome: "blocked",
+      exceptions: [
+        exception(
+          "deterministic_synthesis_failure",
+          "publication_blocking",
+          "The source bundle is unavailable.",
+        ),
+      ],
+    };
+  }
+  const bundleId = text(bundle.id);
+  const input = await loadSynthesisInput(client, bundle);
+  const baseManifest = input.bundle.eventKey
+    ? getEventPageManifest(input.bundle.eventKey)
+    : undefined;
+  const synthesis = synthesizeEventSourceBundle(input, baseManifest);
+  const existing = await client
+    .from("event_source_syntheses")
+    .select(
+      "id,engine_kind,engine_version,input_hash,status,reconciled_profile,conflicts,manifest_proposal,validation_report,is_manifest_valid,quality_score",
+    )
+    .eq("bundle_id", bundleId)
+    .eq("engine_kind", "deterministic")
+    .eq("engine_version", synthesis.engineVersion)
+    .eq("input_hash", synthesis.inputHash)
+    .order("version_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existing.error) throw new Error(existing.error.message);
+  if (existing.data) {
+    return {
+      outcome: "succeeded",
+      output: {
+        synthesisId: existing.data.id,
+        engineKind: existing.data.engine_kind,
+        engineVersion: existing.data.engine_version,
+        inputHash: existing.data.input_hash,
+        status: existing.data.status,
+        reconciledProfile: existing.data.reconciled_profile,
+        conflicts: existing.data.conflicts,
+        manifestProposal: existing.data.manifest_proposal,
+        validationReport: existing.data.validation_report,
+        isManifestValid: existing.data.is_manifest_valid,
+        qualityScore: numberValue(existing.data.quality_score),
+        exactReplay: true,
+      },
+      links: { sourceBundleId: bundleId, synthesisId: existing.data.id },
+    };
+  }
+
+  if (synthesis.conflicts.length) {
+    return {
+      outcome: "blocked",
+      output: {
+        conflicts: synthesis.conflicts,
+        validationReport: synthesis.validationReport,
+      },
+      links: { sourceBundleId: bundleId },
+      exceptions: [
+        exception(
+          "deterministic_synthesis_failure",
+          "human_review_required",
+          "Deterministic synthesis retained unresolved factual conflicts.",
+          { conflicts: synthesis.conflicts },
+        ),
+      ],
+    };
+  }
+
+  let synthesisId: string | null = null;
+  let replay = false;
+  if (!context.dryRun) {
+    const result = await client.rpc("atlas_create_event_source_synthesis", {
+      p_bundle_id: bundleId,
+      p_engine_kind: synthesis.engineKind,
+      p_engine_version: synthesis.engineVersion,
+      p_input_hash: synthesis.inputHash,
+      p_reconciled_profile: synthesis.reconciledProfile,
+      p_conflicts: synthesis.conflicts,
+      p_manifest_proposal: synthesis.manifestProposal,
+      p_validation_report: synthesis.validationReport,
+      p_is_manifest_valid: synthesis.isManifestValid,
+      p_quality_score: synthesis.qualityScore,
+      p_model_provider: null,
+      p_model_name: null,
+      p_model_response_id: null,
+      p_actor_identity: context.actorIdentity,
+    });
+    if (result.error) throw new Error(result.error.message);
+    const row = firstRpcRow(result.data);
+    synthesisId = text(row.synthesis_id);
+    replay = row.created === false;
+  }
+  return {
+    outcome: "succeeded",
+    output: {
+      synthesisId,
+      engineKind: synthesis.engineKind,
+      engineVersion: synthesis.engineVersion,
+      inputHash: synthesis.inputHash,
+      reconciledProfile: synthesis.reconciledProfile,
+      conflicts: synthesis.conflicts,
+      manifestProposal: synthesis.manifestProposal,
+      validationReport: synthesis.validationReport,
+      isManifestValid: synthesis.isManifestValid,
+      qualityScore: synthesis.qualityScore,
+      dryRun: context.dryRun,
+      exactReplay: replay,
+    },
+    links: {
+      sourceBundleId: bundleId,
+      synthesisId,
+    },
+  };
+}
+
+function stageEditorial(
+  context: CompletionStageExecutorContext,
+): CompletionStageExecutionResult {
+  const synthesis = outputFor(context, "deterministic_synthesis");
+  const qualityScore = numberValue(synthesis.qualityScore);
+  if (
+    context.dryRun ||
+    context.event.editorialPolicy === "deterministic_only" ||
+    qualityScore >= 0.9
+  ) {
+    return {
+      outcome: "skipped",
+      output: {
+        modelCallRequired: false,
+        reason:
+          context.dryRun
+            ? "dry_run_model_calls_disabled"
+            : context.event.editorialPolicy === "deterministic_only"
+            ? "deterministic_only_policy"
+            : "deterministic_quality_sufficient",
+        deterministicContentRetained: true,
+      },
+    };
+  }
+  const strength =
+    context.event.editorialPolicy === "reasoning_if_ambiguous"
+      ? "reasoning"
+      : "economical";
+  return {
+    outcome: "succeeded",
+    modelRequest: {
+      processorId: "event-source-editorial",
+      routeId:
+        strength === "economical"
+          ? "editorial-economical-v1"
+          : "editorial-reasoning-v1",
+      reason:
+        strength === "economical"
+          ? "Deterministic facts are safe, but retained prose quality is below the configured threshold."
+          : "A reviewed factual ambiguity requires the configured reasoning route.",
+      deterministicPreconditions: {
+        deterministicSynthesisId: synthesis.synthesisId ?? null,
+        deterministicInputHash: synthesis.inputHash ?? null,
+        qualityScore,
+        conflicts: synthesis.conflicts ?? [],
+      },
+      modelFamily: strength === "economical" ? "editorial-small" : "reasoning",
+      configuredModel:
+        strength === "economical"
+          ? process.env.AI_GATEWAY_EDITORIAL_MODEL?.trim() ||
+            "openai/gpt-5.4-mini"
+          : process.env.AI_GATEWAY_REASONING_MODEL?.trim() ||
+            "openai/gpt-5.4",
+      reasoningLevel: strength === "reasoning" ? "medium" : null,
+      maximumAttempts: 1,
+      estimatedInputTokens: 12_000,
+      estimatedOutputTokens: 3_000,
+      fallbackBehavior: "retain_deterministic_content_and_open_exception",
+      failureBlocking: strength === "reasoning",
+      strength,
+    },
+  };
+}
+
+function stageContent(
+  context: CompletionStageExecutorContext,
+): CompletionStageExecutionResult {
+  const deterministic = outputFor(context, "deterministic_synthesis");
+  const editorial = outputFor(context, "editorial_assistance");
+  const synthesis =
+    editorial.editorialAccepted === true && isRecord(editorial.manifestProposal)
+      ? editorial
+      : deterministic;
+  const conflicts = Array.isArray(synthesis.conflicts)
+    ? synthesis.conflicts
+    : [];
+  if (conflicts.length) {
+    return {
+      outcome: "blocked",
+      exceptions: [
+        exception(
+          "conflicting_event_dates",
+          "human_review_required",
+          "Conflicting deterministic facts block content readiness.",
+          { conflicts },
+        ),
+      ],
+    };
+  }
+  const validation = validateEventPageContentReadiness(
+    synthesis.manifestProposal,
+  );
+  if (!validation.ok) {
+    return {
+      outcome: "blocked",
+      output: { validationErrors: validation.errors },
+      exceptions: [
+        exception(
+          "editorial_quality_failure",
+          "publication_blocking",
+          "The deterministic Event Hub content is incomplete.",
+          {
+            errors: validation.errors,
+            validationReport: synthesis.validationReport ?? {},
+          },
+        ),
+      ],
+    };
+  }
+  return {
+    outcome: "succeeded",
+    output: {
+      contentReady: true,
+      artPending: validation.artPending,
+      manifestProposal: validation.value,
+      manifestHash: completionSha256(validation.value),
+      synthesisId: synthesis.synthesisId ?? null,
+      reconciledProfile: synthesis.reconciledProfile ?? {},
+      contentSource:
+        synthesis === editorial
+          ? "model_assisted_editorial_synthesis"
+          : "deterministic_synthesis",
+    },
+    links: {
+      synthesisId: text(synthesis.synthesisId) || null,
+      readinessState: validation.artPending ? "art_pending" : "content_ready",
+      publicationEligible: false,
+    },
+  };
+}
+
+async function stagePackage(
+  client: CompletionSupabaseClient,
+  context: CompletionStageExecutorContext,
+): Promise<CompletionStageExecutionResult> {
+  const retained = references(context);
+  if (retained.packageId) {
+    const packageResult = await client
+      .from("event_factory_packages")
+      .select("id,status,readiness_checks,readiness_score")
+      .eq("id", retained.packageId)
+      .maybeSingle();
+    if (packageResult.error || !packageResult.data) {
+      throw new Error(packageResult.error?.message ?? "Package was not found.");
+    }
+    const artReady =
+      isRecord(packageResult.data.readiness_checks) &&
+      packageResult.data.readiness_checks.art === true;
+    return {
+      outcome: "succeeded",
+      output: {
+        packageId: packageResult.data.id,
+        status: packageResult.data.status,
+        readinessChecks: packageResult.data.readiness_checks,
+        privatePreviewAvailable: true,
+        artPending: !artReady,
+      },
+      links: {
+        packageId: packageResult.data.id,
+        readinessState: artReady ? "review_ready" : "art_pending",
+        publicationEligible: false,
+      },
+    };
+  }
+  if (context.dryRun) {
+    return {
+      outcome: "succeeded",
+      output: {
+        packagePrepared: false,
+        dryRun: true,
+        privatePreviewAvailable: false,
+        artPending:
+          outputFor(context, "content_readiness").artPending === true,
+      },
+      links: {
+        readinessState:
+          outputFor(context, "content_readiness").artPending === true
+            ? "art_pending"
+            : "content_ready",
+        publicationEligible: false,
+      },
+    };
+  }
+  try {
+    const candidateId = retained.candidateId;
+    if (!candidateId) {
+      throw new Error(
+        "A retained candidate is required for Event Factory package preparation.",
+      );
+    }
+    let verificationCaseId = retained.verificationCaseId;
+    if (!verificationCaseId) {
+      const verification = await client
+        .from("event_verification_cases")
+        .select("id")
+        .eq("candidate_id", candidateId)
+        .eq("status", "verified")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (verification.error) throw new Error(verification.error.message);
+      verificationCaseId = verification.data?.id ?? null;
+    }
+    if (!verificationCaseId) {
+      throw new Error("A verified Event Factory diligence case is required.");
+    }
+    const result = await prepareEventFactoryPackage({
+      verificationCaseId,
+      candidateId,
+      actorIdentity: context.actorIdentity,
+      artProvenance: context.event.artProvenance,
+    });
+    const packageId = text(result.package_id);
+    const artPending = result.art_pending === true;
+    return {
+      outcome: "succeeded",
+      output: {
+        packageId,
+        packagePrepared: result.created !== false,
+        status: result.status,
+        readinessScore: numberValue(result.readiness_score),
+        privatePreviewAvailable: true,
+        artPending,
+      },
+      links: {
+        packageId,
+        verificationCaseId,
+        readinessState: artPending ? "art_pending" : "review_ready",
+        publicationEligible: false,
+      },
+    };
+  } catch (error) {
+    return {
+      outcome: "blocked",
+      error: { message: error instanceof Error ? error.message : String(error) },
+      exceptions: [
+        exception(
+          "event_factory_readiness_failure",
+          "publication_blocking",
+          error instanceof Error ? error.message : "Event Factory preparation failed.",
+        ),
+      ],
+    };
+  }
+}
+
+async function stageVisual(
+  client: CompletionSupabaseClient,
+  context: CompletionStageExecutorContext,
+): Promise<CompletionStageExecutionResult> {
+  const packageOutput = outputFor(context, "package_preparation");
+  if (packageOutput.artPending === true) {
+    return {
+      outcome: "succeeded",
+      output: {
+        visualReady: false,
+        artPending: true,
+        imageActionInvoked: false,
+      },
+      links: {
+        readinessState: "art_pending",
+        artProvenance: context.event.artProvenance,
+        publicationEligible: false,
+      },
+      exceptions: [
+        exception(
+          "missing_approved_image",
+          "publication_blocking",
+          "Content is ready for private review, but approved hero art is pending.",
+          {
+            packageId: packageOutput.packageId ?? null,
+            imageActionInvoked: false,
+          },
+        ),
+      ],
+    };
+  }
+  const candidateId = references(context).candidateId;
+  const workflow = await client
+    .from("event_visual_workflows")
+    .select("id,status,asset,qa_checks")
+    .or(
+      [
+        candidateId ? `candidate_id.eq.${candidateId}` : "",
+        `event_key.eq.${context.event.eventKey}`,
+      ]
+        .filter(Boolean)
+        .join(","),
+    )
+    .eq("status", "approved")
+    .order("revision_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (workflow.error) throw new Error(workflow.error.message);
+  if (!workflow.data) {
+    return {
+      outcome: "succeeded",
+      output: { visualReady: false, artPending: true, imageActionInvoked: false },
+      links: {
+        readinessState: "art_pending",
+        publicationEligible: false,
+      },
+      exceptions: [
+        exception(
+          "missing_approved_image",
+          "publication_blocking",
+          "No approved visual workflow is retained.",
+        ),
+      ],
+    };
+  }
+  if (context.event.artProvenance === "unknown") {
+    return {
+      outcome: "succeeded",
+      output: {
+        visualReady: false,
+        workflowId: workflow.data.id,
+        imageActionInvoked: false,
+      },
+      links: {
+        readinessState: "publication_blocked",
+        artProvenance: "unknown",
+        publicationEligible: false,
+      },
+      exceptions: [
+        exception(
+          "image_provenance_failure",
+          "human_review_required",
+          "Approved art exists, but its provenance category remains unknown.",
+          { workflowId: workflow.data.id },
+        ),
+      ],
+    };
+  }
+  return {
+    outcome: "succeeded",
+    output: {
+      visualReady: true,
+      workflowId: workflow.data.id,
+      provenanceCategory: context.event.artProvenance,
+      imageActionInvoked: false,
+    },
+    links: {
+      readinessState: "review_ready",
+      artProvenance: context.event.artProvenance,
+      publicationEligible: false,
+    },
+  };
+}
+
+function stageExceptionReview(
+  context: CompletionStageExecutorContext,
+): CompletionStageExecutionResult {
+  return {
+    outcome: "succeeded",
+    output: {
+      exceptionQueueInspected: true,
+      humanDecisionRequired:
+        outputFor(context, "visual_readiness").visualReady !== true,
+    },
+  };
+}
+
+function stagePublicationReadiness(
+  context: CompletionStageExecutorContext,
+): CompletionStageExecutionResult {
+  const packageOutput = outputFor(context, "package_preparation");
+  const visualOutput = outputFor(context, "visual_readiness");
+  const eligible =
+    packageOutput.privatePreviewAvailable === true &&
+    visualOutput.visualReady === true;
+  return {
+    outcome: "succeeded",
+    output: {
+      publicationEligible: eligible,
+      publicationInvoked: false,
+      requiresHumanPackageApproval: true,
+      packageId: packageOutput.packageId ?? null,
+    },
+    links: {
+      packageId: text(packageOutput.packageId) || null,
+      readinessState: eligible
+        ? "review_ready"
+        : visualOutput.artPending === true
+          ? "art_pending"
+          : "publication_blocked",
+      publicationEligible: eligible,
+    },
+    ...(!eligible
+      ? {
+          exceptions: [
+            exception(
+              "publication_readiness_failure",
+              "publication_blocking",
+              "The private package is retained, but publication readiness is blocked.",
+              {
+                packageId: packageOutput.packageId ?? null,
+                artPending: visualOutput.artPending === true,
+              },
+            ),
+          ],
+        }
+      : {}),
+  };
+}
+
+export function createSupabaseMichiganCompletionExecutor(
+  client: CompletionSupabaseClient,
+  options?: {
+    executeModel?: NonNullable<CompletionStageExecutor["executeModel"]>;
+  },
+): CompletionStageExecutor {
+  return {
+    async execute(stageId, context) {
+      if (stageId === "manifest_validation") {
+        return {
+          outcome: "succeeded",
+          output: {
+            schemaVersion: context.manifest.schemaVersion,
+            eventInputHash: context.event.inputHash,
+          },
+        };
+      }
+      if (stageId === "candidate_staging") {
+        return stageCandidate(client, context);
+      }
+      if (stageId === "identity_matching") {
+        return stageIdentity(client, context);
+      }
+      if (stageId === "evidence_readiness") {
+        return stageEvidence(client, context);
+      }
+      if (stageId === "deterministic_synthesis") {
+        return stageSynthesis(client, context);
+      }
+      if (stageId === "editorial_assistance") {
+        return stageEditorial(context);
+      }
+      if (stageId === "content_readiness") {
+        return stageContent(context);
+      }
+      if (stageId === "package_preparation") {
+        return stagePackage(client, context);
+      }
+      if (stageId === "visual_readiness") {
+        return stageVisual(client, context);
+      }
+      if (stageId === "exception_review") {
+        return stageExceptionReview(context);
+      }
+      if (stageId === "publication_readiness") {
+        return stagePublicationReadiness(context);
+      }
+      throw new Error(`Unsupported Michigan completion stage ${stageId}.`);
+    },
+    ...(options?.executeModel ? { executeModel: options.executeModel } : {}),
+  };
+}

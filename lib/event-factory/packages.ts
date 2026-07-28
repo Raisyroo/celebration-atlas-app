@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { ATLAS_EVENTS } from "@/data/events";
 import type { EventPageManifest } from "@/data/eventPageManifestTypes";
 import { validateEventPageManifest } from "@/data/eventPageManifestValidation";
+import { validateEventPageContentReadiness } from "@/data/eventPageContentReadiness";
 import { getEventPageManifest } from "@/data/eventPageManifests";
 import { createAtlasServiceClient } from "@/lib/atlas-control/service";
 import {
@@ -12,6 +13,10 @@ import {
 } from "@/lib/event-pages/publishing";
 import type { ScoutContentReference } from "@/lib/scout/composerContext";
 import { getApprovedEventVisualWorkflow } from "./visuals";
+import {
+  ART_PROVENANCE_CATEGORIES,
+  type ArtProvenanceCategory,
+} from "@/lib/michigan-completion/types";
 import type {
   EventFactoryGateKey,
   EventFactoryPackageStatus,
@@ -55,9 +60,11 @@ type CanonicalEventRow = {
 type AcceptedSynthesisRow = {
   id: string;
   status: string;
+  engine_kind: "deterministic" | "model_assisted";
   is_manifest_valid: boolean;
   manifest_proposal: unknown;
   reconciled_profile: unknown;
+  conflicts: unknown;
 };
 
 type VerifiedMapRecord = {
@@ -86,6 +93,7 @@ type PackageRow = {
 export type EventFactoryPackagePreview = {
   manifest: EventPageManifest;
   scoutContentReference: ScoutContentReference;
+  artPending: boolean;
 };
 
 type PackageListRow = {
@@ -198,6 +206,7 @@ export async function prepareEventFactoryPackage(args: {
   verificationCaseId: string;
   candidateId: string;
   actorIdentity: string;
+  artProvenance?: ArtProvenanceCategory;
 }) {
   const supabase = requireServiceClient();
   const [candidateResult, verificationResult] = await Promise.all([
@@ -223,10 +232,11 @@ export async function prepareEventFactoryPackage(args: {
     candidateId: candidate.id,
     eventKey: candidate.slug_candidate,
   });
-  if (!approvedVisual?.asset) {
-    throw new Error("An approved visual-signature workflow with cloud-hosted hero art is required before package review.");
+  const artProvenance = args.artProvenance ?? "unknown";
+  if (!ART_PROVENANCE_CATEGORIES.includes(artProvenance)) {
+    throw new Error("A supported image provenance category is required.");
   }
-  if (approvedVisual.supersedesWorkflowId) {
+  if (approvedVisual?.asset && approvedVisual.supersedesWorkflowId) {
     const sourcePackageResult = await supabase
       .from("event_factory_packages")
       .select("id,content_hash")
@@ -288,19 +298,29 @@ export async function prepareEventFactoryPackage(args: {
   if (bundleResult.data?.id) {
     const synthesisResult = await supabase
       .from("event_source_syntheses")
-      .select("id,status,is_manifest_valid,manifest_proposal,reconciled_profile")
+      .select("id,status,engine_kind,is_manifest_valid,manifest_proposal,reconciled_profile,conflicts")
       .eq("bundle_id", bundleResult.data.id)
-      .eq("status", "accepted")
-      .eq("is_manifest_valid", true)
       .order("version_number", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(40);
     if (synthesisResult.error) throw new Error(synthesisResult.error.message);
-    const synthesis = synthesisResult.data as AcceptedSynthesisRow | null;
+    const syntheses = (synthesisResult.data ?? []) as AcceptedSynthesisRow[];
+    const synthesis = syntheses.find((item) => (
+      item.status === "accepted"
+      && item.is_manifest_valid
+      && validateEventPageManifest(item.manifest_proposal).ok
+    )) ?? syntheses.find((item) => {
+      const content = validateEventPageContentReadiness(item.manifest_proposal);
+      return item.status === "generated"
+        && ["deterministic", "model_assisted"].includes(item.engine_kind)
+        && Array.isArray(item.conflicts)
+        && item.conflicts.length === 0
+        && content.ok
+        && content.artPending;
+    });
     if (synthesis) {
-      const validation = validateEventPageManifest(synthesis.manifest_proposal);
+      const validation = validateEventPageContentReadiness(synthesis.manifest_proposal);
       if (!validation.ok) {
-        throw new Error(`Accepted Event Hub proposal is invalid: ${validation.errors.join(" ")}`);
+        throw new Error(`Event Hub content proposal is invalid: ${validation.errors.join(" ")}`);
       }
       synthesisId = synthesis.id;
       acceptedManifest = validation.value;
@@ -310,13 +330,19 @@ export async function prepareEventFactoryPackage(args: {
 
   const manifestSource = acceptedManifest ?? localManifest;
   if (!manifestSource) {
-    throw new Error("An accepted source synthesis or a complete local Event Hub manifest is required before package review.");
+    throw new Error("A source synthesis or complete local Event Hub content manifest is required before private package review.");
   }
   const manifest = structuredClone(manifestSource);
-  manifest.hero.imageSrc = approvedVisual.asset.publicUrl;
-  manifest.hero.imageAlt = approvedVisual.asset.altText;
-  manifest.hero.credit = approvedVisual.asset.credit;
-  const validation = validateEventPageManifest(manifest);
+  if (approvedVisual?.asset) {
+    manifest.hero.imageSrc = approvedVisual.asset.publicUrl;
+    manifest.hero.imageAlt = approvedVisual.asset.altText;
+    manifest.hero.credit = approvedVisual.asset.credit;
+  } else {
+    manifest.hero.imageSrc = "";
+    manifest.hero.imageAlt = "";
+    delete manifest.hero.credit;
+  }
+  const validation = validateEventPageContentReadiness(manifest);
   if (!validation.ok) throw new Error(`Event Hub preview is invalid: ${validation.errors.join(" ")}`);
   if (/\bsponsor/i.test(JSON.stringify(manifest))) throw new Error("Remove event sponsor references before package review.");
 
@@ -384,7 +410,7 @@ export async function prepareEventFactoryPackage(args: {
     sourceIds: manifest.sources.map((source) => source.id),
     suggestions: manifest.scoutSuggestions,
   };
-  const artBrief = {
+  const artBrief = approvedVisual?.asset ? {
     workflowVersion: "visual-signature-v1",
     visualWorkflowId: approvedVisual.id,
     lane: approvedVisual.lane,
@@ -397,10 +423,20 @@ export async function prepareEventFactoryPackage(args: {
     referenceSources: approvedVisual.referenceSources,
     visualSignature: approvedVisual.visualSignature,
     generationBrief: approvedVisual.generationBrief,
+    provenanceCategory: artProvenance,
     factualExclusions: ["third-party sponsor marks", "unverified performers", "unsupported landmarks", "invented lettering"],
     requiredPlacements: ["event-hub hero", "map card", "social preview"],
+  } : {
+    workflowVersion: "visual-signature-v1",
+    eventName: manifest.identity.name,
+    place: manifest.identity.location,
+    venue: manifest.identity.venue,
+    season: candidate.typical_season,
+    provenanceCategory: artProvenance,
+    readinessState: "art_pending",
+    imageActionAuthorized: false,
   };
-  const artAsset = {
+  const artAsset = approvedVisual?.asset ? {
     workflowVersion: "visual-signature-v1",
     visualWorkflowId: approvedVisual.id,
     src: approvedVisual.asset.publicUrl,
@@ -411,7 +447,13 @@ export async function prepareEventFactoryPackage(args: {
     storageBucket: approvedVisual.asset.storageBucket,
     storagePath: approvedVisual.asset.storagePath,
     reviewState: "approved",
+    provenanceCategory: artProvenance,
     qaChecks: approvedVisual.qaChecks,
+  } : {
+    workflowVersion: "visual-signature-v1",
+    reviewState: "pending",
+    provenanceCategory: artProvenance,
+    imageActionAuthorized: false,
   };
   const packagePayload = {
     canonicalProfile,
@@ -438,7 +480,14 @@ export async function prepareEventFactoryPackage(args: {
     p_actor_identity: args.actorIdentity,
   });
   if (error) throw new Error(error.message);
-  return firstRpcRow(data);
+  return {
+    ...firstRpcRow(data),
+    content_ready: true,
+    art_pending: !approvedVisual?.asset,
+    private_preview_available: true,
+    publication_blocked: !approvedVisual?.asset,
+    art_provenance: artProvenance,
+  };
 }
 
 async function getPackage(packageId: string): Promise<PackageRow> {
@@ -456,7 +505,7 @@ export async function getEventFactoryPackagePreview(
   packageId: string,
 ): Promise<EventFactoryPackagePreview> {
   const packageRow = await getPackage(packageId);
-  const validation = validateEventPageManifest(packageRow.page_manifest);
+  const validation = validateEventPageContentReadiness(packageRow.page_manifest);
   if (!validation.ok) {
     throw new Error(`Event package preview is invalid: ${validation.errors.join(" ")}`);
   }
@@ -467,6 +516,7 @@ export async function getEventFactoryPackagePreview(
       packageId: packageRow.id,
       packageVersion: String(packageRow.package_version),
     },
+    artPending: validation.artPending,
   };
 }
 
@@ -496,6 +546,7 @@ export async function getPublicEventFactoryPackagePreview(
       packageId: packageRow.id,
       packageVersion: String(packageRow.package_version),
     },
+    artPending: false,
   };
 }
 

@@ -56,5 +56,10 @@ export async function getReadiness(): Promise<Readiness> {
     supabase.from("event_factory_packages").select("id,supersedes_package_id").limit(1),
   ]);
   if (factoryRevisionChecks.some((r) => r.error)) return { state: "missing_migration", title: "Event Factory Revision Migration Not Yet Applied", detail: "The Event Factory is connected, but migration 017 for immutable same-edition visual and package corrections is not reachable yet." };
-  return { state: "ready", title: "Control Plane Ready", detail: "Protected service-role bridge can reach discovery evidence, parent-bound editorial proposals, retained verification, visual-signature workflows, complete editorial packages, reviewed publishing, and the private source archive." };
+  const completionChecks = await Promise.all([
+    supabase.from("atlas_review_item_actions").select("id").limit(1),
+    supabase.rpc("atlas_list_michigan_completion_runs", { p_limit: 1 }),
+  ]);
+  if (completionChecks.some((r) => r.error)) return { state: "missing_migration", title: "Michigan Completion Migration Not Yet Applied", detail: "The existing Control Plane is connected, but migrations 023-024 for private resumable completion runs and exception audit history are not reachable yet." };
+  return { state: "ready", title: "Control Plane Ready", detail: "Protected service-role bridge can reach discovery evidence, parent-bound editorial proposals, retained verification, visual-signature workflows, complete editorial packages, private Michigan completion runs, reviewed publishing, and the private source archive." };
 }

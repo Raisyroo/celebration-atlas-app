@@ -15,6 +15,12 @@ const DEFAULT_EDITORIAL_MODEL = 'openai/gpt-5.4-mini';
 type GatewayResponse = {
   id?: string;
   model?: string;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    input_tokens?: number;
+    output_tokens?: number;
+  };
   choices?: Array<{
     message?: {
       content?: string;
@@ -66,12 +72,14 @@ export async function generateEditorialModelDraft(args: {
   input: EventSourceSynthesisInput;
   manifest: EventPageManifest;
   plan: EditorialPlan;
+  configuredModel?: string;
+  maxCompletionTokens?: number;
 }) {
   const token = await gatewayToken();
   if (!token) {
     throw new Error('AI Gateway authentication is unavailable. Vercel OIDC or AI_GATEWAY_API_KEY is required.');
   }
-  const model = editorialModel();
+  const model = args.configuredModel?.trim() || editorialModel();
   const targets = buildEditorialRewriteTargets(args.manifest);
   const evidence = buildEditorialEvidencePackage(args.input, args.manifest, args.plan);
   const snapshotIds = args.input.snapshots.map((snapshot) => snapshot.id);
@@ -98,7 +106,10 @@ export async function generateEditorialModelDraft(args: {
         type: 'json_schema',
         json_schema: editorialModelJsonSchema(targets, snapshotIds),
       },
-      max_completion_tokens: 6_000,
+      max_completion_tokens: Math.max(
+        1,
+        Math.min(6_000, args.maxCompletionTokens ?? 6_000),
+      ),
       stream: false,
     }),
     signal: AbortSignal.timeout(55_000),
@@ -123,5 +134,15 @@ export async function generateEditorialModelDraft(args: {
     model: payload.model || model,
     requestedModel: model,
     responseId: payload.id ?? null,
+    usage: {
+      inputTokens:
+        payload.usage?.input_tokens ??
+        payload.usage?.prompt_tokens ??
+        null,
+      outputTokens:
+        payload.usage?.output_tokens ??
+        payload.usage?.completion_tokens ??
+        null,
+    },
   };
 }
