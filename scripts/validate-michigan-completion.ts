@@ -993,7 +993,7 @@ async function validateStageRegistryAndSourceBoundaries() {
     "manifest_validation@1",
     "candidate_staging@1",
     "identity_matching@2",
-    "evidence_readiness@3",
+    "evidence_readiness@4",
     "deterministic_synthesis@20",
     "editorial_assistance@1",
     "content_readiness@1",

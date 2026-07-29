@@ -164,6 +164,10 @@ export type VerificationSnapshotInput = {
   canonicalUrl: string;
   pageTitle: string | null;
   contentHash: string;
+  contentSegments?: Array<{
+    kind: string;
+    text: string;
+  }>;
 };
 
 export type VerificationClaimInput = {
@@ -517,8 +521,9 @@ function evidenceExcerpt(claim: VerificationClaimInput) {
 
 function verificationSourceKind(
   snapshot: VerificationSnapshotInput,
+  isOfficial: boolean,
 ): PlannedVerificationEvidence["sourceKind"] {
-  if (snapshot.sourceKind === "official_home") return "official_event";
+  if (isOfficial) return "official_event";
   try {
     const host = new URL(snapshot.canonicalUrl).hostname.toLowerCase();
     if (host.endsWith(".gov")) return "government";
@@ -537,6 +542,20 @@ function confidence(
     : "unknown";
 }
 
+const ANNUAL_EVENT_LANGUAGE =
+  /\b(?:annual|anniversary|each year|every year|yearly)\b/i;
+
+function isOfficialSnapshot(
+  snapshot: VerificationSnapshotInput,
+  officialHosts: string[],
+) {
+  if (snapshot.sourceKind === "official_home") return true;
+  const host = sourceHost(snapshot.canonicalUrl);
+  return officialHosts.some((officialHost) =>
+    isSameHostFamily(host, officialHost)
+  );
+}
+
 export function planVerificationEvidence(args: {
   snapshots: VerificationSnapshotInput[];
   claims: VerificationClaimInput[];
@@ -545,15 +564,22 @@ export function planVerificationEvidence(args: {
   const snapshots = new Map(
     args.snapshots.map((snapshot) => [snapshot.id, snapshot]),
   );
+  const officialHosts = args.snapshots
+    .filter((snapshot) => snapshot.sourceKind === "official_home")
+    .map((snapshot) => sourceHost(snapshot.canonicalUrl))
+    .filter(Boolean);
+  const relevantSnapshotIds = new Set(
+    args.claims.map((claim) => claim.sourceSnapshotId),
+  );
   const planned: PlannedVerificationEvidence[] = [];
   for (const claim of args.claims) {
     if (["rejected", "superseded"].includes(claim.reviewStatus)) continue;
     const snapshot = snapshots.get(claim.sourceSnapshotId);
     if (!snapshot?.canonicalUrl) continue;
-    const isOfficial = snapshot.sourceKind === "official_home";
+    const isOfficial = isOfficialSnapshot(snapshot, officialHosts);
     const common = {
       sourceSnapshotId: snapshot.id,
-      sourceKind: verificationSourceKind(snapshot),
+      sourceKind: verificationSourceKind(snapshot, isOfficial),
       sourceUrl: snapshot.canonicalUrl,
       sourceTitle: snapshot.pageTitle ?? undefined,
       excerpt: evidenceExcerpt(claim),
@@ -604,7 +630,41 @@ export function planVerificationEvidence(args: {
         proofKind: "annual_language",
         occurrenceYear: args.targetYear,
       });
+    } else if (
+      claim.fieldPath === "identity.description" &&
+      ANNUAL_EVENT_LANGUAGE.test(evidenceExcerpt(claim))
+    ) {
+      planned.push({
+        ...common,
+        proofKind: "annual_language",
+        occurrenceYear: args.targetYear,
+      });
     }
+  }
+  for (const snapshot of args.snapshots) {
+    if (
+      !relevantSnapshotIds.has(snapshot.id) ||
+      !isOfficialSnapshot(snapshot, officialHosts)
+    ) {
+      continue;
+    }
+    const annualSegment = snapshot.contentSegments?.find((segment) =>
+      ANNUAL_EVENT_LANGUAGE.test(segment.text)
+    );
+    if (!annualSegment) continue;
+    planned.push({
+      sourceSnapshotId: snapshot.id,
+      proofKind: "annual_language",
+      sourceKind: "official_event",
+      sourceUrl: snapshot.canonicalUrl,
+      sourceTitle: snapshot.pageTitle ?? undefined,
+      excerpt: annualSegment.text.replace(/\s+/g, " ").trim().slice(0, 4_000),
+      occurrenceYear: args.targetYear,
+      isOfficial: true,
+      confidence: "high",
+      confidenceScore: 0.95,
+      contentHash: snapshot.contentHash || undefined,
+    });
   }
   return [
     ...new Map(
@@ -636,6 +696,11 @@ export type VerificationCompositionServices = {
     actorIdentity: string;
     notes: string;
   }): Promise<Record<string, unknown>>;
+  verifyCase(args: {
+    verificationCaseId: string;
+    actorIdentity: string;
+    notes: string;
+  }): Promise<Record<string, unknown>>;
 };
 
 export type VerificationCompositionResult = {
@@ -644,8 +709,66 @@ export type VerificationCompositionResult = {
   evidencePlanned: number;
   evidenceAdded: number;
   submittedForHumanReview: boolean;
-  automaticallyVerified: false;
+  automaticallyVerified: boolean;
+  missingFacts: string[];
 };
+
+function missingVerificationFacts(
+  planned: PlannedVerificationEvidence[],
+  targetYear: number,
+) {
+  const officialCurrentOccurrence = planned.some(
+    (evidence) =>
+      evidence.proofKind === "current_occurrence" &&
+      evidence.isOfficial &&
+      evidence.occurrenceYear === targetYear,
+  );
+  const checks = [
+    {
+      label: "official event identity",
+      passed: planned.some(
+        (evidence) =>
+          evidence.proofKind === "official_identity" &&
+          evidence.isOfficial,
+      ),
+    },
+    {
+      label: "official current dates",
+      passed:
+        officialCurrentOccurrence &&
+        planned.some(
+          (evidence) =>
+            evidence.proofKind === "current_dates" &&
+            evidence.isOfficial &&
+            evidence.occurrenceYear === targetYear,
+        ),
+    },
+    {
+      label: "official event location",
+      passed: planned.some(
+        (evidence) =>
+          ["venue", "location"].includes(evidence.proofKind) &&
+          evidence.isOfficial &&
+          evidence.occurrenceYear === targetYear,
+      ),
+    },
+    {
+      label: "annual recurrence",
+      passed: planned.some(
+        (evidence) =>
+          evidence.proofKind === "annual_language" &&
+          (
+            evidence.isOfficial ||
+            (
+              officialCurrentOccurrence &&
+              ["high", "verified"].includes(evidence.confidence)
+            )
+          ),
+      ),
+    },
+  ];
+  return checks.filter((check) => !check.passed).map((check) => check.label);
+}
 
 export async function composeVerificationCase(args: {
   services: VerificationCompositionServices;
@@ -680,6 +803,7 @@ export async function composeVerificationCase(args: {
       evidenceAdded: 0,
       submittedForHumanReview: false,
       automaticallyVerified: false,
+      missingFacts: [],
     };
   }
   if (!["collecting", "needs_review"].includes(status)) {
@@ -690,6 +814,7 @@ export async function composeVerificationCase(args: {
       evidenceAdded: 0,
       submittedForHumanReview: false,
       automaticallyVerified: false,
+      missingFacts: [],
     };
   }
 
@@ -699,23 +824,33 @@ export async function composeVerificationCase(args: {
     targetYear: args.targetYear,
   });
   let evidenceAdded = 0;
-  if (status === "collecting") {
-    for (const evidence of planned) {
-      const result = await args.services.addEvidence({
-        ...evidence,
-        verificationCaseId,
-        actorIdentity: args.actorIdentity,
-      });
-      if (result.created !== false) evidenceAdded += 1;
-    }
-    if (planned.length) {
+  for (const evidence of planned) {
+    const result = await args.services.addEvidence({
+      ...evidence,
+      verificationCaseId,
+      actorIdentity: args.actorIdentity,
+    });
+    if (result.created !== false) evidenceAdded += 1;
+  }
+  const missingFacts = missingVerificationFacts(planned, args.targetYear);
+  if (planned.length) {
+    if (status === "collecting") {
       const submitted = await args.services.submitCase({
         verificationCaseId,
         actorIdentity: args.actorIdentity,
         notes:
-          "County completion added deterministic retained evidence and submitted the case for the existing human diligence review. It did not verify or publish the event.",
+          "County completion added deterministic retained evidence. No canonical event or publication action was authorized.",
       });
       status = String(submitted.status ?? "needs_review");
+    }
+    if (status === "needs_review" && missingFacts.length === 0) {
+      const verified = await args.services.verifyCase({
+        verificationCaseId,
+        actorIdentity: args.actorIdentity,
+        notes:
+          "Official-first deterministic verification cleared identity, current dates, location, and annual recurrence. This private verification does not create a canonical event or authorize publication.",
+      });
+      status = String(verified.status ?? "verified");
     }
   }
   return {
@@ -724,7 +859,8 @@ export async function composeVerificationCase(args: {
     evidencePlanned: planned.length,
     evidenceAdded,
     submittedForHumanReview: status === "needs_review",
-    automaticallyVerified: false,
+    automaticallyVerified: status === "verified" && missingFacts.length === 0,
+    missingFacts,
   };
 }
 
@@ -813,6 +949,17 @@ export function createDefaultVerificationCompositionServices(): VerificationComp
       return transitionEventVerificationCase({
         verificationCaseId: args.verificationCaseId,
         action: "submit",
+        actorIdentity: args.actorIdentity,
+        notes: args.notes,
+      });
+    },
+    async verifyCase(args) {
+      const { transitionEventVerificationCase } = await import(
+        "../event-factory/verification.ts"
+      );
+      return transitionEventVerificationCase({
+        verificationCaseId: args.verificationCaseId,
+        action: "verify",
         actorIdentity: args.actorIdentity,
         notes: args.notes,
       });

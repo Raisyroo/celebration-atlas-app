@@ -532,7 +532,7 @@ function contentSegments(
 
     for (const rawText of rawTexts) {
       const text = scrubSponsorReferences(rawText, sponsorNames, 1_000);
-      if (text.length < 4 || SPONSOR_LANGUAGE.test(rawText)) continue;
+      if (text.length < 4) continue;
       const normalized = text.toLowerCase();
       const occurrenceLimit = kind === 'heading' || kind === 'time' ? 4 : 1;
       const occurrenceCount = seenCounts.get(normalized) ?? 0;

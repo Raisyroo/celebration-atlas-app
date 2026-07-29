@@ -51,6 +51,7 @@ const fixture = `<!doctype html>
   </head>
   <body>
     <h1>Lakeside Festival</h1>
+    <p>The 43rd annual Lakeside Festival returns to Harbor Park. Presented by Example Sponsor.</p>
     <a href="/schedule">Festival Schedule</a>
     <a href="/about-us">Festival History</a>
     <a href="/personalities">Festival Queen and Grand Marshal</a>
@@ -79,6 +80,7 @@ assert(inspection.usefulLinks.some((link) => link.url.endsWith('/personalities')
 assert(inspection.usefulLinks.some((link) => link.url.endsWith('/photo-video-gallery')), 'Official gallery link was not discovered.');
 assert(!inspection.usefulLinks.some((link) => /sponsor/i.test(`${link.label} ${link.url}`)), 'Sponsor links were not excluded.');
 assert(inspection.contentSegments.some((segment) => segment.text === 'Lakeside Festival'), 'Meaningful page content was not retained for later synthesis.');
+assert(inspection.contentSegments.some((segment) => /43rd annual Lakeside Festival returns to Harbor Park/i.test(segment.text)), 'Safe annual-event language was discarded with a sponsor sentence.');
 assert(!/sponsor/i.test(JSON.stringify({ candidate: inspection.candidate, evidence: inspection.evidence, contentSegments: inspection.contentSegments, usefulLinks: inspection.usefulLinks })), 'Sponsor references leaked into reviewable content.');
 assert(inspection.diagnostics.excludedSponsorReferenceCount > 0, 'Excluded sponsor references were not counted.');
 assert(inspection.diagnostics.contentCharacters > 0, 'Sanitized source content character count was not recorded.');

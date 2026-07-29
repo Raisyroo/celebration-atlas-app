@@ -92,7 +92,7 @@ It:
 - records a distinct-new-private-candidate decision without creating a canonical event or candidate match;
 - treats fuzzy similarity only as a human-review signal.
 
-After identity clearance, the existing source-bundle service composes a retained bundle from one official source plus bounded supporting sources. Per-support-source failure is retained without discarding successful captures. The existing verification service composes and submits an evidence-backed case for human review. The operator never verifies its own case. Package preparation requires an already verified case.
+After identity clearance, the existing source-bundle service composes a retained bundle from one official source plus bounded optional supporting sources. Per-support-source failure is retained without discarding successful captures. The existing verification service adds the evidence and uses its existing private `verify` transition only when the retained official host family proves exact identity, current dates, location, and annual recurrence. Strong annual language may corroborate an official current occurrence; a second source is not required merely to repeat facts already established by the official source. An incomplete or conflicting event stops with a plain-language list of what still needs human verification. Package preparation still requires a verified case, and verification still cannot create a canonical event or publish anything.
 
 Retained evidence is immutable history, not an instruction to treat every
 captured value as a current-event fact. Before verification planning and

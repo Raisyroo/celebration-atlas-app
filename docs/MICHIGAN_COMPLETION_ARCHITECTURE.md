@@ -41,7 +41,7 @@ For a registered county it:
 
 The private extension generalizes the existing guarded staging predicate rather than creating a new intake RPC. Deterministic identity clearance is permitted only for an immutable reviewed county payload, explicit private-write authorization, no canonical/candidate exact collision, no source-ownership conflict, no prior promotion or match, and no fuzzy warning. The action marks only the private candidate's reviewed distinct identity state; it does not create a canonical event or match.
 
-Evidence composition uses the existing bounded source-bundle capture service. Verification evidence is submitted through the existing human verification service and is never self-approved. A package cannot use an unverified completion-created verification case. See `docs/COUNTY_COMPLETION_OPERATOR.md`.
+Evidence composition uses the existing bounded source-bundle capture service. A retained official host family may deterministically clear a private verification case only when it proves the exact event identity, current-edition dates, location, and annual recurrence. Missing or conflicting facts still create a concise human-review exception. A package cannot use an unverified completion-created verification case, and verification never authorizes canonicalization or publication. See `docs/COUNTY_COMPLETION_OPERATOR.md`.
 
 ## Reuse audit
 
@@ -63,7 +63,7 @@ The classifications below are exhaustive for the v1 completion workflow.
 | Canonical events | reuse unchanged | `events` | Canonical materialization remains an Event Factory publication effect after human approval. The completion orchestrator only reads existing canonical identity. |
 | Official-source inspection and bounded collection | reuse unchanged | `lib/event-intake/officialSourceInspection*.ts`, `sourceCollection.ts`, `sourceBundles.ts`, migration 006 objects | Retain network safety, source snapshots, raw private archive, claims, links, schedule candidates, and source provenance. No alternate crawler or evidence store is permitted. |
 | Source/evidence readiness | extend | `event_source_bundles`, snapshots, claims, links, schedule candidates, bundle actions | Add deterministic readiness evaluation and exception routing; do not copy evidence into completion records. |
-| Event verification | reuse unchanged | `lib/event-factory/verification.ts`, `event_verification_cases`, evidence, actions | Preserve existence, recurrence, dates, location, official/supporting-source, and human verification gates. |
+| Event verification | reuse with official-first policy | `lib/event-factory/verification.ts`, `event_verification_cases`, evidence, actions, migration 029 | Preserve existence, recurrence, dates, location, official-source, and exception gates. Supporting evidence is useful but not mandatory when the retained official source proves the required facts. |
 | Deterministic synthesis | reuse unchanged | `lib/event-intake/synthesisEngine.ts`, `synthesis.ts`, migrations 007, 013, and 020 | Keep input-hash replay, conflict preservation, historical/current separation, sponsor exclusion, map provenance, and immutable proposals. |
 | Evidence-bound editorial synthesis | adapt | `lib/event-intake/editorialAssistance.ts`, `editorialModel.ts`, `synthesis.ts`, migration 020 lifecycle | Invoke only through a reserved completion model action. Record why deterministic output was insufficient, the configured route, limits, usage, and fallback. Rejection leaves deterministic content available. |
 | Model routing, per-event/run budgets, and usage ledger | genuinely missing | completion action records and `lib/michigan-completion/runtime.ts` | Add deterministic-first routes, budget reservation, usage completion, exact-replay charge suppression, and explicit budget exceptions. Do not connect a billing API for v1. |
@@ -139,7 +139,7 @@ The completion layer observes and invokes these existing lifecycles; it does not
 | `event_candidates` | intake creates/updates `needs_review`; reviewed Event Factory materialization later sets `matched_event_id`, `verification_status=promoted`, `duplicate_status=unique_candidate`, and `needs_review=false` | Completion may stage/reuse a candidate, but canonical promotion is prohibited. |
 | `event_source_bundles` | `collecting -> ready_for_synthesis -> draft_ready`; `ready_for_synthesis|draft_ready -> collecting` on reopen; any non-archived state may archive | Completion can advance evidence only through the existing bundle RPCs. |
 | `event_source_syntheses` | `generated -> in_review -> accepted|rejected`; acceptance supersedes another accepted proposal; an accepted editorial child supersedes its deterministic parent; rejected editorial work leaves the deterministic parent generated | Deterministic generation may run automatically; review acceptance remains its existing human gate. |
-| `event_verification_cases` | `collecting -> needs_review -> verified`; open cases may reject; `needs_review|verified|rejected|stale -> collecting` on reopen | Completion evaluates and queues missing diligence; it does not bypass human verification. |
+| `event_verification_cases` | `collecting -> needs_review -> verified`; open cases may reject; `needs_review|verified|rejected|stale -> collecting` on reopen | Completion adds retained evidence and may take the existing `verify` transition only when deterministic official-first requirements pass. Otherwise it queues the exact missing facts for human review. |
 | `event_visual_workflows` | `researching -> draft -> ready_for_review -> approved|rejected`; eligible approved/rejected work may reopen to draft; retained released art uses a new immutable revision | Completion reads this lifecycle only and never initiates visual work. |
 | `event_factory_packages` | `assembling -> ready_for_review -> approved|rejected`; `rejected|failed -> assembling`; `approved -> publishing -> published|failed`; released corrections create linked immutable package revisions | Art-pending completion remains `assembling`; the orchestrator never approves, materializes, publishes, or archives a package. |
 | `event_page_versions` | `draft -> in_review -> approved|rejected`; `approved -> published`; a replaced published version becomes `archived` | Completion does not cross into draft review/publication for an art-pending package and never moves the public pointer. |
@@ -214,6 +214,8 @@ Because the historical migration 004 is absent from the repository, migration 02
 Migration 023 is forward-only and was applied only after the focused completion validator, Atlas Control validation, public-schema security validation, lint, and full build passed.
 
 Migration 024 replaces only the private run-list RPC after read-only hosted verification showed that PostgreSQL's `LEAST`/`GREATEST` expression syntax cannot be schema-qualified as ordinary `pg_catalog` functions. It preserves the service-role assertion, empty search path, bounded limit, return shape, revokes, and grant; it changes no run, event, package, media, page, or publication data.
+
+Migration 029 narrows private diligence to the facts that matter at county scale. It keeps the existing verification and package RPCs, monotonically upgrades retained evidence when a related page is in the official host family, permits high-confidence annual language to corroborate an official current occurrence, requires current dates before verification, and removes the blanket second-source requirement. All three replaced functions remain atomic, service-role-only, and unable to create a canonical event or public page.
 
 ### Run data placement
 
@@ -314,13 +316,13 @@ The registry contains exactly the eleven Michigan v1 stages below. A registry ch
 - Blocking: blocks this event on ambiguity; unrelated records continue.
 - Required for every event: yes.
 
-### 4. `evidence_readiness@1`
+### 4. `evidence_readiness@4`
 
 - Existing capability: source bundles, immutable snapshots, claims, links, schedule candidates, verification evidence, and official-source inspection safety.
 - Processor: deterministic readiness evaluation. Collection uses only the existing bounded source service when separately authorized.
 - Prerequisites: resolved private event/candidate identity and at least one retained official-source reference.
 - Idempotency: bundle/snapshot/claim hashes and the readiness-input hash.
-- Completion: official identity evidence is retained; required facts and provenance are present; conflicts and archive/current distinctions are explicit; source format is supported or manually resolved.
+- Completion: retained official-family evidence proves identity, current dates, location, and annual recurrence, or the event stops with a plain-language list of the facts that still need human verification. Conflicts and archive/current distinctions remain explicit.
 - Retry: automatically retryable only for a registry-approved transient collection failure; otherwise reopen evidence or route to review.
 - Exceptions: `conflicting_event_dates`, `missing_official_source`, `weak_source_evidence`, `unsupported_source_format`, `missing_or_ambiguous_location`, `archive_current_program_ambiguity`.
 - Blocking: blocks synthesis for this event; other events continue.

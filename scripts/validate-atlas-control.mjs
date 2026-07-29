@@ -164,6 +164,21 @@ assert(eventVerificationMigration.includes("proof_kind = 'annual_language'") && 
 assert(eventVerificationMigration.includes("set search_path = ''"), 'event verification RPCs do not use a fixed empty search path');
 assert(eventVerificationMigration.includes('revoke all on function public.atlas_add_event_verification_evidence'), 'event verification evidence RPC is not revoked from public roles');
 
+const officialFirstVerificationMigration = read('supabase/migrations/029_official_first_event_verification.sql');
+assert(/(?:^|\r?\n)begin;\r?\n/.test(officialFirstVerificationMigration), 'official-first verification migration is not atomic');
+assert(officialFirstVerificationMigration.trimEnd().endsWith('commit;'), 'official-first verification migration does not commit atomically');
+assert(!/\bcreate\s+table\b/i.test(officialFirstVerificationMigration), 'official-first verification migration adds a duplicate table');
+for (const rpc of ['atlas_add_event_verification_evidence', 'atlas_transition_event_verification_case', 'atlas_upsert_event_factory_package']) {
+  assert(officialFirstVerificationMigration.includes(`create or replace function public.${rpc}`), `official-first verification migration does not replace ${rpc}`);
+  assert(officialFirstVerificationMigration.includes(`grant execute on function public.${rpc}`), `official-first verification migration does not grant ${rpc} only through the service contract`);
+}
+assert((officialFirstVerificationMigration.match(/perform public\.atlas_assert_service_role\(\);/g) ?? []).length === 3, 'official-first verification RPCs are not all service-role asserted');
+assert(officialFirstVerificationMigration.includes("or v_case.dates_status <> 'announced'"), 'official-first verification can clear a case without current dates');
+assert(!officialFirstVerificationMigration.includes('or v_case.supporting_source_count < 1'), 'official-first verification still requires a supporting source');
+assert(officialFirstVerificationMigration.includes("'sources', v_case.official_source_count >= 1,"), 'private package readiness still requires a supporting source');
+assert(officialFirstVerificationMigration.includes("'refreshed'"), 'retained evidence cannot be monotonically reclassified as official');
+assert(!/\b(?:insert|update|delete)\s+(?:into\s+|from\s+)?public\.(?:events|event_pages|event_page_versions|event_media)\b/i.test(officialFirstVerificationMigration), 'official-first verification migration can mutate public event state');
+
 const serviceRoleCompatibilityMigration = read('supabase/migrations/009_fix_atlas_service_role_assertion.sql');
 assert(serviceRoleCompatibilityMigration.includes("request.jwt.claims") && serviceRoleCompatibilityMigration.includes("->>'role'"), 'control-plane role assertion does not support current PostgREST JWT claims');
 assert(serviceRoleCompatibilityMigration.includes('revoke execute on function public.atlas_assert_service_role()'), 'control-plane role assertion is executable by public roles');

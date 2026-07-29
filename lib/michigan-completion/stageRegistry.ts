@@ -58,7 +58,7 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "evidence_readiness",
-    version: "3",
+    version: "4",
     capability: "event_source_bundles, snapshots, claims, links, and schedule candidates",
     processor: "deterministic",
     prerequisites: ["identity_matching"],

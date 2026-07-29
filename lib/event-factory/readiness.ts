@@ -193,7 +193,7 @@ function blockersFor(gates: Record<EventFactoryGateKey, EventFactoryGateState>) 
   if (gates.annual !== "ready") blockers.push("Annual recurrence proof");
   if (gates.dates !== "ready") blockers.push("Current event dates");
   if (gates.location !== "ready") blockers.push("Verified map coordinates");
-  if (gates.sources !== "ready") blockers.push("Corroborating source evidence");
+  if (gates.sources !== "ready") blockers.push("Official source evidence");
   if (gates.map !== "ready") blockers.push("Public map record");
   if (gates.page !== "ready") blockers.push("Approved Event Hub page");
   return blockers;
@@ -297,7 +297,6 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
     ));
     const sourceUrls = new Set([...relatedCandidateSources, ...relatedEventSources].map((source) => source.source_url));
     if (officialWebsite) sourceUrls.add(officialWebsite);
-    const trustedSourceCount = [...relatedCandidateSources, ...relatedEventSources].filter((source) => Number(source.trust_score ?? 0) >= 0.75).length;
     const localEvent = localEventById.get(slug) ?? localEventByName.get(normalized(name));
     const relatedBundles = bundles.filter((bundle) => sharesEventFactoryIdentity(identity, {
       candidateId: bundle.candidate_id,
@@ -361,7 +360,7 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
       annual: verificationCase?.recurrence_status === "confirmed" ? "ready" : verificationCase?.recurrence_status === "likely" ? "claimed" : fallbackAnnual,
       dates: verificationCase?.target_year === CURRENT_YEAR && verificationCase.dates_status === "announced" ? "ready" : verificationCase?.target_year === CURRENT_YEAR && verificationCase.dates_status === "not_announced" ? "claimed" : hasCurrentDates(candidate) ? "ready" : "missing",
       location: verificationCase?.location_status === "confirmed" && ((event?.location_verified && event.latitude !== null && event.longitude !== null) || hasAcceptedMap || hasLocalCoordinates) ? "ready" : verificationCase?.location_status === "confirmed" || verificationCase?.location_status === "likely" || event?.city || candidate?.city ? "claimed" : "missing",
-      sources: verificationCase && verificationCase.official_source_count >= 1 && verificationCase.supporting_source_count >= 1 ? "ready" : trustedSourceCount >= 2 && Boolean(officialWebsite) ? "claimed" : sourceUrls.size > 0 ? "claimed" : "missing",
+      sources: verificationCase && verificationCase.official_source_count >= 1 ? "ready" : Boolean(officialWebsite) ? "claimed" : sourceUrls.size > 0 ? "claimed" : "missing",
       map: (event?.location_verified && event.latitude !== null && event.longitude !== null) || hasAcceptedMap || Boolean(localEvent) ? "ready" : "missing",
       page: hasPublishedPage || relatedPages.some((page) => page.is_valid) || Boolean(acceptedManifest) || Boolean(localManifest) ? "ready" : "missing",
       art: visualWorkflow?.status === "approved" || relatedMedia.length > 0

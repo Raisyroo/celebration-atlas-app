@@ -831,6 +831,7 @@ async function stageEvidence(
       canonicalUrl: text(row.canonical_url),
       pageTitle: text(row.page_title) || null,
       contentHash: text(row.content_hash),
+      contentSegments: inspectionContentSegments(row.inspection),
     }),
   );
   const verificationClaims = rawClaims.map(
@@ -855,6 +856,23 @@ async function stageEvidence(
     claims: verificationClaims,
   });
   const claims = evidenceSelection.claims;
+  const compatibleSnapshotIds = new Set(
+    evidenceSelection.compatibleSnapshotIds,
+  );
+  const verificationEvidenceClaims = [
+    ...new Map(
+      [
+        ...claims,
+        ...verificationClaims.filter(
+          (claim) =>
+            compatibleSnapshotIds.has(claim.sourceSnapshotId) &&
+            ["identity.description", "recurrence.annual"].includes(
+              claim.fieldPath,
+            ),
+        ),
+      ].map((claim) => [claim.id, claim]),
+    ).values(),
+  ];
   const conflicts = evidenceSelection.dateConflicts;
   if (!official.length) {
     return {
@@ -922,6 +940,8 @@ async function stageEvidence(
   const verificationExceptions: CompletionExceptionInput[] = [];
   let verificationCaseId = retained.verificationCaseId ?? null;
   let verificationCaseStatus: string | null = null;
+  let verificationAutomaticallyCompleted = false;
+  let verificationMissingFacts: string[] = [];
   if (candidateId && year) {
     let existingCase: { id: string; status: string } | null = null;
     if (verificationCaseId) {
@@ -955,10 +975,12 @@ async function stageEvidence(
         actorIdentity: context.actorIdentity,
         existingCase,
         snapshots: verificationSnapshots,
-        claims,
+        claims: verificationEvidenceClaims,
       });
       verificationCaseId = verification.verificationCaseId;
       verificationCaseStatus = verification.status;
+      verificationAutomaticallyCompleted = verification.automaticallyVerified;
+      verificationMissingFacts = verification.missingFacts;
     }
     if (verificationCaseStatus !== "verified") {
       verificationExceptions.push(
@@ -966,13 +988,16 @@ async function stageEvidence(
           "verification_review_required",
           "human_review_required",
           verificationCaseStatus === "needs_review"
-            ? "Deterministic retained evidence was submitted to the existing Event Factory diligence review; human verification remains required."
+            ? verificationMissingFacts.length
+              ? `Please verify: ${verificationMissingFacts.join(", ")}.`
+              : "The retained facts require human verification."
             : "The Event Factory diligence case is not yet verified.",
           {
             verificationCaseId,
             status: verificationCaseStatus,
             targetYear: year,
-            automaticallyVerified: false,
+            automaticallyVerified: verificationAutomaticallyCompleted,
+            missingFacts: verificationMissingFacts,
           },
         ),
       );
@@ -1005,7 +1030,8 @@ async function stageEvidence(
       dateConflicts: [],
       verificationCaseId,
       verificationCaseStatus,
-      verificationAutomaticallyCompleted: false,
+      verificationAutomaticallyCompleted,
+      verificationMissingFacts,
       sourceBundleComposition: sourceComposition,
     },
     links: { sourceBundleId: bundleId, verificationCaseId },

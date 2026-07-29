@@ -873,6 +873,10 @@ async function validateSourceAndVerificationComposition() {
       verificationCalls.push("submit");
       return { status: "needs_review" };
     },
+    async verifyCase() {
+      verificationCalls.push("verify");
+      return { status: "verified" };
+    },
   };
   const verification = await composeVerificationCase({
     services: verificationServices,
@@ -887,11 +891,25 @@ async function validateSourceAndVerificationComposition() {
         pageTitle: "Fixture Festival",
         contentHash: "b".repeat(64),
       },
+      {
+        id: "official-calendar",
+        sourceKind: "other",
+        canonicalUrl: "https://calendar.official.example/event/42",
+        pageTitle: "Fixture Festival",
+        contentHash: "c".repeat(64),
+      },
+      {
+        id: "supporting",
+        sourceKind: "other",
+        canonicalUrl: "https://guide.example/fixture-festival",
+        pageTitle: "Fixture Festival Guide",
+        contentHash: "d".repeat(64),
+      },
     ],
     claims: [
       {
         id: "name",
-        sourceSnapshotId: "official",
+        sourceSnapshotId: "official-calendar",
         fieldPath: "identity.name",
         value: "Fixture Festival",
         normalizedText: "fixture festival",
@@ -901,7 +919,7 @@ async function validateSourceAndVerificationComposition() {
       },
       {
         id: "date",
-        sourceSnapshotId: "official",
+        sourceSnapshotId: "official-calendar",
         fieldPath: "timing.startDate",
         value: "2026-08-01",
         normalizedText: "2026-08-01",
@@ -911,7 +929,7 @@ async function validateSourceAndVerificationComposition() {
       },
       {
         id: "location",
-        sourceSnapshotId: "official",
+        sourceSnapshotId: "official-calendar",
         fieldPath: "location.display",
         value: "Fixture Park",
         normalizedText: "fixture park",
@@ -919,16 +937,91 @@ async function validateSourceAndVerificationComposition() {
         confidenceScore: 0.9,
         reviewStatus: "unreviewed",
       },
+      {
+        id: "annual-description",
+        sourceSnapshotId: "supporting",
+        fieldPath: "identity.description",
+        value: "The 43rd annual Fixture Festival returns this summer.",
+        normalizedText:
+          "the 43rd annual fixture festival returns this summer",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
     ],
   });
-  assert.equal(verification.status, "needs_review");
-  assert.equal(verification.submittedForHumanReview, true);
-  assert.equal(verification.automaticallyVerified, false);
+  assert.equal(verification.status, "verified");
+  assert.equal(verification.submittedForHumanReview, false);
+  assert.equal(verification.automaticallyVerified, true);
+  assert.deepEqual(verification.missingFacts, []);
   assert.equal(verificationCalls.includes("submit"), true);
   assert.equal(
     verificationCalls.some((call) => call === "verify"),
-    false,
+    true,
   );
+
+  const incompleteCalls: string[] = [];
+  const incomplete = await composeVerificationCase({
+    services: {
+      async createCase() {
+        incompleteCalls.push("create");
+        return { verification_case_id: "case-2", status: "collecting" };
+      },
+      async addEvidence(args) {
+        incompleteCalls.push(`evidence:${args.proofKind}`);
+        return { created: true };
+      },
+      async submitCase() {
+        incompleteCalls.push("submit");
+        return { status: "needs_review" };
+      },
+      async verifyCase() {
+        incompleteCalls.push("verify");
+        return { status: "verified" };
+      },
+    },
+    candidateId: "candidate-2",
+    targetYear: 2026,
+    actorIdentity: "validator",
+    snapshots: [
+      {
+        id: "official-incomplete",
+        sourceKind: "official_home",
+        canonicalUrl: "https://incomplete.example/",
+        pageTitle: "Incomplete Festival",
+        contentHash: "c".repeat(64),
+      },
+    ],
+    claims: [
+      {
+        id: "incomplete-name",
+        sourceSnapshotId: "official-incomplete",
+        fieldPath: "identity.name",
+        value: "Incomplete Festival",
+        normalizedText: "incomplete festival",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
+      {
+        id: "incomplete-date",
+        sourceSnapshotId: "official-incomplete",
+        fieldPath: "timing.startDate",
+        value: "2026-08-01",
+        normalizedText: "2026-08-01",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
+    ],
+  });
+  assert.equal(incomplete.status, "needs_review");
+  assert.equal(incomplete.automaticallyVerified, false);
+  assert.deepEqual(
+    incomplete.missingFacts,
+    ["official event location", "annual recurrence"],
+  );
+  assert.equal(incompleteCalls.includes("verify"), false);
 }
 
 async function validateResumeReplayContinuation(args: Awaited<ReturnType<typeof validateInventoryAndPlanning>>) {
@@ -1443,7 +1536,7 @@ async function main() {
   await validateMigrationAndPersistentBoundaries();
   await validateMigrationExecution();
   console.log(
-    "County completion operator validation passed: 83-record classification, stable hashes, exclusions, candidate reuse, guarded staging, deterministic identity, bounded sources, verification review, replay/resume, mixed continuation, aggregate reporting, and zero model/image/publication effects.",
+    "County completion operator validation passed: 83-record classification, stable hashes, exclusions, candidate reuse, guarded staging, deterministic identity, bounded sources, official-first verification, missing-fact review, replay/resume, mixed continuation, aggregate reporting, and zero model/image/publication effects.",
   );
 }
 
