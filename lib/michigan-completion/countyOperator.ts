@@ -70,6 +70,8 @@ export type CountyOperatorPackageRow = {
   source_bundle_id: string;
   synthesis_id: string;
   readiness_checks?: Record<string, unknown> | null;
+  art_asset?: Record<string, unknown> | null;
+  published_at?: string | null;
   updated_at?: string;
 };
 
@@ -119,6 +121,12 @@ export type CountyRecordProjection = {
   privatePackageId: string | null;
   privatePackageState: string | null;
   artState: "approved" | "pending" | "not_started";
+  publicationArtState:
+    | "published_with_approved_art"
+    | "published_without_art"
+    | "image_uploaded_awaiting_approval"
+    | "blocked_non_art"
+    | "private_awaiting_verification";
   publicationReadinessState:
     | "already_completed"
     | "publication_blocked"
@@ -473,6 +481,15 @@ function referencesForCandidate(
         (verification && row.verification_case_id === verification.id),
     ),
   );
+  const publishedPackage = latestByUpdatedAt(
+    snapshot.packages.filter(
+      (row) =>
+        row.status === "published" &&
+        ((candidateId && row.candidate_id === candidateId) ||
+          (canonicalEventId && row.event_id === canonicalEventId) ||
+          (verification && row.verification_case_id === verification.id)),
+    ),
+  );
   const visual = latestByUpdatedAt(
     snapshot.visualWorkflows.filter(
       (row) =>
@@ -481,16 +498,23 @@ function referencesForCandidate(
     ),
   );
   const artReady =
-    visual?.status === "approved" &&
-    isRecord(packageRow?.readiness_checks) &&
-    packageRow.readiness_checks.art === true;
+    isRecord(publishedPackage?.readiness_checks) &&
+    publishedPackage.readiness_checks.art === true &&
+    isRecord(publishedPackage.art_asset) &&
+    typeof (publishedPackage.art_asset.publicUrl ?? publishedPackage.art_asset.src) === "string";
+  const uploadedAwaitingApproval =
+    visual?.status === "ready_for_review" &&
+    isRecord(visual.asset) &&
+    typeof visual.asset.publicUrl === "string";
   return {
     bundle,
     synthesis,
     verification,
     packageRow,
+    publishedPackage,
     visual,
     artReady,
+    uploadedAwaitingApproval,
     references: {
       candidateId,
       canonicalEventId,
@@ -548,6 +572,17 @@ function baseProjection(args: {
       : refs?.packageRow
         ? "pending"
         : "not_started",
+    publicationArtState: refs?.publishedPackage
+      ? refs.artReady
+        ? "published_with_approved_art"
+        : refs.uploadedAwaitingApproval
+          ? "image_uploaded_awaiting_approval"
+          : "published_without_art"
+      : refs?.verification?.status === "verified" && args.activity !== "exception"
+        ? "private_awaiting_verification"
+        : args.activity === "exception" || args.activity === "excluded"
+          ? "blocked_non_art"
+          : "private_awaiting_verification",
     publicationReadinessState:
       args.status === "existing_canonical_or_completed"
         ? "already_completed"
@@ -1073,6 +1108,12 @@ function completionProjection(
         : event?.readinessState === "art_pending"
           ? "pending"
           : projection.artState,
+    publicationArtState:
+      event?.readinessState === "review_ready" && event.publicationEligible
+        ? projection.publicationArtState
+        : openException
+          ? "blocked_non_art"
+          : projection.publicationArtState,
     publicationReadinessState:
       event?.readinessState === "review_ready"
         ? "review_ready"

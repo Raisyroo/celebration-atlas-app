@@ -1407,17 +1407,6 @@ async function stageVisual(
         artProvenance: context.event.artProvenance,
         publicationEligible: false,
       },
-      exceptions: [
-        exception(
-          "missing_approved_image",
-          "publication_blocking",
-          "Content is ready for private review, but approved hero art is pending.",
-          {
-            packageId: packageOutput.packageId ?? null,
-            imageActionInvoked: false,
-          },
-        ),
-      ],
     };
   }
   const candidateId = references(context).candidateId;
@@ -1445,13 +1434,6 @@ async function stageVisual(
         readinessState: "art_pending",
         publicationEligible: false,
       },
-      exceptions: [
-        exception(
-          "missing_approved_image",
-          "publication_blocking",
-          "No approved visual workflow is retained.",
-        ),
-      ],
     };
   }
   if (context.event.artProvenance === "unknown") {
@@ -1460,6 +1442,7 @@ async function stageVisual(
       output: {
         visualReady: false,
         workflowId: workflow.data.id,
+        provenanceBlocked: true,
         imageActionInvoked: false,
       },
       links: {
@@ -1501,7 +1484,7 @@ function stageExceptionReview(
     output: {
       exceptionQueueInspected: true,
       humanDecisionRequired:
-        outputFor(context, "visual_readiness").visualReady !== true,
+        outputFor(context, "visual_readiness").provenanceBlocked === true,
     },
   };
 }
@@ -1513,7 +1496,7 @@ function stagePublicationReadiness(
   const visualOutput = outputFor(context, "visual_readiness");
   const eligible =
     packageOutput.privatePreviewAvailable === true &&
-    visualOutput.visualReady === true;
+    visualOutput.provenanceBlocked !== true;
   return {
     outcome: "succeeded",
     output: {
@@ -1521,14 +1504,11 @@ function stagePublicationReadiness(
       publicationInvoked: false,
       requiresHumanPackageApproval: true,
       packageId: packageOutput.packageId ?? null,
+      artPending: visualOutput.visualReady !== true,
     },
     links: {
       packageId: text(packageOutput.packageId) || null,
-      readinessState: eligible
-        ? "review_ready"
-        : visualOutput.artPending === true
-          ? "art_pending"
-          : "publication_blocked",
+      readinessState: eligible ? "review_ready" : "publication_blocked",
       publicationEligible: eligible,
     },
     ...(!eligible
@@ -1540,7 +1520,7 @@ function stagePublicationReadiness(
               "The private package is retained, but publication readiness is blocked.",
               {
                 packageId: packageOutput.packageId ?? null,
-                artPending: visualOutput.artPending === true,
+                artPending: visualOutput.visualReady !== true,
               },
             ),
           ],

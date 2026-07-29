@@ -20,6 +20,7 @@ import type {
   EventVisualWorkflowSummary,
 } from "@/lib/event-factory/types";
 import { buildEventVisualGenerationBrief } from "@/lib/event-factory/visualPrompt";
+import ManualEventHeroUpload from "./ManualEventHeroUpload";
 
 type Ready = { title: string; detail: string; state: string };
 type OperationRun = { id: string; operation_type: string; actor_identity: string; status: string; summary?: { candidate_id?: string } | null; created_at: string };
@@ -842,6 +843,8 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
           )}
         </div>
         {visualResult && <p className="factory-result" role="status">{visualResult}</p>}
+
+        <ManualEventHeroUpload items={factory.items} workflows={visualWorkflows} onComplete={refresh} />
 
         <form className="visual-brief-form" onSubmit={saveVisualWorkflow}>
           <label>

@@ -4,13 +4,19 @@ import { requireAtlasAdmin } from "@/lib/atlas-control/auth";
 import { createAtlasServiceClient } from "@/lib/atlas-control/service";
 import {
   attachEventVisualWorkflowRevisionAsset,
+  createManualEventVisualWorkflow,
   getEventVisualWorkflow,
   saveEventVisualWorkflow,
 } from "@/lib/event-factory/visuals";
+import sharp from "sharp";
+import {
+  EVENT_HERO_UPLOAD_SPEC,
+  eventHeroFormatForMimeType,
+  validateEventHeroUploadMetadata,
+} from "@/lib/event-factory/heroUploadSpec";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const MAX_HERO_BYTES = 16 * 1024 * 1024;
-const ALLOWED_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ALLOWED_CONTENT_TYPES = new Set<string>(EVENT_HERO_UPLOAD_SPEC.acceptedMimeTypes);
 
 function extensionFor(file: File) {
   if (file.type === "image/jpeg") return "jpg";
@@ -36,26 +42,72 @@ export async function POST(request: Request) {
 
   const formData = await request.formData().catch(() => null);
   const workflowId = formData?.get("workflowId");
+  const sourcePackageId = formData?.get("sourcePackageId");
   const altText = formData?.get("altText");
   const file = formData?.get("hero");
-  if (typeof workflowId !== "string" || !UUID.test(workflowId)) {
-    return NextResponse.json({ error: "A valid visual workflow is required." }, { status: 400 });
+  const confirmations = {
+    correctEvent: formData?.get("correctEvent") === "true",
+    rightsConfirmed: formData?.get("rightsConfirmed") === "true",
+    noInventedMarks: formData?.get("noInventedMarks") === "true",
+    fullFrameReviewed: formData?.get("fullFrameReviewed") === "true",
+  };
+  const hasWorkflowId = typeof workflowId === "string" && UUID.test(workflowId);
+  const hasSourcePackageId = typeof sourcePackageId === "string" && UUID.test(sourcePackageId);
+  if (!hasWorkflowId && !hasSourcePackageId) {
+    return NextResponse.json({ error: "Choose an event or a valid visual workflow." }, { status: 400 });
+  }
+  if (hasWorkflowId && hasSourcePackageId) {
+    return NextResponse.json({ error: "Choose either a visual workflow or a published event package." }, { status: 400 });
   }
   if (typeof altText !== "string" || !altText.trim()) {
     return NextResponse.json({ error: "Descriptive hero alt text is required." }, { status: 400 });
   }
   if (!(file instanceof File)) return NextResponse.json({ error: "Choose a hero image file." }, { status: 400 });
   if (!ALLOWED_CONTENT_TYPES.has(file.type)) return NextResponse.json({ error: "Hero art must be JPG, PNG, or WEBP." }, { status: 400 });
-  if (file.size > MAX_HERO_BYTES) return NextResponse.json({ error: "Hero art must be 16 MB or smaller." }, { status: 400 });
+  if (file.size > EVENT_HERO_UPLOAD_SPEC.maxBytes) {
+    return NextResponse.json({ error: `Hero art must be ${EVENT_HERO_UPLOAD_SPEC.maxMegabytes} MB or smaller.` }, { status: 400 });
+  }
 
   try {
-    const workflow = await getEventVisualWorkflow(workflowId);
-    if (["approved", "archived"].includes(workflow.status)) {
-      return NextResponse.json({ error: "Reopen this visual workflow before replacing its artwork." }, { status: 400 });
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const metadata = await sharp(bytes, { animated: false }).metadata();
+    const format = eventHeroFormatForMimeType(file.type);
+    const metadataValidation = validateEventHeroUploadMetadata({
+      width: metadata.width ?? 0,
+      height: metadata.height ?? 0,
+      byteSize: file.size,
+      mimeType: file.type,
+      format: format ?? metadata.format ?? "",
+      pages: metadata.pages,
+    });
+    if (!metadataValidation.ok) {
+      return NextResponse.json({ error: metadataValidation.errors.join(" ") }, { status: 400 });
     }
 
-    const storagePath = `events/${workflow.eventKey}/hero/${Date.now()}-${safeFilename(file.name)}.${extensionFor(file)}`;
-    const bytes = new Uint8Array(await file.arrayBuffer());
+    let eventKey = "";
+    let workflow = null;
+    if (hasWorkflowId) {
+      workflow = await getEventVisualWorkflow(workflowId);
+      if (["approved", "archived"].includes(workflow.status)) {
+        return NextResponse.json({ error: "Reopen this visual workflow before replacing its artwork." }, { status: 400 });
+      }
+      eventKey = workflow.eventKey;
+    } else {
+      const packageResult = await supabase
+        .from("event_factory_packages")
+        .select("id,event_key,status")
+        .eq("id", sourcePackageId)
+        .single();
+      if (packageResult.error || !packageResult.data) {
+        return NextResponse.json({ error: "The published event package was not found." }, { status: 400 });
+      }
+      if (packageResult.data.status !== "published") {
+        return NextResponse.json({ error: "Finished art can be attached only to a published event package." }, { status: 400 });
+      }
+      eventKey = packageResult.data.event_key;
+    }
+
+    const storagePath = `events/${eventKey}/hero/${Date.now()}-${safeFilename(file.name)}.${extensionFor(file)}`;
     const upload = await supabase.storage.from(CELEBRATION_ATLAS_MEDIA_BUCKET).upload(storagePath, bytes, {
       contentType: file.type,
       upsert: false,
@@ -81,35 +133,55 @@ export async function POST(request: Request) {
       storagePath,
       contentType: file.type,
       byteSize: file.size,
+      width: metadata.width!,
+      height: metadata.height!,
+      sourceFilename: file.name.slice(0, 255),
+      uploadedBy: auth.admin.email,
+      uploadedAt: new Date().toISOString(),
+      provenanceCategory: "externally_supplied" as const,
     };
-    const result = workflow.supersedesWorkflowId
+    const result = hasSourcePackageId
+      ? await createManualEventVisualWorkflow({
+          sourcePackageId: sourcePackageId as string,
+          asset,
+          confirmations,
+          actorIdentity: auth.admin.email,
+        })
+      : workflow!.supersedesWorkflowId
       ? await attachEventVisualWorkflowRevisionAsset({
-          workflowId: workflow.id,
+          workflowId: workflow!.id,
           asset,
           actorIdentity: auth.admin.email,
         })
       : await saveEventVisualWorkflow({
-          candidateId: workflow.candidateId,
-          sourceBundleId: workflow.sourceBundleId,
-          targetYear: workflow.targetYear,
-          eventKey: workflow.eventKey,
-          eventName: workflow.eventName,
-          locationLabel: workflow.locationLabel,
-          lane: workflow.lane,
-          searchQuery: workflow.searchQuery,
-          reviewedThumbnailCount: workflow.reviewedThumbnailCount,
-          referenceSources: workflow.referenceSources,
-          motifs: workflow.visualSignature.motifs,
-          heroMoment: workflow.visualSignature.heroMoment,
+          candidateId: workflow!.candidateId,
+          sourceBundleId: workflow!.sourceBundleId,
+          targetYear: workflow!.targetYear,
+          eventKey: workflow!.eventKey,
+          eventName: workflow!.eventName,
+          locationLabel: workflow!.locationLabel,
+          lane: workflow!.lane,
+          searchQuery: workflow!.searchQuery,
+          reviewedThumbnailCount: workflow!.reviewedThumbnailCount,
+          referenceSources: workflow!.referenceSources,
+          motifs: workflow!.visualSignature.motifs,
+          heroMoment: workflow!.visualSignature.heroMoment,
           asset,
           qaChecks: {
-            ...workflow.qaChecks,
+            ...workflow!.qaChecks,
             publicAssetVerified: true,
           },
           actorIdentity: auth.admin.email,
         });
 
-    return NextResponse.json({ ok: true, publicUrl, storagePath, result });
+    return NextResponse.json({
+      ok: true,
+      publicUrl,
+      storagePath,
+      width: metadata.width,
+      height: metadata.height,
+      result,
+    });
   } catch (error) {
     if (uploadedStoragePath) {
       await supabase.storage.from(CELEBRATION_ATLAS_MEDIA_BUCKET).remove([uploadedStoragePath]).catch(() => undefined);

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAtlasAdmin } from "@/lib/atlas-control/auth";
 import {
   createEventVisualWorkflowRevision,
@@ -8,6 +9,10 @@ import {
   saveEventVisualWorkflow,
   saveEventVisualWorkflowRevisionQa,
 } from "@/lib/event-factory/visuals";
+import {
+  approveAndPublishEventFactoryPackage,
+  createEventFactoryArtRevision,
+} from "@/lib/event-factory/packages";
 import type { EventVisualLane, EventVisualReference } from "@/lib/event-factory/types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -134,6 +139,44 @@ export async function POST(request: Request) {
         notes: notes || undefined,
       });
       return noStoreJson({ result });
+    }
+
+    if (action === "approve_manual_and_attach") {
+      const sourcePackageId = text(payload.sourcePackageId);
+      if (!UUID.test(workflowId) || !UUID.test(sourcePackageId)) {
+        return noStoreJson({ error: "A valid uploaded visual and published package are required." }, 400);
+      }
+      const workflow = await getEventVisualWorkflow(workflowId);
+      if (workflow.generationBrief.style !== "Externally supplied finished asset") {
+        return noStoreJson({ error: "Only an externally supplied finished asset can use this action." }, 400);
+      }
+      if (!["ready_for_review", "approved"].includes(workflow.status)) {
+        return noStoreJson({ error: "The uploaded image is not ready for approval." }, 400);
+      }
+      if (workflow.status === "ready_for_review") {
+        await reviewEventVisualWorkflow({
+          workflowId,
+          decision: "approve",
+          actorIdentity: auth.admin.email,
+          notes: notes || "Approved externally supplied finished Event Hub hero.",
+        });
+      }
+      const revision = await createEventFactoryArtRevision({
+        sourcePackageId,
+        visualWorkflowId: workflowId,
+        actorIdentity: auth.admin.email,
+        notes: "Attached approved externally supplied Event Hub hero.",
+      });
+      const packageId = text(revision.package_id);
+      if (!UUID.test(packageId)) throw new Error("The art revision did not return a valid package id.");
+      const published = await approveAndPublishEventFactoryPackage({
+        packageId,
+        actorIdentity: auth.admin.email,
+        notes: notes || "Approved and attached externally supplied Event Hub hero.",
+      });
+      revalidatePath(`/events/${workflow.eventKey}`);
+      revalidatePath("/");
+      return noStoreJson({ result: published, packageId, publicPath: `/events/${workflow.eventKey}` });
     }
 
     if (action === "approve" || action === "reject" || action === "reopen") {

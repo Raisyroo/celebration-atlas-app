@@ -405,6 +405,18 @@ async function validateInventoryAndPlanning() {
     concurrency: 1,
   });
   assert.equal(plan.records.length, 83);
+  const publicationArtStates = new Set([
+    "published_with_approved_art",
+    "published_without_art",
+    "image_uploaded_awaiting_approval",
+    "blocked_non_art",
+    "private_awaiting_verification",
+  ]);
+  assert(
+    plan.records.every((record) =>
+      publicationArtStates.has(record.publicationArtState)),
+    "Every county record must have one bounded publication/art state.",
+  );
   assert.deepEqual(statusCounts(plan), {
     existing_canonical_or_completed: 2,
     eligible_for_guarded_staging: 43,

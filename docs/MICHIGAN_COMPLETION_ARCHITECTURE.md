@@ -368,25 +368,25 @@ The registry contains exactly the eleven Michigan v1 stages below. A registry ch
 - Processor: deterministic.
 - Prerequisites: verified case, accepted/selected content, map provenance, and `content_ready`.
 - Idempotency: candidate/year plus package content hash and package revision rules.
-- Completion: an immutable private package projection exists. With no approved art it remains `assembling`, records `page=true` and `art=false`, and is available through the private art-pending preview seam.
+- Completion: an immutable private package projection exists. With no approved art it records `page=true` and `art=false`; migration 027 may mark it `ready_for_review` only after all seven non-art gates, verified diligence, and identity clearance pass.
 - Retry: exact package hash reuses the package; editable private content may create the next allowed package version; approved/published packages remain immutable.
 - Exceptions: `event_factory_readiness_failure`, `identity_security_mismatch`, `unexpected_system_failure`.
 - Blocking: package failure blocks later readiness for this event; missing art alone does not invalidate completed content.
 - Required for every event: yes after content readiness.
 
-### 9. `visual_readiness@1`
+### 9. `visual_readiness@2`
 
 - Existing capability: approved visual-workflow lookup, immutable visual revisions, media/provenance QA.
 - Processor: deterministic read-only evaluation.
 - Prerequisites: private package/content identity.
 - Idempotency: selected workflow/asset content hash and QA/review state.
-- Completion: either approved, provenance-complete art is linked, or the event is explicitly marked `art_pending` with a publication-blocking exception. Completion never initiates image work.
+- Completion: either approved, provenance-complete art is linked, or the event is explicitly marked `art_pending` without creating an image action or publication-blocking exception. Completion never initiates image work.
 - Retry: only after an external human visual workflow action changes the workflow/asset hash.
-- Exceptions: `missing_approved_image`, `image_provenance_failure`.
-- Blocking: blocks publication readiness, not content completion or the private preview.
+- Exceptions: `image_provenance_failure` only when an existing asset has unsafe or unknown provenance.
+- Blocking: art absence is non-blocking; unsafe provenance blocks publication readiness.
 - Required for every event: the evaluation is required; an image operation is never required or performed by completion.
 
-### 10. `exception_review@1`
+### 10. `exception_review@2`
 
 - Existing capability: Atlas Control `atlas_review_items`; migration 023 adds transition audit.
 - Processor: deterministic queue reconciliation plus human decisions. A model may assist only when the exception is explicitly model-review eligible and budgeted.
@@ -398,15 +398,15 @@ The registry contains exactly the eleven Michigan v1 stages below. A registry ch
 - Blocking: blocks only affected events unless the exception is run-level or a fatal identity/security/system error.
 - Required for every event: no; it is skipped when no exception exists.
 
-### 11. `publication_readiness@1`
+### 11. `publication_readiness@2`
 
-- Existing capability: Event Factory eight gates, strict Event Page validation, approved hero/media checks, and migration-021 atomic activation preconditions.
+- Existing capability: seven mandatory non-art Event Factory gates, an independent art state, strict Event Page validation, and migration-027 atomic activation preconditions.
 - Processor: deterministic read-only evaluation.
 - Prerequisites: private package, completed exception review, and visual-readiness result.
 - Idempotency: package/readiness/exception/visual hashes and publication-readiness rule version.
-- Completion: records `publication_eligible=true` only when the package is fully review-ready and all blockers are closed; otherwise records the exact blocker and `publication_eligible=false`.
+- Completion: records `publication_eligible=true` when the non-art package is review-ready and all blockers are closed, whether approved art exists or the package is deliberately image-free.
 - Retry: after package, exception, art, or readiness-rule changes.
-- Exceptions: `missing_approved_image`, `image_provenance_failure`, `event_factory_readiness_failure`, `publication_readiness_failure`, `identity_security_mismatch`.
+- Exceptions: `image_provenance_failure`, `event_factory_readiness_failure`, `publication_readiness_failure`, `identity_security_mismatch`.
 - Blocking: never blocks the preservation of earlier work; it blocks handoff to human publication review.
 - Required for every event that reaches the end of the run: yes.
 
@@ -519,19 +519,18 @@ Content and art are two independent completion dimensions.
 | --- | --- |
 | `publication_blocked` | A non-art factual, identity, evidence, content, security, or package blocker is open. Earlier successful work remains intact. |
 | `content_ready` | Identity, evidence, verification, synthesis, Event Hub content, citations, map provenance, and non-art package gates pass. Art has not yet been evaluated for final readiness. |
-| `art_pending` | Content remains ready and a private package/preview is available, but no approved provenance-complete hero exists. Publication eligibility is false. |
-| `review_ready` | Content and approved art pass all Event Factory and strict Event Page requirements, with no open publication-blocking exception. This is eligibility for human review, not approval or publication. |
+| `art_pending` | Content remains ready and no approved provenance-complete hero exists. This is an independent presentation state, not a failed event. |
+| `review_ready` | Every non-art requirement passes and no publication blocker is open. Approved art is optional. This is eligibility for human review, not approval or publication. |
 
 The existing package model remains authoritative:
 
-- all seven non-art gates ready and art false keeps the package in `assembling`;
-- the completion layer maps that package to `art_pending`;
-- the private preview presents an explicit art-pending treatment and does not set a fake hero URL;
-- public manifest validation remains strict;
+- all seven non-art gates ready, verified diligence, and identity clearance may make an art-false package `ready_for_review`;
+- the completion layer retains `art_pending` as an independent output while recording publication review eligibility;
+- private and public Event Hubs present a deliberate text-based hero and do not set a fake hero URL;
+- public manifest validation requires both hero source and alt text together, or both empty;
 - no Event Page version is published or made public;
-- missing art creates or preserves `missing_approved_image`;
 - content is not discarded or regenerated when art later becomes available;
-- only an approved visual workflow can move the event from `art_pending` to `review_ready`;
+- only an approved visual workflow and reviewed package revision can attach art;
 - image provenance must be `ray_provided`, `organizer_provided`, `licensed`, `generated`, `legacy`, or `unknown`; `unknown` is never publication-ready.
 
 This task does not implement the Event Image Lab and the orchestrator contains no image search, generation, upload, copy, edit, transform, replacement, or placeholder behavior.

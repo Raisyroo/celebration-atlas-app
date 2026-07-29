@@ -32,7 +32,7 @@ Current operational state overrides older historical notes. Do not restore a sup
 - New events move through retained evidence, deterministic reconciliation, editorial synthesis, private package preview, human approval, and audited publication.
 - Inspection, synthesis, and package preparation never equal publication.
 - During the Michigan pilot, only an explicit human package approval may materialize and publish a new event.
-- New hero art must use the Hero Image Factory and an approved Supabase-hosted visual workflow. Local image existence alone does not clear the art gate.
+- New hero art must satisfy `docs/EVENT_IMAGE_SPECIFICATION.md` and use an approved Supabase-hosted visual workflow. A finished externally supplied asset may enter through Atlas Control; local image existence alone never clears review.
 - Preserve source URLs, claims, disagreements, schedule provenance, visual references, and review actions.
 - Existing published packages are compatibility fixtures. Do not break them while tightening requirements for new packages.
 

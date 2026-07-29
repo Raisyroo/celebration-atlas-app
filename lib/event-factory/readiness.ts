@@ -89,6 +89,10 @@ type PackageRow = {
   event_id: string | null;
   status: EventFactoryPackageStatus;
   readiness_checks: Partial<Record<EventFactoryGateKey, boolean>>;
+  package_version: number;
+  page_manifest: unknown;
+  art_asset: Record<string, unknown>;
+  published_at: string | null;
 };
 type VisualWorkflowRow = {
   id: string;
@@ -98,6 +102,8 @@ type VisualWorkflowRow = {
   event_key: string;
   lane: "fast_visual" | "editorial";
   status: "researching" | "draft" | "ready_for_review" | "approved" | "rejected" | "archived";
+  asset: Record<string, unknown>;
+  generation_brief: Record<string, unknown>;
 };
 
 const CURRENT_YEAR = new Date().getUTCFullYear();
@@ -174,7 +180,7 @@ function stageFor(
     (key) => gates[key as EventFactoryGateKey] === "ready",
   );
   if (!diligenceReady) return hasCanonicalEvent ? "due_diligence" : "discovery_review";
-  const outputReady = ["map", "page", "art"].every((key) => gates[key as EventFactoryGateKey] === "ready");
+  const outputReady = ["map", "page"].every((key) => gates[key as EventFactoryGateKey] === "ready");
   if (!outputReady) return "production";
   if (hasCanonicalEvent && hasPublishedPage) return "live";
   if (verificationStatus !== "verified") return "due_diligence";
@@ -190,7 +196,6 @@ function blockersFor(gates: Record<EventFactoryGateKey, EventFactoryGateState>) 
   if (gates.sources !== "ready") blockers.push("Corroborating source evidence");
   if (gates.map !== "ready") blockers.push("Public map record");
   if (gates.page !== "ready") blockers.push("Approved Event Hub page");
-  if (gates.art !== "ready") blockers.push("Approved Celebration Atlas art");
   return blockers;
 }
 
@@ -252,8 +257,8 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
     supabase.from("event_source_syntheses").select("bundle_id,status,is_manifest_valid,manifest_proposal,reconciled_profile").eq("status", "accepted").eq("is_manifest_valid", true).limit(1000),
     supabase.from("event_page_versions").select("status,is_valid,event_pages!event_page_versions_event_page_id_fkey!inner(event_id,event_key,slug)").limit(1000),
     supabase.from("event_verification_cases").select("id,candidate_id,event_id,target_year,status,existence_status,recurrence_status,dates_status,location_status,official_source_count,supporting_source_count").or(`candidate_id.in.(${candidateFilter.join(",")}),event_id.in.(${eventFilter.join(",")})`).order("target_year", { ascending: false }).limit(1000),
-    supabase.from("event_factory_packages").select("id,candidate_id,event_id,status,readiness_checks,package_version,updated_at").or(`candidate_id.in.(${candidateFilter.join(",")}),event_id.in.(${eventFilter.join(",")})`).order("package_version", { ascending: false }).order("updated_at", { ascending: false }).limit(1000),
-    supabase.from("event_visual_workflows").select("id,candidate_id,event_id,event_key,lane,status,revision_number,updated_at").or(`candidate_id.in.(${candidateFilter.join(",")}),event_id.in.(${eventFilter.join(",")})`).order("revision_number", { ascending: false }).order("updated_at", { ascending: false }).limit(1000),
+    supabase.from("event_factory_packages").select("id,candidate_id,event_id,status,readiness_checks,package_version,page_manifest,art_asset,published_at,updated_at").or(`candidate_id.in.(${candidateFilter.join(",")}),event_id.in.(${eventFilter.join(",")})`).order("package_version", { ascending: false }).order("updated_at", { ascending: false }).limit(1000),
+    supabase.from("event_visual_workflows").select("id,candidate_id,event_id,event_key,lane,status,asset,generation_brief,revision_number,updated_at").or(`candidate_id.in.(${candidateFilter.join(",")}),event_id.in.(${eventFilter.join(",")})`).order("revision_number", { ascending: false }).order("updated_at", { ascending: false }).limit(1000),
   ]);
 
   const warnings: string[] = [];
@@ -331,6 +336,10 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
       candidateId: item.candidate_id,
       eventId: item.event_id,
     }));
+    const publishedPackage = packages.find((item) => item.status === "published" && sharesEventFactoryIdentity(identity, {
+      candidateId: item.candidate_id,
+      eventId: item.event_id,
+    }));
     const visualWorkflow = visualWorkflows.find((item) => sharesEventFactoryIdentity(identity, {
       candidateId: item.candidate_id,
       eventId: item.event_id,
@@ -365,6 +374,34 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
       if (eventPackage?.readiness_checks[gate]) gates[gate] = "ready";
     }
     const stage = stageFor(gates, Boolean(event), verificationCase?.status ?? null, excluded, hasPublishedPage, eventPackage?.status ?? null);
+    const publishedHasArt = Boolean(
+      typeof publishedPackage?.art_asset?.publicUrl === "string"
+        ? publishedPackage.art_asset.publicUrl.trim()
+        : typeof publishedPackage?.art_asset?.src === "string"
+          ? publishedPackage.art_asset.src.trim()
+          : "",
+    );
+    const pendingUploadedArt = Boolean(
+      visualWorkflow
+      && ["ready_for_review", "approved"].includes(visualWorkflow.status)
+      && typeof visualWorkflow.asset?.publicUrl === "string"
+      && visualWorkflow.asset.publicUrl.trim()
+      && visualWorkflow.generation_brief?.style === "Externally supplied finished asset"
+      && publishedPackage?.art_asset?.visualWorkflowId !== visualWorkflow.id,
+    );
+    const nonArtReady = (["exists", "annual", "dates", "location", "sources", "map", "page"] as EventFactoryGateKey[])
+      .every((gate) => gates[gate] === "ready");
+    const publicationArtState: EventFactoryItem["publicationArtState"] = publishedPackage
+      ? publishedHasArt
+        ? "published_with_approved_art"
+        : pendingUploadedArt
+          ? "image_uploaded_awaiting_approval"
+          : "published_without_art"
+      : verificationCase?.status !== "verified"
+        ? "private_awaiting_verification"
+        : nonArtReady
+          ? "private_awaiting_verification"
+          : "blocked_non_art";
     return {
       key: eventId ?? candidateId ?? slug,
       candidateId,
@@ -372,7 +409,9 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
       verificationCaseId: verificationCase?.id ?? null,
       targetYear: verificationCase?.target_year ?? null,
       packageId: eventPackage?.id ?? null,
+      publishedPackageId: publishedPackage?.id ?? null,
       packageStatus: eventPackage?.status ?? null,
+      publicationArtState,
       visualWorkflowId: visualWorkflow?.id ?? null,
       visualWorkflowStatus: visualWorkflow?.status ?? null,
       visualLane: visualWorkflow?.lane ?? null,

@@ -53,7 +53,7 @@ export async function loadSupabaseCountyOperatorSnapshot(args: {
     args.client
       .from("event_factory_packages")
       .select(
-        "id,status,candidate_id,event_id,verification_case_id,source_bundle_id,synthesis_id,readiness_checks,updated_at",
+        "id,status,candidate_id,event_id,verification_case_id,source_bundle_id,synthesis_id,readiness_checks,art_asset,published_at,updated_at",
       )
       .order("updated_at", { ascending: false })
       .limit(5_000),

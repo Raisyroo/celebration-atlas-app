@@ -109,7 +109,7 @@ assert(eventFactoryReadiness.includes('event_visual_workflows') && eventFactoryR
 assert(eventFactoryReadiness.includes('event_page_versions_event_page_id_fkey'), 'event factory readiness does not disambiguate the Event Page version relationship');
 
 const eventFactoryPackages = read('lib/event-factory/packages.ts');
-for (const rpc of ['atlas_upsert_event_factory_package', 'atlas_create_event_factory_hero_correction', 'atlas_review_event_factory_package', 'atlas_materialize_event_factory_package', 'atlas_activate_event_factory_publication', 'atlas_finish_event_factory_publication', 'atlas_list_event_factory_packages']) {
+for (const rpc of ['atlas_upsert_event_factory_package', 'atlas_finalize_art_optional_event_factory_package', 'atlas_create_event_factory_hero_correction', 'atlas_create_event_factory_art_revision', 'atlas_review_event_factory_package', 'atlas_materialize_event_factory_package', 'atlas_activate_event_factory_publication', 'atlas_finish_event_factory_publication', 'atlas_list_event_factory_packages']) {
   assert(eventFactoryPackages.includes(`"${rpc}"`), `event package service does not call fixed RPC ${rpc}`);
 }
 assert(eventFactoryPackages.includes('validateEventPageManifest'), 'event package publication does not revalidate the reviewed Event Hub manifest');
@@ -122,9 +122,11 @@ assert(eventFactoryPackages.includes('getApprovedEventVisualWorkflow'), 'event p
 assert(eventFactoryPackages.includes('visual-signature-v1') && eventFactoryPackages.includes('assertReviewedVisualAsset'), 'event package publication does not retain and recheck the approved visual workflow');
 assert(!eventFactoryPackages.includes('publishEventPageVersion'), 'event package service still activates the Event Hub before atomic package finalization');
 assert(
-  eventFactoryPackages.indexOf('const versionId = await prepareReviewedManifest(') < eventFactoryPackages.indexOf('const mediaId = await registerApprovedPackageArt(')
-    && eventFactoryPackages.indexOf('const mediaId = await registerApprovedPackageArt(') < eventFactoryPackages.indexOf('const activated = await activateEventFactoryPublication('),
-  'event package publication does not prepare page, register media, and activate in order',
+  eventFactoryPackages.indexOf('const versionId = await prepareReviewedManifest(') < eventFactoryPackages.indexOf('const mediaId = validation.artPending')
+    && eventFactoryPackages.indexOf('const mediaId = validation.artPending') < eventFactoryPackages.indexOf('const activated = await activateEventFactoryPublication(')
+    && eventFactoryPackages.includes('? null')
+    && eventFactoryPackages.includes(': await registerApprovedPackageArt('),
+  'event package publication does not prepare page, conditionally register media, and activate in order',
 );
 assert(!eventFactoryPackages.includes('window'), 'server-owned event package service references the browser');
 assert(!/rpc\([^"'`]/.test(eventFactoryPackages), 'event package service appears to accept a dynamic RPC name');

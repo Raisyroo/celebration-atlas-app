@@ -56,7 +56,7 @@ Planning classifies every approved inventory row exactly once:
 | `eligible_for_guarded_staging` | Put it in one bounded, hashed manifest using the generalized county guard. |
 | `evidence_or_current_edition_verification_required` | Reuse the private candidate and continue only through retained evidence and human verification gates. |
 
-The aggregate report retains, for all rows, the source record ID, selected canonical/candidate/run references, activity, status, reason, exception, source-bundle/synthesis/verification/package/visual references, current-edition requirement, location-verification requirement, and content/art/publication readiness.
+The aggregate report retains, for all rows, the source record ID, selected canonical/candidate/run references, activity, status, reason, exception, source-bundle/synthesis/verification/package/visual references, current-edition requirement, location-verification requirement, and content/art/publication readiness. Its minimal `publicationArtState` projection distinguishes `published_with_approved_art`, `published_without_art`, `image_uploaded_awaiting_approval`, `blocked_non_art`, and `private_awaiting_verification`. Missing art is not reported as a failed event when the non-art publication requirements pass.
 
 ## Batches, hashes, replay, and resume
 

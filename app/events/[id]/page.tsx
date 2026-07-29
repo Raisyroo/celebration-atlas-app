@@ -16,6 +16,7 @@ export default async function EventPage({ params }: EventPageProps) {
         key={resolvedEventPage.manifest.eventId}
         manifest={resolvedEventPage.manifest}
         scoutContentReference={resolvedEventPage.scoutContentReference}
+        artPending={resolvedEventPage.artPending}
       />
     );
   }

@@ -140,6 +140,14 @@ function mapAsset(value: unknown): EventVisualAsset | null {
     storagePath,
     ...(text(source.contentType) ? { contentType: text(source.contentType) } : {}),
     ...(Number.isFinite(Number(source.byteSize)) ? { byteSize: Number(source.byteSize) } : {}),
+    ...(Number.isFinite(Number(source.width)) ? { width: Number(source.width) } : {}),
+    ...(Number.isFinite(Number(source.height)) ? { height: Number(source.height) } : {}),
+    ...(text(source.sourceFilename) ? { sourceFilename: text(source.sourceFilename) } : {}),
+    ...(text(source.uploadedBy) ? { uploadedBy: text(source.uploadedBy) } : {}),
+    ...(text(source.uploadedAt) ? { uploadedAt: text(source.uploadedAt) } : {}),
+    ...(source.provenanceCategory === "externally_supplied"
+      ? { provenanceCategory: "externally_supplied" as const }
+      : {}),
   };
 }
 
@@ -270,6 +278,36 @@ export async function createEventVisualWorkflowRevision(args: {
   if (error) throw new Error(error.message);
   const row = Array.isArray(data) ? data[0] : data;
   if (!row || typeof row !== "object") throw new Error("Visual workflow revision returned no result.");
+  return row as Record<string, unknown>;
+}
+
+export async function createManualEventVisualWorkflow(args: {
+  sourcePackageId: string;
+  asset: EventVisualAsset;
+  confirmations: {
+    correctEvent: boolean;
+    rightsConfirmed: boolean;
+    noInventedMarks: boolean;
+    fullFrameReviewed: boolean;
+  };
+  actorIdentity: string;
+}) {
+  const supabase = requireServiceClient();
+  const { data, error } = await supabase.rpc("atlas_create_manual_event_visual_workflow", {
+    p_source_package_id: args.sourcePackageId,
+    p_asset: args.asset,
+    p_confirmations: args.confirmations,
+    p_content_hash: contentHash({
+      sourcePackageId: args.sourcePackageId,
+      asset: args.asset,
+      confirmations: args.confirmations,
+      pathway: "externally_supplied_finished_asset",
+    }),
+    p_actor_identity: args.actorIdentity,
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || typeof row !== "object") throw new Error("Manual visual workflow returned no result.");
   return row as Record<string, unknown>;
 }
 

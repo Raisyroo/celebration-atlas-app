@@ -52,7 +52,7 @@ Use `/atlas-control` as an authorized administrator:
 
 Publication occurs in one database transaction. The prior published version is archived and the stable page pointer moves only when the approved replacement can be published successfully.
 
-Event Factory publication adds a wider package-level transaction in migration 021. Its server flow creates or reuses a draft, submits and approves it without changing the public pointer, registers or reuses the reviewed hero media, and then calls `atlas_activate_event_factory_publication`. That final RPC verifies the package, canonical event, exact frozen manifest, approved version, and approved hero record before it archives the old version, publishes the replacement, moves `event_pages.published_version_id`, marks the package `published`, and appends both audit transitions in one commit.
+Event Factory publication adds a wider package-level transaction in migration 021. Its server flow creates or reuses a draft, submits and approves it without changing the public pointer, registers reviewed hero media when the manifest contains art, and then calls `atlas_activate_event_factory_publication`. Migration 027 extends that same atomic RPC for an image-free manifest: a null media id is accepted only when hero source and alt text are both empty and every non-art readiness check is true. Art-bearing packages still require the exact approved media row.
 
 The general Event Page publish RPC remains available for versions that are not owned by an Event Factory package. A database trigger rejects independent activation of an exact factory-backed manifest until its package is published, and the public resolver requires the exact factory package to be `published`. Checked-in transition manifests remain the application fallback when no eligible database publication resolves.
 
@@ -64,6 +64,6 @@ Migration 007 source synthesis proposals are deliberately outside this publicati
 
 ## Content contract
 
-`data/eventPageManifestValidation.ts` validates the manifest before draft creation and again before rendering a database publication. It checks required renderer fields, enum values, unique record ids, module and filter references, source provenance references, dates, URLs, serialized size, and event sponsor language.
+`data/eventPageManifestValidation.ts` validates the manifest before draft creation and again before rendering a database publication. It checks required renderer fields, enum values, unique record ids, module and filter references, source provenance references, dates, URLs, serialized size, and event sponsor language. Hero source and alt text must either both be present or both be empty. The empty pair selects the Event Hub's deliberate text-based hero and never creates an image request.
 
 The public route also verifies that the manifest `eventId` and `slug` match the stable database page identity. A mismatch cannot replace the checked-in fallback.

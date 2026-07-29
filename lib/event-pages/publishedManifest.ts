@@ -20,6 +20,7 @@ type PublishedEventPageRow = {
 export type ResolvedEventPage = {
   manifest: EventPageManifest;
   scoutContentReference: ScoutContentReference;
+  artPending: boolean;
 };
 
 function getLocalEventPage(identifier: string): ResolvedEventPage | undefined {
@@ -28,6 +29,7 @@ function getLocalEventPage(identifier: string): ResolvedEventPage | undefined {
   return {
     manifest: localFallback,
     scoutContentReference: getManifestScoutContentReference(localFallback),
+    artPending: !localFallback.hero.imageSrc.trim(),
   };
 }
 
@@ -55,6 +57,7 @@ async function resolveEventPageResult(identifier: string): Promise<ResolvedEvent
       packageId: data.version_id,
       packageVersion: String(data.version_number),
     },
+    artPending: !validation.value.hero.imageSrc.trim(),
   };
 }
 

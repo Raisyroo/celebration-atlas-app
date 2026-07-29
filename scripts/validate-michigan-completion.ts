@@ -863,19 +863,6 @@ function createFixtureExecutor(
               artProvenance: "unknown",
               publicationEligible: false,
             },
-            exceptions: [
-              {
-                code: "missing_approved_image",
-                classification: "publication_blocking",
-                message: "Content is ready; approved art remains pending.",
-                publicationBlocking: true,
-                details: {
-                  imageGenerated: false,
-                  imageSubstituted: false,
-                  privatePreviewAvailable: true,
-                },
-              },
-            ],
           };
         }
         return success({
@@ -884,27 +871,19 @@ function createFixtureExecutor(
         });
       }
       if (stageId === "exception_review") {
-        if (eventKey === "art-pending") {
-          return {
-            outcome: "blocked",
-            output: {
-              publicationBlocked: true,
-              contentWorkRetained: true,
-            },
-          };
-        }
         return success({ blockingExceptionPresent: false });
       }
       if (stageId === "publication_readiness") {
+        const artOptionalEligible = eventKey === "art-pending";
         return {
           ...success({
-            publicationEligible: false,
+            publicationEligible: artOptionalEligible,
             publicationInvoked: false,
-            readinessStatus: "content_ready",
+            readinessStatus: artOptionalEligible ? "review_ready" : "content_ready",
           }),
           links: {
-            readinessState: "content_ready",
-            publicationEligible: false,
+            readinessState: artOptionalEligible ? "review_ready" : "content_ready",
+            publicationEligible: artOptionalEligible,
           },
         };
       }
@@ -1015,9 +994,9 @@ async function validateStageRegistryAndSourceBoundaries() {
     "editorial_assistance@1",
     "content_readiness@1",
     "package_preparation@1",
-    "visual_readiness@1",
-    "exception_review@1",
-    "publication_readiness@1",
+    "visual_readiness@2",
+    "exception_review@2",
+    "publication_readiness@2",
   ];
   assert.deepEqual(
     MICHIGAN_COMPLETION_STAGES.map(
@@ -1183,11 +1162,11 @@ async function validateAttachmentCasesAThroughE() {
     undefined,
   );
 
-  // D. Art pending: content and private preview survive; no image action; publish blocked.
+  // D. Art pending: content and private preview survive; no image action; review eligibility remains.
   const artPending = completionEventByKey(snapshot, "art-pending");
-  assert.equal(artPending.readinessState, "art_pending");
-  assert.equal(artPending.status, "waiting_for_exception");
-  assert.equal(artPending.publicationEligible, false);
+  assert.equal(artPending.readinessState, "review_ready");
+  assert.equal(artPending.status, "ready_for_review");
+  assert.equal(artPending.publicationEligible, true);
   assert.equal(
     checkpointFor(snapshot, "art-pending", "content_readiness")?.output
       .contentReady,
@@ -1209,13 +1188,13 @@ async function validateAttachmentCasesAThroughE() {
     false,
   );
   assert.equal(effects.imageActions, 0);
-  assert(
+  assert.equal(
     snapshot.exceptions.some(
       (exception) =>
         exception.eventKey === "art-pending" &&
-        exception.code === "missing_approved_image" &&
-        exception.publicationBlocking,
+        exception.code === "missing_approved_image",
     ),
+    false,
   );
 
   // E. Event and run budgets block calls without stopping deterministic records.

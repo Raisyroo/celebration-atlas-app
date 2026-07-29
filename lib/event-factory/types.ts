@@ -36,7 +36,14 @@ export type EventFactoryItem = {
   verificationCaseId: string | null;
   targetYear: number | null;
   packageId: string | null;
+  publishedPackageId: string | null;
   packageStatus: EventFactoryPackageStatus | null;
+  publicationArtState:
+    | "published_with_approved_art"
+    | "published_without_art"
+    | "image_uploaded_awaiting_approval"
+    | "blocked_non_art"
+    | "private_awaiting_verification";
   visualWorkflowId: string | null;
   visualWorkflowStatus: EventVisualWorkflowStatus | null;
   visualLane: EventVisualLane | null;
@@ -92,6 +99,12 @@ export type EventVisualAsset = {
   storagePath: string;
   contentType?: string;
   byteSize?: number;
+  width?: number;
+  height?: number;
+  sourceFilename?: string;
+  uploadedBy?: string;
+  uploadedAt?: string;
+  provenanceCategory?: "externally_supplied";
 };
 
 export type EventVisualQaChecks = {

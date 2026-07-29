@@ -13,6 +13,14 @@ const migration021 = await readFile(
   path.join(root, 'supabase/migrations/021_atomic_event_factory_publication.sql'),
   'utf8',
 );
+const migration027 = await readFile(
+  path.join(root, 'supabase/migrations/027_art_optional_event_hubs.sql'),
+  'utf8',
+);
+const artOptionalActivation = migration027.match(
+  /create or replace function public\.atlas_activate_event_factory_publication\([\s\S]*?\n\$\$;/,
+)?.[0];
+assert(artOptionalActivation, 'migration 027 must replace the atomic activation function');
 
 const db = new PGlite();
 let hashSequence = 1;
@@ -22,7 +30,7 @@ function manifest(eventKey, heroUrl, marker = 'current') {
     eventId: eventKey,
     slug: eventKey,
     marker,
-    hero: { imageSrc: heroUrl },
+    hero: { imageSrc: heroUrl, imageAlt: heroUrl ? `${eventKey} hero` : '' },
   };
 }
 
@@ -108,6 +116,7 @@ async function createPackage({
       status,
       page_manifest,
       art_asset,
+      readiness_checks,
       readiness_score,
       reviewed_by,
       published_by,
@@ -125,6 +134,16 @@ async function createPackage({
       jsonb_build_object(
         'src', $5::text,
         'publicUrl', $5::text
+      ),
+      jsonb_build_object(
+        'exists', true,
+        'annual', true,
+        'dates', true,
+        'location', true,
+        'sources', true,
+        'map', true,
+        'page', true,
+        'art', $5::text <> ''
       ),
       1,
       'lifecycle-test',
@@ -263,6 +282,7 @@ try {
       package_version integer not null default 1,
       page_manifest jsonb not null,
       art_asset jsonb not null,
+      readiness_checks jsonb not null default '{}'::jsonb,
       readiness_score numeric(4,3) not null default 1,
       reviewed_by text,
       review_notes text,
@@ -286,6 +306,7 @@ try {
   `);
 
   await db.exec(migration021);
+  await db.exec(artOptionalActivation);
 
   await db.exec(`
     create or replace function public.test_reject_atomic_publication()
@@ -340,6 +361,49 @@ try {
     1,
     'a fully activated Event Factory page must resolve publicly',
   );
+
+  // A2. An otherwise complete package may activate with no hero media.
+  const imageFreeKey = 'atomic-image-free';
+  const imageFreeManifest = manifest(imageFreeKey, '');
+  const imageFreeEventId = await createEvent(imageFreeKey);
+  const imageFreePageId = await createPage(imageFreeEventId, imageFreeKey);
+  const imageFreeVersionId = await createVersion(imageFreePageId, imageFreeManifest);
+  const imageFreePackageId = await createPackage({
+    eventId: imageFreeEventId,
+    eventKey: imageFreeKey,
+    pageManifest: imageFreeManifest,
+  });
+  const imageFreePublication = await activate(
+    imageFreePackageId,
+    imageFreeVersionId,
+    null,
+  );
+  assert.equal(imageFreePublication.status, 'published');
+  assert.equal(imageFreePublication.media_id, null);
+  assert.equal(await publishedPointer(imageFreePageId), imageFreeVersionId);
+
+  // Missing art never excuses a failed non-art readiness check.
+  const blockedImageFreeKey = 'atomic-image-free-blocked';
+  const blockedImageFreeManifest = manifest(blockedImageFreeKey, '');
+  const blockedImageFreeEventId = await createEvent(blockedImageFreeKey);
+  const blockedImageFreePageId = await createPage(blockedImageFreeEventId, blockedImageFreeKey);
+  const blockedImageFreeVersionId = await createVersion(blockedImageFreePageId, blockedImageFreeManifest);
+  const blockedImageFreePackageId = await createPackage({
+    eventId: blockedImageFreeEventId,
+    eventKey: blockedImageFreeKey,
+    pageManifest: blockedImageFreeManifest,
+  });
+  await db.query(`
+    update public.event_factory_packages
+    set readiness_checks = jsonb_set(readiness_checks, '{dates}', 'false'::jsonb)
+    where id = $1::uuid
+  `, [blockedImageFreePackageId]);
+  await assert.rejects(
+    activate(blockedImageFreePackageId, blockedImageFreeVersionId, null),
+    /every non-art safeguard/,
+  );
+  assert.equal(await packageStatus(blockedImageFreePackageId), 'publishing');
+  assert.equal(await publishedPointer(blockedImageFreePageId), null);
 
   // B. Media registration failure leaves the approved page private.
   const mediaFailureKey = 'atomic-media-failure';

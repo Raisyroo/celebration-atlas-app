@@ -274,9 +274,16 @@ export function validateEventPageManifest(input: unknown): EventPageManifestVali
   }
 
   const hero = requiredRecord(input, 'hero', 'manifest', errors);
-  ['imageSrc', 'imageAlt', 'eyebrow', 'tagline'].forEach((key) => {
+  ['eyebrow', 'tagline'].forEach((key) => {
     requiredString(hero, key, 'manifest.hero', errors);
   });
+  const imageSrc = typeof hero.imageSrc === 'string' ? hero.imageSrc.trim() : '';
+  const imageAlt = typeof hero.imageAlt === 'string' ? hero.imageAlt.trim() : '';
+  if (typeof hero.imageSrc !== 'string' || typeof hero.imageAlt !== 'string') {
+    errors.push('manifest.hero.imageSrc and manifest.hero.imageAlt must be strings.');
+  } else if (Boolean(imageSrc) !== Boolean(imageAlt)) {
+    errors.push('manifest.hero.imageSrc and manifest.hero.imageAlt must both be supplied or both be empty.');
+  }
   optionalString(hero, 'imagePosition', 'manifest.hero', errors);
   optionalString(hero, 'credit', 'manifest.hero', errors);
 
@@ -619,6 +626,9 @@ export function validateEventPageManifest(input: unknown): EventPageManifestVali
   if (!navigation.length) warnings.push('Manifest has no navigation items.');
   if (!suggestions.length) warnings.push('Manifest has no Scout suggestions.');
   if (!sources.length) warnings.push('Manifest has no provenance sources.');
+  if (!imageSrc && !imageAlt) {
+    warnings.push('Manifest intentionally uses the image-free Event Hub hero treatment.');
+  }
 
   if (errors.length) return { ok: false, errors: [...new Set(errors)], warnings };
   return { ok: true, value: input as unknown as EventPageManifest, errors: [], warnings };

@@ -985,6 +985,7 @@ export default function EventHub({ manifest, scoutContentReference, homeLink, ar
   const hasVisibleScoutHistory =
     isScoutHistoryVisible && scoutConversation.length > 0;
   const resolvedHomeLink = resolveEventHubHomeLink(homeLink);
+  const imageFreeHero = artPending || !manifest.hero.imageSrc.trim();
 
   return (
     <main
@@ -1033,11 +1034,11 @@ export default function EventHub({ manifest, scoutContentReference, homeLink, ar
       </header>
 
       <section className={styles.hero} aria-labelledby="event-hub-title">
-        {artPending ? (
-          <div className={styles.artPending} role="status">
-            <span>Private content preview</span>
-            <strong>Approved hero art pending</strong>
-            <small>No image has been generated or substituted.</small>
+        {imageFreeHero ? (
+          <div className={styles.artPending} data-image-free-hero="true">
+            <span>Celebration Atlas</span>
+            <strong>{manifest.identity.name}</strong>
+            <small>{manifest.identity.location}</small>
           </div>
         ) : (
           <Image

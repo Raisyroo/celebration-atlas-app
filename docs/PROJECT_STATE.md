@@ -48,6 +48,10 @@ The private review queue is empty.
 
 ## Event Factory
 
+The reduced art-optional publication path is implemented. A fully verified, identity-cleared package may become review-ready with `art=false`; its public Event Hub renders a deliberate image-free hero. The existing Atlas Control visual workbench now has a finished external-image path governed by `docs/EVENT_IMAGE_SPECIFICATION.md` (1024 x 1536, 2:3, JPG/PNG/WebP, 8 MB). Upload, approval, attachment, replacement, and removal retain the existing visual, package, media, Event Page, URL, and audit architecture. No image generation is part of this path.
+
+Forward-only migration `027_art_optional_event_hubs.sql` was deployed to the linked Supabase project on July 29, 2026, with local and remote migration parity verified through `027`. It adds no table. It keeps all functions service-role-only, makes an image-free package review-ready only after the seven non-art checks plus verified diligence and identity clearance pass, permits null media only for an actually empty hero during atomic activation, and creates immutable manual-art and art-removal revisions. It cannot approve a workflow or package, materialize a candidate, or publish a page by itself.
+
 The operating loop is:
 
 ```text
@@ -117,7 +121,7 @@ Persistent completion state reuses `atlas_operation_runs`, append-only `atlas_op
 
 The command `npm run atlas:complete-michigan-batch` defaults to dry-run, requires `--authorize-private-writes` for existing private workflow mutations, supports bounded concurrency, deterministic-only execution, explicit run and per-event model budgets, exact resume, and a structured report. It exposes no publication option. Model assistance is reserved only after deterministic processing and records its route, reason, preconditions, configured model, attempt cap, usage, budgets, fallback, and terminal outcome.
 
-Content and art readiness are independent. Complete source-bound Event Hub content can remain in a private `art_pending` package and preview without a hero URL; missing or unapproved art creates or preserves a publication-blocking exception. The completion layer never searches for, generates, copies, edits, uploads, selects, substitutes, or approves imagery, and strict public Event Hub validation remains unchanged.
+Content and art readiness are independent. Complete source-bound Event Hub content can remain `art_pending` without a hero URL, but missing art alone is no longer a publication-blocking exception. The completion layer never searches for, generates, copies, edits, uploads, selects, substitutes, or approves imagery. Public validation accepts either a complete hero source/alt pair or a deliberately empty pair.
 
 Atlas Control gains only a protected compact completion-run projection and linked completion-exception context. The full architecture and operating contract are in `docs/MICHIGAN_COMPLETION_ARCHITECTURE.md`; the bounded county rollout and first-proof procedure are in `docs/MICHIGAN_COMPLETION_EXECUTION_PLAN.md`.
 

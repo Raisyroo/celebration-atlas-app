@@ -25,7 +25,7 @@ Every package must report these gates independently:
 | Sources | The official source is supported by at least one useful corroborating source. |
 | Map | A canonical public map record can be rendered from approved database data. |
 | Page | A valid accepted source-synthesis manifest, reviewed page version, or checked-in transition manifest can render a private Event Hub preview. |
-| Art | Celebration Atlas artwork is approved, or an editor has deliberately selected an allowed fallback. |
+| Art | Optional output state: approved Celebration Atlas artwork is retained, or the package deliberately remains image-free. |
 
 An event description containing words such as `annual` or `recurring` is a claim, not proof. The underlying source and excerpt must remain available for review.
 
@@ -43,7 +43,7 @@ An extracted `identity.description` is not automatically suitable as a general o
 
 AI may discover events, inspect sources, archive evidence, reconcile facts, classify the event, geocode the location, generate a manifest, prepare Scout context, create an art brief, generate artwork, and assemble a private preview.
 
-During the Michigan pilot, only a human approval may release a package publicly. Approval is a single package-level decision after all blockers are visible and the mobile preview has been reviewed. Canonical materialization, approved Event Hub preparation, and approved art registration remain retryable private effects underneath that decision. Migration 021 places the public boundary in one final transaction: it locks the package and Event Hub records, verifies the exact canonical event, frozen manifest, and approved hero media, archives any prior public version, activates the replacement, finalizes the package, and appends both audit histories before committing.
+During the Michigan pilot, only a human approval may release a package publicly. Approval is a single package-level decision after all blockers are visible and the preview has been reviewed. Canonical materialization and approved Event Hub preparation remain private effects underneath that decision. Migration 021 established the atomic public boundary. Forward-only migration 027, once separately deployed, retains that transaction while allowing a null hero media id only for a genuinely image-free manifest whose seven non-art checks all pass. A package with art still requires matching approved media.
 
 Package preparation never creates or updates a public canonical event. Migration 011 stores packages and their action history behind service-role-only access. The `Approve and publish` control is the first action allowed to materialize the candidate into `events` and publish the reviewed Event Hub version.
 
@@ -88,7 +88,9 @@ The workflow begins in `draft`, can become `ready_for_review`, and requires expl
 
 Art from another event may be a rendering-quality or layout exemplar, but it must never outweigh the target event's own thumbnail research or act as evidence for its content. The uploaded asset must implement the stored event-specific generation brief. When a generated option drifts from that brief, the editor resets its QA checks, replaces the cloud asset, and verifies the new mobile crop before the workflow can return to `ready_for_review`.
 
-Package synthesis and preparation prefer the approved cloud asset and retain the complete visual brief and review record. New visual-signature packages cannot publish without that approved workflow. Existing published pilot packages remain compatible and are not retroactively blocked.
+Package synthesis and preparation prefer an approved cloud asset and retain the complete visual brief and review record. Missing art alone is not a publication blocker after every identity, evidence, verification, location, date, content, map, and package safeguard passes. The published Event Hub then uses its intentional image-free hero.
+
+A finished externally supplied image uses the exact contract in `docs/EVENT_IMAGE_SPECIFICATION.md`. Atlas Control validates and stores it, creates a review-ready record in the existing visual workflow, and requires explicit approval before an immutable package revision can attach it. This manual path performs no image search, generation, enhancement, or crop.
 
 Migration 017 adds immutable same-edition corrections. A visual workflow retained by a released package is never reopened or overwritten. Instead, `Correct approved hero` creates a linked visual revision, copies the retained event research and generation brief, clears the selected asset, and resets every QA gate. After the corrected cloud asset is uploaded, checked, and explicitly approved, package preparation creates a linked package revision rather than rebuilding the released package. The normal private preview and human `Approve and publish` decision then promote a new immutable Event Hub version while the prior visual workflow, package, media object, and page version remain in the audit history.
 

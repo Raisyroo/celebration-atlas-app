@@ -86,6 +86,7 @@ type PackageRow = {
   slug: string;
   status: EventFactoryPackageStatus;
   package_version: number;
+  content_hash: string;
   page_manifest: unknown;
   art_asset: Record<string, unknown>;
 };
@@ -480,12 +481,21 @@ export async function prepareEventFactoryPackage(args: {
     p_actor_identity: args.actorIdentity,
   });
   if (error) throw new Error(error.message);
+  let packageResult = firstRpcRow(data);
+  if (!approvedVisual?.asset) {
+    const finalized = await supabase.rpc("atlas_finalize_art_optional_event_factory_package", {
+      p_package_id: packageResult.package_id,
+      p_actor_identity: args.actorIdentity,
+    });
+    if (finalized.error) throw new Error(finalized.error.message);
+    packageResult = firstRpcRow(finalized.data);
+  }
   return {
-    ...firstRpcRow(data),
+    ...packageResult,
     content_ready: true,
     art_pending: !approvedVisual?.asset,
     private_preview_available: true,
-    publication_blocked: !approvedVisual?.asset,
+    publication_blocked: false,
     art_provenance: artProvenance,
   };
 }
@@ -494,7 +504,7 @@ async function getPackage(packageId: string): Promise<PackageRow> {
   const supabase = requireServiceClient();
   const { data, error } = await supabase
     .from("event_factory_packages")
-    .select("id,supersedes_package_id,verification_case_id,candidate_id,event_id,event_key,slug,status,package_version,page_manifest,art_asset")
+    .select("id,supersedes_package_id,verification_case_id,candidate_id,event_id,event_key,slug,status,package_version,content_hash,page_manifest,art_asset")
     .eq("id", packageId)
     .single();
   if (error || !data) throw new Error(error?.message ?? "Event package was not found.");
@@ -535,7 +545,7 @@ export async function getPublicEventFactoryPackagePreview(
   if (!PUBLIC_PREVIEW_STATUSES.has(packageRow.status)) {
     throw new Error("This event package is not available for read-only review.");
   }
-  const validation = validateEventPageManifest(packageRow.page_manifest);
+  const validation = validateEventPageContentReadiness(packageRow.page_manifest);
   if (!validation.ok) {
     throw new Error(`Event package preview is invalid: ${validation.errors.join(" ")}`);
   }
@@ -546,7 +556,7 @@ export async function getPublicEventFactoryPackagePreview(
       packageId: packageRow.id,
       packageVersion: String(packageRow.package_version),
     },
-    artPending: false,
+    artPending: validation.artPending,
   };
 }
 
@@ -594,10 +604,47 @@ async function finishEventFactoryPublication(args: {
   return firstRpcRow(data);
 }
 
+export async function createEventFactoryArtRevision(args: {
+  sourcePackageId: string;
+  visualWorkflowId?: string | null;
+  actorIdentity: string;
+  notes?: string;
+}) {
+  const supabase = requireServiceClient();
+  const sourcePackage = await getPackage(args.sourcePackageId);
+  let visualWorkflowHash: string | null = null;
+  if (args.visualWorkflowId) {
+    const visualResult = await supabase
+      .from("event_visual_workflows")
+      .select("content_hash")
+      .eq("id", args.visualWorkflowId)
+      .single();
+    if (visualResult.error || !visualResult.data) {
+      throw new Error(visualResult.error?.message ?? "Visual workflow was not found.");
+    }
+    visualWorkflowHash = visualResult.data.content_hash;
+  }
+  const { data, error } = await supabase.rpc("atlas_create_event_factory_art_revision", {
+    p_source_package_id: args.sourcePackageId,
+    p_visual_workflow_id: args.visualWorkflowId ?? null,
+    p_content_hash: contentHash({
+      sourcePackageId: args.sourcePackageId,
+      sourcePackageHash: sourcePackage.content_hash,
+      visualWorkflowId: args.visualWorkflowId ?? null,
+      visualWorkflowHash,
+      scope: args.visualWorkflowId ? "attach_external_hero" : "remove_hero",
+    }),
+    p_actor_identity: args.actorIdentity,
+    p_notes: args.notes ?? null,
+  });
+  if (error) throw new Error(error.message);
+  return firstRpcRow(data);
+}
+
 async function activateEventFactoryPublication(args: {
   packageId: string;
   versionId: string;
-  mediaId: string;
+  mediaId: string | null;
   actorIdentity: string;
   notes?: string;
 }) {
@@ -718,9 +765,9 @@ export async function approveAndPublishEventFactoryPackage(args: {
     throw new Error("This package is not ready for approval and publication.");
   }
 
-  const validation = validateEventPageManifest(packageRow.page_manifest);
+  const validation = validateEventPageContentReadiness(packageRow.page_manifest);
   if (!validation.ok) throw new Error(`Reviewed Event Hub manifest is invalid: ${validation.errors.join(" ")}`);
-  assertReviewedVisualAsset(packageRow.art_asset);
+  if (!validation.artPending) assertReviewedVisualAsset(packageRow.art_asset);
 
   let materialized = ["publishing", "published"].includes(packageRow.status);
   try {
@@ -735,11 +782,13 @@ export async function approveAndPublishEventFactoryPackage(args: {
       args.actorIdentity,
       Boolean(packageRow.supersedes_package_id),
     );
-    const mediaId = await registerApprovedPackageArt(
-      eventId,
-      packageRow.event_key,
-      packageRow.art_asset,
-    );
+    const mediaId = validation.artPending
+      ? null
+      : await registerApprovedPackageArt(
+          eventId,
+          packageRow.event_key,
+          packageRow.art_asset,
+        );
     const activated = await activateEventFactoryPublication({
       packageId: args.packageId,
       versionId,

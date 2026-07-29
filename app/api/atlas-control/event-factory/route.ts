@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAtlasAdmin } from "@/lib/atlas-control/auth";
 import {
   approveAndPublishEventFactoryPackage,
+  createEventFactoryArtRevision,
   prepareEventFactoryPackage,
   reviewEventFactoryPackage,
 } from "@/lib/event-factory/packages";
@@ -61,6 +63,27 @@ export async function POST(request: Request) {
         notes: notes || undefined,
       });
       return noStoreJson({ result });
+    }
+
+    if (action === "remove_art_and_publish") {
+      if (!UUID.test(packageId)) return noStoreJson({ error: "A valid published event package id is required." }, 400);
+      const revision = await createEventFactoryArtRevision({
+        sourcePackageId: packageId,
+        visualWorkflowId: null,
+        actorIdentity: auth.admin.email,
+        notes: notes || "Prepared reviewed removal of Event Hub hero art.",
+      });
+      const revisionPackageId = text(revision.package_id);
+      if (!UUID.test(revisionPackageId)) throw new Error("The art removal revision did not return a valid package id.");
+      const result = await approveAndPublishEventFactoryPackage({
+        packageId: revisionPackageId,
+        actorIdentity: auth.admin.email,
+        notes: notes || "Approved Event Hub hero removal; image-free hero retained.",
+      });
+      const eventKey = text(revision.event_key);
+      if (eventKey) revalidatePath(`/events/${eventKey}`);
+      revalidatePath("/");
+      return noStoreJson({ result, packageId: revisionPackageId, publicPath: eventKey ? `/events/${eventKey}` : null });
     }
 
     if (action === "reject" || action === "reopen") {
