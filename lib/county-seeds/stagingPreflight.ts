@@ -59,7 +59,7 @@ export async function loadCountySeedPreflightSnapshot(
       tableUrl(
         url,
         "event_candidates",
-        "id,candidate_name,normalized_name,slug_candidate,city,county,venue_name,official_website_candidate,typical_month,typical_season,verification_status,duplicate_status,matched_event_id,raw_payload,source_urls,created_at",
+        "id,candidate_name,normalized_name,slug_candidate,city,county,venue_name,official_website_candidate,typical_month,typical_season,verification_status,duplicate_status,matched_event_id,needs_review,raw_payload,source_urls,created_at",
       ),
       key,
     ),

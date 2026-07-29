@@ -123,6 +123,16 @@ Atlas Control gains only a protected compact completion-run projection and linke
 
 Migrations 023 and 024 passed the required release gate and are deployed. Migration 024 is the forward-only correction for the PostgreSQL-specific run-list limit expression found during read-only verification; migration 023 was not edited in place. Local and remote migration history is aligned through 024. The service-role run list returns an empty array, the completion exception-action table is empty, and anonymous access to both is denied. Before/after verification retained 19 canonical events, 18 matched candidates, eight published package rows, seven published page pointers and versions, and nine approved media records with identical public-state hashes. No production completion run has been started, and this implementation has not staged, canonicalized, packaged, or published any production event. The existing Bay-Rama candidate is unchanged; Richmond and Memphis remain unstaged; no image action has occurred.
 
+## Michigan County Completion Operator
+
+The local working tree now contains the minimum county-level coordinator requested by the Macomb workflow audit. `npm run atlas:create-county-events -- <county>` verifies a registered retained county inventory, classifies every row, reuses existing canonical/candidate/run/evidence/package records, creates bounded hash-protected Michigan Completion manifests for only eligible records, safely discovers resumable runs, and produces one aggregate county report. It defaults to deterministic zero-model dry runs with concurrency one. `--plan-only` performs classification plus local manifest/report generation without starting or resuming a run. Private records require explicit `--authorize-private-writes --actor <identity>`.
+
+Macomb's registry binds the retained 83-record `03_IMPORT_READY` inventory and its exact artifact, workbook, sheet, row-count, header, and row fingerprints. Every record receives one report disposition. Armada Fair and Romeo Peach Festival reuse canonical records; Art on the Bay and other compatible retained records reuse candidates/runs; protected or held Bay-Rama, Richmond, and Memphis are excluded; ambiguous and insufficient records remain blocked; only the rest enter bounded manifests.
+
+The operator remains a thin layer over the existing county staging, Michigan Completion, source-bundle, synthesis, verification, Event Factory, visual-readiness, review, and publication-safeguard contracts. Deterministic identity clearance cannot use fuzzy similarity as proof and cannot create a canonical event or match. Source composition uses the existing bounded capture service, and completion-created verification evidence is submitted to the existing human review gate rather than self-verified.
+
+Forward-only migration `026_generalize_county_completion_staging.sql` contains the generalized guarded staging predicate and service-role-only deterministic identity-clearance action. It is local only and has not been deployed by this task. No Macomb operator command or production mutation was run. The full contract is in `docs/COUNTY_COMPLETION_OPERATOR.md`.
+
 ## Hero Image Factory
 
 Migration `014_event_visual_workflows.sql` and the Control Desk Hero Image Factory implement the fast visual workflow:
@@ -224,9 +234,9 @@ The package, canonical event, immutable Event Hub v1, approved media record, and
 
 ## Current Next Milestone
 
-The Michigan Completion release gate and migrations 023-024 are complete. The exact next checkpoint is to prepare and independently review the one-record `MAC-042` Macomb private-proof manifest described in `docs/MICHIGAN_COMPLETION_EXECUTION_PLAN.md`, then run only its deterministic, zero-model-budget dry-run. The proof manifest does not yet exist and the dry-run was not started in this implementation task.
+Review and validate the county operator and migration 026, then decide separately whether to deploy migration 026. Deployment must be followed by local/remote parity and unchanged public-state verification and does not authorize a county run.
 
-After migration parity and unchanged publication state are verified, the exact next task is to prepare and independently review the one-record `MAC-042` Macomb private-proof manifest described in `docs/MICHIGAN_COMPLETION_EXECUTION_PLAN.md`, then run its deterministic, zero-model-budget dry-run only. That later proof is a separate authorization boundary: do not canonicalize or publish Bay-Rama, and do not stage Richmond or Memphis.
+After that separate checkpoint, the first county operation should be `npm run atlas:create-county-events -- macomb --plan-only` so the complete 83-record classification and generated manifest hashes can be reviewed without starting a run. Any later dry run or private run requires its own explicit authorization. Bay-Rama, Richmond, and Memphis remain excluded, and no county operation may canonicalize, perform image work, approve, or publish.
 
 The state-map presentation resolver, anonymous public-account follow-up, and broader product checkpoints remain separately queued and are not part of the completion-layer release.
 

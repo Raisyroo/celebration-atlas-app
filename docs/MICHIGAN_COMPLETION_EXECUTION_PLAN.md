@@ -1,6 +1,6 @@
 # Michigan Completion Execution Plan v1
 
-Status: post-implementation operating plan. This document does not authorize migration deployment, a production completion run, candidate staging, canonical materialization, image work, package approval, or publication. The first Macomb proof described below has not been run.
+Status: post-implementation operating plan. This document does not authorize migration deployment, a production completion run, candidate staging, canonical materialization, image work, package approval, or publication. Event-specific Macomb proofs are retained history; the county operator remains a separate authorization boundary.
 
 The operating layer must follow `docs/MICHIGAN_COMPLETION_ARCHITECTURE.md`. Michigan is the only implementation target for this plan; there is no fifty-state roadmap here.
 
@@ -34,6 +34,30 @@ After an authorized migration deployment:
 5. stop without starting a completion run.
 
 Migration deployment and a completion-run authorization are separate decisions.
+
+## County operator
+
+The supported county entry point is:
+
+```powershell
+npm run atlas:create-county-events -- macomb
+```
+
+It verifies the registered retained inventory, classifies every row, creates bounded immutable Michigan Completion manifests, discovers compatible runs, starts or resumes default-safe dry runs through the existing orchestrator, and writes one aggregate county report. Model budgets are fixed at zero and concurrency defaults to one.
+
+Planning without a completion run uses:
+
+```powershell
+npm run atlas:create-county-events -- macomb --plan-only
+```
+
+Private workflow effects require a separately reviewed instruction and an explicit actor:
+
+```powershell
+npm run atlas:create-county-events -- macomb --authorize-private-writes --actor <allowlisted-admin-email>
+```
+
+Migration 026 must be reviewed, validated, deployed, and verified for local/remote parity before private county mode. Dry-run and private manifests have separate immutable identities. The operator never exposes canonicalization, image, approval, or publication options. Detailed classification, replay, resume, report, and safety rules are in `docs/COUNTY_COMPLETION_OPERATOR.md`.
 
 ## Michigan operating sequence
 
@@ -367,4 +391,4 @@ An exception-blocked exit is resumable and must not be reported as rollback. Alr
 - Historical/current-program ambiguity and shared organizer URLs will remain common Michigan exceptions.
 - Existing published packages are compatibility fixtures; completion hardening must not retroactively invalidate them.
 
-The immediate next step is to prepare and independently review the one-record `MAC-042` private proof manifest at `artifacts/michigan-completion/macomb/macomb-private-proof-v1.json`. Recompute and review its immutable hash, then run only the documented deterministic, zero-model-budget dry-run. Do not canonicalize or publish Bay-Rama.
+The immediate next step is to review the local county-operator implementation and migration 026, pass the focused and full release gates, and then make a separate decision about deploying migration 026. No Macomb county command should be run as part of implementation validation. After deployment parity is confirmed, use `--plan-only` for the first reviewed county projection before separately authorizing any dry or private run.

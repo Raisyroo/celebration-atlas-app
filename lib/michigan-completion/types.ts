@@ -1,5 +1,5 @@
 export const MICHIGAN_COMPLETION_ORCHESTRATOR_VERSION =
-  "michigan-completion-orchestrator/1";
+  "michigan-completion-orchestrator/2";
 
 export const COMPLETION_RUN_STATUSES = [
   "queued",
@@ -31,6 +31,7 @@ export const COMPLETION_EXCEPTION_CODES = [
   "unsupported_source_format",
   "missing_or_ambiguous_location",
   "archive_current_program_ambiguity",
+  "verification_review_required",
   "deterministic_synthesis_failure",
   "editorial_quality_failure",
   "model_budget_exceeded",

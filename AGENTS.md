@@ -46,3 +46,11 @@ Current operational state overrides older historical notes. Do not restore a sup
 - For user-facing changes, verify the real route at mobile width and check for horizontal overflow, rendering errors, and missing media.
 - For Supabase schema work, add a numbered migration and verify local/remote migration parity.
 - Update `docs/PROJECT_STATE.md` when a milestone changes architecture, publication state, or the next-task handoff.
+
+## Michigan County Event Operations
+
+- When asked to create events for a registered Michigan county, use `npm run atlas:create-county-events -- <county>` and the existing Michigan Completion architecture. Do not hand-build a parallel county workflow or manually run per-event manifests.
+- Use `--plan-only` when the authorization is limited to classification and local manifest/report generation. The normal command defaults to dry-run; private workflow records require the user's explicit authorization plus `--authorize-private-writes --actor <identity>`.
+- County operation is deterministic-only with zero model budget. It may not canonicalize, search for or create images, approve packages, publish Event Pages, or change public discovery.
+- Preserve every inventory disposition, retained exception, immutable hash, replay identity, and human verification/publication gate. Never auto-resolve an exception to make a county continue.
+- Read `docs/COUNTY_COMPLETION_OPERATOR.md` before changing or operating the county command.

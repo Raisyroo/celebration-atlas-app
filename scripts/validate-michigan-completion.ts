@@ -1009,8 +1009,8 @@ async function validateStageRegistryAndSourceBoundaries() {
   const expected = [
     "manifest_validation@1",
     "candidate_staging@1",
-    "identity_matching@1",
-    "evidence_readiness@1",
+    "identity_matching@2",
+    "evidence_readiness@2",
     "deterministic_synthesis@19",
     "editorial_assistance@1",
     "content_readiness@1",
@@ -1024,7 +1024,7 @@ async function validateStageRegistryAndSourceBoundaries() {
       (stage) => `${stage.id}@${stage.version}`,
     ),
     expected,
-    "The Michigan stage registry order and versions are part of the v1 replay contract.",
+    "The Michigan stage registry order and versions are part of the replay contract.",
   );
   assert.equal(
     new Set(MICHIGAN_COMPLETION_STAGES.map((stage) => stage.id)).size,

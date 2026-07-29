@@ -10,6 +10,18 @@ import type {
   SynthesisContentSegment,
 } from "../event-intake/synthesisTypes.ts";
 import { completionSha256 } from "./manifest.ts";
+import { evaluateDeterministicIdentityClearance } from "./identityClearance.ts";
+import {
+  composeRetainedSourceBundle,
+  composeVerificationCase,
+  createDefaultSourceCompositionServices,
+  createDefaultVerificationCompositionServices,
+  type SourceBundleCompositionResult,
+  type SourceCompositionServices,
+  type VerificationClaimInput,
+  type VerificationCompositionServices,
+  type VerificationSnapshotInput,
+} from "./privateComposition.ts";
 import type {
   CompletionExceptionInput,
   CompletionStageExecutionResult,
@@ -44,6 +56,59 @@ function stringArray(value: unknown) {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
+}
+
+function metadata(context: CompletionStageExecutorContext) {
+  return isRecord(context.event.metadata) ? context.event.metadata : {};
+}
+
+function candidateSeed(candidate: RecordValue) {
+  const raw = isRecord(candidate.raw_payload) ? candidate.raw_payload : {};
+  return isRecord(raw.county_seed) ? raw.county_seed : {};
+}
+
+function officialSourceUrl(
+  context: CompletionStageExecutorContext,
+  candidate?: RecordValue | null,
+) {
+  const retained = text(metadata(context).officialSourceUrl);
+  if (retained) return retained;
+  const countyCandidate = isRecord(context.event.countySeed?.candidate)
+    ? context.event.countySeed?.candidate
+    : {};
+  return (
+    text(countyCandidate.official_website_candidate) ||
+    text(candidate?.official_website_candidate)
+  );
+}
+
+function supportingSourceUrls(context: CompletionStageExecutorContext) {
+  return stringArray(metadata(context).supportingSourceUrls)
+    .filter((url) => /^https?:\/\//.test(url))
+    .slice(0, 2);
+}
+
+function eventTargetYear(
+  context: CompletionStageExecutorContext,
+  candidate?: RecordValue | null,
+) {
+  const configured = Number(metadata(context).targetYear);
+  if (Number.isSafeInteger(configured) && configured >= 2000 && configured <= 2100) {
+    return configured;
+  }
+  const values = [
+    text(candidate?.start_date),
+    text(candidate?.end_date),
+    text(
+      isRecord(context.event.countySeed?.candidate)
+        ? context.event.countySeed?.candidate.start_date
+        : "",
+    ),
+  ];
+  for (const value of values) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return Number(value.slice(0, 4));
+  }
+  return null;
 }
 
 function outputFor(
@@ -433,7 +498,7 @@ async function stageIdentity(
   const candidateResult = await client
     .from("event_candidates")
     .select(
-      "id,candidate_name,normalized_name,city,official_website_candidate,matched_event_id,duplicate_status,needs_review",
+      "id,candidate_name,normalized_name,slug_candidate,city,official_website_candidate,start_date,end_date,matched_event_id,verification_status,duplicate_status,needs_review,raw_payload",
     )
     .eq("id", candidateId)
     .maybeSingle();
@@ -452,7 +517,6 @@ async function stageIdentity(
     };
   }
   if (
-    candidate.needs_review ||
     ["possible_duplicate", "duplicate", "merged"].includes(
       text(candidate.duplicate_status),
     )
@@ -463,7 +527,7 @@ async function stageIdentity(
         exception(
           "uncertain_identity_match",
           "human_review_required",
-          "The retained candidate requires identity review; no merge was attempted.",
+          "The retained candidate has a disputed duplicate disposition; no merge was attempted.",
           { candidateId, duplicateStatus: candidate.duplicate_status },
         ),
       ],
@@ -492,14 +556,30 @@ async function stageIdentity(
           .ilike("city", city)
           .limit(2)
       : Promise.resolve({ data: [], error: null }),
+    website
+      ? client
+          .from("events")
+          .select("id,name")
+          .eq("official_website", website)
+          .limit(2)
+      : Promise.resolve({ data: [], error: null }),
+    normalizedName && city
+      ? client
+          .from("events")
+          .select("id,name")
+          .ilike("name", text(candidate.candidate_name))
+          .ilike("city", city)
+          .limit(2)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   const collisionError = collisionResults.find((result) => result.error)?.error;
   if (collisionError) throw new Error(collisionError.message);
+  const collisionRows: Array<{ id: string }> = collisionResults.flatMap(
+    (result) => (result.data ?? []) as Array<{ id: string }>,
+  );
   const collisions = [
     ...new Map(
-      collisionResults
-        .flatMap((result) => result.data ?? [])
-        .map((row) => [row.id, row]),
+      collisionRows.map((row) => [row.id, row]),
     ).values(),
   ];
   if (collisions.length) {
@@ -518,9 +598,121 @@ async function stageIdentity(
       ],
     };
   }
+  if (candidate.needs_review) {
+    const seed = candidateSeed(candidate);
+    const decision = isRecord(seed.resolved_decision)
+      ? seed.resolved_decision
+      : {};
+    const clearanceDecision = evaluateDeterministicIdentityClearance({
+      needsReview: candidate.needs_review === true,
+      duplicateStatus: text(candidate.duplicate_status),
+      countyDisposition: text(decision.phase_c1_disposition),
+      executionApproval: text(decision.execution_approval),
+      reviewedInventoryHash: text(decision.reviewed_inventory_hash),
+      exactCollisionIds: [],
+      fuzzyReviewSignals: stringArray(
+        metadata(context).identityPreflightWarnings,
+      ),
+    });
+    if (
+      clearanceDecision.disposition !==
+        "clear_distinct_private_candidate" ||
+      context.dryRun
+    ) {
+      return {
+        outcome: "blocked",
+        exceptions: [
+          exception(
+            "uncertain_identity_match",
+            "human_review_required",
+            "The retained candidate requires identity review and is not eligible for the narrow reviewed county-completion clearance.",
+            {
+              candidateId,
+              duplicateStatus: candidate.duplicate_status,
+              countyDisposition:
+                text(decision.phase_c1_disposition) || null,
+              reasonCode: clearanceDecision.reasonCode,
+              mergeAttempted: false,
+            },
+          ),
+        ],
+      };
+    }
+    const reason = [
+      "Deterministic county-completion identity clearance.",
+      "No canonical URL, slug, normalized-name/municipality, alias/location, candidate-source ownership, or exact candidate collision was found.",
+      "Fuzzy similarity was not used as identity proof.",
+      "The candidate remains private and unmatched.",
+    ].join(" ");
+    const identityInputHash = completionSha256({
+      runId: context.run.id,
+      candidateId,
+      eventInputHash: context.event.inputHash,
+      candidateName: candidate.candidate_name,
+      normalizedName,
+      slug: candidate.slug_candidate,
+      city,
+      officialSourceUrl: website,
+      countyCleanId: seed.clean_id,
+      payloadHash: seed.payload_hash,
+      reviewedInventoryHash: decision.reviewed_inventory_hash,
+      collisionIds: [],
+      identityRuleVersion: "county-completion-clean-identity/1",
+    });
+    const cleared = await client.rpc(
+      "atlas_clear_county_completion_candidate_identity",
+      {
+        p_run_id: context.run.id,
+        p_candidate_id: candidateId,
+        p_identity_input_hash: identityInputHash,
+        p_actor_identity: context.actorIdentity,
+        p_reason: reason,
+      },
+    );
+    if (cleared.error) {
+      return {
+        outcome: "blocked",
+        error: { message: cleared.error.message },
+        exceptions: [
+          exception(
+            /collision|identity|source/i.test(cleared.error.message)
+              ? "duplicate_candidate"
+              : "identity_security_mismatch",
+            "human_review_required",
+            cleared.error.message,
+            {
+              candidateId,
+              identityInputHash,
+              mergeAttempted: false,
+            },
+          ),
+        ],
+      };
+    }
+    const clearance = firstRpcRow(cleared.data);
+    return {
+      outcome: "succeeded",
+      output: {
+        disposition: "unique_private_candidate",
+        identityAutomaticallyCleared: true,
+        identityInputHash,
+        identityAuditActionId: clearance.action_id ?? null,
+        identityRuleVersion: "county-completion-clean-identity/1",
+        reason,
+        mergeAttempted: false,
+        canonicalizationAttempted: false,
+      },
+      links: { candidateId },
+    };
+  }
   return {
     outcome: "succeeded",
-    output: { disposition: "unique_candidate", mergeAttempted: false },
+    output: {
+      disposition: "unique_candidate",
+      identityAutomaticallyCleared: false,
+      mergeAttempted: false,
+      canonicalizationAttempted: false,
+    },
     links: { candidateId },
   };
 }
@@ -528,30 +720,119 @@ async function stageIdentity(
 async function stageEvidence(
   client: CompletionSupabaseClient,
   context: CompletionStageExecutorContext,
+  sourceServices: SourceCompositionServices,
+  verificationServices: VerificationCompositionServices,
 ): Promise<CompletionStageExecutionResult> {
-  const bundle = await resolveBundle(client, context);
+  const retained = references(context);
+  const candidateId = retained.candidateId;
+  let candidate: RecordValue | null = null;
+  if (candidateId) {
+    const candidateResult = await client
+      .from("event_candidates")
+      .select(
+        "id,candidate_name,official_website_candidate,start_date,end_date,raw_payload",
+      )
+      .eq("id", candidateId)
+      .maybeSingle();
+    if (candidateResult.error) throw new Error(candidateResult.error.message);
+    candidate = candidateResult.data as RecordValue | null;
+  }
+  let sourceComposition: SourceBundleCompositionResult | null = null;
+  let bundle = await resolveBundle(client, context);
   if (!bundle) {
-    return {
-      outcome: "blocked",
-      exceptions: [
-        exception(
-          "missing_official_source",
-          "publication_blocking",
-          "No retained source bundle is attached to this event.",
-        ),
-      ],
+    const sourceUrl = officialSourceUrl(context, candidate);
+    const plannedComposition = {
+      authorized: !context.dryRun,
+      officialSourceUrl: sourceUrl || null,
+      supportingSourceUrls: supportingSourceUrls(context),
+      maxAdditionalSources: 5,
+      imageActionInvoked: false,
+      publicationInvoked: false,
     };
+    if (context.dryRun || !candidateId || !sourceUrl) {
+      return {
+        outcome: "blocked",
+        output: {
+          sourceBundleComposition: plannedComposition,
+          sourceBundleCreated: false,
+          dryRun: context.dryRun,
+        },
+        exceptions: [
+          exception(
+            "missing_official_source",
+            "publication_blocking",
+            sourceUrl
+              ? "No retained source bundle is attached; the bounded official-source composition is only predicted in this dry run."
+              : "No retained official source is available for bounded source-bundle composition.",
+            { candidateId, sourceUrl: sourceUrl || null },
+          ),
+        ],
+      };
+    }
+    try {
+      const composed = await composeRetainedSourceBundle({
+        services: sourceServices,
+        eventName:
+          context.event.displayName ||
+          text(candidate?.candidate_name) ||
+          context.event.eventKey,
+        eventKey: context.event.eventKey,
+        candidateId,
+        officialSourceUrl: sourceUrl,
+        supportingSourceUrls: supportingSourceUrls(context),
+        actorIdentity: context.actorIdentity,
+        maxAdditionalSources: 5,
+      });
+      sourceComposition = composed;
+      bundle = await resolveBundle(client, context);
+      if (!bundle || text(bundle.id) !== composed.bundleId) {
+        throw new Error(
+          "The retained source bundle could not be resolved after composition.",
+        );
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Bounded official-source composition failed.";
+      return {
+        outcome: "blocked",
+        output: {
+          sourceBundleComposition: plannedComposition,
+          sourceBundleCreated: false,
+        },
+        error: { message },
+        exceptions: [
+          exception(
+            /unsupported|content[- ]type|archive|compressed/i.test(message)
+              ? "unsupported_source_format"
+              : "weak_source_evidence",
+            /timeout|temporar|network/i.test(message)
+              ? "retryable"
+              : "human_review_required",
+            message,
+            {
+              candidateId,
+              officialSourceUrl: sourceUrl,
+              automaticRetryAttempted: false,
+            },
+          ),
+        ],
+      };
+    }
   }
   const bundleId = text(bundle.id);
   const [snapshotResult, claimResult, scheduleResult] = await Promise.all([
     client
       .from("event_source_snapshots")
-      .select("id,source_kind,canonical_url")
+      .select(
+        "id,source_kind,canonical_url,page_title,content_hash,inspection",
+      )
       .eq("bundle_id", bundleId),
     client
       .from("event_source_claims")
       .select(
-        "id,source_snapshot_id,field_path,value,normalized_text,review_status,confidence",
+        "id,source_snapshot_id,field_path,value,normalized_text,review_status,confidence,confidence_score",
       )
       .eq("bundle_id", bundleId),
     client
@@ -619,6 +900,93 @@ async function stageEvidence(
       ],
     };
   }
+  const verificationExceptions: CompletionExceptionInput[] = [];
+  let verificationCaseId = retained.verificationCaseId ?? null;
+  let verificationCaseStatus: string | null = null;
+  const year = eventTargetYear(context, candidate);
+  if (candidateId && year) {
+    let existingCase: { id: string; status: string } | null = null;
+    if (verificationCaseId) {
+      const result = await client
+        .from("event_verification_cases")
+        .select("id,status")
+        .eq("id", verificationCaseId)
+        .maybeSingle();
+      if (result.error) throw new Error(result.error.message);
+      existingCase = result.data as { id: string; status: string } | null;
+    } else {
+      const result = await client
+        .from("event_verification_cases")
+        .select("id,status")
+        .eq("candidate_id", candidateId)
+        .eq("target_year", year)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (result.error) throw new Error(result.error.message);
+      existingCase = result.data as { id: string; status: string } | null;
+    }
+    if (context.dryRun) {
+      verificationCaseId = existingCase?.id ?? null;
+      verificationCaseStatus = existingCase?.status ?? "planned";
+    } else {
+      const verification = await composeVerificationCase({
+        services: verificationServices,
+        candidateId,
+        targetYear: year,
+        actorIdentity: context.actorIdentity,
+        existingCase,
+        snapshots: snapshots.map((row): VerificationSnapshotInput => ({
+          id: text(row.id),
+          sourceKind: text(row.source_kind),
+          canonicalUrl: text(row.canonical_url),
+          pageTitle: text(row.page_title) || null,
+          contentHash: text(row.content_hash),
+        })),
+        claims: claims.map((row): VerificationClaimInput => ({
+          id: text(row.id),
+          sourceSnapshotId: text(row.source_snapshot_id),
+          fieldPath: text(row.field_path),
+          value: row.value,
+          normalizedText: text(row.normalized_text),
+          confidence: text(row.confidence),
+          confidenceScore:
+            row.confidence_score === null
+              ? null
+              : numberValue(row.confidence_score),
+          reviewStatus: text(row.review_status),
+        })),
+      });
+      verificationCaseId = verification.verificationCaseId;
+      verificationCaseStatus = verification.status;
+    }
+    if (verificationCaseStatus !== "verified") {
+      verificationExceptions.push(
+        exception(
+          "verification_review_required",
+          "human_review_required",
+          verificationCaseStatus === "needs_review"
+            ? "Deterministic retained evidence was submitted to the existing Event Factory diligence review; human verification remains required."
+            : "The Event Factory diligence case is not yet verified.",
+          {
+            verificationCaseId,
+            status: verificationCaseStatus,
+            targetYear: year,
+            automaticallyVerified: false,
+          },
+        ),
+      );
+    }
+  } else {
+    verificationExceptions.push(
+      exception(
+        "verification_review_required",
+        "human_review_required",
+        "A retained candidate and unambiguous target year are required to prepare the Event Factory diligence case.",
+        { candidateId, targetYear: year },
+      ),
+    );
+  }
   return {
     outcome: "succeeded",
     output: {
@@ -629,8 +997,13 @@ async function stageEvidence(
       scheduleCandidateCount: (scheduleResult.data ?? []).length,
       officialSnapshotIds: official.map((row) => row.id),
       dateConflicts: [],
+      verificationCaseId,
+      verificationCaseStatus,
+      verificationAutomaticallyCompleted: false,
+      sourceBundleComposition: sourceComposition,
     },
-    links: { sourceBundleId: bundleId },
+    links: { sourceBundleId: bundleId, verificationCaseId },
+    exceptions: verificationExceptions,
   };
 }
 
@@ -948,6 +1321,19 @@ async function stagePackage(
       );
     }
     let verificationCaseId = retained.verificationCaseId;
+    if (verificationCaseId) {
+      const retainedVerification = await client
+        .from("event_verification_cases")
+        .select("id,status")
+        .eq("id", verificationCaseId)
+        .maybeSingle();
+      if (retainedVerification.error) {
+        throw new Error(retainedVerification.error.message);
+      }
+      if (retainedVerification.data?.status !== "verified") {
+        verificationCaseId = null;
+      }
+    }
     if (!verificationCaseId) {
       const verification = await client
         .from("event_verification_cases")
@@ -1167,8 +1553,16 @@ export function createSupabaseMichiganCompletionExecutor(
   client: CompletionSupabaseClient,
   options?: {
     executeModel?: NonNullable<CompletionStageExecutor["executeModel"]>;
+    sourceCompositionServices?: SourceCompositionServices;
+    verificationCompositionServices?: VerificationCompositionServices;
   },
 ): CompletionStageExecutor {
+  const sourceCompositionServices =
+    options?.sourceCompositionServices ??
+    createDefaultSourceCompositionServices();
+  const verificationCompositionServices =
+    options?.verificationCompositionServices ??
+    createDefaultVerificationCompositionServices();
   return {
     async execute(stageId, context) {
       if (stageId === "manifest_validation") {
@@ -1187,7 +1581,12 @@ export function createSupabaseMichiganCompletionExecutor(
         return stageIdentity(client, context);
       }
       if (stageId === "evidence_readiness") {
-        return stageEvidence(client, context);
+        return stageEvidence(
+          client,
+          context,
+          sourceCompositionServices,
+          verificationCompositionServices,
+        );
       }
       if (stageId === "deterministic_synthesis") {
         return stageSynthesis(client, context);

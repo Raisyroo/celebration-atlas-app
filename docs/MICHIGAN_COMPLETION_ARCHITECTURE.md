@@ -1,6 +1,6 @@
 # Michigan Completion Operating Layer v1
 
-Status: implemented and deployed architecture contract whose database delta is migration `023_michigan_completion_operating_layer.sql` plus the forward-only hosted-Postgres list-expression correction in `024_fix_michigan_completion_run_list_limit.sql`. At the start of the audit, the repository and deployed Supabase project were aligned through migration `022_batched_published_atlas_discovery.sql`; they are now aligned through 024. Neither migration authorizes a completion run, event staging, canonicalization, package publication, or any image action.
+Status: implemented and deployed operating-layer contract through migrations 023-025. The local county-operator extension adds forward-only migration `026_generalize_county_completion_staging.sql`; migration 026 is not deployed or authorized by this document. No migration authorizes a completion run, event staging, canonicalization, package publication, or image action.
 
 ## Purpose and boundary
 
@@ -23,6 +23,25 @@ deterministic repetition -> bounded model assistance -> human exception review -
 ```
 
 Publication is deliberately outside the stage registry. The orchestrator must never call `atlas_materialize_event_factory_package`, `atlas_activate_event_factory_publication`, `atlas_publish_event_page_version`, or the `approve_and_publish` Atlas Control action.
+
+## County-level operator extension
+
+`scripts/create-county-events.ts` is the one-command county coordinator over this operating layer. It does not replace the manifest, candidate, matching, source-bundle, synthesis, verification, Event Factory, exception, run, or publication contracts.
+
+For a registered county it:
+
+1. verifies one retained approved inventory and all of its source hashes;
+2. loads a read-only county projection from existing domain and completion records;
+3. assigns every inventory row one explicit disposition;
+4. excludes canonical/completed, protected, held, ambiguous, insufficient, and actively blocked records;
+5. reuses eligible private candidates and safely resumable compatible runs;
+6. creates stable bounded manifests only for remaining guarded work;
+7. invokes the existing orchestrator in dry-run mode by default or private mode only after explicit authorization;
+8. emits one hash-protected aggregate report covering every source record.
+
+The private extension generalizes the existing guarded staging predicate rather than creating a new intake RPC. Deterministic identity clearance is permitted only for an immutable reviewed county payload, explicit private-write authorization, no canonical/candidate exact collision, no source-ownership conflict, no prior promotion or match, and no fuzzy warning. The action marks only the private candidate's reviewed distinct identity state; it does not create a canonical event or match.
+
+Evidence composition uses the existing bounded source-bundle capture service. Verification evidence is submitted through the existing human verification service and is never self-approved. A package cannot use an unverified completion-created verification case. See `docs/COUNTY_COMPLETION_OPERATOR.md`.
 
 ## Reuse audit
 
@@ -95,6 +114,19 @@ The v1 completion code belongs only in:
 - `scripts/validate-michigan-completion.ts`
 
 Those files compose existing services. They must not contain a second candidate schema, synthesis engine, Event Hub manifest model, visual factory, canonical event writer, or publication implementation.
+
+The county extension is limited to:
+
+- `lib/michigan-completion/countyInventory.ts`
+- `lib/michigan-completion/countyOperator.ts`
+- `lib/michigan-completion/countyOperatorSupabase.ts`
+- `lib/michigan-completion/identityClearance.ts`
+- `lib/michigan-completion/privateComposition.ts`
+- `scripts/create-county-events.ts`
+- `scripts/validate-county-completion-operator.ts`
+- `supabase/migrations/026_generalize_county_completion_staging.sql`
+
+These files may coordinate or narrowly extend the contracts above; they may not duplicate them.
 
 ## Current canonical state transitions
 

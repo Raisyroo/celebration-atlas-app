@@ -45,7 +45,7 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "identity_matching",
-    version: "1",
+    version: "2",
     capability: "event_candidates, events, lib/county-seeds/matching.ts",
     processor: "deterministic",
     prerequisites: ["candidate_staging"],
@@ -58,13 +58,13 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "evidence_readiness",
-    version: "1",
+    version: "2",
     capability: "event_source_bundles, snapshots, claims, links, and schedule candidates",
     processor: "deterministic",
     prerequisites: ["identity_matching"],
     idempotencyContract: "Bundle identity plus retained source and claim hashes.",
     completionConditions: ["Official retained source exists and evidence is sufficient for deterministic synthesis."],
-    retryBehavior: "Retry after evidence is added or reviewed; this stage performs no live capture.",
+    retryBehavior: "Authorized private runs may compose one bounded retained bundle; retry only after retained evidence or review state changes.",
     exceptionCodes: [
       "conflicting_event_dates",
       "missing_official_source",
@@ -72,6 +72,7 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
       "unsupported_source_format",
       "missing_or_ambiguous_location",
       "archive_current_program_ambiguity",
+      "verification_review_required",
     ],
     blocksLaterStages: true,
     requiredForEveryEvent: true,

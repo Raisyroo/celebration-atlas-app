@@ -13,6 +13,8 @@ export const COUNTY_SEED_ADAPTER_VERSION = "county-seed-staging-adapter/1";
 export const COUNTY_SEED_PARSER_VERSION = "county-seed-parser/1";
 export const COUNTY_SEED_STAGING_CONTRACT_VERSION = 1;
 export const COUNTY_SEED_GUARD_MIGRATION = "018_guard_county_seed_candidate_staging.sql";
+export const COUNTY_COMPLETION_GUARD_MIGRATION =
+  "026_generalize_county_completion_staging.sql";
 export const COUNTY_SEED_GUARDED_RPC = "atlas_stage_county_seed_candidate";
 
 export const BATCH_0_CLEAN_IDS = ["MAC-001", "MAC-050"] as const;
@@ -34,7 +36,8 @@ export const MACOMB_FIRST_EVENT_PILOT_CLEAN_IDS = [
 
 export type CountySeedReviewedSelection =
   | "phase_c1_batch_1"
-  | "macomb_first_event_pilot_v2";
+  | "macomb_first_event_pilot_v2"
+  | "reviewed_county_completion_v1";
 
 export type CountySeedRpcSource = {
   source_name: string;
@@ -119,8 +122,12 @@ export type CountySeedRpcCandidate = {
       phase_b_classification: "New candidate" | "Insufficient information";
       phase_c1_disposition:
         | "provisional_batch_1_manifest_only"
-        | "revised_three_event_pilot_manifest_only";
-      execution_approval: "not_authorized";
+        | "revised_three_event_pilot_manifest_only"
+        | "reviewed_county_completion_manifest";
+      execution_approval:
+        | "not_authorized"
+        | "private_writes_explicitly_authorized";
+      reviewed_inventory_hash?: string;
     };
     payload_hash?: string;
   };
@@ -145,6 +152,7 @@ export type PreparedCountySeedRecord = {
 export type PreflightCandidateRow = ExistingEventCandidate & {
   source_urls?: unknown;
   created_at?: string;
+  needs_review?: boolean;
 };
 
 export type PreflightSourceRow = {
@@ -380,14 +388,31 @@ export function prepareCountySeedRecord(args: {
   actorIdentity?: string;
   cohortRelationships?: CountySeedRpcCandidate["county_seed"]["cohort_relationships"];
   reviewedSelection?: CountySeedReviewedSelection;
+  executionApproval?: CountySeedRpcCandidate["county_seed"]["resolved_decision"]["execution_approval"];
+  reviewedInventoryHash?: string;
 }): PreparedCountySeedRecord {
   const { seed } = args;
   const reviewedSelection = args.reviewedSelection ?? "phase_c1_batch_1";
   const reviewedCleanIds = reviewedSelection === "macomb_first_event_pilot_v2"
     ? MACOMB_FIRST_EVENT_PILOT_CLEAN_IDS
-    : BATCH_1_CLEAN_IDS;
-  if (!(reviewedCleanIds as readonly string[]).includes(seed.cleanId)) {
-    throw new Error(`County seed ${seed.cleanId} is not in the reviewed ${reviewedSelection} selection.`);
+    : reviewedSelection === "phase_c1_batch_1"
+      ? BATCH_1_CLEAN_IDS
+      : null;
+  if (
+    reviewedCleanIds &&
+    !(reviewedCleanIds as readonly string[]).includes(seed.cleanId)
+  ) {
+    throw new Error(
+      `County seed ${seed.cleanId} is not in the reviewed ${reviewedSelection} selection.`,
+    );
+  }
+  if (
+    reviewedSelection === "reviewed_county_completion_v1" &&
+    !/^[0-9a-f]{64}$/.test(args.reviewedInventoryHash ?? "")
+  ) {
+    throw new Error(
+      `County seed ${seed.cleanId} requires the immutable reviewed county-inventory hash.`,
+    );
   }
   if (!seed.officialEventUrl.original) {
     throw new Error(`County seed ${seed.cleanId} has no official event URL and is insufficient for staging.`);
@@ -445,10 +470,19 @@ export function prepareCountySeedRecord(args: {
         && seed.cleanId === "MAC-026"
         ? "Insufficient information"
         : "New candidate",
-      phase_c1_disposition: reviewedSelection === "macomb_first_event_pilot_v2"
-        ? "revised_three_event_pilot_manifest_only"
-        : "provisional_batch_1_manifest_only",
-      execution_approval: "not_authorized",
+      phase_c1_disposition:
+        reviewedSelection === "macomb_first_event_pilot_v2"
+          ? "revised_three_event_pilot_manifest_only"
+          : reviewedSelection === "reviewed_county_completion_v1"
+            ? "reviewed_county_completion_manifest"
+            : "provisional_batch_1_manifest_only",
+      execution_approval:
+        reviewedSelection === "reviewed_county_completion_v1"
+          ? args.executionApproval ?? "not_authorized"
+          : "not_authorized",
+      ...(reviewedSelection === "reviewed_county_completion_v1"
+        ? { reviewed_inventory_hash: args.reviewedInventoryHash }
+        : {}),
     },
   };
   const candidate: CountySeedRpcCandidate = {
