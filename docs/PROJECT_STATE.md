@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: July 28, 2026
+Last updated: July 29, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -44,7 +44,9 @@ Current public Event Hub coverage:
 
 The seven factory-published packages are at 100 percent readiness. Existing package and manifest fallbacks must remain valid while the generalized pipeline expands.
 
-The private review queue is empty.
+The published-package review queue is empty. The bounded Macomb completion
+pilot now retains seven open completion exceptions and two private Event
+Factory verification cases; none authorizes canonicalization or publication.
 
 ## Event Factory
 
@@ -137,9 +139,40 @@ The operator remains a thin layer over the existing county staging, Michigan Com
 
 Forward-only migration `026_generalize_county_completion_staging.sql` contains the generalized guarded staging predicate and service-role-only deterministic identity-clearance action. It was deployed atomically on July 29, 2026, and local/remote migration history is aligned through 026. Service-role calls reach the function's fail-closed input validation; anonymous calls are denied with `42501`.
 
+Forward-only migration `028_fix_county_completion_identity_target_type.sql`
+corrects the identity-clearance replay lookup to compare the deployed UUID
+action target directly with the UUID candidate parameter. The original
+production-shaped five-event run exposed the migration-026 `uuid = text`
+comparison before identity clearance. Migration 028 patches only the existing
+function definition inside one transaction, retains its service-role assertion
+and execution grants, and adds no table or alternate workflow. It was deployed
+on July 29, 2026, and local/remote migration history is aligned through 028.
+
 The first Macomb `--plan-only` projection classified all 83 retained records without starting or resuming a completion run: 43 eligible for guarded staging, 34 insufficient, three protected or held, two existing canonical records, and one disputed identity record (`MAC-041` Art on the Bay). It generated nine local dry-run manifests and `artifacts/michigan-completion/macomb/county-operation-report-v1.json`, whose canonical SHA-256 is `abdf37f05007e56eb9e2920e6e6978e8ba4c46264f9b4d667acc5b5547b26b75`.
 
 Before/after plan-only counts and stable hashes are identical for canonical events, candidates, candidate sources, source bundles, syntheses, verification cases, packages, pages, page versions, media, visual workflows, completion runs/actions, and review items. No model, image, canonicalization, publication, or private-processing action occurred. The full contract is in `docs/COUNTY_COMPLETION_OPERATOR.md`.
+
+The first bounded private county cohort uses run
+`37942091-94d7-4599-ae36-ffbf4bf4096a` for `MAC-054` Holland Ponds Migratory
+Bird Day, `MAC-057` Shelby Township Art Fair, `MAC-059` Assumption GreekFest,
+`MAC-063` Shorewood Kiwanis Harper Charity Cruise, and `MAC-065` St. Clair
+Shores Memorial Day Parade. Its five migration-026 database exceptions were
+transitioned through the supported append-only `superseded` disposition with
+migration-028 provenance and no human identity decision, then the same run was
+resumed exactly once. All five candidates are now deterministically cleared as
+distinct private unmatched candidates. The run retains five official candidate
+sources, five source bundles, 21 source snapshots, 59 claims, two
+needs-review verification cases, and four verification-evidence rows.
+
+The run is safely `waiting_for_exceptions` with seven open review items:
+Holland Ponds and Assumption GreekFest each require human verification and
+retain a deterministic synthesis conflict; Shelby Township Art Fair,
+Shorewood Kiwanis Harper Charity Cruise, and the St. Clair Shores Memorial Day
+Parade retain conflicting date claims. No synthesis, package, visual workflow,
+canonical match, canonical event, Event Page, page version, media record,
+model action, image action, or publication action was created. The next
+operator action is evidence review of these seven retained exceptions, not
+another county run or another resume.
 
 ## Hero Image Factory
 
