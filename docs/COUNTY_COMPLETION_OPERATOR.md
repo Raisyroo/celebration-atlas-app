@@ -1,6 +1,6 @@
 # Michigan County Completion Operator
 
-Status: implemented locally as a thin orchestration layer over the Michigan Completion Operating Layer. It does not add a second event pipeline and it does not authorize a county run, migration deployment, canonicalization, image work, approval, or publication.
+Status: implemented as a thin orchestration layer over the Michigan Completion Operating Layer. Migration 026 is deployed with local/remote parity; deployment does not authorize a county run, canonicalization, image work, approval, or publication.
 
 ## Operator command
 

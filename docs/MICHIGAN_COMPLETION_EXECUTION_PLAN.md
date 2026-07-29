@@ -57,7 +57,7 @@ Private workflow effects require a separately reviewed instruction and an explic
 npm run atlas:create-county-events -- macomb --authorize-private-writes --actor <allowlisted-admin-email>
 ```
 
-Migration 026 must be reviewed, validated, deployed, and verified for local/remote parity before private county mode. Dry-run and private manifests have separate immutable identities. The operator never exposes canonicalization, image, approval, or publication options. Detailed classification, replay, resume, report, and safety rules are in `docs/COUNTY_COMPLETION_OPERATOR.md`.
+Migration 026 passed review and validation, was deployed atomically, and has verified local/remote parity. Dry-run and private manifests have separate immutable identities. The operator never exposes canonicalization, image, approval, or publication options. Detailed classification, replay, resume, report, and safety rules are in `docs/COUNTY_COMPLETION_OPERATOR.md`.
 
 ## Michigan operating sequence
 
@@ -391,4 +391,4 @@ An exception-blocked exit is resumable and must not be reported as rollback. Alr
 - Historical/current-program ambiguity and shared organizer URLs will remain common Michigan exceptions.
 - Existing published packages are compatibility fixtures; completion hardening must not retroactively invalidate them.
 
-The immediate next step is to review the local county-operator implementation and migration 026, pass the focused and full release gates, and then make a separate decision about deploying migration 026. No Macomb county command should be run as part of implementation validation. After deployment parity is confirmed, use `--plan-only` for the first reviewed county projection before separately authorizing any dry or private run.
+Migration 026 and the first Macomb plan-only projection are complete. The retained report at `artifacts/michigan-completion/macomb/county-operation-report-v1.json` classifies all 83 records without starting or resuming a run. Review its one identity exception, three protected records, 34 insufficient records, two canonical records, and 43 guarded-staging records before separately authorizing any dry or private execution.

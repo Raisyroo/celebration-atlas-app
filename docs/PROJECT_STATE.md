@@ -131,7 +131,11 @@ Macomb's registry binds the retained 83-record `03_IMPORT_READY` inventory and i
 
 The operator remains a thin layer over the existing county staging, Michigan Completion, source-bundle, synthesis, verification, Event Factory, visual-readiness, review, and publication-safeguard contracts. Deterministic identity clearance cannot use fuzzy similarity as proof and cannot create a canonical event or match. Source composition uses the existing bounded capture service, and completion-created verification evidence is submitted to the existing human review gate rather than self-verified.
 
-Forward-only migration `026_generalize_county_completion_staging.sql` contains the generalized guarded staging predicate and service-role-only deterministic identity-clearance action. It is local only and has not been deployed by this task. No Macomb operator command or production mutation was run. The full contract is in `docs/COUNTY_COMPLETION_OPERATOR.md`.
+Forward-only migration `026_generalize_county_completion_staging.sql` contains the generalized guarded staging predicate and service-role-only deterministic identity-clearance action. It was deployed atomically on July 29, 2026, and local/remote migration history is aligned through 026. Service-role calls reach the function's fail-closed input validation; anonymous calls are denied with `42501`.
+
+The first Macomb `--plan-only` projection classified all 83 retained records without starting or resuming a completion run: 43 eligible for guarded staging, 34 insufficient, three protected or held, two existing canonical records, and one disputed identity record (`MAC-041` Art on the Bay). It generated nine local dry-run manifests and `artifacts/michigan-completion/macomb/county-operation-report-v1.json`, whose canonical SHA-256 is `abdf37f05007e56eb9e2920e6e6978e8ba4c46264f9b4d667acc5b5547b26b75`.
+
+Before/after plan-only counts and stable hashes are identical for canonical events, candidates, candidate sources, source bundles, syntheses, verification cases, packages, pages, page versions, media, visual workflows, completion runs/actions, and review items. No model, image, canonicalization, publication, or private-processing action occurred. The full contract is in `docs/COUNTY_COMPLETION_OPERATOR.md`.
 
 ## Hero Image Factory
 
@@ -234,9 +238,9 @@ The package, canonical event, immutable Event Hub v1, approved media record, and
 
 ## Current Next Milestone
 
-Review and validate the county operator and migration 026, then decide separately whether to deploy migration 026. Deployment must be followed by local/remote parity and unchanged public-state verification and does not authorize a county run.
+Review the retained Macomb classification report before authorizing any execution. Art on the Bay remains disputed because its candidate is still `unchecked` with `needs_review=true`; Bay-Rama, Richmond, and Memphis remain excluded; 34 records remain insufficient; and the 43 guarded-staging records are only planned.
 
-After that separate checkpoint, the first county operation should be `npm run atlas:create-county-events -- macomb --plan-only` so the complete 83-record classification and generated manifest hashes can be reviewed without starting a run. Any later dry run or private run requires its own explicit authorization. Bay-Rama, Richmond, and Memphis remain excluded, and no county operation may canonicalize, perform image work, approve, or publish.
+Any later dry run or private run requires its own explicit authorization. No county operation may canonicalize, perform image work, approve, or publish.
 
 The state-map presentation resolver, anonymous public-account follow-up, and broader product checkpoints remain separately queued and are not part of the completion-layer release.
 

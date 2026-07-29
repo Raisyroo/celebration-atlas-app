@@ -1,6 +1,6 @@
 # Michigan Completion Operating Layer v1
 
-Status: implemented and deployed operating-layer contract through migrations 023-025. The local county-operator extension adds forward-only migration `026_generalize_county_completion_staging.sql`; migration 026 is not deployed or authorized by this document. No migration authorizes a completion run, event staging, canonicalization, package publication, or image action.
+Status: implemented and deployed operating-layer contract through migration `026_generalize_county_completion_staging.sql`. Migration 026 was deployed atomically on July 29, 2026, and local/remote migration history is aligned through 026. No migration authorizes a completion run, event staging, canonicalization, package publication, or image action.
 
 ## Purpose and boundary
 
