@@ -18,6 +18,10 @@ import {
 import {
   MICHIGAN_COMPLETION_STAGES,
 } from "../lib/michigan-completion/stageRegistry.ts";
+import {
+  completionEventHasStaleBlockingStage,
+  openBlockingCompletionExceptionsForEvent,
+} from "../lib/michigan-completion/exceptionPolicy.ts";
 import type {
   CompletionExceptionInput,
   CompletionExceptionRecord,
@@ -995,7 +999,7 @@ async function validateStageRegistryAndSourceBoundaries() {
     "content_readiness@1",
     "package_preparation@1",
     "visual_readiness@2",
-    "exception_review@2",
+    "exception_review@3",
     "publication_readiness@2",
   ];
   assert.deepEqual(
@@ -1255,6 +1259,136 @@ async function validateAttachmentCasesAThroughE() {
 }
 
 async function validateCasesFThroughHAndModelFallback() {
+  // A blocked event stays quarantined while unrelated incomplete events resume.
+  const selectiveParsed = fixtureManifest("macomb-selective-resume", [
+    rawEvent("identity-ambiguity", 17),
+    rawEvent("selective-resume-event", 18),
+    rawEvent("queued-after-interruption", 19),
+  ]);
+  const selectiveStore = new FixtureCompletionStore();
+  const selectiveEffects = createEffects();
+  selectiveStore.interruptOnceBefore(
+    "selective-resume-event",
+    "deterministic_synthesis",
+  );
+  const selectiveInterrupted = await executeMichiganCompletionRun({
+    store: selectiveStore,
+    executor: createFixtureExecutor(selectiveEffects),
+    manifest: selectiveParsed.value,
+    inputHash: selectiveParsed.inputHash,
+    actorIdentity: FIXED_ACTOR,
+    dryRun: true,
+    deterministicOnly: true,
+    maxConcurrency: 1,
+    modelBudgetTokens: 0,
+    perEventModelBudgetTokens: 0,
+    now: () => FIXED_TIME,
+  });
+  assert.equal(selectiveInterrupted.exitCode, COMPLETION_EXIT_CODES.failed);
+  const retainedIdentityException =
+    selectiveInterrupted.snapshot.exceptions.find(
+      (exception) =>
+        exception.eventKey === "identity-ambiguity" &&
+        exception.code === "uncertain_identity_match",
+    );
+  assert(retainedIdentityException);
+  const identityCheckpointCount =
+    selectiveInterrupted.snapshot.checkpoints.filter(
+      (checkpoint) =>
+        checkpoint.runEventId ===
+        completionEventByKey(
+          selectiveInterrupted.snapshot,
+          "identity-ambiguity",
+        ).id,
+    ).length;
+
+  assert.deepEqual(
+    openBlockingCompletionExceptionsForEvent(
+      [retainedIdentityException],
+      "identity-ambiguity",
+    ).map((exception) => exception.id),
+    [retainedIdentityException.id],
+  );
+  assert.equal(
+    completionEventHasStaleBlockingStage({
+      exceptions: [retainedIdentityException],
+      eventKey: "identity-ambiguity",
+      runEventId: retainedIdentityException.runEventId ?? "",
+      checkpoints: selectiveInterrupted.snapshot.checkpoints,
+      stages: MICHIGAN_COMPLETION_STAGES,
+    }),
+    false,
+    "A blocker already evaluated by the current stage version must stay quarantined.",
+  );
+  assert.equal(
+    completionEventHasStaleBlockingStage({
+      exceptions: [
+        {
+          ...retainedIdentityException,
+          stageId: "evidence_readiness",
+        },
+      ],
+      eventKey: "identity-ambiguity",
+      runEventId: retainedIdentityException.runEventId ?? "",
+      checkpoints: [
+        {
+          runEventId: retainedIdentityException.runEventId ?? "",
+          stageId: "evidence_readiness",
+          stageVersion: "2",
+        },
+      ],
+      stages: MICHIGAN_COMPLETION_STAGES,
+    }),
+    true,
+    "A blocker from an older deterministic stage version may receive one bounded recheck.",
+  );
+
+  const selectiveResumed = await executeMichiganCompletionRun({
+    store: selectiveStore,
+    executor: createFixtureExecutor(selectiveEffects),
+    resumeRunId: selectiveInterrupted.snapshot.run.id,
+    actorIdentity: FIXED_ACTOR,
+    now: () => FIXED_TIME,
+  });
+  assert.equal(selectiveResumed.snapshot.run.status, "waiting_for_exceptions");
+  assert.equal(
+    completionEventByKey(
+      selectiveResumed.snapshot,
+      "identity-ambiguity",
+    ).status,
+    "waiting_for_exception",
+  );
+  assert.equal(
+    completionEventByKey(
+      selectiveResumed.snapshot,
+      "selective-resume-event",
+    ).status,
+    "completed",
+  );
+  assert.equal(
+    completionEventByKey(
+      selectiveResumed.snapshot,
+      "queued-after-interruption",
+    ).status,
+    "completed",
+  );
+  assert.equal(
+    selectiveResumed.snapshot.checkpoints.filter(
+      (checkpoint) =>
+        checkpoint.runEventId ===
+        completionEventByKey(
+          selectiveResumed.snapshot,
+          "identity-ambiguity",
+        ).id,
+    ).length,
+    identityCheckpointCount,
+    "Selective resume must not reprocess an event with an open blocking exception.",
+  );
+  assert.equal(
+    selectiveEffects.candidateWrites.get("identity-ambiguity"),
+    1,
+  );
+
   // F. Resume begins after the last successful checkpoint and does not repeat effects.
   const resumeParsed = fixtureManifest("macomb-resume", [
     rawEvent("resume-event", 20),

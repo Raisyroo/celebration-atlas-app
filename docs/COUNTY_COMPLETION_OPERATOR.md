@@ -10,7 +10,7 @@ The persistent county-level entry point is:
 npm run atlas:create-county-events -- macomb
 ```
 
-The default is a deterministic, zero-model-budget dry run. It reads the registered retained inventory and current private control-plane state, writes bounded immutable manifests and one aggregate local report, then starts new dry runs or resumes only compatible exception-cleared dry runs through the existing Michigan Completion orchestrator.
+The default is a deterministic, zero-model-budget dry run. It reads the registered retained inventory and current private control-plane state, writes bounded immutable manifests and one aggregate local report, then starts new dry runs or resumes only compatible events whose own blocking exceptions are closed through the existing Michigan Completion orchestrator.
 
 To classify the county and create local manifests/report without starting or resuming a run:
 
@@ -49,7 +49,7 @@ Planning classifies every approved inventory row exactly once:
 | Classification | Operator behavior |
 | --- | --- |
 | `existing_canonical_or_completed` | Reuse the canonical/completed record; do not stage it. |
-| `active_or_resumable` | Reuse the compatible run; resume only when it is partial and all exceptions are closed. |
+| `active_or_resumable` | Reuse the compatible run; resume an incomplete event when its own blocking exceptions are closed. |
 | `protected_or_editorially_held` | Exclude it and retain the configured reason. |
 | `disputed_or_ambiguous_identity` | Exclude it for human identity review. Fuzzy similarity never clears or merges identity. |
 | `insufficient_for_staging` | Exclude it and report missing identity/source/location inputs. |
@@ -67,7 +67,7 @@ The aggregate report retains, for all rows, the source record ID, selected canon
 - Manifest candidate payloads use the existing county-seed staging adapter and guarded staging RPC.
 - Existing candidates, canonical records, bundles, syntheses, verification cases, packages, visual workflows, compatible runs, checkpoints, exceptions, and reports are reused.
 - A compatible exact run is never started again.
-- A partial run is resumed only when all of its exceptions are closed. An open exception is reported and left untouched.
+- Resume is event-scoped inside the immutable batch. Completed or review-ready events replay no work; an incomplete event continues when its own blocking exceptions are closed. If a blocking exception belongs to an older version of its deterministic stage, that event may run one versioned recheck; it remains blocked at exception review until the obsolete exception receives a supported disposition. Other unresolved neighboring events remain quarantined and untouched. A run-level blocking exception still stops the whole run.
 - One failed batch is recorded in the aggregate report; later independent batches continue.
 
 Generated artifacts default to:
@@ -118,6 +118,13 @@ The county operator:
 - does not automatically resolve exceptions;
 - does not retry a failed source capture or failed batch command;
 - does not treat planning, synthesis, package preparation, or `publication_eligible` as publication.
+
+A batch may therefore finish in `waiting_for_exceptions` while other events in
+that same batch are already private and review-ready. Human package approval
+and publication remain event-by-event decisions; the batch status is an
+aggregate progress signal, not an all-or-nothing publication gate. The default
+batch size remains five so operational mistakes and review queues stay bounded
+even when a county inventory contains hundreds of records.
 
 The focused contract is validated by:
 

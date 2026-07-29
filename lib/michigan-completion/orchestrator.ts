@@ -1,6 +1,11 @@
 import {
   completionSha256,
 } from "./manifest.ts";
+import {
+  completionEventHasStaleBlockingStage,
+  completionExceptionAppliesToEvent,
+  isOpenBlockingCompletionException,
+} from "./exceptionPolicy.ts";
 import { MICHIGAN_COMPLETION_STAGES } from "./stageRegistry.ts";
 import {
   MICHIGAN_COMPLETION_ORCHESTRATOR_VERSION,
@@ -401,6 +406,12 @@ async function processEvent(args: {
       deterministicOnly: snapshot.run.deterministicOnly,
       actorIdentity: args.actorIdentity,
       priorOutputs,
+      eventExceptions: snapshot.exceptions.filter((exception) =>
+        completionExceptionAppliesToEvent(
+          exception,
+          args.event.eventKey,
+        ),
+      ),
     };
     try {
       result = await args.executor.execute(stage.id, context);
@@ -647,8 +658,34 @@ export async function executeMichiganCompletionRun(args: {
   }
 
   try {
+    const eventsToProcess = args.resumeRunId
+      ? manifest.events.filter((event) => {
+          const runEvent = findRunEvent(snapshot, event.eventKey);
+          if (["completed", "ready_for_review"].includes(runEvent.status)) {
+            return false;
+          }
+          const blocked = snapshot.exceptions.some(
+            (exception) =>
+              completionExceptionAppliesToEvent(
+                exception,
+                event.eventKey,
+              ) &&
+              isOpenBlockingCompletionException(exception),
+          );
+          return (
+            !blocked ||
+            completionEventHasStaleBlockingStage({
+              exceptions: snapshot.exceptions,
+              eventKey: event.eventKey,
+              runEventId: runEvent.id,
+              checkpoints: snapshot.checkpoints,
+              stages: MICHIGAN_COMPLETION_STAGES,
+            })
+          );
+        })
+      : manifest.events;
     await mapWithConcurrency(
-      manifest.events,
+      eventsToProcess,
       snapshot.run.maxConcurrency,
       async (event) => {
         await processEvent({

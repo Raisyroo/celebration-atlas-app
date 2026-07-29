@@ -11,6 +11,12 @@ import {
 import type { NormalizedCountySeed } from "../county-seeds/types.ts";
 import type { ApprovedCountyInventory } from "./countyInventory.ts";
 import {
+  completionEventHasStaleBlockingStage,
+  completionExceptionAppliesToEvent,
+  openBlockingCompletionExceptionsForEvent,
+} from "./exceptionPolicy.ts";
+import { MICHIGAN_COMPLETION_STAGES } from "./stageRegistry.ts";
+import {
   completionSha256,
   parseMichiganCompletionManifest,
 } from "./manifest.ts";
@@ -416,7 +422,11 @@ function runProjection(
     : null;
   const exceptions = eventInput
     ? run.exceptions.filter(
-        (exception) => exception.eventKey === eventInput.eventKey,
+        (exception) =>
+          completionExceptionAppliesToEvent(
+            exception,
+            eventInput.eventKey,
+          ),
       )
     : [];
   const openException = exceptions.find((exception) =>
@@ -429,9 +439,21 @@ function runProjection(
   const active = ["queued", "validating", "running"].includes(run.run.status);
   const resumeRecommended =
     run.run.status === "waiting_for_exceptions" &&
-    !run.exceptions.some((exception) =>
-      ["open", "acknowledged"].includes(exception.status),
-    );
+    !completed &&
+    eventInput !== undefined &&
+    (openBlockingCompletionExceptionsForEvent(
+      exceptions,
+      eventInput.eventKey,
+    ).length === 0 ||
+      (event !== null &&
+        event !== undefined &&
+        completionEventHasStaleBlockingStage({
+          exceptions,
+          eventKey: eventInput.eventKey,
+          runEventId: event.id,
+          checkpoints: run.checkpoints,
+          stages: MICHIGAN_COMPLETION_STAGES,
+        })));
   return {
     runId: run.run.id,
     currentStage: event?.currentStageId ?? null,

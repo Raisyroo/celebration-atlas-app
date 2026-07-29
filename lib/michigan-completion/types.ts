@@ -388,6 +388,7 @@ export type CompletionStageExecutorContext = {
   deterministicOnly: boolean;
   actorIdentity: string;
   priorOutputs: ReadonlyMap<string, Record<string, unknown>>;
+  eventExceptions: readonly CompletionExceptionRecord[];
 };
 
 export type CompletionStageExecutor = {

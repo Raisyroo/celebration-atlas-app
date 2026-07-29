@@ -192,6 +192,19 @@ five-event run and all seven exception records remain unchanged; this
 implementation did not resume a run, transition a review item, call a model,
 create an image, canonicalize, package, or publish.
 
+County continuation is event-scoped within each immutable batch. On resume,
+completed and review-ready events replay no work, events with their own open
+blocking exceptions remain quarantined, and unrelated incomplete events may
+continue. A blocker from an older deterministic stage version may receive one
+versioned recheck, but the event remains blocked until the retained exception
+is dispositioned through the supported review action. A run-level blocking
+exception still stops every event. The
+exception-review stage now enforces the same event-scoped policy before
+publication readiness, so an event cannot become review-ready while its own
+blocking exception remains open. A batch may remain
+`waiting_for_exceptions` while clean packages from that batch proceed through
+individual human approval.
+
 ## Hero Image Factory
 
 Migration `014_event_visual_workflows.sql` and the Control Desk Hero Image Factory implement the fast visual workflow:
@@ -293,13 +306,13 @@ The package, canonical event, immutable Event Hub v1, approved media record, and
 
 ## Current Next Milestone
 
-Review the two retained human-verification cases for Holland Ponds and
-Assumption GreekFest. The evidence-selection policy deterministically removes
-the historical and unrelated-metadata false conflicts from the active view,
-but it does not manufacture the missing current-edition facts or self-verify
-either event. The five-event private run remains paused with its seven existing
-exceptions until a separately authorized review/transition and resume plan is
-approved.
+Apply the event-scoped continuation policy to the retained five-event Macomb
+pilot. Review the two retained human-verification cases for Holland Ponds and
+Assumption GreekFest separately. The evidence-selection policy deterministically
+removes historical and unrelated-metadata false conflicts from the active view,
+but it does not manufacture missing current-edition facts or self-verify an
+event. Clean events may advance independently after their own review items are
+closed; unresolved events stay quarantined.
 
 Bay-Rama, Richmond, and Memphis remain excluded. Any later dry run or private
 run requires its own explicit authorization. No county operation may

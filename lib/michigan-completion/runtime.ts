@@ -12,6 +12,9 @@ import type {
 import { completionSha256 } from "./manifest.ts";
 import { evaluateDeterministicIdentityClearance } from "./identityClearance.ts";
 import {
+  openBlockingCompletionExceptionsForEvent,
+} from "./exceptionPolicy.ts";
+import {
   composeRetainedSourceBundle,
   composeVerificationCase,
   createDefaultSourceCompositionServices,
@@ -1575,13 +1578,37 @@ async function stageVisual(
 function stageExceptionReview(
   context: CompletionStageExecutorContext,
 ): CompletionStageExecutionResult {
+  const openBlockingExceptions =
+    openBlockingCompletionExceptionsForEvent(
+      context.eventExceptions,
+      context.event.eventKey,
+    );
+  const output = {
+    exceptionQueueInspected: true,
+    openBlockingExceptionCount: openBlockingExceptions.length,
+    openBlockingExceptions: openBlockingExceptions.map((exception) => ({
+      id: exception.id,
+      stageId: exception.stageId,
+      code: exception.code,
+      status: exception.status,
+    })),
+    humanDecisionRequired:
+      openBlockingExceptions.length > 0 ||
+      outputFor(context, "visual_readiness").provenanceBlocked === true,
+  };
+  if (openBlockingExceptions.length) {
+    return {
+      outcome: "blocked",
+      output,
+      links: {
+        readinessState: "publication_blocked",
+        publicationEligible: false,
+      },
+    };
+  }
   return {
     outcome: "succeeded",
-    output: {
-      exceptionQueueInspected: true,
-      humanDecisionRequired:
-        outputFor(context, "visual_readiness").provenanceBlocked === true,
-    },
+    output,
   };
 }
 

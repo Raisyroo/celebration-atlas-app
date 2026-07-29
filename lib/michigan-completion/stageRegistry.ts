@@ -144,7 +144,7 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "exception_review",
-    version: "2",
+    version: "3",
     capability: "atlas_review_items, atlas_review_item_actions, and Atlas Control read-only review surface",
     processor: "human_review",
     prerequisites: ["visual_readiness"],

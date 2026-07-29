@@ -155,7 +155,12 @@ For each exception:
 4. resolve only after a deterministic rerun proves the blocker is gone;
 5. waive only a non-fatal exception with an actor and concrete reason;
 6. supersede only when a linked replacement exception exists;
-7. resume the same run so successful checkpoints are reused.
+7. resume the same run so successful checkpoints are reused; only incomplete
+   events without an open event-level blocking exception continue, while
+   unresolved neighboring events remain quarantined. A blocker tied to an
+   older deterministic stage version may receive one bounded recheck, but it
+   remains publication-blocking until the retained review item receives a
+   supported disposition.
 
 Never waive an identity/security mismatch, unsupported canonical merge, missing official source, unresolved current-date conflict, unknown image provenance, or missing approved art into publication readiness.
 

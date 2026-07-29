@@ -936,6 +936,14 @@ async function validateResumeReplayContinuation(args: Awaited<ReturnType<typeof 
   const resolvedRun = structuredClone(artRun);
   resolvedRun.exceptions[0].status = "resolved";
   resolvedRun.exceptions[0].resolvedAt = FIXED_TIME;
+  resolvedRun.exceptions.push({
+    ...resolvedRun.exceptions[0],
+    id: "00000000-0000-4000-8000-000000000099",
+    runEventId: null,
+    eventKey: "unrelated-held-event",
+    status: "open",
+    resolvedAt: null,
+  });
   const resumablePlan = planCountyOperation({
     inventory,
     snapshot: {
@@ -944,6 +952,26 @@ async function validateResumeReplayContinuation(args: Awaited<ReturnType<typeof 
     },
   });
   assert.deepEqual(resumablePlan.resumeRunIds, [ART_RUN_ID]);
+  const runLevelBlocked = structuredClone(resolvedRun);
+  runLevelBlocked.exceptions.push({
+    ...resolvedRun.exceptions[0],
+    id: "00000000-0000-4000-8000-000000000100",
+    runEventId: null,
+    eventKey: null,
+    status: "open",
+    resolvedAt: null,
+  });
+  assert.deepEqual(
+    planCountyOperation({
+      inventory,
+      snapshot: {
+        ...snapshot,
+        completionRuns: [runLevelBlocked],
+      },
+    }).resumeRunIds,
+    [],
+    "A run-level blocking exception must quarantine every event in the run.",
+  );
   let resumed = 0;
   const resumeOnlyPlan = {
     ...resumablePlan,
