@@ -198,8 +198,8 @@
   z-index: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: center;
+  object-fit: cover;
+  object-position: 56% center;
   filter: saturate(0.94) contrast(1.03) brightness(0.86);
 }
 
@@ -1728,7 +1728,7 @@
   }
 
   .heroImage {
-    object-position: center;
+    object-position: center 55%;
   }
 
   .artPending {
