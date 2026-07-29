@@ -44,9 +44,10 @@ Current public Event Hub coverage:
 
 The seven factory-published packages are at 100 percent readiness. Existing package and manifest fallbacks must remain valid while the generalized pipeline expands.
 
-The published-package review queue is empty. The bounded Macomb completion
-pilot now retains seven open completion exceptions and two private Event
-Factory verification cases; none authorizes canonicalization or publication.
+The bounded Macomb completion pilot now retains nine open completion
+exceptions across events that still need facts and one private Shelby Township
+Art Fair package ready for human review. None authorizes canonicalization or
+publication.
 
 ## Event Factory
 
@@ -135,7 +136,7 @@ The local working tree now contains the minimum county-level coordinator request
 
 Macomb's registry binds the retained 83-record `03_IMPORT_READY` inventory and its exact artifact, workbook, sheet, row-count, header, and row fingerprints. Every record receives one report disposition. Armada Fair and Romeo Peach Festival reuse canonical records; Art on the Bay and other compatible retained records reuse candidates/runs; protected or held Bay-Rama, Richmond, and Memphis are excluded; ambiguous and insufficient records remain blocked; only the rest enter bounded manifests.
 
-The operator remains a thin layer over the existing county staging, Michigan Completion, source-bundle, synthesis, verification, Event Factory, visual-readiness, review, and publication-safeguard contracts. Deterministic identity clearance cannot use fuzzy similarity as proof and cannot create a canonical event or match. Source composition uses the existing bounded capture service, and completion-created verification evidence is submitted to the existing human review gate rather than self-verified.
+The operator remains a thin layer over the existing county staging, Michigan Completion, source-bundle, synthesis, verification, Event Factory, visual-readiness, review, and publication-safeguard contracts. Deterministic identity clearance cannot use fuzzy similarity as proof and cannot create a canonical event or match. Source composition uses the existing bounded capture service. Official-family evidence may clear a private verification case automatically only when it proves identity, current dates, location, and annual recurrence; otherwise the event stops with the exact facts still needing human verification.
 
 Forward-only migration `026_generalize_county_completion_staging.sql` contains the generalized guarded staging predicate and service-role-only deterministic identity-clearance action. It was deployed atomically on July 29, 2026, and local/remote migration history is aligned through 026. Service-role calls reach the function's fail-closed input validation; anonymous calls are denied with `42501`.
 
@@ -147,6 +148,15 @@ comparison before identity clearance. Migration 028 patches only the existing
 function definition inside one transaction, retains its service-role assertion
 and execution grants, and adds no table or alternate workflow. It was deployed
 on July 29, 2026, and local/remote migration history is aligned through 028.
+
+Forward-only migration `029_official_first_event_verification.sql` is deployed
+with local/remote parity through 029. It keeps the existing verification,
+evidence, and package RPCs, adds service-role assertions to all three replaced
+definitions, recognizes retained pages in the official host family, permits
+strong annual language to corroborate an official current occurrence, requires
+current dates before verification, and removes the blanket second-source
+requirement. It adds no table and cannot create a canonical event, public page,
+media record, discovery record, or publication pointer.
 
 The first Macomb `--plan-only` projection classified all 83 retained records without starting or resuming a completion run: 43 eligible for guarded staging, 34 insufficient, three protected or held, two existing canonical records, and one disputed identity record (`MAC-041` Art on the Bay). It generated nine local dry-run manifests and `artifacts/michigan-completion/macomb/county-operation-report-v1.json`, whose canonical SHA-256 is `abdf37f05007e56eb9e2920e6e6978e8ba4c46264f9b4d667acc5b5547b26b75`.
 
@@ -182,7 +192,7 @@ unrelated page metadata, prefers a single value from the official host family,
 and still blocks on conflicting current-year official dates. It feeds both
 verification planning and deterministic synthesis without deleting or changing
 any retained snapshot, claim, or schedule candidate. Evidence-readiness stage
-version 3 and deterministic-synthesis wrapper stage version 20 prevent older
+version 4 and deterministic-synthesis wrapper stage version 20 prevent older
 successful checkpoints from silently replaying pre-policy behavior.
 
 The focused county-operator validator covers current-year official-family
@@ -212,10 +222,11 @@ model tokens, and invoked no publication or image action. The recheck produced
 four deterministic syntheses, three new diligence cases, and thirteen retained
 verification-evidence rows:
 
-- Shelby Township Art Fair reached valid, conflict-free private content
-  (`936e3e3c-8e30-46c5-8a31-a35e30dc68af`) and stopped before package creation
-  because diligence case `2d41f85d-4c19-4aba-9dba-58f8cbdd6aec` still needs
-  human verification.
+- At that checkpoint, Shelby Township Art Fair had reached valid,
+  conflict-free private content
+  (`936e3e3c-8e30-46c5-8a31-a35e30dc68af`) but had not yet cleared its
+  diligence case. Migration 029 and the acceptance proof described below now
+  supersede that historical blocker.
 - Shorewood Kiwanis Harper Charity Cruise reached valid, conflict-free private
   content (`82a46b17-86e5-45fc-8208-2983a84d7908`) and stopped before package
   creation because diligence case `cc4bb03d-b09d-4a0c-90a0-b6f58e1a8314`
@@ -230,11 +241,32 @@ verification-evidence rows:
 
 Four obsolete archive-wide conflict exceptions were resolved through
 `atlas_transition_michigan_completion_exception` only after current-version
-checkpoints proved the blockers gone. Eleven legitimate verification, evidence,
+checkpoints proved the blockers gone. Nine legitimate verification, evidence,
 content, and package-readiness exceptions remain open. Four retained bundles
 advanced to `draft_ready`; no candidate, candidate source, source snapshot,
 source claim, canonical event, package, Event Page, page version, media record,
 or visual workflow was created or changed by the resume.
+
+The official-first Shelby acceptance proof is complete. Existing candidate
+`0ebe2d9f-f85c-4075-a93e-02b6cddb61f0`, verification case
+`2d41f85d-4c19-4aba-9dba-58f8cbdd6aec`, bundle
+`340b2b94-d90e-48b6-88cf-a83d2d0fc37e`, and deterministic synthesis
+`936e3e3c-8e30-46c5-8a31-a35e30dc68af` were reused. The municipal calendar
+proved the event identity, August 8-9 dates, and River Bends Park; retained
+high-confidence `43rd annual` language proved recurrence. The case is verified
+at score 1.0 with one official and two supporting sources. The exact official
+5700 22 Mile Road address was matched to OpenStreetMap way `767548630` at
+`42.6545304, -83.0548010` and appended through the existing synthesis map RPC.
+
+Private package `2cad824e-2a7b-43db-a58b-d4bcb133efc9` is
+`ready_for_review`, content-ready, and deliberately art-pending. Its read-only
+preview contains Why Go, Schedule, and Plan for August 8-9 at River Bends Park.
+The obsolete Shelby verification and package-readiness exceptions were
+superseded through the supported append-only transition. Canonical events,
+candidate matches, public pages, page versions, media, and public discovery
+retained identical before/after counts and hashes; model, image, approval, and
+publication actions remained zero. The five-event run remains partial because
+the other events still have their own exceptions.
 
 ## Hero Image Factory
 
@@ -337,14 +369,16 @@ The package, canonical event, immutable Event Hub v1, approved media record, and
 
 ## Current Next Milestone
 
-Review the two strongest new diligence cases separately: Shorewood Kiwanis
-Harper Charity Cruise first, then Shelby Township Art Fair. Each case must be
-decided from its retained evidence through the existing Event Factory review
-action. Do not clear Holland Ponds, Assumption GreekFest, or the Memorial Day
+Review private Shelby Township Art Fair package
+`2cad824e-2a7b-43db-a58b-d4bcb133efc9` as the first human acceptance test.
+The decision is now about the visitor-facing page, not re-proving facts already
+established by the official source. Approve/publish or hold only through the
+existing package action; do not materialize or publish it automatically.
+
+Next, apply the same official-first rule to Shorewood Kiwanis Harper Charity
+Cruise. Do not clear Holland Ponds, Assumption GreekFest, or the Memorial Day
 Parade until their event-specific missing facts are supplied by retained
-sources. After a diligence decision, close only that event's proven-obsolete
-completion exceptions and resume the same immutable run; do not wait for the
-other events in the batch.
+sources. Do not wait for those events before reviewing a clean package.
 
 Continue county growth in bounded five-event cohorts. Successful events may
 advance to individual private package review while failed events enter the
