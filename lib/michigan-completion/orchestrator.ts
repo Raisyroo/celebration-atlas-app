@@ -23,15 +23,65 @@ export const COMPLETION_EXIT_CODES = {
 } as const;
 
 function errorRecord(error: unknown) {
+  const structured =
+    error && typeof error === "object"
+      ? error as {
+          code?: unknown;
+          details?: unknown;
+          hint?: unknown;
+          name?: unknown;
+        }
+      : {};
   return {
+    code:
+      typeof structured.code === "string" && structured.code.trim()
+        ? structured.code
+        : "MICHIGAN_COMPLETION_STAGE_OPERATION_FAILED",
     message:
       error instanceof Error
         ? error.message
         : typeof error === "string"
           ? error
           : "Unexpected completion-stage failure.",
-    ...(error instanceof Error ? { name: error.name } : {}),
+    ...(typeof structured.name === "string"
+      ? { name: structured.name }
+      : error instanceof Error
+        ? { name: error.name }
+        : {}),
+    ...(typeof structured.details === "string" && structured.details
+      ? { details: structured.details }
+      : {}),
+    ...(typeof structured.hint === "string" && structured.hint
+      ? { hint: structured.hint }
+      : {}),
   };
+}
+
+class CompletionStageOperationError extends Error {
+  readonly eventKey: string;
+  readonly stageId: string;
+  readonly failure: ReturnType<typeof errorRecord>;
+
+  constructor(eventKey: string, stageId: string, cause: unknown) {
+    const failure = errorRecord(cause);
+    super(failure.message, { cause });
+    this.name = "CompletionStageOperationError";
+    this.eventKey = eventKey;
+    this.stageId = stageId;
+    this.failure = failure;
+  }
+}
+
+async function stageOperation<T>(
+  eventKey: string,
+  stageId: string,
+  operation: () => Promise<T>,
+) {
+  try {
+    return await operation();
+  } catch (error) {
+    throw new CompletionStageOperationError(eventKey, stageId, error);
+  }
 }
 
 function exceptionDedupeKey(input: {
@@ -319,15 +369,19 @@ async function processEvent(args: {
       continue;
     }
 
-    const begun = await args.store.beginStage({
-      runId: snapshot.run.id,
-      eventKey: args.event.eventKey,
-      stageId: stage.id,
-      stageVersion: stage.version,
-      inputHash: stageInputHash,
-      deterministic: stage.processor !== "model_assisted",
-      actorIdentity: args.actorIdentity,
-    });
+    const begun = await stageOperation(
+      args.event.eventKey,
+      stage.id,
+      () => args.store.beginStage({
+        runId: snapshot.run.id,
+        eventKey: args.event.eventKey,
+        stageId: stage.id,
+        stageVersion: stage.version,
+        inputHash: stageInputHash,
+        deterministic: stage.processor !== "model_assisted",
+        actorIdentity: args.actorIdentity,
+      }),
+    );
     if (
       begun.exactReplay &&
       (begun.checkpoint.status === "succeeded" ||
@@ -388,25 +442,33 @@ async function processEvent(args: {
       };
     }
 
-    await recordExceptions({
-      store: args.store,
-      runId: snapshot.run.id,
-      eventKey: args.event.eventKey,
-      stageId: stage.id,
-      exceptions: result.exceptions ?? [],
-      actorIdentity: args.actorIdentity,
-    });
-    const checkpoint = await args.store.finishStage({
-      runId: snapshot.run.id,
-      eventKey: args.event.eventKey,
-      stageId: stage.id,
-      stageVersion: stage.version,
-      status: result.outcome,
-      output: result.output ?? {},
-      error: result.error ?? null,
-      links: result.links ?? {},
-      actorIdentity: args.actorIdentity,
-    });
+    await stageOperation(
+      args.event.eventKey,
+      stage.id,
+      () => recordExceptions({
+        store: args.store,
+        runId: snapshot.run.id,
+        eventKey: args.event.eventKey,
+        stageId: stage.id,
+        exceptions: result.exceptions ?? [],
+        actorIdentity: args.actorIdentity,
+      }),
+    );
+    const checkpoint = await stageOperation(
+      args.event.eventKey,
+      stage.id,
+      () => args.store.finishStage({
+        runId: snapshot.run.id,
+        eventKey: args.event.eventKey,
+        stageId: stage.id,
+        stageVersion: stage.version,
+        status: result.outcome,
+        output: result.output ?? {},
+        error: result.error ?? null,
+        links: result.links ?? {},
+        actorIdentity: args.actorIdentity,
+      }),
+    );
     if (
       checkpoint.status === "succeeded" ||
       checkpoint.status === "skipped"
@@ -488,6 +550,40 @@ export function buildCompletionRunReport(
     events: snapshot.events,
     exceptions: snapshot.exceptions,
     modelActions: snapshot.modelActions,
+    failure:
+      snapshot.run.status === "failed" && snapshot.run.error
+        ? {
+            runId: snapshot.run.id,
+            manifestHash: snapshot.run.inputHash,
+            eventKey:
+              typeof snapshot.run.error.eventKey === "string"
+                ? snapshot.run.error.eventKey
+                : null,
+            failedStage:
+              typeof snapshot.run.error.failedStage === "string"
+                ? snapshot.run.error.failedStage
+                : null,
+            lastSuccessfulStage:
+              typeof snapshot.run.error.lastSuccessfulStage === "string"
+                ? snapshot.run.error.lastSuccessfulStage
+                : null,
+            errorCode:
+              typeof snapshot.run.error.code === "string"
+                ? snapshot.run.error.code
+                : "MICHIGAN_COMPLETION_STAGE_OPERATION_FAILED",
+            errorMessage:
+              typeof snapshot.run.error.message === "string"
+                ? snapshot.run.error.message
+                : "Michigan completion execution failed.",
+            modelUsage: {
+              reservedTokens: snapshot.run.modelReservedTokens,
+              usedTokens: snapshot.run.modelUsageTokens,
+              actualInputTokens: snapshot.run.actualModelInputTokens,
+              actualOutputTokens: snapshot.run.actualModelOutputTokens,
+            },
+            reportTimestamp: generatedAt,
+          }
+        : null,
   };
 }
 
@@ -550,23 +646,76 @@ export async function executeMichiganCompletionRun(args: {
     }
   }
 
-  await mapWithConcurrency(
-    manifest.events,
-    snapshot.run.maxConcurrency,
-    async (event) => {
-      await processEvent({
-        store: args.store,
-        executor: args.executor,
-        manifest,
-        event,
-        initialSnapshot: snapshot,
-        actorIdentity: args.actorIdentity,
-      });
-    },
-  );
+  try {
+    await mapWithConcurrency(
+      manifest.events,
+      snapshot.run.maxConcurrency,
+      async (event) => {
+        await processEvent({
+          store: args.store,
+          executor: args.executor,
+          manifest,
+          event,
+          initialSnapshot: snapshot,
+          actorIdentity: args.actorIdentity,
+        });
+      },
+    );
+  } catch (error) {
+    const failure = error instanceof CompletionStageOperationError
+      ? error
+      : new CompletionStageOperationError(
+          "",
+          "",
+          error,
+        );
+    const retained = await args.store.getRun(snapshot.run.id);
+    const failedEvent =
+      retained.events.find(
+        (event) => event.eventKey === failure.eventKey,
+      ) ??
+      retained.events.find(
+        (event) => event.status === "running" && event.currentStageId,
+      ) ??
+      retained.events.find((event) => event.currentStageId);
+    snapshot = await args.store.finalizeRun({
+      runId: retained.run.id,
+      requestedStatus: "failed",
+      summary: {
+        orchestratorVersion: MICHIGAN_COMPLETION_ORCHESTRATOR_VERSION,
+        publicationInvoked: false,
+        automaticImageActionInvoked: false,
+        error: {
+          ...failure.failure,
+          eventKey: failure.eventKey || failedEvent?.eventKey || null,
+          failedStage: failure.stageId || failedEvent?.currentStageId || null,
+          lastSuccessfulStage: failedEvent?.lastSuccessfulStageId ?? null,
+        },
+      },
+      actorIdentity: args.actorIdentity,
+    });
+    return {
+      snapshot,
+      report: buildCompletionRunReport(snapshot, args.now?.()),
+      exitCode: COMPLETION_EXIT_CODES.failed,
+    };
+  }
 
   snapshot = await args.store.getRun(snapshot.run.id);
   const finalStatus = requestedFinalStatus(snapshot);
+  const failedEvent = finalStatus === "failed"
+    ? snapshot.events.find((event) => event.status === "failed")
+    : undefined;
+  const failedCheckpoint = failedEvent
+    ? [...snapshot.checkpoints]
+        .reverse()
+        .find(
+          (checkpoint) =>
+            checkpoint.runEventId === failedEvent.id &&
+            checkpoint.status === "failed",
+        )
+    : undefined;
+  const retainedFailure = failedCheckpoint?.error ?? {};
   snapshot = await args.store.finalizeRun({
     runId: snapshot.run.id,
     requestedStatus: finalStatus,
@@ -574,6 +723,27 @@ export async function executeMichiganCompletionRun(args: {
       orchestratorVersion: MICHIGAN_COMPLETION_ORCHESTRATOR_VERSION,
       publicationInvoked: false,
       automaticImageActionInvoked: false,
+      ...(finalStatus === "failed"
+        ? {
+            error: {
+              code:
+                typeof retainedFailure.code === "string"
+                  ? retainedFailure.code
+                  : "MICHIGAN_COMPLETION_STAGE_FAILED",
+              message:
+                typeof retainedFailure.message === "string"
+                  ? retainedFailure.message
+                  : "A Michigan completion stage failed.",
+              eventKey: failedEvent?.eventKey ?? null,
+              failedStage:
+                failedCheckpoint?.stageId ??
+                failedEvent?.currentStageId ??
+                null,
+              lastSuccessfulStage:
+                failedEvent?.lastSuccessfulStageId ?? null,
+            },
+          }
+        : {}),
     },
     actorIdentity: args.actorIdentity,
   });

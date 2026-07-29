@@ -309,6 +309,11 @@ async function main() {
       `report=${reportPath}`,
     ].join(" "),
   );
+  if (result.report.failure) {
+    console.error(
+      `Michigan completion failed: ${result.report.failure.errorMessage}`,
+    );
+  }
   return result.exitCode;
 }
 

@@ -168,6 +168,7 @@ function projectRun(rawRun: JsonRecord): CompletionRun {
     startedAt: nullableText(rawRun.startedAt),
     updatedAt: text(rawRun.updatedAt),
     completedAt: nullableText(rawRun.completedAt),
+    error: isRecord(rawRun.error) ? rawRun.error : null,
   };
 }
 

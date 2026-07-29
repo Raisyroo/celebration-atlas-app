@@ -11,6 +11,7 @@ import {
 } from "../lib/michigan-completion/manifest.ts";
 import {
   buildCompletionRunReport,
+  COMPLETION_EXIT_CODES,
   completionEventByKey,
   executeMichiganCompletionRun,
 } from "../lib/michigan-completion/orchestrator.ts";
@@ -24,6 +25,7 @@ import type {
   CompletionModelRequest,
   CompletionRun,
   CompletionRunEvent,
+  CompletionRunReport,
   CompletionRunSnapshot,
   CompletionStageCheckpoint,
   CompletionStageExecutionResult,
@@ -42,6 +44,10 @@ const MIGRATION_PATH = path.join(
 const CORRECTION_MIGRATION_PATH = path.join(
   ROOT,
   "supabase/migrations/024_fix_michigan_completion_run_list_limit.sql",
+);
+const REVIEW_TYPE_MIGRATION_PATH = path.join(
+  ROOT,
+  "supabase/migrations/025_allow_michigan_completion_review_items.sql",
 );
 const FIXED_TIME = "2026-07-28T12:00:00.000Z";
 const FIXED_ACTOR = "michigan-completion-validator";
@@ -81,9 +87,16 @@ class FixtureCompletionStore implements CompletionStore {
   private interruptBefore:
     | { eventKey: string; stageId: string; used: boolean }
     | undefined;
+  private failExceptionPersistence:
+    | { eventKey: string; stageId: string; used: boolean }
+    | undefined;
 
   interruptOnceBefore(eventKey: string, stageId: string) {
     this.interruptBefore = { eventKey, stageId, used: false };
+  }
+
+  failExceptionPersistenceOnce(eventKey: string, stageId: string) {
+    this.failExceptionPersistence = { eventKey, stageId, used: false };
   }
 
   private id() {
@@ -152,6 +165,7 @@ class FixtureCompletionStore implements CompletionStore {
       startedAt: null,
       updatedAt: FIXED_TIME,
       completedAt: null,
+      error: null,
     };
     const events: CompletionRunEvent[] = input.events.map((event) => ({
       id: this.id(),
@@ -205,6 +219,7 @@ class FixtureCompletionStore implements CompletionStore {
     snapshot.run.retryCount += 1;
     snapshot.run.startedAt ??= FIXED_TIME;
     snapshot.run.completedAt = null;
+    snapshot.run.error = null;
     snapshot.audit.push({
       id: this.id(),
       action: "run_resumed",
@@ -395,6 +410,19 @@ class FixtureCompletionStore implements CompletionStore {
     dedupeKey: string;
     actorIdentity: string;
   }) {
+    if (
+      this.failExceptionPersistence &&
+      !this.failExceptionPersistence.used &&
+      this.failExceptionPersistence.eventKey === input.eventKey &&
+      this.failExceptionPersistence.stageId === input.stageId
+    ) {
+      this.failExceptionPersistence.used = true;
+      const failure = new Error(
+        'new row for relation "atlas_review_items" violates check constraint "atlas_review_items_type_check"',
+      ) as Error & { code?: string };
+      failure.code = "23514";
+      throw failure;
+    }
     const snapshot = this.snapshot(input.runId);
     const existing = snapshot.exceptions.find(
       (exception) =>
@@ -594,6 +622,13 @@ class FixtureCompletionStore implements CompletionStore {
   }) {
     const snapshot = this.snapshot(input.runId);
     snapshot.run.status = input.requestedStatus;
+    snapshot.run.error =
+      input.requestedStatus === "failed" &&
+      input.summary.error &&
+      typeof input.summary.error === "object" &&
+      !Array.isArray(input.summary.error)
+        ? clone(input.summary.error as Record<string, unknown>)
+        : null;
     snapshot.run.completedAt =
       input.requestedStatus === "completed" ||
       input.requestedStatus === "failed" ||
@@ -690,6 +725,21 @@ function createFixtureExecutor(
     async execute(stageId, context) {
       const eventKey = context.event.eventKey;
       if (stageId === "manifest_validation") {
+        if (eventKey === "exception-persistence-failure") {
+          return {
+            outcome: "blocked",
+            output: { valid: false },
+            exceptions: [
+              {
+                code: "invalid_manifest_record",
+                classification: "fatal",
+                message: "Synthetic exception persistence failure.",
+                fatal: true,
+                publicationBlocking: true,
+              },
+            ],
+          };
+        }
         return success({ valid: true });
       }
       if (stageId === "candidate_staging") {
@@ -1236,24 +1286,21 @@ async function validateCasesFThroughHAndModelFallback() {
     "resume-event",
     "deterministic_synthesis",
   );
-  await expectError(
-    () =>
-      executeMichiganCompletionRun({
-        store: resumeStore,
-        executor: createFixtureExecutor(resumeEffects),
-        manifest: resumeParsed.value,
-        inputHash: resumeParsed.inputHash,
-        actorIdentity: FIXED_ACTOR,
-        dryRun: true,
-        deterministicOnly: true,
-        maxConcurrency: 1,
-        modelBudgetTokens: 0,
-        perEventModelBudgetTokens: 0,
-        now: () => FIXED_TIME,
-      }),
-    /Synthetic mid-event interruption/,
-    "The fixture must interrupt between two checkpoints.",
-  );
+  const interruptedResult = await executeMichiganCompletionRun({
+    store: resumeStore,
+    executor: createFixtureExecutor(resumeEffects),
+    manifest: resumeParsed.value,
+    inputHash: resumeParsed.inputHash,
+    actorIdentity: FIXED_ACTOR,
+    dryRun: true,
+    deterministicOnly: true,
+    maxConcurrency: 1,
+    modelBudgetTokens: 0,
+    perEventModelBudgetTokens: 0,
+    now: () => FIXED_TIME,
+  });
+  assert.equal(interruptedResult.exitCode, COMPLETION_EXIT_CODES.failed);
+  assert.equal(interruptedResult.snapshot.run.status, "failed");
   const interrupted = await resumeStore.getRun(fixedUuid(1));
   assert.equal(
     completionEventByKey(interrupted, "resume-event").lastSuccessfulStageId,
@@ -1427,6 +1474,103 @@ async function validateCasesFThroughHAndModelFallback() {
   );
 }
 
+async function validateTerminalFailureAndStructuredReport() {
+  const parsed = fixtureManifest("macomb-failure-report", [
+    rawEvent("exception-persistence-failure", 60),
+  ]);
+  const store = new FixtureCompletionStore();
+  store.failExceptionPersistenceOnce(
+    "exception-persistence-failure",
+    "manifest_validation",
+  );
+  const effects = createEffects();
+
+  const result = await executeMichiganCompletionRun({
+    store,
+    executor: createFixtureExecutor(effects),
+    manifest: parsed.value,
+    inputHash: parsed.inputHash,
+    actorIdentity: FIXED_ACTOR,
+    dryRun: true,
+    deterministicOnly: true,
+    maxConcurrency: 1,
+    modelBudgetTokens: 0,
+    perEventModelBudgetTokens: 0,
+    now: () => FIXED_TIME,
+  });
+
+  assert.equal(result.exitCode, COMPLETION_EXIT_CODES.failed);
+  assert.equal(result.snapshot.run.status, "failed");
+  assert.equal(result.snapshot.run.completedAt, FIXED_TIME);
+  assert.equal(result.snapshot.run.error?.code, "23514");
+  assert.equal(result.report.failure?.runId, result.snapshot.run.id);
+  assert.equal(result.report.failure?.manifestHash, parsed.inputHash);
+  assert.equal(result.report.failure?.eventKey, "exception-persistence-failure");
+  assert.equal(result.report.failure?.failedStage, "manifest_validation");
+  assert.equal(result.report.failure?.lastSuccessfulStage, null);
+  assert.equal(result.report.failure?.errorCode, "23514");
+  assert.equal(result.report.failure?.modelUsage.usedTokens, 0);
+  assert.equal(result.report.failure?.reportTimestamp, FIXED_TIME);
+  assert.equal(
+    auditCount(
+      result.snapshot,
+      (entry) =>
+        entry.action === "run_finalized" &&
+        entry.status === "failed",
+    ),
+    1,
+    "A stage-operation failure must append one terminal failure action.",
+  );
+  assert.equal(effects.candidateWrites.size, 0);
+  assert.equal(effects.synthesisWrites.size, 0);
+  assert.equal(effects.packageWrites.size, 0);
+  assert.equal(effects.modelCalls.size, 0);
+  assert.equal(effects.publicationCalls, 0);
+  assert.equal(effects.materializationCalls, 0);
+  assert.equal(effects.imageActions, 0);
+
+  const temporaryDirectory = await mkdtemp(
+    path.join(os.tmpdir(), "atlas-michigan-completion-failure-"),
+  );
+  try {
+    const reportPath = path.join(temporaryDirectory, "run-report.json");
+    await writeFile(
+      reportPath,
+      `${stableCompletionJson(result.report)}\n`,
+      "utf8",
+    );
+    const retainedReport = JSON.parse(
+      await readFile(reportPath, "utf8"),
+    ) as CompletionRunReport;
+    assert.deepEqual(retainedReport.failure, result.report.failure);
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+
+  const auditBeforeExactReplay = result.snapshot.audit.length;
+  const exactReplay = await executeMichiganCompletionRun({
+    store,
+    executor: createFixtureExecutor(effects),
+    manifest: parsed.value,
+    inputHash: parsed.inputHash,
+    actorIdentity: FIXED_ACTOR,
+    dryRun: true,
+    deterministicOnly: true,
+    maxConcurrency: 1,
+    modelBudgetTokens: 0,
+    perEventModelBudgetTokens: 0,
+    now: () => FIXED_TIME,
+  });
+  assert.equal(exactReplay.snapshot.exactReplay, true);
+  assert.equal(exactReplay.exitCode, COMPLETION_EXIT_CODES.failed);
+  assert.equal(exactReplay.snapshot.audit.length, auditBeforeExactReplay);
+  assert.equal(exactReplay.snapshot.exceptions.length, 0);
+  assert.equal(effects.candidateWrites.size, 0);
+  assert.equal(effects.synthesisWrites.size, 0);
+  assert.equal(effects.packageWrites.size, 0);
+  assert.equal(effects.modelCalls.size, 0);
+}
+
 async function one(
   db: PGlite,
   sql: string,
@@ -1562,6 +1706,22 @@ const PREDECESSOR_SCHEMA = `
     updated_at timestamptz not null default now()
   );
 
+  alter table public.atlas_review_items
+    add constraint atlas_review_items_type_check check (
+      review_type = any (
+        array[
+          'ambiguous_event_match'::text,
+          'duplicate_risk'::text,
+          'conflicting_source_data'::text,
+          'missing_or_non_official_source'::text,
+          'suspicious_date_location_change'::text,
+          'media_collision'::text,
+          'policy_or_validation_block'::text,
+          'other'::text
+        ]
+      )
+    );
+
   alter table public.atlas_operation_runs enable row level security;
   alter table public.atlas_operation_actions enable row level security;
   alter table public.atlas_review_items enable row level security;
@@ -1620,6 +1780,7 @@ async function startDatabaseRun(
   db: PGlite,
   inputHash = HASH_A,
   events?: Array<Record<string, unknown>>,
+  batchId = "sql-fixture-batch",
 ) {
   return jsonValue(
     await one(db, START_RUN_SQL, [
@@ -1627,7 +1788,7 @@ async function startDatabaseRun(
       FIXED_ACTOR,
       "MI",
       "macomb",
-      "sql-fixture-batch",
+      batchId,
       "sql-manifest/v1",
       inputHash,
       "sql-validator/1",
@@ -1813,6 +1974,10 @@ async function validateMigrationLifecycleAndSecurity() {
     CORRECTION_MIGRATION_PATH,
     "utf8",
   );
+  const reviewTypeMigration = await readFile(
+    REVIEW_TYPE_MIGRATION_PATH,
+    "utf8",
+  );
   assert.doesNotMatch(
     correctionMigration,
     /pg_catalog\.(?:least|greatest)\s*\(/i,
@@ -1823,6 +1988,7 @@ async function validateMigrationLifecycleAndSecurity() {
     await db.exec(PREDECESSOR_SCHEMA);
     await db.exec(migration);
     await db.exec(correctionMigration);
+    await db.exec(reviewTypeMigration);
 
     const candidateId = fixedUuid(7001);
     const eventId = fixedUuid(7002);
@@ -1833,6 +1999,109 @@ async function validateMigrationLifecycleAndSecurity() {
     await db.query(
       "insert into public.events (id) values ($1::uuid)",
       [eventId],
+    );
+
+    // A and B: reproduce the deployed allowlist, then prove the forward repair
+    // accepts the exact private type and retains its run/candidate/stage links.
+    const macRun = await startDatabaseRun(
+      db,
+      HASH_B,
+      [
+        {
+          eventKey: "MAC-042",
+          inputHash: HASH_C,
+          readinessStatus: "publication_blocked",
+          artProvenance: "unknown",
+          references: { candidateId },
+        },
+      ],
+      "mac-042-review-constraint",
+    );
+    const uncertainIdentity = jsonValue(
+      await one(db, EXCEPTION_SQL, [
+        macRun.runId,
+        FIXED_ACTOR,
+        "MAC-042",
+        "identity_matching",
+        "uncertain_identity_match",
+        "human_review_required",
+        "mac-042-uncertain-identity",
+        "The retained candidate requires identity review.",
+        JSON.stringify({
+          humanReviewRequired: true,
+          publicationBlocking: false,
+        }),
+        JSON.stringify({ candidateId }),
+        "Review the retained candidate identity before continuing.",
+      ]),
+    );
+    const uncertainReplay = jsonValue(
+      await one(db, EXCEPTION_SQL, [
+        macRun.runId,
+        FIXED_ACTOR,
+        "MAC-042",
+        "identity_matching",
+        "uncertain_identity_match",
+        "human_review_required",
+        "mac-042-uncertain-identity",
+        "The retained candidate requires identity review.",
+        JSON.stringify({
+          humanReviewRequired: true,
+          publicationBlocking: false,
+        }),
+        JSON.stringify({ candidateId }),
+        "Review the retained candidate identity before continuing.",
+      ]),
+    );
+    assert.equal(uncertainIdentity.exactReplay, false);
+    assert.equal(uncertainReplay.exactReplay, true);
+    assert.equal(uncertainReplay.reviewItemId, uncertainIdentity.reviewItemId);
+    const uncertainRow = await one(
+      db,
+      `
+        select operation_run_id, candidate_id, review_type,
+               evidence->>'eventKey' as event_key,
+               evidence->>'stageId' as stage_id,
+               evidence->>'exceptionCode' as exception_code
+        from public.atlas_review_items
+        where id = $1::uuid
+      `,
+      [uncertainIdentity.reviewItemId],
+    );
+    assert.equal(uncertainRow.operation_run_id, macRun.runId);
+    assert.equal(uncertainRow.candidate_id, candidateId);
+    assert.equal(uncertainRow.review_type, "michigan_completion_exception");
+    assert.equal(uncertainRow.event_key, "MAC-042");
+    assert.equal(uncertainRow.stage_id, "identity_matching");
+    assert.equal(uncertainRow.exception_code, "uncertain_identity_match");
+    assert.equal(
+      Number(
+        await scalar(
+          db,
+          `
+            select count(*)
+            from public.atlas_review_items
+            where operation_run_id = $1::uuid
+              and review_type = 'michigan_completion_exception'
+          `,
+          [macRun.runId],
+        ),
+      ),
+      1,
+      "Exact exception replay must not duplicate the review item.",
+    );
+    await expectDatabaseError(
+      db,
+      `
+        insert into public.atlas_review_items (
+          review_type, recommended_action
+        ) values (
+          'arbitrary_text', 'Must remain rejected.'
+        )
+      `,
+      [],
+      /atlas_review_items_type_check/i,
+      "The repaired constraint must continue to reject arbitrary text.",
     );
 
     // H and G at the SQL boundary: exact replay is stable; conflicting input fails.
@@ -1851,6 +2120,7 @@ async function validateMigrationLifecycleAndSecurity() {
             select count(*)
             from public.atlas_operation_runs
             where operation_type = 'michigan_completion_v1'
+              and request->>'batchIdentity' = 'sql-fixture-batch'
           `,
         ),
       ),
@@ -2537,6 +2807,7 @@ async function main() {
   await validateStageRegistryAndSourceBoundaries();
   await validateAttachmentCasesAThroughE();
   await validateCasesFThroughHAndModelFallback();
+  await validateTerminalFailureAndStructuredReport();
   await validateMigrationLifecycleAndSecurity();
   console.log(
     "Michigan completion validation passed: A-I behavior, replay/resume, budgets, append-only history, no publication/image actions, stable reports, and service-role isolation.",

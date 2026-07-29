@@ -281,6 +281,7 @@ export type CompletionRun = {
   startedAt: string | null;
   updatedAt: string;
   completedAt: string | null;
+  error: Record<string, unknown> | null;
 };
 
 export type CompletionRunSnapshot = {
@@ -423,4 +424,20 @@ export type CompletionRunReport = {
   events: CompletionRunEvent[];
   exceptions: CompletionExceptionRecord[];
   modelActions: CompletionModelActionRecord[];
+  failure: {
+    runId: string;
+    manifestHash: string;
+    eventKey: string | null;
+    failedStage: string | null;
+    lastSuccessfulStage: string | null;
+    errorCode: string;
+    errorMessage: string;
+    modelUsage: {
+      reservedTokens: number;
+      usedTokens: number;
+      actualInputTokens: number;
+      actualOutputTokens: number;
+    };
+    reportTimestamp: string;
+  } | null;
 };
