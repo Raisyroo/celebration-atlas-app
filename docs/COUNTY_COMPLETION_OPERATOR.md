@@ -94,6 +94,16 @@ It:
 
 After identity clearance, the existing source-bundle service composes a retained bundle from one official source plus bounded supporting sources. Per-support-source failure is retained without discarding successful captures. The existing verification service composes and submits an evidence-backed case for human review. The operator never verifies its own case. Package preparation requires an already verified case.
 
+Retained evidence is immutable history, not an instruction to treat every
+captured value as a current-event fact. Before verification planning and
+deterministic synthesis, policy `completion-evidence-selection/1` selects the
+target-edition view: the official-home snapshot remains eligible; a supporting
+snapshot must carry the exact normalized event identity and must not identify a
+different edition; unrelated metadata and non-target-year dates remain
+retained but inactive. When the official host family agrees on one value it
+outranks external alternatives. Conflicting current-year official values remain
+active and produce the existing human-review stop.
+
 ## Non-negotiable safeguards
 
 The county operator:

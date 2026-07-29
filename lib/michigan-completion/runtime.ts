@@ -16,6 +16,7 @@ import {
   composeVerificationCase,
   createDefaultSourceCompositionServices,
   createDefaultVerificationCompositionServices,
+  selectCompletionEvidenceClaims,
   type SourceBundleCompositionResult,
   type SourceCompositionServices,
   type VerificationClaimInput,
@@ -328,39 +329,6 @@ async function loadSynthesisInput(
         }
       : {}),
   };
-}
-
-function sourceConflicts(claims: RecordValue[]) {
-  const active = claims.filter(
-    (claim) =>
-      ["timing.startDate", "timing.endDate"].includes(text(claim.field_path)) &&
-      !["rejected", "superseded"].includes(text(claim.review_status)),
-  );
-  const grouped = new Map<string, RecordValue[]>();
-  for (const claim of active) {
-    const key = text(claim.field_path);
-    grouped.set(key, [...(grouped.get(key) ?? []), claim]);
-  }
-  return [...grouped.entries()].flatMap(([fieldPath, fieldClaims]) => {
-    const values = new Set(
-      fieldClaims.map((claim) =>
-        text(claim.normalized_text) || JSON.stringify(claim.value),
-      ),
-    );
-    return values.size > 1
-      ? [
-          {
-            fieldPath,
-            values: [...values],
-            claims: fieldClaims.map((claim) => ({
-              claimId: text(claim.id),
-              sourceSnapshotId: text(claim.source_snapshot_id),
-              value: claim.value,
-            })),
-          },
-        ]
-      : [];
-  });
 }
 
 async function stageCandidate(
@@ -844,11 +812,47 @@ async function stageEvidence(
     throw new Error("Retained source evidence could not be inspected.");
   }
   const snapshots = (snapshotResult.data ?? []) as RecordValue[];
-  const claims = (claimResult.data ?? []) as RecordValue[];
+  const rawClaims = (claimResult.data ?? []) as RecordValue[];
   const official = snapshots.filter(
     (snapshot) => text(snapshot.source_kind) === "official_home",
   );
-  const conflicts = sourceConflicts(claims);
+  const year = eventTargetYear(context, candidate);
+  const eventName =
+    context.event.displayName ||
+    text(candidate?.candidate_name) ||
+    context.event.eventKey;
+  const verificationSnapshots = snapshots.map(
+    (row): VerificationSnapshotInput => ({
+      id: text(row.id),
+      sourceKind: text(row.source_kind),
+      canonicalUrl: text(row.canonical_url),
+      pageTitle: text(row.page_title) || null,
+      contentHash: text(row.content_hash),
+    }),
+  );
+  const verificationClaims = rawClaims.map(
+    (row): VerificationClaimInput => ({
+      id: text(row.id),
+      sourceSnapshotId: text(row.source_snapshot_id),
+      fieldPath: text(row.field_path),
+      value: row.value,
+      normalizedText: text(row.normalized_text),
+      confidence: text(row.confidence),
+      confidenceScore:
+        row.confidence_score === null
+          ? null
+          : numberValue(row.confidence_score),
+      reviewStatus: text(row.review_status),
+    }),
+  );
+  const evidenceSelection = selectCompletionEvidenceClaims({
+    eventName,
+    targetYear: year,
+    snapshots: verificationSnapshots,
+    claims: verificationClaims,
+  });
+  const claims = evidenceSelection.claims;
+  const conflicts = evidenceSelection.dateConflicts;
   if (!official.length) {
     return {
       outcome: "blocked",
@@ -866,7 +870,16 @@ async function stageEvidence(
   if (conflicts.length) {
     return {
       outcome: "blocked",
-      output: { conflicts },
+      output: {
+        conflicts,
+        retainedClaimCount: rawClaims.length,
+        selectedClaimCount: claims.length,
+        evidencePolicyVersion: evidenceSelection.policyVersion,
+        targetYear: year,
+        ignoredClaimCount: evidenceSelection.ignoredClaims.length,
+        ignoredClaims: evidenceSelection.ignoredClaims,
+        relevantSnapshotIds: evidenceSelection.relevantSnapshotIds,
+      },
       links: { sourceBundleId: bundleId },
       exceptions: [
         exception(
@@ -894,7 +907,10 @@ async function stageEvidence(
             bundleId,
             status: bundle.status,
             snapshotCount: snapshots.length,
-            claimCount: claims.length,
+            retainedClaimCount: rawClaims.length,
+            selectedClaimCount: claims.length,
+            evidencePolicyVersion: evidenceSelection.policyVersion,
+            targetYear: year,
           },
         ),
       ],
@@ -903,7 +919,6 @@ async function stageEvidence(
   const verificationExceptions: CompletionExceptionInput[] = [];
   let verificationCaseId = retained.verificationCaseId ?? null;
   let verificationCaseStatus: string | null = null;
-  const year = eventTargetYear(context, candidate);
   if (candidateId && year) {
     let existingCase: { id: string; status: string } | null = null;
     if (verificationCaseId) {
@@ -936,26 +951,8 @@ async function stageEvidence(
         targetYear: year,
         actorIdentity: context.actorIdentity,
         existingCase,
-        snapshots: snapshots.map((row): VerificationSnapshotInput => ({
-          id: text(row.id),
-          sourceKind: text(row.source_kind),
-          canonicalUrl: text(row.canonical_url),
-          pageTitle: text(row.page_title) || null,
-          contentHash: text(row.content_hash),
-        })),
-        claims: claims.map((row): VerificationClaimInput => ({
-          id: text(row.id),
-          sourceSnapshotId: text(row.source_snapshot_id),
-          fieldPath: text(row.field_path),
-          value: row.value,
-          normalizedText: text(row.normalized_text),
-          confidence: text(row.confidence),
-          confidenceScore:
-            row.confidence_score === null
-              ? null
-              : numberValue(row.confidence_score),
-          reviewStatus: text(row.review_status),
-        })),
+        snapshots: verificationSnapshots,
+        claims,
       });
       verificationCaseId = verification.verificationCaseId;
       verificationCaseStatus = verification.status;
@@ -993,7 +990,13 @@ async function stageEvidence(
       bundleId,
       bundleStatus: bundle.status,
       snapshotCount: snapshots.length,
-      claimCount: claims.length,
+      retainedClaimCount: rawClaims.length,
+      selectedClaimCount: claims.length,
+      evidencePolicyVersion: evidenceSelection.policyVersion,
+      targetYear: year,
+      ignoredClaimCount: evidenceSelection.ignoredClaims.length,
+      ignoredClaims: evidenceSelection.ignoredClaims,
+      relevantSnapshotIds: evidenceSelection.relevantSnapshotIds,
       scheduleCandidateCount: (scheduleResult.data ?? []).length,
       officialSnapshotIds: official.map((row) => row.id),
       dateConflicts: [],
@@ -1025,7 +1028,73 @@ async function stageSynthesis(
     };
   }
   const bundleId = text(bundle.id);
-  const input = await loadSynthesisInput(client, bundle);
+  const retainedInput = await loadSynthesisInput(client, bundle);
+  const evidenceTargetYear = Number(
+    outputFor(context, "evidence_readiness").targetYear,
+  );
+  const targetYear =
+    Number.isSafeInteger(evidenceTargetYear) &&
+    evidenceTargetYear >= 2000 &&
+    evidenceTargetYear <= 2100
+      ? evidenceTargetYear
+      : eventTargetYear(context);
+  const evidenceSelection = selectCompletionEvidenceClaims({
+    eventName:
+      context.event.displayName ||
+      retainedInput.bundle.name.replace(
+        /\s+retained official-source bundle$/i,
+        "",
+      ),
+    targetYear,
+    snapshots: retainedInput.snapshots.map(
+      (snapshot): VerificationSnapshotInput => ({
+        id: snapshot.id,
+        sourceKind: snapshot.sourceKind,
+        canonicalUrl: snapshot.canonicalUrl,
+        pageTitle: snapshot.pageTitle,
+        contentHash: snapshot.contentHash,
+      }),
+    ),
+    claims: retainedInput.claims.map(
+      (claim): VerificationClaimInput => ({
+        id: claim.id,
+        sourceSnapshotId: claim.sourceSnapshotId,
+        fieldPath: claim.fieldPath,
+        value: claim.value,
+        normalizedText: claim.normalizedText,
+        confidence: claim.confidence,
+        confidenceScore: claim.confidenceScore,
+        reviewStatus: claim.reviewStatus,
+      }),
+    ),
+  });
+  const selectedClaimIds = new Set(
+    evidenceSelection.claims.map((claim) => claim.id),
+  );
+  const relevantSnapshotIds = new Set(
+    evidenceSelection.relevantSnapshotIds,
+  );
+  const scheduleMatchesTargetYear = (value: string | null) => {
+    if (!value || targetYear === null) return true;
+    const year = Number(value.match(/^(\d{4})-\d{2}-\d{2}/)?.[1]);
+    return !year || year === targetYear;
+  };
+  const input: EventSourceSynthesisInput = {
+    ...retainedInput,
+    snapshots: retainedInput.snapshots.filter((snapshot) =>
+      relevantSnapshotIds.has(snapshot.id),
+    ),
+    claims: retainedInput.claims.filter((claim) =>
+      selectedClaimIds.has(claim.id),
+    ),
+    scheduleCandidates: retainedInput.scheduleCandidates.filter(
+      (schedule) =>
+        !["rejected", "superseded"].includes(schedule.reviewStatus) &&
+        relevantSnapshotIds.has(schedule.sourceSnapshotId) &&
+        scheduleMatchesTargetYear(schedule.startsAt) &&
+        scheduleMatchesTargetYear(schedule.endsAt),
+    ),
+  };
   const baseManifest = input.bundle.eventKey
     ? getEventPageManifest(input.bundle.eventKey)
     : undefined;
@@ -1059,6 +1128,15 @@ async function stageSynthesis(
         isManifestValid: existing.data.is_manifest_valid,
         qualityScore: numberValue(existing.data.quality_score),
         exactReplay: true,
+        retainedSnapshotCount: retainedInput.snapshots.length,
+        selectedSnapshotCount: input.snapshots.length,
+        retainedClaimCount: retainedInput.claims.length,
+        selectedClaimCount: input.claims.length,
+        retainedScheduleCandidateCount:
+          retainedInput.scheduleCandidates.length,
+        selectedScheduleCandidateCount: input.scheduleCandidates.length,
+        evidencePolicyVersion: evidenceSelection.policyVersion,
+        ignoredClaims: evidenceSelection.ignoredClaims,
       },
       links: { sourceBundleId: bundleId, synthesisId: existing.data.id },
     };
@@ -1070,6 +1148,15 @@ async function stageSynthesis(
       output: {
         conflicts: synthesis.conflicts,
         validationReport: synthesis.validationReport,
+        retainedSnapshotCount: retainedInput.snapshots.length,
+        selectedSnapshotCount: input.snapshots.length,
+        retainedClaimCount: retainedInput.claims.length,
+        selectedClaimCount: input.claims.length,
+        retainedScheduleCandidateCount:
+          retainedInput.scheduleCandidates.length,
+        selectedScheduleCandidateCount: input.scheduleCandidates.length,
+        evidencePolicyVersion: evidenceSelection.policyVersion,
+        ignoredClaims: evidenceSelection.ignoredClaims,
       },
       links: { sourceBundleId: bundleId },
       exceptions: [
@@ -1122,6 +1209,15 @@ async function stageSynthesis(
       qualityScore: synthesis.qualityScore,
       dryRun: context.dryRun,
       exactReplay: replay,
+      retainedSnapshotCount: retainedInput.snapshots.length,
+      selectedSnapshotCount: input.snapshots.length,
+      retainedClaimCount: retainedInput.claims.length,
+      selectedClaimCount: input.claims.length,
+      retainedScheduleCandidateCount:
+        retainedInput.scheduleCandidates.length,
+      selectedScheduleCandidateCount: input.scheduleCandidates.length,
+      evidencePolicyVersion: evidenceSelection.policyVersion,
+      ignoredClaims: evidenceSelection.ignoredClaims,
     },
     links: {
       sourceBundleId: bundleId,

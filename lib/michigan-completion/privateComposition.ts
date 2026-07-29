@@ -177,6 +177,306 @@ export type VerificationClaimInput = {
   reviewStatus: string;
 };
 
+export const COMPLETION_EVIDENCE_POLICY_VERSION =
+  "completion-evidence-selection/1";
+
+export type CompletionEvidenceIgnoredReason =
+  | "inactive_review"
+  | "identity_mismatch"
+  | "irrelevant_snapshot"
+  | "non_target_year"
+  | "invalid_city"
+  | "lower_authority_alternative"
+  | "narrative_alternative";
+
+export type CompletionEvidenceSelection = {
+  policyVersion: typeof COMPLETION_EVIDENCE_POLICY_VERSION;
+  claims: VerificationClaimInput[];
+  relevantSnapshotIds: string[];
+  compatibleSnapshotIds: string[];
+  ignoredClaims: Array<{
+    claimId: string;
+    fieldPath: string;
+    reason: CompletionEvidenceIgnoredReason;
+  }>;
+  dateConflicts: Array<{
+    fieldPath: string;
+    values: string[];
+    claims: Array<{
+      claimId: string;
+      sourceSnapshotId: string;
+      value: unknown;
+    }>;
+  }>;
+};
+
+function normalizeCompletionIdentityName(value: unknown) {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(?:19|20)\d{2}\b/g, " ")
+    .replace(/&/g, " and ")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function claimDateYear(value: unknown) {
+  const match = String(value ?? "").match(/^(\d{4})-\d{2}-\d{2}/);
+  return match ? Number(match[1]) : null;
+}
+
+function identityEditionYears(value: unknown) {
+  return [
+    ...String(value ?? "").matchAll(/\b((?:19|20)\d{2})\b/g),
+  ].map((match) => Number(match[1]));
+}
+
+function normalizedClaimValue(claim: VerificationClaimInput) {
+  if (claim.fieldPath === "identity.name") {
+    return normalizeCompletionIdentityName(claim.value);
+  }
+  if (
+    claim.fieldPath === "timing.startDate" ||
+    claim.fieldPath === "timing.endDate"
+  ) {
+    return String(claim.value ?? "").match(/^\d{4}-\d{2}-\d{2}/)?.[0] ?? "";
+  }
+  return (
+    claim.normalizedText ||
+    String(claim.value ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+  );
+}
+
+function sourceHost(url: string) {
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function isSameHostFamily(left: string, right: string) {
+  return Boolean(
+    left &&
+      right &&
+      (left === right ||
+        left.endsWith(`.${right}`) ||
+        right.endsWith(`.${left}`)),
+  );
+}
+
+function invalidCityClaim(value: unknown) {
+  const candidate = String(value ?? "").trim();
+  return (
+    /^\d/.test(candidate) ||
+    /\b(?:road|street|avenue|mile|drive|boulevard)\b/i.test(
+      candidate,
+    )
+  );
+}
+
+function confidenceScore(claim: VerificationClaimInput) {
+  return claim.confidenceScore ?? 0;
+}
+
+export function selectCompletionEvidenceClaims(args: {
+  eventName: string;
+  targetYear: number | null;
+  snapshots: VerificationSnapshotInput[];
+  claims: VerificationClaimInput[];
+}): CompletionEvidenceSelection {
+  const snapshots = new Map(
+    args.snapshots.map((snapshot) => [snapshot.id, snapshot]),
+  );
+  const expectedName = normalizeCompletionIdentityName(args.eventName);
+  const compatibleSnapshotIds = new Set(
+    args.claims
+      .filter(
+        (claim) =>
+          claim.fieldPath === "identity.name" &&
+          normalizeCompletionIdentityName(claim.value) === expectedName,
+      )
+      .map((claim) => claim.sourceSnapshotId),
+  );
+  const snapshotYears = new Map<string, Set<number>>();
+  for (const claim of args.claims) {
+    const years = snapshotYears.get(claim.sourceSnapshotId) ?? new Set<number>();
+    if (
+      claim.fieldPath === "timing.startDate" ||
+      claim.fieldPath === "timing.endDate"
+    ) {
+      const year = claimDateYear(claim.value);
+      if (year) years.add(year);
+    } else if (claim.fieldPath === "identity.name") {
+      identityEditionYears(claim.value).forEach((year) => years.add(year));
+    }
+    snapshotYears.set(claim.sourceSnapshotId, years);
+  }
+  const officialHosts = args.snapshots
+    .filter((snapshot) => snapshot.sourceKind === "official_home")
+    .map((snapshot) => sourceHost(snapshot.canonicalUrl))
+    .filter(Boolean);
+  const relevantSnapshotIds = new Set(
+    args.snapshots
+      .filter(
+        (snapshot) =>
+          snapshot.sourceKind === "official_home" ||
+          (compatibleSnapshotIds.has(snapshot.id) &&
+            (args.targetYear === null ||
+              !(snapshotYears.get(snapshot.id)?.size ?? 0) ||
+              (snapshotYears.get(snapshot.id)?.size === 1 &&
+                snapshotYears.get(snapshot.id)?.has(args.targetYear)))),
+      )
+      .map((snapshot) => snapshot.id),
+  );
+  const ignoredClaims: CompletionEvidenceSelection["ignoredClaims"] = [];
+  let selected = args.claims.filter((claim) => {
+    let reason: CompletionEvidenceIgnoredReason | null = null;
+    if (["rejected", "superseded"].includes(claim.reviewStatus)) {
+      reason = "inactive_review";
+    } else if (claim.fieldPath === "identity.name") {
+      if (normalizeCompletionIdentityName(claim.value) !== expectedName) {
+        reason = "identity_mismatch";
+      } else if (!relevantSnapshotIds.has(claim.sourceSnapshotId)) {
+        reason = "non_target_year";
+      }
+    } else if (
+      claim.fieldPath === "timing.startDate" ||
+      claim.fieldPath === "timing.endDate"
+    ) {
+      if (
+        args.targetYear !== null &&
+        claimDateYear(claim.value) !== args.targetYear
+      ) {
+        reason = "non_target_year";
+      } else if (!relevantSnapshotIds.has(claim.sourceSnapshotId)) {
+        reason = "irrelevant_snapshot";
+      }
+    } else if (
+      claim.fieldPath === "identity.description" ||
+      claim.fieldPath.startsWith("location.") ||
+      claim.fieldPath === "timing.timezone"
+    ) {
+      if (!relevantSnapshotIds.has(claim.sourceSnapshotId)) {
+        reason = "irrelevant_snapshot";
+      } else if (
+        claim.fieldPath === "location.city" &&
+        invalidCityClaim(claim.value)
+      ) {
+        reason = "invalid_city";
+      }
+    } else if (
+      claim.fieldPath !== "sources.officialUrl" &&
+      !relevantSnapshotIds.has(claim.sourceSnapshotId)
+    ) {
+      reason = "irrelevant_snapshot";
+    }
+    if (reason) {
+      ignoredClaims.push({
+        claimId: claim.id,
+        fieldPath: claim.fieldPath,
+        reason,
+      });
+      return false;
+    }
+    return true;
+  });
+
+  for (const fieldPath of [
+    "identity.name",
+    "identity.description",
+    "timing.startDate",
+    "timing.endDate",
+    "location.city",
+    "location.display",
+    "location.venue",
+  ]) {
+    const fieldClaims = selected.filter(
+      (claim) => claim.fieldPath === fieldPath,
+    );
+    if (fieldClaims.length < 2) continue;
+    const officialFamilyClaims = fieldClaims.filter((claim) => {
+      const host = sourceHost(
+        snapshots.get(claim.sourceSnapshotId)?.canonicalUrl ?? "",
+      );
+      return officialHosts.some((officialHost) =>
+        isSameHostFamily(host, officialHost),
+      );
+    });
+    if (!officialFamilyClaims.length) continue;
+    const authoritativeValues = new Set(
+      officialFamilyClaims.map(normalizedClaimValue),
+    );
+    const narrativeField = fieldPath === "identity.description";
+    if (authoritativeValues.size > 1 && !narrativeField) continue;
+    const retained = narrativeField
+      ? [
+          [...officialFamilyClaims].sort(
+            (left, right) =>
+              confidenceScore(right) - confidenceScore(left) ||
+              left.id.localeCompare(right.id),
+          )[0],
+        ]
+      : officialFamilyClaims;
+    const retainedIds = new Set(retained.map((claim) => claim.id));
+    selected = selected.filter((claim) => {
+      if (claim.fieldPath !== fieldPath || retainedIds.has(claim.id)) {
+        return true;
+      }
+      ignoredClaims.push({
+        claimId: claim.id,
+        fieldPath: claim.fieldPath,
+        reason: narrativeField
+          ? "narrative_alternative"
+          : "lower_authority_alternative",
+      });
+      return false;
+    });
+  }
+
+  const dateConflicts = ["timing.startDate", "timing.endDate"].flatMap(
+    (fieldPath) => {
+      const fieldClaims = selected.filter(
+        (claim) => claim.fieldPath === fieldPath,
+      );
+      const values = [
+        ...new Set(fieldClaims.map(normalizedClaimValue).filter(Boolean)),
+      ];
+      return values.length > 1
+        ? [
+            {
+              fieldPath,
+              values,
+              claims: fieldClaims.map((claim) => ({
+                claimId: claim.id,
+                sourceSnapshotId: claim.sourceSnapshotId,
+                value: claim.value,
+              })),
+            },
+          ]
+        : [];
+    },
+  );
+
+  return {
+    policyVersion: COMPLETION_EVIDENCE_POLICY_VERSION,
+    claims: selected,
+    relevantSnapshotIds: [...relevantSnapshotIds].sort(),
+    compatibleSnapshotIds: [...compatibleSnapshotIds].sort(),
+    ignoredClaims: ignoredClaims.sort(
+      (left, right) =>
+        left.claimId.localeCompare(right.claimId) ||
+        left.reason.localeCompare(right.reason),
+    ),
+    dateConflicts,
+  };
+}
+
 export type PlannedVerificationEvidence = {
   sourceSnapshotId: string;
   proofKind:

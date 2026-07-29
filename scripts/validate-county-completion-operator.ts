@@ -25,6 +25,7 @@ import { buildCompletionRunReport } from "../lib/michigan-completion/orchestrato
 import {
   composeRetainedSourceBundle,
   composeVerificationCase,
+  selectCompletionEvidenceClaims,
   type SourceCompositionServices,
   type VerificationCompositionServices,
 } from "../lib/michigan-completion/privateComposition.ts";
@@ -671,6 +672,192 @@ async function validateSourceAndVerificationComposition() {
   assert.equal(source.failures.length, 1);
   assert.equal(calls.at(-1), "ready");
   assert.equal(calls.includes("related:3"), true);
+
+  const evidenceSelection = selectCompletionEvidenceClaims({
+    eventName: "Fixture Festival",
+    targetYear: 2026,
+    snapshots: [
+      {
+        id: "official",
+        sourceKind: "official_home",
+        canonicalUrl: "https://events.fixture.example/",
+        pageTitle: "Fixture Festival",
+        contentHash: "a".repeat(64),
+      },
+      {
+        id: "official-calendar",
+        sourceKind: "other",
+        canonicalUrl: "https://calendar.events.fixture.example/event/42",
+        pageTitle: "Fixture Festival",
+        contentHash: "b".repeat(64),
+      },
+      {
+        id: "historical",
+        sourceKind: "other",
+        canonicalUrl: "https://guide.example/fixture-festival-2025",
+        pageTitle: "Fixture Festival 2025",
+        contentHash: "c".repeat(64),
+      },
+      {
+        id: "news",
+        sourceKind: "other",
+        canonicalUrl: "https://news.example/article",
+        pageTitle: "Newsroom",
+        contentHash: "d".repeat(64),
+      },
+    ],
+    claims: [
+      {
+        id: "official-name",
+        sourceSnapshotId: "official",
+        fieldPath: "identity.name",
+        value: "Fixture Festival",
+        normalizedText: "fixture festival",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
+      {
+        id: "calendar-name",
+        sourceSnapshotId: "official-calendar",
+        fieldPath: "identity.name",
+        value: "Fixture Festival",
+        normalizedText: "fixture festival",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
+      {
+        id: "calendar-date",
+        sourceSnapshotId: "official-calendar",
+        fieldPath: "timing.startDate",
+        value: "2026-08-08",
+        normalizedText: "2026-08-08",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
+      {
+        id: "historical-name",
+        sourceSnapshotId: "historical",
+        fieldPath: "identity.name",
+        value: "Fixture Festival 2025",
+        normalizedText: "fixture festival 2025",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
+      {
+        id: "historical-date",
+        sourceSnapshotId: "historical",
+        fieldPath: "timing.startDate",
+        value: "2025-08-09",
+        normalizedText: "2025-08-09",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
+      {
+        id: "news-name",
+        sourceSnapshotId: "news",
+        fieldPath: "identity.name",
+        value: "Newsroom",
+        normalizedText: "newsroom",
+        confidence: "medium",
+        confidenceScore: 0.7,
+        reviewStatus: "unreviewed",
+      },
+      {
+        id: "news-date",
+        sourceSnapshotId: "news",
+        fieldPath: "timing.startDate",
+        value: "2026-02-18",
+        normalizedText: "2026-02-18",
+        confidence: "medium",
+        confidenceScore: 0.7,
+        reviewStatus: "unreviewed",
+      },
+    ],
+  });
+  assert.deepEqual(
+    evidenceSelection.claims.map((claim) => claim.id).sort(),
+    ["calendar-date", "calendar-name", "official-name"],
+  );
+  assert.deepEqual(evidenceSelection.relevantSnapshotIds, [
+    "official",
+    "official-calendar",
+  ]);
+  assert.equal(
+    evidenceSelection.ignoredClaims.some(
+      (claim) =>
+        claim.claimId === "historical-date" &&
+        claim.reason === "non_target_year",
+    ),
+    true,
+  );
+  assert.equal(
+    evidenceSelection.ignoredClaims.some(
+      (claim) =>
+        claim.claimId === "news-date" &&
+        claim.reason === "irrelevant_snapshot",
+    ),
+    true,
+  );
+  assert.deepEqual(evidenceSelection.dateConflicts, []);
+
+  const realCurrentConflict = selectCompletionEvidenceClaims({
+    eventName: "Fixture Festival",
+    targetYear: 2026,
+    snapshots: [
+      {
+        id: "official",
+        sourceKind: "official_home",
+        canonicalUrl: "https://events.fixture.example/",
+        pageTitle: "Fixture Festival",
+        contentHash: "a".repeat(64),
+      },
+      {
+        id: "official-calendar",
+        sourceKind: "other",
+        canonicalUrl: "https://calendar.events.fixture.example/event/42",
+        pageTitle: "Fixture Festival",
+        contentHash: "b".repeat(64),
+      },
+    ],
+    claims: [
+      {
+        id: "calendar-name",
+        sourceSnapshotId: "official-calendar",
+        fieldPath: "identity.name",
+        value: "Fixture Festival",
+        normalizedText: "fixture festival",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
+      {
+        id: "date-one",
+        sourceSnapshotId: "official",
+        fieldPath: "timing.startDate",
+        value: "2026-08-08",
+        normalizedText: "2026-08-08",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
+      {
+        id: "date-two",
+        sourceSnapshotId: "official-calendar",
+        fieldPath: "timing.startDate",
+        value: "2026-08-09",
+        normalizedText: "2026-08-09",
+        confidence: "high",
+        confidenceScore: 0.9,
+        reviewStatus: "unreviewed",
+      },
+    ],
+  });
+  assert.equal(realCurrentConflict.dateConflicts.length, 1);
 
   const verificationCalls: string[] = [];
   const verificationServices: VerificationCompositionServices = {

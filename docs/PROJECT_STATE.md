@@ -174,6 +174,24 @@ model action, image action, or publication action was created. The next
 operator action is evidence review of these seven retained exceptions, not
 another county run or another resume.
 
+Completion evidence selection now distinguishes the immutable retained archive
+from the facts active for a target edition. Policy
+`completion-evidence-selection/1` requires exact normalized event identity for
+supporting snapshots, excludes explicitly non-target-year editions and
+unrelated page metadata, prefers a single value from the official host family,
+and still blocks on conflicting current-year official dates. It feeds both
+verification planning and deterministic synthesis without deleting or changing
+any retained snapshot, claim, or schedule candidate. Evidence-readiness stage
+version 3 and deterministic-synthesis wrapper stage version 20 prevent older
+successful checkpoints from silently replaying pre-policy behavior.
+
+The focused county-operator validator covers current-year official-family
+selection, historical/news exclusion, and preservation of genuine
+official-family date conflicts. The full production build passes. The existing
+five-event run and all seven exception records remain unchanged; this
+implementation did not resume a run, transition a review item, call a model,
+create an image, canonicalize, package, or publish.
+
 ## Hero Image Factory
 
 Migration `014_event_visual_workflows.sql` and the Control Desk Hero Image Factory implement the fast visual workflow:
@@ -275,9 +293,17 @@ The package, canonical event, immutable Event Hub v1, approved media record, and
 
 ## Current Next Milestone
 
-Review the retained Macomb classification report before authorizing any execution. Art on the Bay remains disputed because its candidate is still `unchecked` with `needs_review=true`; Bay-Rama, Richmond, and Memphis remain excluded; 34 records remain insufficient; and the 43 guarded-staging records are only planned.
+Review the two retained human-verification cases for Holland Ponds and
+Assumption GreekFest. The evidence-selection policy deterministically removes
+the historical and unrelated-metadata false conflicts from the active view,
+but it does not manufacture the missing current-edition facts or self-verify
+either event. The five-event private run remains paused with its seven existing
+exceptions until a separately authorized review/transition and resume plan is
+approved.
 
-Any later dry run or private run requires its own explicit authorization. No county operation may canonicalize, perform image work, approve, or publish.
+Bay-Rama, Richmond, and Memphis remain excluded. Any later dry run or private
+run requires its own explicit authorization. No county operation may
+canonicalize, perform image work, approve, or publish.
 
 The state-map presentation resolver, anonymous public-account follow-up, and broader product checkpoints remain separately queued and are not part of the completion-layer release.
 

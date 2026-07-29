@@ -58,7 +58,7 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "evidence_readiness",
-    version: "2",
+    version: "3",
     capability: "event_source_bundles, snapshots, claims, links, and schedule candidates",
     processor: "deterministic",
     prerequisites: ["identity_matching"],
@@ -79,7 +79,7 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "deterministic_synthesis",
-    version: "19",
+    version: "20",
     capability: "lib/event-intake/synthesisEngine.ts and atlas_create_event_source_synthesis",
     processor: "deterministic",
     prerequisites: ["evidence_readiness"],
