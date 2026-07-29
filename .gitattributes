@@ -1,2 +1,3 @@
 # Retained county artifacts use byte-stable hashes and must survive cross-platform checkouts.
 /artifacts/county-seeds/**/*.json text eol=lf
+/supabase/migrations/*.sql text eol=lf
