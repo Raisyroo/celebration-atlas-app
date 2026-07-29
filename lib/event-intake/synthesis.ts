@@ -3,6 +3,7 @@ import { createAtlasServiceClient } from '@/lib/atlas-control/service';
 import { resolveEventPageManifest } from '@/lib/event-pages/publishedManifest';
 import type { ScoutContentReference } from '@/lib/scout/composerContext';
 import { validateEventPageManifest } from '@/data/eventPageManifestValidation';
+import { validateEventPageContentReadiness } from '@/data/eventPageContentReadiness';
 import type { EventPageManifest } from '@/data/eventPageManifestTypes';
 import {
   applyEditorialModelOutput,
@@ -170,6 +171,7 @@ function modelEditorialReviewSummary(value: unknown): ModelEditorialReviewSummar
       sponsorLanguageExcluded: quality.sponsorLanguageExcluded === true,
       researchNarrationExcluded: quality.researchNarrationExcluded === true,
       spotlightNarrativeSourceRequired: quality.spotlightNarrativeSourceRequired === true,
+      editorialQualityPassed: quality.editorialQualityPassed === true,
       manifestValid: quality.manifestValid === true,
     },
   };
@@ -470,7 +472,7 @@ async function persistModelAssistedEditorialSynthesis(args: {
   if (!editorial.report.appliedRewriteCount && !editorial.report.addedAudienceGroupCount && !editorial.report.addedSpotlight) {
     throw new Error('The editorial model produced no grounded improvements.');
   }
-  const validation = validateEventPageManifest(editorial.manifest);
+  const validation = validateEventPageContentReadiness(editorial.manifest);
   const parentValidation = validationReport(parent.validation_report);
   const warnings = [
     ...parentValidation.warnings,
@@ -478,7 +480,7 @@ async function persistModelAssistedEditorialSynthesis(args: {
     ...editorial.rejected.map((item) => `Editorial rewrite rejected for ${item.target}: ${item.reason}`),
   ];
   const report = {
-    errors: validation.errors,
+    errors: validation.ok ? [] : validation.errors,
     warnings: [...new Set(warnings)],
     missingFields: parentValidation.missingFields,
     editorial: parentValidation.editorial,

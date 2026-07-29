@@ -27,8 +27,9 @@ import type {
 } from "./types.ts";
 
 export const COUNTY_COMPLETION_OPERATOR_VERSION =
-  "michigan-county-completion-operator/1";
+  "michigan-county-completion-operator/2";
 export const DEFAULT_COUNTY_COMPLETION_BATCH_SIZE = 5;
+export const COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS = 15_000;
 
 export const COUNTY_RECORD_STATUSES = [
   "existing_canonical_or_completed",
@@ -178,9 +179,10 @@ export type CountyOperationPlan = {
   };
   execution: {
     dryRun: boolean;
-    deterministicOnly: true;
-    modelBudgetTokens: 0;
-    perEventModelBudgetTokens: 0;
+    deterministicOnly: boolean;
+    editorialAssistanceAuthorized: boolean;
+    modelBudgetTokens: number;
+    perEventModelBudgetTokens: number;
     concurrency: number;
     batchSize: number;
     privateWritesAuthorized: boolean;
@@ -219,9 +221,10 @@ export type CountyOperationReport = {
   inventory: CountyOperationPlan["inventory"];
   safeguards: {
     dryRun: boolean;
-    deterministicOnly: true;
-    modelBudgetTokens: 0;
-    perEventModelBudgetTokens: 0;
+    deterministicOnly: boolean;
+    editorialAssistanceAuthorized: boolean;
+    modelBudgetTokens: number;
+    perEventModelBudgetTokens: number;
     automaticImageActions: 0;
     publicationActions: 0;
     publicationWrites: 0;
@@ -317,6 +320,7 @@ function matchingCompletionRun(
   seed: NormalizedCountySeed,
   snapshot: CountyOperatorSnapshot,
   dryRun: boolean,
+  editorialAssistance: boolean,
   countyCode: string,
   inventorySha256: string,
   candidateId: string | null,
@@ -329,15 +333,28 @@ function matchingCompletionRun(
     .filter(
       (run) =>
         run.run.dryRun === dryRun &&
-        run.run.deterministicOnly &&
-        run.run.modelBudgetTokens === 0 &&
-        run.run.perEventModelBudgetTokens === 0,
+        run.run.deterministicOnly === !editorialAssistance &&
+        run.run.perEventModelBudgetTokens ===
+          (editorialAssistance
+            ? COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS
+            : 0) &&
+        (editorialAssistance
+          ? run.run.modelBudgetTokens > 0
+          : run.run.modelBudgetTokens === 0),
     )
     .filter((run) => {
       const event = run.manifest?.events.find(
         (candidate) => candidate.sourceRecordId === seed.cleanId,
       );
       if (!event) return false;
+      if (
+        event.editorialPolicy !==
+        (editorialAssistance
+          ? "economical_if_needed"
+          : "deterministic_only")
+      ) {
+        return false;
+      }
       const retainedCandidateId = event.references?.candidateId ?? null;
       const retainedCanonicalId = event.references?.canonicalEventId ?? null;
       if (
@@ -623,6 +640,7 @@ function classifyRecords(args: {
   snapshot: CountyOperatorSnapshot;
   dryRun: boolean;
   privateWritesAuthorized: boolean;
+  editorialAssistance: boolean;
 }): PlannedCountyRecord[] {
   const { inventory, snapshot } = args;
   const matches = matchCountySeeds(
@@ -661,6 +679,7 @@ function classifyRecords(args: {
       seed,
       snapshot,
       args.dryRun,
+      args.editorialAssistance,
       inventory.config.countyCode,
       inventory.inventorySha256,
       candidate?.id ?? null,
@@ -843,11 +862,15 @@ function buildBatch(args: {
   inventory: ApprovedCountyInventory;
   records: PlannedCountyRecord[];
   privateWritesAuthorized: boolean;
+  editorialAssistance: boolean;
 }): CountyCompletionBatchPlan {
   const sourceRecordIds = args.records
     .map((record) => record.sourceRecordId)
     .sort();
-  const mode = args.privateWritesAuthorized ? "private" : "dry";
+  const mode = [
+    args.privateWritesAuthorized ? "private" : "dry",
+    args.editorialAssistance ? "editorial" : "deterministic",
+  ].join("-");
   const recordSetHash = completionSha256(sourceRecordIds).slice(0, 16);
   const batchId = [
     "county-completion",
@@ -888,6 +911,7 @@ function buildBatch(args: {
     workbookSha256: args.inventory.config.workbookSha256,
     approvedSheetSha256: args.inventory.config.approvedSheetSha256,
     privateWritesAuthorized: args.privateWritesAuthorized,
+    editorialAssistanceAuthorized: args.editorialAssistance,
     records: sourceRecordIds.map((sourceRecordId) => ({
       sourceRecordId,
       payloadSha256: preparedById.get(sourceRecordId)?.payload_sha256 ?? null,
@@ -930,8 +954,12 @@ function buildBatch(args: {
               },
             }
           : {}),
-        editorialPolicy: "deterministic_only",
-        perEventModelBudgetTokens: 0,
+        editorialPolicy: args.editorialAssistance
+          ? "economical_if_needed"
+          : "deterministic_only",
+        perEventModelBudgetTokens: args.editorialAssistance
+          ? COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS
+          : 0,
         artProvenance: "unknown",
         metadata: {
           operatorVersion: COUNTY_COMPLETION_OPERATOR_VERSION,
@@ -958,6 +986,7 @@ function buildBatch(args: {
           canonicalizationAuthorized: false,
           imageActionAuthorized: false,
           publicationAuthorized: false,
+          editorialAssistanceAuthorized: args.editorialAssistance,
         },
       };
     }),
@@ -970,9 +999,14 @@ function buildBatch(args: {
       sourceSheet: args.inventory.config.sourceSheet,
       approvedSheetSha256: args.inventory.config.approvedSheetSha256,
       stagingManifestHash,
-      deterministicOnly: true,
-      runModelBudgetTokens: 0,
-      perEventModelBudgetTokens: 0,
+      deterministicOnly: !args.editorialAssistance,
+      editorialAssistanceAuthorized: args.editorialAssistance,
+      runModelBudgetTokens: args.editorialAssistance
+        ? args.records.length * COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS
+        : 0,
+      perEventModelBudgetTokens: args.editorialAssistance
+        ? COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS
+        : 0,
       canonicalizationAuthorized: false,
       imageActionAuthorized: false,
       publicationAuthorized: false,
@@ -997,6 +1031,7 @@ export function planCountyOperation(args: {
   inventory: ApprovedCountyInventory;
   snapshot: CountyOperatorSnapshot;
   authorizePrivateWrites?: boolean;
+  editorialAssistance?: boolean;
   batchSize?: number;
   concurrency?: number;
 }): CountyOperationPlan {
@@ -1006,11 +1041,13 @@ export function planCountyOperation(args: {
   );
   const concurrency = Math.max(1, Math.min(16, args.concurrency ?? 1));
   const dryRun = args.authorizePrivateWrites !== true;
+  const editorialAssistance = args.editorialAssistance === true;
   const internalRecords = classifyRecords({
     inventory: args.inventory,
     snapshot: args.snapshot,
     dryRun,
     privateWritesAuthorized: args.authorizePrivateWrites === true,
+    editorialAssistance,
   });
   const processable = internalRecords.filter((record) =>
     [
@@ -1025,6 +1062,7 @@ export function planCountyOperation(args: {
         inventory: args.inventory,
         records: processable.slice(index, index + batchSize),
         privateWritesAuthorized: args.authorizePrivateWrites === true,
+        editorialAssistance,
       }),
     );
   }
@@ -1070,9 +1108,14 @@ export function planCountyOperation(args: {
     },
     execution: {
       dryRun,
-      deterministicOnly: true,
-      modelBudgetTokens: 0,
-      perEventModelBudgetTokens: 0,
+      deterministicOnly: !editorialAssistance,
+      editorialAssistanceAuthorized: editorialAssistance,
+      modelBudgetTokens: editorialAssistance
+        ? batchSize * COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS
+        : 0,
+      perEventModelBudgetTokens: editorialAssistance
+        ? COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS
+        : 0,
       concurrency,
       batchSize,
       privateWritesAuthorized: args.authorizePrivateWrites === true,
@@ -1220,9 +1263,12 @@ export function buildCountyOperationReport(args: {
     inventory: args.plan.inventory,
     safeguards: {
       dryRun: args.plan.execution.dryRun,
-      deterministicOnly: true,
-      modelBudgetTokens: 0,
-      perEventModelBudgetTokens: 0,
+      deterministicOnly: args.plan.execution.deterministicOnly,
+      editorialAssistanceAuthorized:
+        args.plan.execution.editorialAssistanceAuthorized,
+      modelBudgetTokens: args.plan.execution.modelBudgetTokens,
+      perEventModelBudgetTokens:
+        args.plan.execution.perEventModelBudgetTokens,
       automaticImageActions: 0,
       publicationActions: 0,
       publicationWrites: 0,

@@ -328,7 +328,7 @@ The registry contains exactly the eleven Michigan v1 stages below. A registry ch
 - Blocking: blocks synthesis for this event; other events continue.
 - Required for every event: yes.
 
-### 5. `deterministic_synthesis@22`
+### 5. `deterministic_synthesis@23`
 
 - Existing capability: `synthesisEngine.ts`, deterministic synthesis RPC and action ledger.
 - Processor: deterministic.
@@ -340,25 +340,25 @@ The registry contains exactly the eleven Michigan v1 stages below. A registry ch
 - Blocking: engine failure or unsafe facts block content; weak but factually safe prose does not.
 - Required for every event: yes.
 
-### 6. `editorial_assistance@1`
+### 6. `editorial_assistance@2`
 
 - Existing capability: evidence-bound model-assisted child synthesis and immutable-fact safeguards.
 - Processor: optional model-assisted.
 - Prerequisites: a successful deterministic proposal, an allowlisted editorial need, an explicit route, and successful event/run budget reservation.
 - Idempotency: parent synthesis, route/processor version, configured model, prompt version, and editorial input hash.
-- Completion: a valid bounded child proposal is recorded, or the deterministic parent is retained with a deliberate skip/fallback.
+- Completion: a valid bounded child proposal is recorded, or the deterministic parent is retained with a deliberate skip/fallback. A high numeric synthesis score no longer skips this stage when the semantic visitor-copy gate detects repetition or factory filler.
 - Retry: bounded by configured attempts; no retry after budget exhaustion; exact replay never reserves or charges again; stronger-model escalation requires a declared route and new reservation.
 - Exceptions: `editorial_quality_failure`, `model_budget_exceeded`, `unexpected_system_failure`.
 - Blocking: normally non-blocking because deterministic content remains available; a human-defined content-quality requirement may keep the event from review.
 - Required for every event: no.
 
-### 7. `content_readiness@2`
+### 7. `content_readiness@3`
 
 - Existing capability: synthesis validation report, Event Hub manifest rules, Event Factory non-art gates.
 - Processor: deterministic.
 - Prerequisites: deterministic or accepted editorial content and resolved publication-sensitive factual exceptions.
 - Idempotency: chosen synthesis ID, validator version, and content projection hash.
-- Completion: identity, evidence, dates/lifecycle, location/map provenance, official link, exactly four substantive topics (`Why Go`, `Schedule`, one evidence-backed `Highlights` or `Traditions` topic, and `Plan`), citations, sponsor exclusion, and public-copy checks pass independently of art. Identity echoes, template placeholders, uncited practical details, empty schedules, and three-topic shells fail this gate.
+- Completion: identity, evidence, dates/lifecycle, location/map provenance, official link, exactly four substantive topics (`Why Go`, `Schedule`, one evidence-backed `Highlights` or `Traditions` topic, and `Plan`), citations, sponsor exclusion, and public-copy checks pass independently of art. Identity echoes, template placeholders, uncited practical details, empty schedules, three-topic shells, repeated hero/Why Go attraction lists, factory phrases, and multiple generic Highlight summaries fail this gate.
 - Retry: after content/evidence/validator-version changes.
 - Exceptions: `conflicting_event_dates`, `missing_official_source`, `missing_or_ambiguous_location`, `editorial_quality_failure`, `event_factory_readiness_failure`.
 - Blocking: blocks package preparation if content is unsafe; does not wait for art.
@@ -478,7 +478,10 @@ Classifications are independent flags, not one lossy severity enum:
 
 ## Model routing and cost controls
 
-Model work is an exception path, not a normal stage requirement.
+Model work is an exception path, not a normal stage requirement. County runs
+remain deterministic by default; `--editorial` is the explicit operator
+authorization for the economical route and gives each event one attempt with
+a 15,000-token ceiling.
 
 The route registry contains only near-term Michigan routes:
 

@@ -79,7 +79,7 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "deterministic_synthesis",
-    version: "22",
+    version: "23",
     capability: "lib/event-intake/synthesisEngine.ts and atlas_create_event_source_synthesis",
     processor: "deterministic",
     prerequisites: ["evidence_readiness"],
@@ -92,7 +92,7 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "editorial_assistance",
-    version: "1",
+    version: "2",
     capability: "Existing evidence-bound model-assisted editorial synthesis",
     processor: "model_assisted",
     prerequisites: ["deterministic_synthesis"],
@@ -105,7 +105,7 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "content_readiness",
-    version: "2",
+    version: "3",
     capability: "Event Page manifest validation and source-synthesis validation report",
     processor: "deterministic",
     prerequisites: ["deterministic_synthesis"],

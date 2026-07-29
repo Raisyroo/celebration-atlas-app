@@ -8,6 +8,7 @@ import type {
   PreflightCandidateRow,
 } from "../lib/county-seeds/staging.ts";
 import {
+  COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS,
   buildCountyOperationReport,
   executeCountyOperation,
   planCountyOperation,
@@ -537,6 +538,56 @@ async function validateInventoryAndPlanning() {
     guardedCandidate.county_seed?.resolved_decision?.execution_approval,
     "private_writes_explicitly_authorized",
   );
+  assert.equal(privatePlan.execution.deterministicOnly, true);
+  assert.equal(privatePlan.execution.editorialAssistanceAuthorized, false);
+  assert.equal(privatePlan.execution.modelBudgetTokens, 0);
+  assert.equal(privatePlan.execution.perEventModelBudgetTokens, 0);
+
+  const editorialPlan = planCountyOperation({
+    inventory,
+    snapshot,
+    authorizePrivateWrites: true,
+    editorialAssistance: true,
+    batchSize: 5,
+  });
+  assert.equal(editorialPlan.execution.deterministicOnly, false);
+  assert.equal(editorialPlan.execution.editorialAssistanceAuthorized, true);
+  assert.equal(
+    editorialPlan.execution.modelBudgetTokens,
+    5 * COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS,
+  );
+  assert.equal(
+    editorialPlan.execution.perEventModelBudgetTokens,
+    COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS,
+  );
+  assert(
+    editorialPlan.batches.every((batch) =>
+      batch.manifest.events.every(
+        (event) =>
+          event.editorialPolicy === "economical_if_needed" &&
+          event.perEventModelBudgetTokens ===
+            COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS,
+      ),
+    ),
+    "Explicit county editorial authorization must use only the bounded economical route.",
+  );
+  assert.notDeepEqual(
+    editorialPlan.batches.map((batch) => batch.manifestHash),
+    privatePlan.batches.map((batch) => batch.manifestHash),
+    "Editorial authorization must produce a new immutable batch contract.",
+  );
+  assert.equal(
+    editorialPlan.resumeRunIds.includes(ART_RUN_ID),
+    false,
+    "A deterministic-only run is not compatible with an editorial-authorized contract.",
+  );
+  const editorialReport = buildCountyOperationReport({
+    plan: editorialPlan,
+    generatedAt: FIXED_TIME,
+  });
+  assert.equal(editorialReport.safeguards.editorialAssistanceAuthorized, true);
+  assert.equal(editorialReport.counts.modelActions, 0);
+  assert.equal(editorialReport.counts.modelUsageTokens, 0);
 
   const ambiguousSnapshot = structuredClone(snapshot);
   ambiguousSnapshot.preflight.candidates.push(

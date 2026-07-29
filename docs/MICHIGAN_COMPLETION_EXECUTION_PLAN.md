@@ -43,7 +43,7 @@ The supported county entry point is:
 npm run atlas:create-county-events -- macomb
 ```
 
-It verifies the registered retained inventory, classifies every row, creates bounded immutable Michigan Completion manifests, discovers compatible runs, starts or resumes default-safe dry runs through the existing orchestrator, and writes one aggregate county report. Model budgets are fixed at zero and concurrency defaults to one.
+It verifies the registered retained inventory, classifies every row, creates bounded immutable Michigan Completion manifests, discovers compatible runs, starts or resumes default-safe dry runs through the existing orchestrator, and writes one aggregate county report. Model budgets default to zero and concurrency defaults to one. An explicit `--editorial` option creates a different immutable contract with one economical, evidence-bound attempt per event and a 15,000-token per-event ceiling; plan-only and dry-run modes still make no provider call.
 
 Planning without a completion run uses:
 

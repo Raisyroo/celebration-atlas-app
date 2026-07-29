@@ -1,13 +1,17 @@
 import assert from 'node:assert/strict';
 import { BROWN_TROUT_EVENT_PAGE_MANIFEST } from '../data/brownTroutEventPageManifest.ts';
 import { validateEventPageContentReadiness } from '../data/eventPageContentReadiness.ts';
+import { evaluateEventPageEditorialQuality } from '../data/eventPageEditorialQuality.ts';
 import type { EventPageManifest } from '../data/eventPageManifestTypes.ts';
 import {
   reconcileEventSourceClaims,
   synthesizeEventSourceBundle,
 } from '../lib/event-intake/synthesisEngine.ts';
 import { buildEditorialPlan } from '../lib/event-intake/editorialPlanning.ts';
-import { applyEditorialModelOutput } from '../lib/event-intake/editorialAssistance.ts';
+import {
+  applyEditorialModelOutput,
+  buildBoundedEditorialRewriteTargets,
+} from '../lib/event-intake/editorialAssistance.ts';
 import type { EventSourceSynthesisInput } from '../lib/event-intake/synthesisTypes.ts';
 
 const input: EventSourceSynthesisInput = {
@@ -1183,7 +1187,10 @@ const shelbyInput: EventSourceSynthesisInput = {
 const shelbySynthesis = synthesizeEventSourceBundle(shelbyInput);
 const shelbyManifest = shelbySynthesis.manifestProposal as EventPageManifest;
 const shelbyContent = validateEventPageContentReadiness(shelbyManifest);
-assert.equal(shelbySynthesis.engineVersion, 'deterministic-v21');
+const shelbyBoundedEditorial = buildBoundedEditorialRewriteTargets(
+  shelbyManifest,
+);
+assert.equal(shelbySynthesis.engineVersion, 'deterministic-v22');
 assert.equal(shelbyManifest.navigation.length, 4, 'A new art-fair manifest must contain all four primary topics.');
 assert.equal(shelbyManifest.scheduleItems.length, 2, 'Official event-day hours must appear as useful Schedule rows.');
 assert.equal(
@@ -1191,7 +1198,118 @@ assert.equal(
   'highlights',
   'Official artist, entertainment, and family evidence must create Highlights.',
 );
-assert.equal(shelbyContent.ok, true, `The source-rich Shelby fixture should be content-ready: ${shelbyContent.ok ? '' : shelbyContent.errors.join(' ')}`);
+assert.equal(shelbyContent.ok, false, 'A source-rich page must still fail when its core visitor copy only repeats one experience list.');
+assert(
+  !shelbyContent.ok && shelbyContent.errors.some((error) => error.includes('must do different jobs')),
+  'The content gate must explain the repeated hero and Why Go copy in plain language.',
+);
+assert(
+  shelbyBoundedEditorial.targets.every(
+    (target) =>
+      !target.id.startsWith('scout.')
+      && !target.id.endsWith('.subtitle'),
+  ),
+  'A repetition-only pass must not spend model work on passing Scout, Schedule, or Plan copy.',
+);
+assert(
+  shelbyBoundedEditorial.targets.some((target) => target.id === 'hero.tagline')
+  && shelbyBoundedEditorial.targets.some((target) => target.id === 'module.why-go.summary')
+  && shelbyBoundedEditorial.targets.some((target) => target.id.includes('module.highlights.item.')),
+  'The bounded pass must retain every core visitor-copy target implicated by the gate.',
+);
+
+const shelbyEditorial = applyEditorialModelOutput({
+  parentSynthesisId: '00000000-0000-4000-8000-000000000004',
+  provider: 'fixture-gateway',
+  model: 'fixture-editor',
+  input: shelbyInput,
+  manifest: shelbyManifest,
+  output: {
+    rewrites: [
+      {
+        target: 'hero.tagline',
+        text: 'A two-day River Bends Park fair pairs more than 120 artist and marketplace vendors with free entry and parking.',
+        sourceSnapshotIds: [shelbySnapshotId],
+      },
+      {
+        target: 'module.why-go.headline',
+        text: 'Browse the artists, then stay for music and hands-on kids’ activities.',
+        sourceSnapshotIds: [shelbySnapshotId],
+      },
+      {
+        target: 'module.why-go.summary',
+        text: 'Free entry and parking make it easy to browse at your own pace, and nearby shuttle buses add another arrival option.',
+        sourceSnapshotIds: [shelbySnapshotId],
+      },
+      {
+        target: 'module.highlights.headline',
+        text: 'What fills River Bends Park.',
+        sourceSnapshotIds: [shelbySnapshotId],
+      },
+      {
+        target: 'module.highlights.summary',
+        text: 'Choose between browsing artist booths, a food-and-music break, and hands-on family time.',
+        sourceSnapshotIds: [shelbySnapshotId],
+      },
+      {
+        target: 'module.highlights.item.highlight-entertainment.summary',
+        text: 'Food and musical entertainment offer a break between rounds of artist booths.',
+        sourceSnapshotIds: [shelbySnapshotId],
+      },
+      {
+        target: 'module.highlights.item.highlight-marketplace.summary',
+        text: 'More than 120 artist and marketplace vendors form the center of the weekend.',
+        sourceSnapshotIds: [shelbySnapshotId],
+      },
+      {
+        target: 'module.highlights.item.highlight-family-activities.summary',
+        text: 'A dedicated craft and activity area gives children something hands-on to do.',
+        sourceSnapshotIds: [shelbySnapshotId],
+      },
+    ],
+    audienceGroups: [
+      {
+        id: 'art-fair-browsers',
+        title: 'For art-fair browsers',
+        tone: 'water',
+        items: [
+          'More than 120 artist and marketplace vendors',
+          'Food and musical entertainment between booths',
+        ],
+        sourceSnapshotIds: [shelbySnapshotId],
+      },
+      {
+        id: 'family-planning',
+        title: 'For families',
+        tone: 'sunset',
+        items: [
+          'A kids’ craft and activity area',
+          'Free parking and shuttle buses nearby',
+        ],
+        sourceSnapshotIds: [shelbySnapshotId],
+      },
+    ],
+    spotlight: null,
+  },
+});
+const shelbyEditorialContent = validateEventPageContentReadiness(
+  shelbyEditorial.manifest,
+);
+assert.equal(
+  shelbyEditorial.report.qualityChecks.editorialQualityPassed,
+  true,
+  `The editorial review report must record the visitor-copy quality result: ${evaluateEventPageEditorialQuality(shelbyEditorial.manifest).errors.join(' ')} Changed targets: ${shelbyEditorial.report.changedTargets.join(', ')}`,
+);
+assert.equal(
+  shelbyEditorial.report.addedAudienceGroupCount,
+  2,
+  'A grounded editorial pass may replace repetitive deterministic visitor groups.',
+);
+assert.equal(
+  shelbyEditorialContent.ok,
+  true,
+  `Distinct, grounded Shelby visitor copy should pass: ${shelbyEditorialContent.ok ? '' : shelbyEditorialContent.errors.join(' ')}`,
+);
 
 const shellOnlyManifest = structuredClone(shelbyManifest);
 shellOnlyManifest.navigation = shellOnlyManifest.navigation.filter((item) => item.targetModuleId !== 'highlights');

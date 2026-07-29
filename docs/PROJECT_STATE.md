@@ -288,6 +288,34 @@ remained zero. The obsolete Shelby verification and package-readiness
 exceptions remain historically superseded, and the five-event run remains
 partial because the other events still have their own exceptions.
 
+Human review then found that package v2 met the structural four-topic gate but
+recycled the same entertainment/vendor/kids list across the hero, Why Go, and
+Highlights. Package v2 was rejected through the supported Event Factory review
+action; its accepted facts and verified map record were not changed.
+Content-readiness v3 now adds a deterministic semantic editorial gate for
+core-copy repetition, known factory phrases, and multiple generic Highlight
+summaries. Editorial prompt v6 assigns distinct jobs to the hero, Why Go
+headline, and Why Go summary, permits grounded audience-group replacement, and
+runs the full content gate before a model-assisted child may be considered
+valid. Michigan Completion routes the economical pass when either numeric
+quality or semantic editorial quality needs it.
+
+One bounded Shelby editorial canary created deterministic-v22 parent
+`70db347a-c5bd-47c7-bbdd-dc790a825800` and retained the previously reviewed
+OpenStreetMap record. Its single `openai/gpt-5.4-mini` request timed out at the
+55-second provider boundary. It was not retried, returned no usage record, and
+created no editorial child or replacement package. Canonical events,
+candidate matches, public Event Pages and versions, media, visual workflows,
+and discovery remained unchanged. The structured after-state is retained at
+`artifacts/michigan-completion/macomb/shelby-editorial-canary-v1.json`.
+
+The county operator remains deterministic and zero-cost by default. A new
+explicit `--editorial` option creates a different immutable contract with one
+economical attempt and a 15,000-token ceiling per event; `--plan-only` can
+preview that routing without a provider call. This reuses the existing
+model-assisted synthesis and publication safeguards rather than creating a
+parallel content workflow.
+
 ## Hero Image Factory
 
 Migration `014_event_visual_workflows.sql` and the Control Desk Hero Image Factory implement the fast visual workflow:
@@ -389,11 +417,11 @@ The package, canonical event, immutable Event Hub v1, approved media record, and
 
 ## Current Next Milestone
 
-Review private Shelby Township Art Fair package version 2
-`2cad824e-2a7b-43db-a58b-d4bcb133efc9` as the first human acceptance test.
-The decision is now about the visitor-facing page, not re-proving facts already
-established by the official source. Approve/publish or hold only through the
-existing package action; do not materialize or publish it automatically.
+Shelby Township Art Fair package v2 is intentionally rejected and held. Before
+another explicitly authorized editorial attempt, confirm the AI Gateway can
+complete the bounded prompt within the existing timeout. Do not retry the
+failed call automatically, accept deterministic-v22 merely because it is
+structurally valid, or publish the rejected package.
 
 Next, apply the same official-first rule to Shorewood Kiwanis Harper Charity
 Cruise. Do not clear Holland Ponds, Assumption GreekFest, or the Memorial Day

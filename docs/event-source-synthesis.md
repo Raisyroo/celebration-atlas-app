@@ -27,16 +27,16 @@ Sponsor-bearing evidence remains in the reconciled profile for audit but is not 
 
 ## Evidence-bound editorial pass
 
-The optional `model_assisted` pass is a child of one unsubmitted deterministic proposal. The deterministic parent remains `generated` while the editorial child is `generated`, `in_review`, or `rejected`; it becomes `superseded` only in the same accepted transition that accepts the child. It receives a bounded package of official source excerpts, current schedule rows, the deterministic editorial plan, and an allowlist of prose targets. It may:
+The optional `model_assisted` pass is a child of one unsubmitted deterministic proposal. The deterministic parent remains `generated` while the editorial child is `generated`, `in_review`, or `rejected`; it becomes `superseded` only in the same accepted transition that accepts the child. It receives a bounded package of official source excerpts, current schedule rows, the deterministic editorial plan, the current semantic editorial-quality findings, and an allowlist of prose targets. It may:
 
 1. Rewrite the hero tagline and existing module copy.
 2. Rewrite existing Scout prompt labels and responses.
-3. Add up to two source-backed Why Go audience groups when none exist.
+3. Add or replace up to two source-backed Why Go audience groups.
 4. Add one source-backed Scout Spotlight when none exists.
 
 It cannot change identity, dates, locations, lifecycle, media, links, navigation, modules, filters, commands, source records, or schedule rows. The application hashes that immutable projection before and after applying model output and rejects the result if it moves.
 
-Every proposed copy change must cite retained source snapshot ids. The application independently rejects unknown targets, unknown sources, duplicate targets, sponsor language, speculative language, and numeric claims that do not appear in the cited evidence. The normal Event Page Manifest validator then runs again. Model output remains a private proposal and never publishes content.
+Every proposed copy change must cite retained source snapshot ids. The application independently rejects unknown targets, unknown sources, duplicate targets, sponsor language, speculative language, and numeric claims that do not appear in the cited evidence. Prompt v6 assigns different jobs to the hero, Why Go headline, and Why Go summary; prohibits recycling one attraction list across them; and asks Highlights to provide concrete visitor value instead of factory filler. When the deterministic gate identifies that specific failure, the request exposes only the hero, Why Go, and experience-copy targets; passing Schedule, Plan, and Scout fields are omitted to reduce token use and latency. The structural manifest validator and full content-readiness validator then run again. A structurally valid child is not content-ready when those semantic checks still fail. Model output remains a private proposal and never publishes content.
 
 Vercel AI Gateway supplies the production model call through `VERCEL_OIDC_TOKEN` or `AI_GATEWAY_API_KEY`. The default model is `openai/gpt-5.4-mini`; `AI_GATEWAY_EDITORIAL_MODEL` can override it. Vercel currently requires the team to have a valid card on file before Gateway will serve requests, including free-credit usage.
 

@@ -3,7 +3,7 @@ import { getVercelOidcToken } from '@vercel/oidc';
 import type { EventPageManifest } from '../../data/eventPageManifestTypes.ts';
 import {
   buildEditorialEvidencePackage,
-  buildEditorialRewriteTargets,
+  buildBoundedEditorialRewriteTargets,
   editorialModelJsonSchema,
   type EditorialModelOutput,
 } from './editorialAssistance';
@@ -52,6 +52,10 @@ function systemPrompt() {
   return [
     'You are the evidence-bound editorial writer for Celebration Atlas, a refined guide to enduring public celebrations.',
     'Your task is to improve hierarchy, specificity, warmth, and mobile readability while preserving every verified fact.',
+    'Make the event worth considering through concrete specificity, not hype: reveal what a visitor can actually experience, notice, or use.',
+    'Give the core fields different jobs. The hero is one defining scene or decision hook. The Why Go headline introduces a distinct angle. The Why Go summary adds practical context and additional facts.',
+    'Do not recycle the same nouns, clauses, or list of attractions across the hero, Why Go headline, Why Go summary, audience groups, and highlights.',
+    'Write each highlight as a distinct visitor-useful fact. Avoid generic shells such as The event includes, The fair brings together, or adds to the event experience.',
     'Use only the supplied official-source evidence. Every rewrite, audience group, and Spotlight must cite the source snapshot IDs that directly support it.',
     'Never invent or alter dates, times, locations, prices, attendance, age, frequency, admission rules, or current-year status.',
     'Never turn historical reference material into a current-year promise. Respect the supplied schedule status and edition years exactly.',
@@ -80,8 +84,10 @@ export async function generateEditorialModelDraft(args: {
     throw new Error('AI Gateway authentication is unavailable. Vercel OIDC or AI_GATEWAY_API_KEY is required.');
   }
   const model = args.configuredModel?.trim() || editorialModel();
-  const targets = buildEditorialRewriteTargets(args.manifest);
+  const bounded = buildBoundedEditorialRewriteTargets(args.manifest);
+  const targets = bounded.targets;
   const evidence = buildEditorialEvidencePackage(args.input, args.manifest, args.plan);
+  const editorialQuality = bounded.quality;
   const snapshotIds = args.input.snapshots.map((snapshot) => snapshot.id);
   const response = await fetch(AI_GATEWAY_URL, {
     method: 'POST',
@@ -96,7 +102,10 @@ export async function generateEditorialModelDraft(args: {
         {
           role: 'user',
           content: JSON.stringify({
-            instruction: 'Rewrite only targets you can materially improve. Preserve concise existing copy when evidence does not support a better version.',
+            instruction: editorialQuality.ok
+              ? 'Rewrite only targets you can materially improve. Preserve concise existing copy when evidence does not support a better version.'
+              : 'Resolve every listed editorial-quality issue using only grounded facts. Rewrite the hero, Why Go headline, Why Go summary, and any generic highlights needed to make their roles distinct.',
+            editorialQualityIssues: editorialQuality.errors,
             targets,
             evidence,
           }),
@@ -112,7 +121,7 @@ export async function generateEditorialModelDraft(args: {
       ),
       stream: false,
     }),
-    signal: AbortSignal.timeout(55_000),
+    signal: AbortSignal.timeout(90_000),
   });
   const payload = await response.json().catch(() => ({})) as GatewayResponse;
   if (!response.ok) {

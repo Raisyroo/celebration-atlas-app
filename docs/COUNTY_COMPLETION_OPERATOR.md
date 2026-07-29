@@ -24,7 +24,20 @@ Private workflow records require a separate explicit authorization:
 npm run atlas:create-county-events -- macomb --authorize-private-writes --actor <allowlisted-admin-email>
 ```
 
-There is no model, image, canonicalization, approval, or publication flag. Model budgets are fixed at zero. Private mode is still limited to the existing candidate, retained-evidence, deterministic-synthesis, verification, private-package, private-preview, exception, checkpoint, and audit contracts.
+The default path has zero model budget. An explicit `--editorial` option may
+reserve one economical, evidence-bound editorial attempt per event only after
+deterministic facts and structure succeed and the visitor-copy gate finds weak
+or repetitive prose. It does not authorize a reasoning model, factual
+rewrites, image work, canonicalization, approval, or publication. Private mode
+remains limited to the existing candidate, retained-evidence, synthesis,
+verification, private-package, private-preview, exception, checkpoint, and
+audit contracts.
+
+With `--editorial`, the immutable run reserves at most 15,000 tokens per event;
+the default five-event batch therefore has a 75,000-token ceiling. Actual
+usage is recorded by the Michigan Completion model-action ledger. Without the
+flag, both limits remain zero. `--plan-only --editorial` can inspect the new
+immutable manifests without starting a run or calling a provider.
 
 ## Inventory registry
 
@@ -62,6 +75,7 @@ The aggregate report retains, for all rows, the source record ID, selected canon
 
 - The default batch size is five; the accepted range is 1–500.
 - Dry-run and private-write manifests have different immutable batch identities.
+- Deterministic-only and editorial-authorized manifests also have different immutable batch identities; one mode never resumes the other.
 - Every manifest is validated by `parseMichiganCompletionManifest`.
 - Every manifest uses the canonical Michigan Completion sorted-key SHA-256 implementation.
 - Manifest candidate payloads use the existing county-seed staging adapter and guarded staging RPC.
@@ -109,7 +123,7 @@ active and produce the existing human-review stop.
 The county operator:
 
 - does not invent facts or identifiers;
-- does not call a model;
+- does not call a model unless `--editorial` explicitly authorizes the single bounded economical route;
 - does not search for, generate, copy, upload, select, approve, or substitute imagery;
 - does not create a canonical event;
 - does not activate a public Event Page;

@@ -126,6 +126,7 @@ export type ModelEditorialReviewSummary = {
     sponsorLanguageExcluded: boolean;
     researchNarrationExcluded: boolean;
     spotlightNarrativeSourceRequired: boolean;
+    editorialQualityPassed: boolean;
     manifestValid: boolean;
   };
 };

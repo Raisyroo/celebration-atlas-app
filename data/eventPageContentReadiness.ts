@@ -1,10 +1,13 @@
 import type { EventPageManifest } from "./eventPageManifestTypes.ts";
 import {
+  evaluateEventPageEditorialQuality,
+} from "./eventPageEditorialQuality.ts";
+import {
   validateEventPageManifest,
 } from "./eventPageManifestValidation.ts";
 
 export const EVENT_PAGE_CONTENT_READINESS_VERSION =
-  "event-page-content-readiness-v2";
+  "event-page-content-readiness-v3";
 
 export type EventPageContentReadinessOptions = {
   allowLegacyStructure?: boolean;
@@ -187,6 +190,8 @@ function newPackageContentErrors(manifest: EventPageManifest) {
       );
     }
   }
+
+  errors.push(...evaluateEventPageEditorialQuality(manifest).errors);
 
   return [...new Set(errors)];
 }

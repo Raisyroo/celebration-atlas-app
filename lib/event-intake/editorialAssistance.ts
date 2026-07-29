@@ -5,6 +5,9 @@ import type {
   ScoutSpotlightPose,
 } from '../../data/eventPageManifestTypes.ts';
 import {
+  evaluateEventPageEditorialQuality,
+} from '../../data/eventPageEditorialQuality.ts';
+import {
   stableStringifyEventPageManifest,
   validateEventPageManifest,
 } from '../../data/eventPageManifestValidation.ts';
@@ -14,7 +17,7 @@ import type {
   ModelEditorialReviewSummary,
 } from './synthesisTypes.ts';
 
-export const EDITORIAL_PROMPT_VERSION = 'celebration-atlas-editor-v5';
+export const EDITORIAL_PROMPT_VERSION = 'celebration-atlas-editor-v6';
 const SPONSOR_LANGUAGE = /\b(?:sponsor(?:ed|ing|ship|s)?|presented by|presenting partner|title partner|powered by|funder)\b/i;
 const PERSONAL_CONTACT = /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\b(?:email|call|text)\s+(?:me|us|the|to)\b/i;
 const SPECULATIVE_LANGUAGE = /\b(?:probably|presumably|apparently|we think|likely to|expected to return)\b/i;
@@ -107,7 +110,7 @@ function moduleTarget(moduleId: string, field: string) {
 export function buildEditorialRewriteTargets(manifest: EventPageManifest): EditorialRewriteTarget[] {
   const targets: EditorialRewriteTarget[] = [{
     id: 'hero.tagline',
-    purpose: 'A specific one-sentence invitation grounded in what makes this event distinctive.',
+    purpose: 'One concrete defining scene or decision hook. Do not repeat the Why Go headline or its experience list.',
     currentText: manifest.hero.tagline,
     maxLength: 190,
   }];
@@ -116,7 +119,7 @@ export function buildEditorialRewriteTargets(manifest: EventPageManifest): Edito
     if (pageModule.type === 'whyGo') {
       targets.push(
         { id: moduleTarget(pageModule.id, 'headline'), purpose: 'A graceful, specific Why Go headline.', currentText: pageModule.headline, maxLength: 180 },
-        { id: moduleTarget(pageModule.id, 'summary'), purpose: 'A concise overview of the event experience and enduring identity.', currentText: pageModule.summary, maxLength: 360 },
+        { id: moduleTarget(pageModule.id, 'summary'), purpose: 'A concise practical overview that adds useful facts instead of restating the hero or headline.', currentText: pageModule.summary, maxLength: 360 },
       );
       if (pageModule.spotlight) {
         targets.push(
@@ -158,7 +161,7 @@ export function buildEditorialRewriteTargets(manifest: EventPageManifest): Edito
         targets.push(
           { id: moduleTarget(pageModule.id, `item.${item.id}.kicker`), purpose: 'A short category-like kicker.', currentText: item.kicker, maxLength: 50 },
           { id: moduleTarget(pageModule.id, `item.${item.id}.title`), purpose: 'A clear highlight title.', currentText: item.title, maxLength: 100 },
-          { id: moduleTarget(pageModule.id, `item.${item.id}.summary`), purpose: 'A source-backed description that keeps the observed edition explicit.', currentText: item.summary, maxLength: 300 },
+          { id: moduleTarget(pageModule.id, `item.${item.id}.summary`), purpose: 'A concrete source-backed visitor detail that is distinct from the other highlights and keeps the observed edition explicit.', currentText: item.summary, maxLength: 300 },
         );
       }
     }
@@ -174,6 +177,41 @@ export function buildEditorialRewriteTargets(manifest: EventPageManifest): Edito
     );
   }
   return targets;
+}
+
+export function buildBoundedEditorialRewriteTargets(
+  manifest: EventPageManifest,
+) {
+  const targets = buildEditorialRewriteTargets(manifest);
+  const quality = evaluateEventPageEditorialQuality(manifest);
+  if (quality.ok) return { targets, quality };
+  const whyGoId = manifest.modules.find(
+    (module) => module.type === 'whyGo',
+  )?.id;
+  const experienceId = manifest.modules.find(
+    (module) => module.type === 'highlights' || module.type === 'traditions',
+  )?.id;
+  const boundedTargets = targets.filter((target) =>
+    target.id === 'hero.tagline'
+    || (whyGoId
+      && [
+        moduleTarget(whyGoId, 'headline'),
+        moduleTarget(whyGoId, 'summary'),
+      ].includes(target.id))
+    || (experienceId
+      && (
+        [
+          moduleTarget(experienceId, 'headline'),
+          moduleTarget(experienceId, 'summary'),
+        ].includes(target.id)
+        || target.id.startsWith(moduleTarget(experienceId, 'item.'))
+          && target.id.endsWith('.summary')
+      ))
+  );
+  return {
+    targets: boundedTargets.length ? boundedTargets : targets,
+    quality,
+  };
 }
 
 function sourceRoleMap(plan: EditorialPlan) {
@@ -576,7 +614,7 @@ export function applyEditorialModelOutput(args: {
 
   const whyGo = manifest.modules.find((module) => module.type === 'whyGo');
   let addedAudienceGroupCount = 0;
-  if (whyGo?.type === 'whyGo' && whyGo.audienceGroups.length === 0) {
+  if (whyGo?.type === 'whyGo') {
     const groups: EventPageAudienceGroup[] = [];
     for (const group of (Array.isArray(args.output.audienceGroups) ? args.output.audienceGroups : []).slice(0, 2)) {
       if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(group.id) || groups.some((candidate) => candidate.id === group.id)) continue;
@@ -588,8 +626,10 @@ export function applyEditorialModelOutput(args: {
       if (!title || items.length < 2 || !grounding.ok || !sourceIds.length) continue;
       groups.push({ id: group.id, title, tone: group.tone === 'sunset' ? 'sunset' : 'water', items, sourceIds });
     }
-    whyGo.audienceGroups = groups;
-    addedAudienceGroupCount = groups.length;
+    if (groups.length) {
+      whyGo.audienceGroups = groups;
+      addedAudienceGroupCount = groups.length;
+    }
   }
 
   let addedSpotlight = false;
@@ -615,6 +655,14 @@ export function applyEditorialModelOutput(args: {
 
   const immutableFactsLocked = beforeHash === projectionHash(manifest);
   const validation = validateEventPageManifest(manifest);
+  const editorialQuality = validation.ok
+    ? evaluateEventPageEditorialQuality(validation.value)
+    : {
+        ok: false,
+        errors: ['The manifest is structurally invalid.'],
+        repetitionPairs: [],
+        genericHighlightCount: 0,
+      };
   const report: ModelEditorialReviewSummary = {
     parentSynthesisId: args.parentSynthesisId,
     provider: args.provider,
@@ -633,6 +681,7 @@ export function applyEditorialModelOutput(args: {
       sponsorLanguageExcluded: true,
       researchNarrationExcluded: true,
       spotlightNarrativeSourceRequired: true,
+      editorialQualityPassed: editorialQuality.ok,
       manifestValid: validation.ok,
     },
   };

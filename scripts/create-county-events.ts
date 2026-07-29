@@ -3,6 +3,7 @@ import path from "node:path";
 import process from "node:process";
 import { createClient } from "@supabase/supabase-js";
 import {
+  COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS,
   buildCountyOperationReport,
   executeCountyOperation,
   planCountyOperation,
@@ -20,6 +21,7 @@ type CountyCliOptions = {
   countyInput: string;
   planOnly: boolean;
   authorizePrivateWrites: boolean;
+  editorialAssistance: boolean;
   actorIdentity: string;
   actorProvided: boolean;
   batchSize: number;
@@ -45,6 +47,7 @@ function usage() {
     "Options:",
     "  --plan-only                    Do not start or resume completion runs",
     "  --authorize-private-writes     Permit only the existing private completion effects",
+    "  --editorial                    Permit one economical evidence-bound editorial attempt per event only when deterministic copy needs it",
     "  --actor <identity>             Required explicitly for private writes",
     "  --batch-size <1-500>           Events per immutable completion manifest (default 5)",
     "  --concurrency <1-16>           Completion event concurrency (default 1)",
@@ -54,7 +57,7 @@ function usage() {
     "  --dry-run                      Accepted for clarity; dry-run is the default",
     "  --help                         Show this help",
     "",
-    "Model budgets are fixed at zero. The command has no image, canonicalization, approval, or publication option.",
+    "Model budgets stay at zero unless --editorial is explicit. The command has no image, canonicalization, approval, or publication option.",
   ].join("\n");
 }
 
@@ -88,6 +91,7 @@ function parseArgs(args: string[]): CountyCliOptions {
     countyInput: "",
     planOnly: false,
     authorizePrivateWrites: false,
+    editorialAssistance: false,
     actorIdentity:
       process.env.ATLAS_COMPLETION_ACTOR?.trim() ||
       "michigan-county-completion-cli",
@@ -107,6 +111,8 @@ function parseArgs(args: string[]): CountyCliOptions {
       // Dry-run is the default and remains explicit in the generated plan.
     } else if (argument === "--authorize-private-writes") {
       options.authorizePrivateWrites = true;
+    } else if (argument === "--editorial") {
+      options.editorialAssistance = true;
     } else if (argument === "--actor") {
       options.actorIdentity = valueAfter(args, index, argument).trim();
       options.actorProvided = true;
@@ -199,10 +205,14 @@ async function main() {
     inventory,
     snapshot,
     authorizePrivateWrites: options.authorizePrivateWrites,
+    editorialAssistance: options.editorialAssistance,
     batchSize: options.batchSize,
     concurrency: options.concurrency,
   });
-  const mode = options.authorizePrivateWrites ? "private" : "dry-run";
+  const mode = [
+    options.authorizePrivateWrites ? "private" : "dry-run",
+    options.editorialAssistance ? "editorial" : "deterministic",
+  ].join("-");
   const manifestDirectory = path.resolve(
     options.manifestDirectory ??
       path.join(
@@ -238,10 +248,15 @@ async function main() {
         inputHash: batch.manifestHash,
         actorIdentity: options.actorIdentity,
         dryRun: !options.authorizePrivateWrites,
-        deterministicOnly: true,
+        deterministicOnly: !options.editorialAssistance,
         maxConcurrency: options.concurrency,
-        modelBudgetTokens: 0,
-        perEventModelBudgetTokens: 0,
+        modelBudgetTokens: options.editorialAssistance
+          ? batch.manifest.events.length *
+            COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS
+          : 0,
+        perEventModelBudgetTokens: options.editorialAssistance
+          ? COUNTY_EDITORIAL_PER_EVENT_BUDGET_TOKENS
+          : 0,
       });
       return {
         runId: result.snapshot.run.id,

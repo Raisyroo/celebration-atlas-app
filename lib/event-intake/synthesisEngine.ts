@@ -17,7 +17,7 @@ import type {
   SynthesisSourceSnapshot,
 } from './synthesisTypes.ts';
 
-export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v21';
+export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v22';
 
 const CONFIDENCE_RANK: Record<SourceClaimConfidence, number> = {
   unknown: 0,

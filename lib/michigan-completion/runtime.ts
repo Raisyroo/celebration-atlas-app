@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getEventPageManifest } from "../../data/eventPageManifests.ts";
 import { validateEventPageContentReadiness } from "../../data/eventPageContentReadiness.ts";
+import {
+  evaluateEventPageEditorialQuality,
+} from "../../data/eventPageEditorialQuality.ts";
+import { validateEventPageManifest } from "../../data/eventPageManifestValidation.ts";
 import { prepareEventFactoryPackage } from "../event-factory/packages.ts";
 import { synthesizeEventSourceBundle } from "../event-intake/synthesisEngine.ts";
 import type {
@@ -1260,10 +1264,24 @@ function stageEditorial(
 ): CompletionStageExecutionResult {
   const synthesis = outputFor(context, "deterministic_synthesis");
   const qualityScore = numberValue(synthesis.qualityScore);
+  const manifestValidation = validateEventPageManifest(
+    synthesis.manifestProposal,
+  );
+  const conflicts = Array.isArray(synthesis.conflicts)
+    ? synthesis.conflicts
+    : [];
+  const editorialQuality = manifestValidation.ok
+    ? evaluateEventPageEditorialQuality(manifestValidation.value)
+    : {
+        ok: false,
+        errors: ["The deterministic manifest is structurally invalid."],
+      };
   if (
     context.dryRun ||
     context.event.editorialPolicy === "deterministic_only" ||
-    qualityScore >= 0.9
+    (context.event.editorialPolicy === "economical_if_needed" &&
+      (!manifestValidation.ok || conflicts.length > 0)) ||
+    (qualityScore >= 0.9 && editorialQuality.ok)
   ) {
     return {
       outcome: "skipped",
@@ -1274,8 +1292,13 @@ function stageEditorial(
             ? "dry_run_model_calls_disabled"
             : context.event.editorialPolicy === "deterministic_only"
             ? "deterministic_only_policy"
-            : "deterministic_quality_sufficient",
+            : !manifestValidation.ok
+            ? "deterministic_structure_requires_non_model_review"
+            : conflicts.length
+            ? "deterministic_fact_conflicts_require_non_model_review"
+            : "deterministic_content_and_editorial_quality_sufficient",
         deterministicContentRetained: true,
+        editorialQualityIssues: editorialQuality.errors,
       },
     };
   }
@@ -1293,13 +1316,16 @@ function stageEditorial(
           : "editorial-reasoning-v1",
       reason:
         strength === "economical"
-          ? "Deterministic facts are safe, but retained prose quality is below the configured threshold."
+          ? editorialQuality.ok
+            ? "Deterministic facts are safe, but retained prose quality is below the configured threshold."
+            : `Deterministic facts are safe, but visitor copy needs bounded editorial improvement: ${editorialQuality.errors.join(" ")}`
           : "A reviewed factual ambiguity requires the configured reasoning route.",
       deterministicPreconditions: {
         deterministicSynthesisId: synthesis.synthesisId ?? null,
         deterministicInputHash: synthesis.inputHash ?? null,
         qualityScore,
-        conflicts: synthesis.conflicts ?? [],
+        conflicts,
+        editorialQualityIssues: editorialQuality.errors,
       },
       modelFamily: strength === "economical" ? "editorial-small" : "reasoning",
       configuredModel:
