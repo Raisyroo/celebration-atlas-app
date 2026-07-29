@@ -42,8 +42,8 @@ export async function loadSupabaseCountyOperatorSnapshot(args: {
       .limit(5_000),
     args.client
       .from("event_source_syntheses")
-      .select("id,status,bundle_id,updated_at")
-      .order("updated_at", { ascending: false })
+      .select("id,status,bundle_id,created_at")
+      .order("created_at", { ascending: false })
       .limit(5_000),
     args.client
       .from("event_verification_cases")

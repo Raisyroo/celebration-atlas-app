@@ -921,11 +921,11 @@ async function validateMigrationAndPersistentBoundaries() {
   );
   assert.match(
     supabaseProjection,
-    /\.select\("id,status,bundle_id,updated_at"\)/,
+    /\.select\("id,status,bundle_id,created_at"\)/,
   );
   assert.doesNotMatch(
     supabaseProjection,
-    /event_source_syntheses"\)[\s\S]{0,120}source_bundle_id/,
+    /event_source_syntheses"\)[\s\S]{0,180}(?:source_bundle_id|updated_at)/,
   );
 }
 

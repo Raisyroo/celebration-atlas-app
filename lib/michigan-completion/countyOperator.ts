@@ -49,7 +49,7 @@ export type CountyOperatorSynthesisRow = {
   id: string;
   status: string;
   bundle_id: string;
-  updated_at?: string;
+  created_at?: string;
 };
 
 export type CountyOperatorVerificationRow = {
@@ -282,10 +282,14 @@ function cohortRelationships(seeds: NormalizedCountySeed[], seed: NormalizedCoun
   };
 }
 
-function latestByUpdatedAt<T extends { updated_at?: string }>(rows: T[]) {
+function latestByUpdatedAt<
+  T extends { updated_at?: string; created_at?: string },
+>(rows: T[]) {
   return [...rows].sort(
     (left, right) =>
-      text(right.updated_at).localeCompare(text(left.updated_at)),
+      text(right.updated_at || right.created_at).localeCompare(
+        text(left.updated_at || left.created_at),
+      ),
   )[0] ?? null;
 }
 
