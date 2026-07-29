@@ -420,7 +420,7 @@ async function main() {
   }
 
   assert(migration.trimStart().startsWith("-- Allow reviewed Event Factory publication"));
-  assert(migration.includes("\nbegin;\n"));
+  assert(/(?:^|\r?\n)begin;\r?\n/.test(migration));
   assert(migration.trimEnd().endsWith("commit;"));
   assert(!/\bcreate\s+table\b/i.test(migration), "migration 027 must add no table");
   assert(migration.includes("perform public.atlas_assert_service_role();"));
