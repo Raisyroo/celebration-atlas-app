@@ -48,7 +48,7 @@ export type CountyOperatorBundleRow = {
 export type CountyOperatorSynthesisRow = {
   id: string;
   status: string;
-  source_bundle_id: string;
+  bundle_id: string;
   updated_at?: string;
 };
 
@@ -449,7 +449,7 @@ function referencesForCandidate(
   const synthesis = bundle
     ? latestByUpdatedAt(
         snapshot.syntheses.filter(
-          (row) => row.source_bundle_id === bundle.id,
+          (row) => row.bundle_id === bundle.id,
         ),
       )
     : null;

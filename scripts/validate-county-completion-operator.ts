@@ -902,12 +902,30 @@ async function validateMigrationAndPersistentBoundaries() {
   );
   assert.doesNotMatch(runtime, /seed\.reviewed_inventory_hash/);
 
-  const packageJson = JSON.parse(
-    await readFile(path.join(ROOT, "package.json"), "utf8"),
-  ) as { scripts?: Record<string, string> };
+  const [packageJsonSource, supabaseProjection] = await Promise.all([
+    readFile(path.join(ROOT, "package.json"), "utf8"),
+    readFile(
+      path.join(
+        ROOT,
+        "lib/michigan-completion/countyOperatorSupabase.ts",
+      ),
+      "utf8",
+    ),
+  ]);
+  const packageJson = JSON.parse(packageJsonSource) as {
+    scripts?: Record<string, string>;
+  };
   assert.equal(
     packageJson.scripts?.["atlas:create-county-events"],
     "node --env-file=.env.local --import ./scripts/register-server-runtime.mjs --experimental-strip-types scripts/create-county-events.ts",
+  );
+  assert.match(
+    supabaseProjection,
+    /\.select\("id,status,bundle_id,updated_at"\)/,
+  );
+  assert.doesNotMatch(
+    supabaseProjection,
+    /event_source_syntheses"\)[\s\S]{0,120}source_bundle_id/,
   );
 }
 
