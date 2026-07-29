@@ -79,7 +79,7 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "deterministic_synthesis",
-    version: "20",
+    version: "22",
     capability: "lib/event-intake/synthesisEngine.ts and atlas_create_event_source_synthesis",
     processor: "deterministic",
     prerequisites: ["evidence_readiness"],
@@ -105,12 +105,12 @@ export const MICHIGAN_COMPLETION_STAGES: readonly MichiganCompletionStageDefinit
   },
   {
     id: "content_readiness",
-    version: "1",
+    version: "2",
     capability: "Event Page manifest validation and source-synthesis validation report",
     processor: "deterministic",
     prerequisites: ["deterministic_synthesis"],
     idempotencyContract: "Selected synthesis identity and immutable manifest content hash.",
-    completionConditions: ["Identity, dates, location, sources, and Event Hub modules are valid; hero art may remain pending."],
+    completionConditions: ["Identity, dates, location, sources, four substantive Event Hub topics, and public copy are valid; hero art may remain pending."],
     retryBehavior: "Retry after evidence or editorial review; deterministic content remains available.",
     exceptionCodes: ["conflicting_event_dates", "editorial_quality_failure", "publication_readiness_failure"],
     blocksLaterStages: true,

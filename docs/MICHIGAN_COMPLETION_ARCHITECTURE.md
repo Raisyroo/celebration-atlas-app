@@ -1,6 +1,6 @@
 # Michigan Completion Operating Layer v1
 
-Status: implemented and deployed operating-layer contract through migration `026_generalize_county_completion_staging.sql`. Migration 026 was deployed atomically on July 29, 2026, and local/remote migration history is aligned through 026. No migration authorizes a completion run, event staging, canonicalization, package publication, or image action.
+Status: implemented and deployed operating-layer contract through the official-first correction in migration `029_official_first_event_verification.sql`, plus the new-package content guard in migration `030_enforce_new_event_content_readiness.sql`. Local and remote migration history is aligned through 030. No migration authorizes a completion run, event staging, canonicalization, package publication, or image action.
 
 ## Purpose and boundary
 
@@ -328,13 +328,13 @@ The registry contains exactly the eleven Michigan v1 stages below. A registry ch
 - Blocking: blocks synthesis for this event; other events continue.
 - Required for every event: yes.
 
-### 5. `deterministic_synthesis@1`
+### 5. `deterministic_synthesis@22`
 
 - Existing capability: `synthesisEngine.ts`, deterministic synthesis RPC and action ledger.
 - Processor: deterministic.
 - Prerequisites: a source bundle ready for synthesis.
 - Idempotency: bundle evidence plus deterministic engine version and input hash.
-- Completion: a deterministic proposal exists with visible conflicts/missing fields, validation report, quality score, and proposed Event Hub content.
+- Completion: a deterministic proposal exists with visible conflicts/missing fields, validation report, quality score, and proposed Event Hub content. For new packages, the deterministic proposal must establish the four-topic structure before optional editorial assistance can refine its prose.
 - Retry: exact replay reuses the proposal; changed evidence or engine version produces a new immutable proposal.
 - Exceptions: `deterministic_synthesis_failure`, `conflicting_event_dates`, `missing_or_ambiguous_location`, `archive_current_program_ambiguity`, `unexpected_system_failure`.
 - Blocking: engine failure or unsafe facts block content; weak but factually safe prose does not.
@@ -352,13 +352,13 @@ The registry contains exactly the eleven Michigan v1 stages below. A registry ch
 - Blocking: normally non-blocking because deterministic content remains available; a human-defined content-quality requirement may keep the event from review.
 - Required for every event: no.
 
-### 7. `content_readiness@1`
+### 7. `content_readiness@2`
 
 - Existing capability: synthesis validation report, Event Hub manifest rules, Event Factory non-art gates.
 - Processor: deterministic.
 - Prerequisites: deterministic or accepted editorial content and resolved publication-sensitive factual exceptions.
 - Idempotency: chosen synthesis ID, validator version, and content projection hash.
-- Completion: identity, evidence, dates/lifecycle, location/map provenance, official link, required Event Hub sections, citations, sponsor exclusion, and public-copy checks pass independently of art.
+- Completion: identity, evidence, dates/lifecycle, location/map provenance, official link, exactly four substantive topics (`Why Go`, `Schedule`, one evidence-backed `Highlights` or `Traditions` topic, and `Plan`), citations, sponsor exclusion, and public-copy checks pass independently of art. Identity echoes, template placeholders, uncited practical details, empty schedules, and three-topic shells fail this gate.
 - Retry: after content/evidence/validator-version changes.
 - Exceptions: `conflicting_event_dates`, `missing_official_source`, `missing_or_ambiguous_location`, `editorial_quality_failure`, `event_factory_readiness_failure`.
 - Blocking: blocks package preparation if content is unsafe; does not wait for art.

@@ -456,6 +456,70 @@ export function scheduleItemsFromHeadingDatePairs(
   return output;
 }
 
+export function scheduleItemsFromEventHoursSegments(
+  inspection: OfficialEventSourceInspection,
+  timeZone = 'America/Detroit',
+) {
+  const startDate = inspection.candidate.startDate;
+  const endDate = inspection.candidate.endDate || startDate;
+  if (!startDate || !endDate) return [];
+
+  const output: EventScheduleCandidatePayload[] = [];
+  for (let index = 0; index < inspection.contentSegments.length; index += 1) {
+    const segment = inspection.contentSegments[index];
+    const match = text(segment.text).match(
+      /^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\s*[-\u2013\u2014]\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+(\d{1,2}),?\s+(20\d{2})$/i,
+    );
+    if (!match) continue;
+    const monthToken = match[8].toLowerCase().replace(/\.$/, '');
+    const month = Object.entries(MONTH_NUMBERS).find(([name]) => (
+      name.startsWith(monthToken) || monthToken.startsWith(name.slice(0, 3))
+    ))?.[1];
+    const day = Number(match[9]);
+    const year = Number(match[10]);
+    const startValue = clockValue(match[1], match[2], match[3]);
+    const endValue = clockValue(match[4], match[5], match[6]);
+    if (!month || !day || startValue === null || endValue === null) continue;
+    const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (isoDate < startDate || isoDate > endDate) continue;
+    const date = new Date(Date.UTC(year, month - 1, day, 12));
+    const weekday = date.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+    if (weekday.toLowerCase() !== match[7].toLowerCase()) continue;
+
+    const dateText = `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year}`;
+    const startsAt = zonedDateTime(localDateParts(dateText, startValue), timeZone);
+    const endsAt = zonedDateTime(localDateParts(dateText, endValue), timeZone);
+    if (!startsAt || !endsAt || endsAt <= startsAt) continue;
+    const eventName = text(inspection.candidate.name) || 'Event';
+    const title = `${eventName} hours`.slice(0, 300);
+    const dedupeKey = createHash('sha256')
+      .update(JSON.stringify([title.toLowerCase(), startsAt, endsAt, inspection.candidate.locationName.toLowerCase()]))
+      .digest('hex');
+    output.push({
+      dedupeKey,
+      title,
+      startsAt,
+      endsAt,
+      dateText,
+      timezone: timeZone,
+      venue: text(inspection.candidate.locationName) || null,
+      category: 'community',
+      tags: ['main-event', 'event-hours'],
+      details: null,
+      confidence: 'verified',
+      confidenceScore: 1,
+      sourceLocator: {
+        adapter: 'event-hours-segment-v1',
+        segmentIndex: index,
+        date: dateText,
+        startTime: `${match[1]}${match[2] ? `:${match[2]}` : ''} ${match[3].toUpperCase()}`,
+        endTime: `${match[4]}${match[5] ? `:${match[5]}` : ''} ${match[6].toUpperCase()}`,
+      },
+    });
+  }
+  return output;
+}
+
 export function scheduleItemsFromStaticSegments(
   inspection: OfficialEventSourceInspection,
   timeZone = 'America/Detroit',
@@ -711,17 +775,27 @@ export async function collectDynamicSchedule(args: {
   sourceKind: string;
   timezone?: string;
 }): Promise<EventScheduleCandidatePayload[]> {
-  if (args.sourceKind !== 'schedule') return [];
+  const timeZone = args.timezone ?? 'America/Detroit';
+  const eventHours = scheduleItemsFromEventHoursSegments(
+    args.inspection,
+    timeZone,
+  );
+  if (args.sourceKind !== 'schedule') return eventHours;
   if (/fooevents-event-listing-single/i.test(args.rawHtml)) {
-    return scheduleItemsFromFooEventsListing(
+    const items = [
+      ...eventHours,
+      ...scheduleItemsFromFooEventsListing(
       args.rawHtml,
       args.inspection,
-      args.timezone ?? 'America/Detroit',
-    );
+      timeZone,
+      ),
+    ];
+    return [...new Map(items.map((item) => [item.dedupeKey, item])).values()]
+      .slice(0, MAX_SCHEDULE_ITEMS);
   }
   if (!/Events\/JS\/EventSchedule\.js|services\/eventsservice\.asmx/i.test(args.rawHtml)) {
-    const timeZone = args.timezone ?? 'America/Detroit';
     const items = [
+      ...eventHours,
       ...scheduleItemsFromHeadingDatePairs(args.inspection, timeZone),
       ...scheduleItemsFromStaticSegments(args.inspection, timeZone),
     ];
@@ -729,14 +803,13 @@ export async function collectDynamicSchedule(args: {
       .slice(0, MAX_SCHEDULE_ITEMS);
   }
   const dates = dateList(args.inspection.candidate.startDate, args.inspection.candidate.endDate);
-  if (!dates.length) return [];
+  if (!dates.length) return eventHours;
 
   const sourceUrl = new URL(args.inspection.finalUrl);
   const endpoint = new URL('/services/eventsservice.asmx/GetEventDaysByList', sourceUrl);
-  if (!sameOrigin(sourceUrl, endpoint)) return [];
+  if (!sameOrigin(sourceUrl, endpoint)) return eventHours;
   const categories = categoryMapFromHtml(args.rawHtml);
-  const timeZone = args.timezone ?? 'America/Detroit';
-  const items: EventScheduleCandidatePayload[] = [];
+  const items: EventScheduleCandidatePayload[] = [...eventHours];
 
   for (let index = 0; index < dates.length; index += 5) {
     const response = await postPublicJson(endpoint, {

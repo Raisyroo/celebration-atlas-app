@@ -55,6 +55,8 @@ The reduced art-optional publication path is implemented. A fully verified, iden
 
 Forward-only migration `027_art_optional_event_hubs.sql` was deployed to the linked Supabase project on July 29, 2026, with local and remote migration parity verified through `027`. It adds no table. It keeps all functions service-role-only, makes an image-free package review-ready only after the seven non-art checks plus verified diligence and identity clearance pass, permits null media only for an actually empty hero during atomic activation, and creates immutable manual-art and art-removal revisions. It cannot approve a workflow or package, materialize a candidate, or publish a page by itself.
 
+Forward-only migration `030_enforce_new_event_content_readiness.sql` is also deployed, with local and remote history aligned through `030`. It adds no table or public write path. Its service-role-only trigger blocks new root Event Factory packages from entering private review or publication states unless they contain exactly four substantive, source-backed topics. Existing published compatibility fixtures and linked correction revisions remain valid.
+
 The operating loop is:
 
 ```text
@@ -72,7 +74,7 @@ Key boundaries:
 - Private package previews render the exact package under review.
 - Human package approval is the only Michigan-pilot action that may publish a new event and add it to the public map.
 - Published package events overlay the checked-in catalog so the map can grow without expanding a hardcoded array for every event.
-- Deployed forward-only migration `021_atomic_event_factory_publication.sql` moves the Event Factory public boundary into one service-role-only transaction after canonical materialization, Event Hub approval, and hero registration. The transaction locks and verifies the package, canonical event, exact frozen manifest, approved version, and approved hero record; then it archives the prior version, activates the replacement, marks the package published, and appends both audit histories atomically. Failed media or activation leaves a new version private and preserves the old public version during revisions. Exact replay is a no-op. Until the matching server-service change in this working tree is deployed through the normal Git workflow, production package publication fails closed at the database guard; the private review queue is empty.
+- Deployed forward-only migration `021_atomic_event_factory_publication.sql` moves the Event Factory public boundary into one service-role-only transaction after canonical materialization, Event Hub approval, and hero registration. The transaction locks and verifies the package, canonical event, exact frozen manifest, approved version, and approved hero record; then it archives the prior version, activates the replacement, marks the package published, and appends both audit histories atomically. Failed media or activation leaves a new version private and preserves the old public version during revisions. Exact replay is a no-op. Until the matching server-service change in this working tree is deployed through the normal Git workflow, production package publication fails closed at the database guard; Shelby Township Art Fair is the current private review item.
 
 Canonical implementation notes live in:
 
@@ -98,7 +100,7 @@ This trial also hardened the reusable path before more fairs enter the queue:
 - A protected fixed API action exposes the existing audited source-synthesis map-record operation.
 - Forward-only migration `020_preserve_deterministic_editorial_parent.sql` keeps a deterministic synthesis `generated` while its model-assisted editorial child is generated, reviewed, or rejected. A rejected child may be retried without defeating deterministic replay; only acceptance supersedes the parent, and accepted uniqueness remains enforced per evidence bundle. The migration appends a compensating `restored` action for any legacy parent that was superseded only by a non-accepted editorial child.
 
-Armada publication is complete. The next Event Factory trial should begin from the generalized v19 rules and measure how much editorial intervention remains, rather than adding Armada-specific code.
+Armada publication is complete. The next Event Factory trial should use the current generalized v21 rules and measure how much editorial intervention remains, rather than adding event-specific code.
 
 The reusable county-seed parser and deterministic matching crosswalk are implemented as read-only Event Factory infrastructure. Macomb County Seed Inventory v1 reads only the finalized workbook's `03_IMPORT_READY` sheet, enforces the 40-column contract and 83 approved unique Clean IDs, preserves complete row provenance, fingerprints both the workbook and approved sheet, normalizes seed fields without treating spreadsheet qualification as publication approval, and compares every seed with the deployed Michigan canonical-event and candidate records. Its primary dry-run classifications are 2 existing canonical likely matches, 46 provisional new candidates, and 35 insufficient-information seeds. Armada Fair and Romeo Peach Festival are the two likely canonical matches. All 83 seeds still require current-edition verification and verified coordinates or address resolution.
 
@@ -192,8 +194,9 @@ unrelated page metadata, prefers a single value from the official host family,
 and still blocks on conflicting current-year official dates. It feeds both
 verification planning and deterministic synthesis without deleting or changing
 any retained snapshot, claim, or schedule candidate. Evidence-readiness stage
-version 4 and deterministic-synthesis wrapper stage version 20 prevent older
-successful checkpoints from silently replaying pre-policy behavior.
+version 4, deterministic-synthesis wrapper stage version 22, and
+content-readiness stage version 2 prevent older successful checkpoints from
+silently replaying pre-policy or three-topic behavior.
 
 The focused county-operator validator covers current-year official-family
 selection, historical/news exclusion, and preservation of genuine
@@ -258,15 +261,32 @@ at score 1.0 with one official and two supporting sources. The exact official
 5700 22 Mile Road address was matched to OpenStreetMap way `767548630` at
 `42.6545304, -83.0548010` and appended through the existing synthesis map RPC.
 
-Private package `2cad824e-2a7b-43db-a58b-d4bcb133efc9` is
-`ready_for_review`, content-ready, and deliberately art-pending. Its read-only
-preview contains Why Go, Schedule, and Plan for August 8-9 at River Bends Park.
-The obsolete Shelby verification and package-readiness exceptions were
-superseded through the supported append-only transition. Canonical events,
-candidate matches, public pages, page versions, media, and public discovery
-retained identical before/after counts and hashes; model, image, approval, and
-publication actions remained zero. The five-event run remains partial because
-the other events still have their own exceptions.
+The first Shelby package version exposed a real gate defect: it was marked
+review-ready even though its own synthesis report listed
+`modules.experience` as missing and the preview contained only Why Go,
+Schedule, and Plan. That package was rejected through the supported review
+action. Content-readiness v2 now rejects identity echoes, placeholder copy,
+empty schedules, duplicated experience copy, uncited practical details, and
+three-topic shells.
+
+The retained official municipal page added one private snapshot and two
+verified August 8-9 schedule rows. Accepted deterministic synthesis
+`966df32a-a3d8-43d6-a5df-e18fe4a4faff` uses engine v21 and retains the
+existing verified OpenStreetMap record. Rebuilt private package
+`2cad824e-2a7b-43db-a58b-d4bcb133efc9` is version 2,
+`ready_for_review`, content-ready, and deliberately art-pending. Its deployed
+read-only preview now contains Why Go, Schedule, Highlights, and Plan;
+Highlights covers food and musical entertainment, more than 120 artist and
+marketplace vendors, and the kids' craft and activity area. Schedule shows
+10 AM-5 PM on both days. Mobile review at `390x844` confirmed all four tabs,
+zero horizontal overflow, and no browser-console errors.
+
+Canonical events, candidate matches, public pages, page versions, media,
+visual workflows, and public discovery retained identical before/after counts
+and hashes. Model, image, canonicalization, approval, and publication actions
+remained zero. The obsolete Shelby verification and package-readiness
+exceptions remain historically superseded, and the five-event run remains
+partial because the other events still have their own exceptions.
 
 ## Hero Image Factory
 
@@ -369,7 +389,7 @@ The package, canonical event, immutable Event Hub v1, approved media record, and
 
 ## Current Next Milestone
 
-Review private Shelby Township Art Fair package
+Review private Shelby Township Art Fair package version 2
 `2cad824e-2a7b-43db-a58b-d4bcb133efc9` as the first human acceptance test.
 The decision is now about the visitor-facing page, not re-proving facts already
 established by the official source. Approve/publish or hold only through the

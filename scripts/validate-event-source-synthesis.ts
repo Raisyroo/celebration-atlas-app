@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { BROWN_TROUT_EVENT_PAGE_MANIFEST } from '../data/brownTroutEventPageManifest.ts';
+import { validateEventPageContentReadiness } from '../data/eventPageContentReadiness.ts';
 import type { EventPageManifest } from '../data/eventPageManifestTypes.ts';
 import {
   reconcileEventSourceClaims,
@@ -978,12 +979,19 @@ assert.equal(editorialSynthesis.validationReport.editorial.referenceYear, 2025);
 assert.equal(editorialSynthesis.validationReport.editorial.referenceItemCount, 7);
 assert(!JSON.stringify(editorialManifest).includes('Metro Electric'), 'a leading event-sponsor name must not leak into generated copy');
 
+const editorialAssistanceManifest = structuredClone(editorialManifest);
+const editorialAssistanceWhyGo = editorialAssistanceManifest.modules.find(
+  (module) => module.type === 'whyGo',
+);
+if (editorialAssistanceWhyGo?.type === 'whyGo') {
+  editorialAssistanceWhyGo.audienceGroups = [];
+}
 const assisted = applyEditorialModelOutput({
   parentSynthesisId: '00000000-0000-4000-8000-000000000001',
   provider: 'fixture-gateway',
   model: 'fixture-editor',
   input: editorialInput,
-  manifest: editorialManifest,
+  manifest: editorialAssistanceManifest,
   output: {
     rewrites: [
       {
@@ -1086,5 +1094,114 @@ const citationRewrite = applyEditorialModelOutput({
 });
 assert.deepEqual(citationRewrite.manifest.scoutSuggestions[0].sourceIds, [historySource.id], 'Rewritten copy must publish the model citations that supported it.');
 assert.equal(citationRewrite.report.qualityChecks.immutableFactsLocked, true, 'Citation reassignment must not alter immutable facts.');
+
+const shelbySnapshotId = 'shelby-official-event';
+const shelbySourceUrl = 'https://municipality.example/calendar/shelby-township-art-fair';
+const shelbyInput: EventSourceSynthesisInput = {
+  bundle: {
+    id: 'shelby-bundle',
+    name: 'Shelby Township Art Fair',
+    status: 'ready_for_synthesis',
+    eventKey: 'shelby-township-art-fair-shelby-township-mi',
+    canonicalEventId: null,
+    candidateId: 'shelby-candidate',
+    readyAt: '2026-07-29T12:00:00.000Z',
+  },
+  snapshots: [{
+    id: shelbySnapshotId,
+    sequenceNumber: 1,
+    sourceKind: 'schedule',
+    canonicalUrl: shelbySourceUrl,
+    pageTitle: 'Shelby Township Art Fair | Shelby Township, MI',
+    contentHash: 'd'.repeat(64),
+    fetchedAt: '2026-07-29T12:00:00.000Z',
+    contentSegments: [
+      { kind: 'heading', text: 'Shelby Township Art Fair' },
+      { kind: 'paragraph', text: 'The Shelby Township Art Fair will celebrate its 43rd anniversary in 2026. This includes over 120 artist and marketplace vendors. There is also food, musical entertainment, and a kid’s craft and activity area.' },
+      { kind: 'paragraph', text: 'Entry and parking is free at River Bends Park, with additional parking and free shuttle buses nearby.' },
+    ],
+  }],
+  claims: [
+    ['claim-shelby-name', 'identity.name', 'Shelby Township Art Fair'],
+    ['claim-shelby-start', 'timing.startDate', '2026-08-08'],
+    ['claim-shelby-end', 'timing.endDate', '2026-08-09'],
+    ['claim-shelby-location', 'location.display', 'River Bends Park, Shelby Township, MI'],
+    ['claim-shelby-city', 'location.city', 'Shelby Township'],
+    ['claim-shelby-state', 'location.state', 'MI'],
+    ['claim-shelby-venue', 'location.venue', 'River Bends Park'],
+    ['claim-shelby-timezone', 'timing.timezone', 'America/Detroit'],
+    ['claim-shelby-source', 'sources.officialUrl', shelbySourceUrl],
+  ].map(([id, fieldPath, value]) => ({
+    id,
+    sourceSnapshotId: shelbySnapshotId,
+    fieldPath,
+    value,
+    normalizedText: value.toLowerCase(),
+    confidence: 'verified' as const,
+    confidenceScore: 1,
+    extractionMethod: 'json_ld' as const,
+    reviewStatus: 'unreviewed' as const,
+    createdAt: '2026-07-29T12:00:00.000Z',
+  })),
+  scheduleCandidates: [
+    {
+      id: 'shelby-hours-saturday',
+      sourceSnapshotId: shelbySnapshotId,
+      dedupeKey: '1'.repeat(64),
+      title: 'Shelby Township Art Fair hours',
+      startsAt: '2026-08-08T14:00:00.000Z',
+      endsAt: '2026-08-08T21:00:00.000Z',
+      dateText: '08/08/2026',
+      timezone: 'America/Detroit',
+      venue: 'River Bends Park',
+      category: 'community',
+      tags: ['main-event', 'event-hours'],
+      details: null,
+      confidence: 'verified',
+      confidenceScore: 1,
+      reviewStatus: 'unreviewed',
+    },
+    {
+      id: 'shelby-hours-sunday',
+      sourceSnapshotId: shelbySnapshotId,
+      dedupeKey: '2'.repeat(64),
+      title: 'Shelby Township Art Fair hours',
+      startsAt: '2026-08-09T14:00:00.000Z',
+      endsAt: '2026-08-09T21:00:00.000Z',
+      dateText: '08/09/2026',
+      timezone: 'America/Detroit',
+      venue: 'River Bends Park',
+      category: 'community',
+      tags: ['main-event', 'event-hours'],
+      details: null,
+      confidence: 'verified',
+      confidenceScore: 1,
+      reviewStatus: 'unreviewed',
+    },
+  ],
+};
+const shelbySynthesis = synthesizeEventSourceBundle(shelbyInput);
+const shelbyManifest = shelbySynthesis.manifestProposal as EventPageManifest;
+const shelbyContent = validateEventPageContentReadiness(shelbyManifest);
+assert.equal(shelbySynthesis.engineVersion, 'deterministic-v21');
+assert.equal(shelbyManifest.navigation.length, 4, 'A new art-fair manifest must contain all four primary topics.');
+assert.equal(shelbyManifest.scheduleItems.length, 2, 'Official event-day hours must appear as useful Schedule rows.');
+assert.equal(
+  shelbyManifest.modules.find((module) => module.type === 'highlights')?.type,
+  'highlights',
+  'Official artist, entertainment, and family evidence must create Highlights.',
+);
+assert.equal(shelbyContent.ok, true, `The source-rich Shelby fixture should be content-ready: ${shelbyContent.ok ? '' : shelbyContent.errors.join(' ')}`);
+
+const shellOnlyManifest = structuredClone(shelbyManifest);
+shellOnlyManifest.navigation = shellOnlyManifest.navigation.filter((item) => item.targetModuleId !== 'highlights');
+shellOnlyManifest.modules = shellOnlyManifest.modules.filter((module) => module.type !== 'highlights');
+shellOnlyManifest.scoutSuggestions = [];
+const shellOnlyContent = validateEventPageContentReadiness(shellOnlyManifest);
+assert.equal(shellOnlyContent.ok, false, 'A three-topic shell must never pass new-package content readiness.');
+assert(
+  !shellOnlyContent.ok && shellOnlyContent.errors.some((error) => error.includes('four primary topics')),
+  'The content gate must explain the missing fourth topic in plain language.',
+);
 
 console.log('Event source synthesis validations passed.');

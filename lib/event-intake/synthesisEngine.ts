@@ -17,7 +17,7 @@ import type {
   SynthesisSourceSnapshot,
 } from './synthesisTypes.ts';
 
-export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v19';
+export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v21';
 
 const CONFIDENCE_RANK: Record<SourceClaimConfidence, number> = {
   unknown: 0,
@@ -1408,6 +1408,47 @@ function applyEditorialPlan(
     }
   }
 
+  if (!hasBaseManifest && !fairExperience && !tattooExperience) {
+    const hero = isRecord(proposal.hero) ? proposal.hero : null;
+    const identity = isRecord(proposal.identity) ? proposal.identity : null;
+    const whyGo = modules.find((module) => module.type === 'whyGo');
+    const currentScheduleItems = scheduleItemRecords(proposal);
+    if (schedule && currentScheduleItems.length) {
+      const dateText = identity ? safeText(identity.dateText) : undefined;
+      schedule.subtitle = dateText
+        ? `Official event hours and current program details for ${dateText}.`
+        : 'Official event hours and current program details.';
+      schedule.sourceIds = sourceIdsForScheduleItems(currentScheduleItems);
+    }
+
+    const experienceCandidates = plan.highlights.length >= 3
+      ? plan.highlights.slice(0, 4)
+      : plan.traditions.length >= 2
+        ? plan.traditions.slice(0, 4)
+        : [];
+    if (hero && identity && whyGo && experienceCandidates.length) {
+      const experienceLabels = experienceCandidates.map((item) => (
+        item.title.replace(/^The\s+/i, '').replace(/^Independent\s+/i, '').toLowerCase()
+      ));
+      const place = safeText(identity.venue) ?? safeText(identity.location);
+      const experienceList = joinedList(experienceLabels);
+      hero.tagline = `${eventName} brings ${experienceList} together${place ? ` at ${place}` : ''}.`;
+      whyGo.headline = `Build your visit around ${experienceList}.`;
+      whyGo.summary = `${eventName} centers the day on ${experienceList}${place ? ` at ${place}` : ''}. Use the confirmed hours and practical details to shape the visit.`;
+      whyGo.audienceGroups = [{
+        id: 'audience-event-experience',
+        title: 'What you will find',
+        tone: 'water',
+        items: experienceCandidates.map((item) => item.title),
+        sourceIds: sourceIdsForSnapshots(
+          experienceCandidates.flatMap((item) => item.sourceSnapshotIds),
+          snapshots,
+          proposal.sources,
+        ),
+      }];
+    }
+  }
+
   const highlightsModule = modules.find((module) => module.type === 'highlights');
   const highlightModuleSourceIds = highlightsModule && Array.isArray(highlightsModule.items)
     ? [...new Set(highlightsModule.items.filter(isRecord).flatMap((item) => stringArray(item.sourceIds)))]
@@ -1594,7 +1635,11 @@ function buildNewManifest(
     state,
   );
   const planLocation = [venue, location].filter(Boolean).join(', ');
-  const description = generalOverviewText(getNestedValue(values, 'identity.description')) ?? '';
+  const descriptionCandidate =
+    generalOverviewText(getNestedValue(values, 'identity.description')) ?? '';
+  const description = slugify(descriptionCandidate) === slugify(name)
+    ? ''
+    : descriptionCandidate;
   const timezone = safeText(getNestedValue(values, 'timing.timezone')) ?? '';
   const sources = mergedSources(undefined, input.snapshots);
   const generatedSchedule = scheduleItems(input.scheduleCandidates, input.snapshots, Number(startsOn.slice(0, 4)) || undefined);

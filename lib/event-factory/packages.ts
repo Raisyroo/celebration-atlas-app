@@ -515,7 +515,14 @@ export async function getEventFactoryPackagePreview(
   packageId: string,
 ): Promise<EventFactoryPackagePreview> {
   const packageRow = await getPackage(packageId);
-  const validation = validateEventPageContentReadiness(packageRow.page_manifest);
+  const validation = validateEventPageContentReadiness(
+    packageRow.page_manifest,
+    {
+      allowLegacyStructure:
+        packageRow.status === "published"
+        || Boolean(packageRow.supersedes_package_id),
+    },
+  );
   if (!validation.ok) {
     throw new Error(`Event package preview is invalid: ${validation.errors.join(" ")}`);
   }
@@ -545,7 +552,14 @@ export async function getPublicEventFactoryPackagePreview(
   if (!PUBLIC_PREVIEW_STATUSES.has(packageRow.status)) {
     throw new Error("This event package is not available for read-only review.");
   }
-  const validation = validateEventPageContentReadiness(packageRow.page_manifest);
+  const validation = validateEventPageContentReadiness(
+    packageRow.page_manifest,
+    {
+      allowLegacyStructure:
+        packageRow.status === "published"
+        || Boolean(packageRow.supersedes_package_id),
+    },
+  );
   if (!validation.ok) {
     throw new Error(`Event package preview is invalid: ${validation.errors.join(" ")}`);
   }
@@ -765,7 +779,10 @@ export async function approveAndPublishEventFactoryPackage(args: {
     throw new Error("This package is not ready for approval and publication.");
   }
 
-  const validation = validateEventPageContentReadiness(packageRow.page_manifest);
+  const validation = validateEventPageContentReadiness(
+    packageRow.page_manifest,
+    { allowLegacyStructure: Boolean(packageRow.supersedes_package_id) },
+  );
   if (!validation.ok) throw new Error(`Reviewed Event Hub manifest is invalid: ${validation.errors.join(" ")}`);
   if (!validation.artPending) assertReviewedVisualAsset(packageRow.art_asset);
 

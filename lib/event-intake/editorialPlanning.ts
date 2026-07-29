@@ -109,15 +109,23 @@ const HIGHLIGHT_TOPICS: Array<{
     kicker: 'Beyond the booths',
     title: 'Entertainment throughout the weekend',
     pattern: /entertainment|sideshow|warrior dance|caricature|face painting/i,
-    roles: ['program', 'identity'],
+    roles: ['program', 'identity', 'schedule', 'other'],
   },
   {
     id: 'marketplace',
     kind: 'marketplace',
-    kicker: 'Convention marketplace',
+    kicker: 'Vendor marketplace',
     title: 'Independent vendors and makers',
     pattern: /visit our vendors|vendors?|vendor booth|marketplace/i,
-    roles: ['participants', 'identity'],
+    roles: ['participants', 'identity', 'schedule', 'other'],
+  },
+  {
+    id: 'family-activities',
+    kind: 'community',
+    kicker: 'For younger visitors',
+    title: 'Kids’ crafts and activities',
+    pattern: /kid(?:s|[’']s)?\s+(?:craft|activity)|children[’']?s\s+(?:craft|activity)|family\s+(?:craft|activity)|youth\s+(?:craft|activity)/i,
+    roles: ['program', 'identity', 'schedule', 'other'],
   },
   {
     id: 'livestock-showmanship',
@@ -167,6 +175,7 @@ function cleanText(value: string, limit = 500) {
   if (SPONSOR_LANGUAGE.test(value)) return '';
   const text = value
     .replace(/\bINFO(?:RMATION)?\s*:.*$/i, '')
+    .replace(/([.!?])\s*[.!?]+/g, '$1')
     .replace(/\s+/g, ' ')
     .trim();
   if (text.length <= limit) return text;
@@ -431,6 +440,31 @@ function matchingExcerpt(text: string, pattern: RegExp) {
   return cleanText(selected.join(' '), 420);
 }
 
+function focusedHighlightSummary(topicId: string, summary: string) {
+  if (topicId === 'marketplace') {
+    const vendorCount = summary.match(
+      /\b(?:over|more than)\s+\d+\s+(?:artist(?:s|ic)?(?:\s+and)?\s+)?marketplace vendors?\b/i,
+    );
+    if (vendorCount) {
+      return `The fair brings together ${vendorCount[0].toLowerCase()}.`;
+    }
+  }
+  if (
+    topicId === 'entertainment'
+    && /\bfood\b/i.test(summary)
+    && /\b(?:musical entertainment|live music)\b/i.test(summary)
+  ) {
+    return 'Food and musical entertainment add to the event experience.';
+  }
+  if (
+    topicId === 'family-activities'
+    && /\bkid(?:s|[’']s)?\s+(?:craft|activity)/i.test(summary)
+  ) {
+    return 'The event includes a kids’ craft and activity area.';
+  }
+  return summary;
+}
+
 function traditions(
   snapshots: SynthesisSourceSnapshot[],
   roles: Map<string, EditorialSourceRole>,
@@ -512,7 +546,10 @@ function highlights(
         : [];
       const summary = exhibitCategories.length >= 4
         ? `Exhibit categories include ${exhibitCategories.join(', ')}.`
-        : matchingExcerpt(text, topic.pattern);
+        : focusedHighlightSummary(
+            topic.id,
+            matchingExcerpt(text, topic.pattern),
+          );
       if (!summary) continue;
       return [{
         id: `highlight-${topic.id}`,

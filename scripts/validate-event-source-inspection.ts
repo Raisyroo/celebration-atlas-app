@@ -9,6 +9,7 @@ import {
 } from '../lib/event-intake/sourceBundlePayload.ts';
 import { selectBoundedOfficialSourceLinks } from '../lib/event-intake/sourceCollection.ts';
 import {
+  scheduleItemsFromEventHoursSegments,
   scheduleItemsFromFooEventsListing,
   scheduleItemsFromHeadingDatePairs,
   scheduleItemsFromSaffireResponse,
@@ -233,6 +234,26 @@ assert(headingPairItems[0]?.title === 'Monster Trucks', 'All-caps schedule headi
 assert(headingPairItems[0]?.startsAt === '2026-08-18T23:00:00.000Z', 'Heading/date-pair local time was not converted with the event timezone.');
 assert(headingPairItems[0]?.category === 'grandstand', 'Fair main-event taxonomy was not applied to heading/date-pair rows.');
 assert(headingPairItems[1]?.sourceLocator.adapter === 'heading-date-pair-v1', 'Heading/date-pair source provenance is missing.');
+
+const eventHoursItems = scheduleItemsFromEventHoursSegments({
+  ...genericScheduleHeadingFixture,
+  candidate: {
+    ...genericScheduleHeadingFixture.candidate,
+    name: 'Shelby Township Art Fair',
+    locationName: 'River Bends Park',
+    startDate: '2026-08-08',
+    endDate: '2026-08-09',
+  },
+  contentSegments: [
+    { kind: 'heading', text: 'When' },
+    { kind: 'heading', text: '10 AM-5 PM Saturday, Aug. 8, 2026' },
+    { kind: 'heading', text: '10 AM-5 PM Sunday, Aug. 9, 2026' },
+  ],
+});
+assert(eventHoursItems.length === 2, 'Explicit event-day hours did not produce one retained schedule row per day.');
+assert(eventHoursItems[0]?.startsAt === '2026-08-08T14:00:00.000Z' && eventHoursItems[0]?.endsAt === '2026-08-08T21:00:00.000Z', 'Event-day hours were not converted from Michigan local time.');
+assert(eventHoursItems[0]?.venue === 'River Bends Park', 'Event-day hours did not retain the official venue.');
+assert(eventHoursItems[1]?.sourceLocator.adapter === 'event-hours-segment-v1', 'Event-day hour provenance is missing.');
 
 const fooEventsItems = scheduleItemsFromFooEventsListing(`<!doctype html><html><body><table><tr><th colspan="3">July 2026</th></tr><tr class="fooevents-event-listing-single"><td><div class="fooevents-event-listing-date-month">Jul</div><div class="fooevents-event-listing-date-day">23</div></td><td><h3><a href="/product/quilt-show/">Quilt Show</a></h3><p class="fooevents-event-listing-compact-location"><strong>Central Park Place</strong></p><span class="event-time">09:00 a.m. – 07:00 p.m.</span></td></tr><tr class="fooevents-event-listing-single"><td><div class="fooevents-event-listing-date-month">Jul</div><div class="fooevents-event-listing-date-day">25</div></td><td><h3><a href="/product/coast-guard-city-usa-run/">Coast Guard City USA Run</a></h3><span class="event-time">07:30 a.m. – 00:00</span></td></tr></table></body></html>`, multiArticleHomeFixture);
 assert(fooEventsItems.length === 2, 'FooEvents compact listings did not produce one candidate per timed event row.');

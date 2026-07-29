@@ -309,6 +309,134 @@ async function validateMigrationServices(migration: string) {
   }
 }
 
+async function validateContentGuardMigration(migration: string) {
+  const db = new PGlite();
+  try {
+    await db.exec(`
+      create role anon nologin;
+      create role authenticated nologin;
+      create role service_role nologin;
+      create or replace function public.atlas_assert_service_role()
+      returns void language plpgsql security definer set search_path = ''
+      as $$ begin return; end; $$;
+      create table public.event_factory_packages (
+        id uuid primary key default gen_random_uuid(),
+        status text not null,
+        supersedes_package_id uuid,
+        page_manifest jsonb not null,
+        readiness_checks jsonb not null default '{}'::jsonb
+      );
+    `);
+    const strictManifest = {
+      schemaVersion: 1,
+      id: "event-page-content-guard",
+      eventId: "content-guard",
+      slug: "content-guard",
+      recipe: "simpleEvent",
+      lifecycle: "upcoming",
+      identity: {
+        name: "Content Guard Art Fair",
+        shortName: "Content Guard",
+        location: "River Park, Michigan",
+        dateText: "August 8-9, 2026",
+        startsOn: "2026-08-08",
+        endsOn: "2026-08-09",
+        timezone: "America/Detroit",
+      },
+      hero: {
+        imageSrc: "",
+        imageAlt: "",
+        eyebrow: "Event Hub",
+        tagline: "Artists, live music, and family activities fill a weekend at River Park.",
+      },
+      navigation: [
+        { id: "nav-why", targetModuleId: "why-go" },
+        { id: "nav-schedule", targetModuleId: "schedule" },
+        { id: "nav-highlights", targetModuleId: "highlights" },
+        { id: "nav-plan", targetModuleId: "plan" },
+      ],
+      modules: [
+        {
+          id: "why-go",
+          type: "whyGo",
+          headline: "Build a day around artists, music, and hands-on activities.",
+          summary: "Content Guard Art Fair brings artists, live music, and family activities together for a practical weekend visit.",
+          metrics: [],
+          audienceGroups: [{ id: "audience", sourceIds: ["official"] }],
+        },
+        {
+          id: "schedule",
+          type: "schedule",
+        },
+        {
+          id: "highlights",
+          type: "highlights",
+          items: [
+            { id: "artists", sourceIds: ["official"] },
+            { id: "music", sourceIds: ["official"] },
+            { id: "family", sourceIds: ["official"] },
+          ],
+        },
+        {
+          id: "plan",
+          type: "planVisit",
+          details: [
+            { id: "location", sourceIds: ["official"] },
+            { id: "dates", sourceIds: ["official"] },
+          ],
+        },
+      ],
+      scheduleItems: [{ id: "hours", sourceIds: ["official"] }],
+      sources: [{ id: "official" }],
+    };
+    const shellManifest = structuredClone(strictManifest);
+    shellManifest.navigation = shellManifest.navigation.filter(
+      (item) => item.targetModuleId !== "highlights",
+    );
+    shellManifest.modules = shellManifest.modules.filter(
+      (module) => module.type !== "highlights",
+    );
+    const legacyPublished = await db.query<{ id: string }>(`
+      insert into public.event_factory_packages (status, page_manifest)
+      values ('published', $1::jsonb)
+      returning id::text
+    `, [JSON.stringify(shellManifest)]);
+
+    await db.exec(migration);
+
+    const ready = await db.query<{ ready: boolean }>(
+      "select public.atlas_event_factory_content_ready_v2($1::jsonb) as ready",
+      [JSON.stringify(strictManifest)],
+    );
+    assert.equal(ready.rows[0]?.ready, true);
+    await assert.rejects(
+      db.query(`
+        insert into public.event_factory_packages (status, page_manifest)
+        values ('assembling', $1::jsonb)
+      `, [JSON.stringify(shellManifest)]),
+      /four substantive, source-backed Event Hub topics/,
+    );
+    await db.query(`
+      insert into public.event_factory_packages (status, page_manifest)
+      values ('assembling', $1::jsonb)
+    `, [JSON.stringify(strictManifest)]);
+    await assert.rejects(
+      db.query(`
+        insert into public.event_factory_packages (status, page_manifest)
+        values ('published', $1::jsonb)
+      `, [JSON.stringify(shellManifest)]),
+      /four substantive, source-backed Event Hub topics/,
+    );
+    await db.query(`
+      update public.event_factory_packages
+      set readiness_checks = '{"legacyChecked": true}'::jsonb
+      where id = $1::uuid
+    `, [legacyPublished.rows[0]?.id]);
+  } finally {
+    await db.close();
+  }
+}
+
 async function main() {
   assert.deepEqual(
     {
@@ -340,7 +468,10 @@ async function main() {
   imageFreeManifest.hero.imageAlt = "";
   delete imageFreeManifest.hero.credit;
   const strictValidation = validateEventPageManifest(imageFreeManifest);
-  const contentValidation = validateEventPageContentReadiness(imageFreeManifest);
+  const contentValidation = validateEventPageContentReadiness(
+    imageFreeManifest,
+    { allowLegacyStructure: true },
+  );
   assert.equal(strictValidation.ok, true, "a complete manifest must remain valid with a deliberately empty hero pair");
   assert.equal(contentValidation.ok, true);
   assert.equal(contentValidation.ok && contentValidation.artPending, true);
@@ -362,6 +493,7 @@ async function main() {
     stages,
     countyOperator,
     migration,
+    contentGuardMigration,
     specification,
   ] = await Promise.all([
     read("components/EventHub.tsx"),
@@ -377,6 +509,7 @@ async function main() {
     read("lib/michigan-completion/stageRegistry.ts"),
     read("lib/michigan-completion/countyOperator.ts"),
     read("supabase/migrations/027_art_optional_event_hubs.sql"),
+    read("supabase/migrations/030_enforce_new_event_content_readiness.sql"),
     read("docs/EVENT_IMAGE_SPECIFICATION.md"),
   ]);
 
@@ -437,6 +570,12 @@ async function main() {
   assert(!/\binsert\s+into\s+public\.events\b/i.test(migration));
   assert(!migration.includes("atlas_materialize_event_factory_package("));
   assert(!migration.includes("atlas_review_event_factory_package("));
+  assert(contentGuardMigration.includes("atlas_event_factory_content_ready_v2"));
+  assert(contentGuardMigration.includes("atlas_guard_new_event_factory_content_trigger"));
+  assert(contentGuardMigration.includes("perform public.atlas_assert_service_role();"));
+  assert(contentGuardMigration.includes("from public, anon, authenticated;"));
+  assert(!/\bcreate\s+table\b/i.test(contentGuardMigration), "migration 030 must add no table");
+  assert(!/\b(?:insert|update|delete)\s+(?:into\s+|from\s+)?public\.(?:events|event_pages|event_page_versions|event_media)\b/i.test(contentGuardMigration));
 
   assert(specification.includes("Exactly 1024 x 1536 pixels"));
   assert(specification.includes("never cropped"));
@@ -447,6 +586,7 @@ async function main() {
     assert(!/image_gen\.|imagegen\(|generateImage\(/i.test(source), "manual art pathway must not invoke generation tools");
   }
   await validateMigrationServices(migration);
+  await validateContentGuardMigration(contentGuardMigration);
 
   console.log(
     "Art-optional Event Hub validations passed: non-art safeguards, image-free rendering, exact asset validation, audited attachment/removal, stable URL, county projection, and zero model/image-generation actions.",
