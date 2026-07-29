@@ -205,6 +205,37 @@ blocking exception remains open. A batch may remain
 `waiting_for_exceptions` while clean packages from that batch proceed through
 individual human approval.
 
+The retained five-event Macomb private run
+`37942091-94d7-4599-ae36-ffbf4bf4096a` received one event-scoped deterministic
+resume on July 29, 2026. The run remained `waiting_for_exceptions`, used zero
+model tokens, and invoked no publication or image action. The recheck produced
+four deterministic syntheses, three new diligence cases, and thirteen retained
+verification-evidence rows:
+
+- Shelby Township Art Fair reached valid, conflict-free private content
+  (`936e3e3c-8e30-46c5-8a31-a35e30dc68af`) and stopped before package creation
+  because diligence case `2d41f85d-4c19-4aba-9dba-58f8cbdd6aec` still needs
+  human verification.
+- Shorewood Kiwanis Harper Charity Cruise reached valid, conflict-free private
+  content (`82a46b17-86e5-45fc-8208-2983a84d7908`) and stopped before package
+  creation because diligence case `cc4bb03d-b09d-4a0c-90a0-b6f58e1a8314`
+  still needs human verification.
+- St. Clair Shores Memorial Day Parade selected the official May 24, 2026
+  edition without an active date conflict, but content remains blocked on a
+  missing location and timezone.
+- Assumption GreekFest no longer has an active synthesis conflict, but current
+  dates, location, and timezone remain missing.
+- Holland Ponds Migratory Bird Day remains quarantined for weak current-edition
+  evidence.
+
+Four obsolete archive-wide conflict exceptions were resolved through
+`atlas_transition_michigan_completion_exception` only after current-version
+checkpoints proved the blockers gone. Eleven legitimate verification, evidence,
+content, and package-readiness exceptions remain open. Four retained bundles
+advanced to `draft_ready`; no candidate, candidate source, source snapshot,
+source claim, canonical event, package, Event Page, page version, media record,
+or visual workflow was created or changed by the resume.
+
 ## Hero Image Factory
 
 Migration `014_event_visual_workflows.sql` and the Control Desk Hero Image Factory implement the fast visual workflow:
@@ -306,13 +337,20 @@ The package, canonical event, immutable Event Hub v1, approved media record, and
 
 ## Current Next Milestone
 
-Apply the event-scoped continuation policy to the retained five-event Macomb
-pilot. Review the two retained human-verification cases for Holland Ponds and
-Assumption GreekFest separately. The evidence-selection policy deterministically
-removes historical and unrelated-metadata false conflicts from the active view,
-but it does not manufacture missing current-edition facts or self-verify an
-event. Clean events may advance independently after their own review items are
-closed; unresolved events stay quarantined.
+Review the two strongest new diligence cases separately: Shorewood Kiwanis
+Harper Charity Cruise first, then Shelby Township Art Fair. Each case must be
+decided from its retained evidence through the existing Event Factory review
+action. Do not clear Holland Ponds, Assumption GreekFest, or the Memorial Day
+Parade until their event-specific missing facts are supplied by retained
+sources. After a diligence decision, close only that event's proven-obsolete
+completion exceptions and resume the same immutable run; do not wait for the
+other events in the batch.
+
+Continue county growth in bounded five-event cohorts. Successful events may
+advance to individual private package review while failed events enter the
+separate verification queue. A cohort's aggregate `waiting_for_exceptions`
+status is not a reason to hold a clean event, but no event bypasses its own
+diligence or explicit human package approval.
 
 Bay-Rama, Richmond, and Memphis remain excluded. Any later dry run or private
 run requires its own explicit authorization. No county operation may
