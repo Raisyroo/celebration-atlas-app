@@ -866,11 +866,18 @@ async function validateResumeReplayContinuation(args: Awaited<ReturnType<typeof 
 }
 
 async function validateMigrationAndPersistentBoundaries() {
-  const [migration, runtime] = await Promise.all([
+  const [migration, correctionMigration, runtime] = await Promise.all([
     readFile(
       path.join(
         ROOT,
         "supabase/migrations/026_generalize_county_completion_staging.sql",
+      ),
+      "utf8",
+    ),
+    readFile(
+      path.join(
+        ROOT,
+        "supabase/migrations/028_fix_county_completion_identity_target_type.sql",
       ),
       "utf8",
     ),
@@ -902,6 +909,32 @@ async function validateMigrationAndPersistentBoundaries() {
   assert.doesNotMatch(migration, /insert into public\.events/);
   assert.doesNotMatch(
     migration,
+    /atlas_activate_event_factory_publication|atlas_publish_event_page_version/,
+  );
+  assert.match(
+    correctionMigration,
+    /(?:^|\n)begin;\s*[\s\S]*\scommit;\s*$/i,
+    "Migration 028 must correct the identity target comparison and privileges atomically.",
+  );
+  assert.match(
+    correctionMigration,
+    /action\.target_entity_id = p_candidate_id::text/,
+  );
+  assert.match(
+    correctionMigration,
+    /action\.target_entity_id = p_candidate_id/,
+  );
+  assert.match(
+    correctionMigration,
+    /revoke all on function public\.atlas_clear_county_completion_candidate_identity[\s\S]*from public, anon, authenticated/,
+  );
+  assert.match(
+    correctionMigration,
+    /grant execute on function public\.atlas_clear_county_completion_candidate_identity[\s\S]*to service_role/,
+  );
+  assert.doesNotMatch(correctionMigration, /insert into public\.events/);
+  assert.doesNotMatch(
+    correctionMigration,
     /atlas_activate_event_factory_publication|atlas_publish_event_page_version/,
   );
   assert.match(
@@ -942,13 +975,22 @@ async function validateMigrationAndPersistentBoundaries() {
 }
 
 async function validateMigrationExecution() {
-  const migration = await readFile(
-    path.join(
-      ROOT,
-      "supabase/migrations/026_generalize_county_completion_staging.sql",
+  const [migration, correctionMigration] = await Promise.all([
+    readFile(
+      path.join(
+        ROOT,
+        "supabase/migrations/026_generalize_county_completion_staging.sql",
+      ),
+      "utf8",
     ),
-    "utf8",
-  );
+    readFile(
+      path.join(
+        ROOT,
+        "supabase/migrations/028_fix_county_completion_identity_target_type.sql",
+      ),
+      "utf8",
+    ),
+  ]);
   const database = new PGlite();
   try {
     await database.exec(`
@@ -992,7 +1034,7 @@ async function validateMigrationExecution() {
         operation_run_id uuid not null references public.atlas_operation_runs(id),
         action_type text not null,
         target_entity_type text,
-        target_entity_id text,
+        target_entity_id uuid,
         lifecycle_state text not null,
         source_references jsonb not null default '[]'::jsonb,
         requested_payload jsonb not null default '{}'::jsonb,
@@ -1052,6 +1094,7 @@ async function validateMigrationExecution() {
       $$;
     `.replace(/^ {6}/gm, ""));
     await database.exec(migration);
+    await database.exec(correctionMigration);
 
     const inventoryHash = "1".repeat(64);
     const payloadHash = "2".repeat(64);
