@@ -68,11 +68,19 @@ The service role has direct read access for Atlas Control views. All database mu
 
 - `atlas_create_event_source_bundle`
 - `atlas_add_event_source_snapshot`
+- `atlas_reprocess_event_source_schedule`
 - `atlas_transition_event_source_bundle`
 - `atlas_attach_event_source_bundle_candidate`
 - `atlas_list_event_source_bundles`
 
 Direct access is revoked from `anon`, `authenticated`, and `service_role` before the minimum read and execute permissions are granted. Every HTTP route independently requires Atlas administrator authorization.
+
+When a newer deterministic parser can recover schedule rows from an already
+retained immutable snapshot, `atlas_reprocess_event_source_schedule` binds the
+derived rows to the exact snapshot SHA-256. It requires the bundle to be
+reopened, inserts only new deduplicated private schedule candidates, and
+appends a `schedule_reprocessed` audit action. It cannot alter source evidence,
+canonical events, packages, pages, media, or publication state.
 
 ## Collection workflow
 

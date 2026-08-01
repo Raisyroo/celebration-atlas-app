@@ -300,7 +300,7 @@ function staticScheduleCategory(title: string) {
   if (/livestock|showmanship|beef|dairy cattle|goat|poultry|rabbit|sheep|swine|horse(?: and| &)? pony/.test(signal)) return 'livestock';
   if (/exhibit|home arts?|horticulture|needlework|photography|woodworking/.test(signal)) return 'exhibits';
   if (/rodeo|monster trucks?|demolition derby|truck|tractor|pull|bump|figure\s*8/.test(signal)) return 'grandstand';
-  if (/kid|family|youth|child|museum/.test(signal)) return 'family';
+  if (/kid|family|youth|child|museum|balloon/.test(signal)) return 'family';
   if (/competition|contest/.test(signal)) return 'competition';
   if (/award|queen|coronation|final|winner/.test(signal)) return 'awards';
   return 'community';
@@ -328,10 +328,12 @@ function clockValue(hoursValue: string, minutesValue: string | undefined, meridi
 }
 
 function parseStaticScheduleLine(value: string) {
-  const split = text(value).match(/^(.+?)\s+[-\u2013\u2014]\s+(.+)$/);
-  if (!split) return null;
-  const timeText = split[1].trim();
-  const match = timeText.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?(?:\s*[-\u2013\u2014]\s*(?:(\d{1,2})(?::(\d{2}))?\s*(AM|PM)|close))?$/i);
+  const normalized = text(value);
+  const split = normalized.match(/^(.+?)\s+[-\u2013\u2014]\s+(.+)$/);
+  const separatedTimeText = split?.[1].trim() ?? '';
+  const separatedMatch = separatedTimeText.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?(?:\s*[-\u2013\u2014]\s*(?:(\d{1,2})(?::(\d{2}))?\s*(AM|PM)|close))?$/i);
+  const compactMatch = normalized.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?(?:\s*[-\u2013\u2014]\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM))?\s+(.+)$/i);
+  const match = separatedMatch ?? compactMatch;
   if (!match) return null;
 
   let startMeridiem = match[3]?.toUpperCase() ?? '';
@@ -345,12 +347,20 @@ function parseStaticScheduleLine(value: string) {
   const startValue = clockValue(match[1], match[2], startMeridiem);
   const endValue = match[4] && endMeridiem ? clockValue(match[4], match[5], endMeridiem) : null;
   if (startValue === null) return null;
+  const rawTitle = separatedMatch ? split![2].trim() : compactMatch![7].trim();
+  const venuePrefix = rawTitle.match(
+    /^(MAINSTAGE|(?:[A-Z][A-Z0-9&.'-]*\s+){0,2}(?:STAGE|GROVE|PAVILION|TENT|PLAZA|AREA))\s+(.+)$/,
+  );
+  const venue = venuePrefix ? readableScheduleTitle(venuePrefix[1]) : null;
   return {
     startValue,
     endValue,
     endNextDay: endValue !== null && endValue < startValue,
-    timeText,
-    title: split[2].trim(),
+    timeText: separatedMatch
+      ? separatedTimeText
+      : normalized.slice(0, normalized.length - rawTitle.length).trim(),
+    title: venuePrefix ? venuePrefix[2].trim() : rawTitle,
+    venue,
   };
 }
 
@@ -564,7 +574,7 @@ export function scheduleItemsFromStaticSegments(
       ? null
       : zonedDateTime(localDateParts(parsed.endNextDay ? addDay(currentDate) : currentDate, parsed.endValue), timeZone);
     if (!startsAt) continue;
-    const venue = cleanVenue(venueMatch?.[1] ?? '', cleanedTitle.blockedTerms);
+    const venue = cleanVenue(parsed.venue ?? venueMatch?.[1] ?? '', cleanedTitle.blockedTerms);
     const dedupeKey = createHash('sha256')
       .update(JSON.stringify([cleanedTitle.title.toLowerCase(), startsAt, endsAt, venue?.toLowerCase() ?? '']))
       .digest('hex');
@@ -576,7 +586,7 @@ export function scheduleItemsFromStaticSegments(
       dateText: currentDate,
       timezone: timeZone,
       venue,
-      category: staticScheduleCategory(cleanedTitle.title),
+      category: staticScheduleCategory(`${cleanedTitle.title} ${venue ?? ''}`),
       tags: [],
       details: null,
       confidence: 'verified',
@@ -591,6 +601,36 @@ export function scheduleItemsFromStaticSegments(
     if (output.length >= MAX_SCHEDULE_ITEMS) break;
   }
   return output;
+}
+
+export function scheduleItemsFromStaticHtml(
+  rawHtml: string,
+  inspection: OfficialEventSourceInspection,
+  timeZone = 'America/Detroit',
+) {
+  const $ = cheerio.load(rawHtml);
+  const main = $('main').first();
+  const root = main.length ? main : $('body').first();
+  const contentSegments: OfficialEventSourceInspection['contentSegments'] = [];
+  root.find('h1,h2,h3,h4,h5,h6,p,li').each((_, element) => {
+    const value = text($(element).text());
+    if (!value) return;
+    const tagName = String((element as { tagName?: string }).tagName ?? '').toLowerCase();
+    contentSegments.push({
+      kind: /^h[1-6]$/.test(tagName) ? 'heading' : tagName === 'li' ? 'listItem' : 'paragraph',
+      text: value,
+    });
+  });
+  return scheduleItemsFromStaticSegments({
+    ...inspection,
+    contentSegments,
+  }, timeZone).map((item) => ({
+    ...item,
+    sourceLocator: {
+      ...item.sourceLocator,
+      adapter: 'static-html-day-list-v1',
+    },
+  }));
 }
 
 const FOOEVENTS_MONTH_NUMBER: Record<string, number> = {
@@ -798,6 +838,7 @@ export async function collectDynamicSchedule(args: {
       ...eventHours,
       ...scheduleItemsFromHeadingDatePairs(args.inspection, timeZone),
       ...scheduleItemsFromStaticSegments(args.inspection, timeZone),
+      ...scheduleItemsFromStaticHtml(args.rawHtml, args.inspection, timeZone),
     ];
     return [...new Map(items.map((item) => [item.dedupeKey, item])).values()]
       .slice(0, MAX_SCHEDULE_ITEMS);

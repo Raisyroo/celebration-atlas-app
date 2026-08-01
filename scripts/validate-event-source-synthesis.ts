@@ -1124,6 +1124,28 @@ const shelbyInput: EventSourceSynthesisInput = {
       { kind: 'paragraph', text: 'The Shelby Township Art Fair will celebrate its 43rd anniversary in 2026. This includes over 120 artist and marketplace vendors. There is also food, musical entertainment, and a kid’s craft and activity area.' },
       { kind: 'paragraph', text: 'Entry and parking is free at River Bends Park, with additional parking and free shuttle buses nearby.' },
     ],
+  }, {
+    id: 'shelby-applications',
+    sequenceNumber: 2,
+    sourceKind: 'registration',
+    canonicalUrl: 'https://artfair.example/applications',
+    pageTitle: 'Applications',
+    contentHash: 'e'.repeat(64),
+    fetchedAt: '2026-07-29T12:00:00.000Z',
+    contentSegments: [
+      { kind: 'paragraph', text: 'The application period is closed. This juried outdoor event accepts original handmade work only.' },
+    ],
+  }, {
+    id: 'shelby-artists',
+    sequenceNumber: 3,
+    sourceKind: 'other',
+    canonicalUrl: 'https://artfair.example/artists-and-vendors',
+    pageTitle: 'Artists & Vendors',
+    contentHash: 'f'.repeat(64),
+    fetchedAt: '2026-07-29T13:00:00.000Z',
+    contentSegments: [
+      { kind: 'paragraph', text: 'More than 120 artist and marketplace vendors show original work at the fair.' },
+    ],
   }],
   claims: [
     ['claim-shelby-name', 'identity.name', 'Shelby Township Art Fair'],
@@ -1197,6 +1219,17 @@ assert.equal(
   shelbyManifest.modules.find((module) => module.type === 'highlights')?.type,
   'highlights',
   'Official artist, entertainment, and family evidence must create Highlights.',
+);
+const shelbyPlan = shelbyManifest.modules.find((module) => module.type === 'planVisit');
+const shelbyHighlights = shelbyManifest.modules.find((module) => module.type === 'highlights');
+assert(shelbyPlan?.type === 'planVisit' && shelbyHighlights?.type === 'highlights');
+assert(
+  shelbyPlan.links.some((link) => link.label === 'Applications'),
+  'An applications page must use a truthful label that does not imply registration is open.',
+);
+assert(
+  shelbyHighlights.links?.some((link) => link.label === 'Artists & vendors'),
+  'A marketplace source must not be labeled as a current-year directory without retained current-year proof.',
 );
 assert.equal(shelbyContent.ok, false, 'A source-rich page must still fail when its core visitor copy only repeats one experience list.');
 assert(

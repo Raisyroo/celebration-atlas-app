@@ -13,6 +13,7 @@ import {
   scheduleItemsFromFooEventsListing,
   scheduleItemsFromHeadingDatePairs,
   scheduleItemsFromSaffireResponse,
+  scheduleItemsFromStaticHtml,
   scheduleItemsFromStaticSegments,
 } from '../lib/event-intake/dynamicSchedule.ts';
 
@@ -211,6 +212,33 @@ assert(staticScheduleItems.length === 3, 'Static weekday schedule parsing did no
 assert(staticScheduleItems[0]?.startsAt === '2026-07-20T16:00:00.000Z' && staticScheduleItems[0]?.endsAt === '2026-07-20T22:00:00.000Z', 'Static time ranges were not converted from Michigan local time.');
 assert(staticScheduleItems[1]?.venue === 'Rimrock Crater', 'Static schedule venue text was not separated from its title.');
 assert(staticScheduleItems[2]?.endsAt === null, 'A closing-time placeholder was incorrectly converted into an invented time.');
+
+const staticHtmlItems = scheduleItemsFromStaticHtml(`<!doctype html><html><body><main>
+  <h2>2026 ENTERTAINMENT LINEUP</h2>
+  <h5>Saturday, August 8</h5>
+  <p>11 AM MAINSTAGE American Ages</p>
+  <p>1 PM HICKORY GROVE The Borderline 3</p>
+  <p>3 PM MAINSTAGE Street Angel - Fleetwood Mac Tribute</p>
+  <p>1-4 PM Balloon Artist</p>
+  <h5>Sunday, August 9</h5>
+  <p>11 AM MAINSTAGE Wayback Machine</p>
+  <p>1 PM HICKORY GROVE Steve and Trish</p>
+  <p>3 PM MAINSTAGE Magic Bus</p>
+  <p>1-4 PM Balloon Artist</p>
+</main></body></html>`, {
+  ...genericHomeFixture,
+  candidate: {
+    ...genericHomeFixture.candidate,
+    startDate: '2026-08-08',
+    endDate: '2026-08-09',
+  },
+});
+assert(staticHtmlItems.length === 8, 'Static HTML schedule parsing did not preserve repeated timed rows across separate event days.');
+assert(staticHtmlItems[0]?.title === 'American Ages' && staticHtmlItems[0]?.venue === 'Mainstage', 'A venue-prefixed static lineup row was not separated into title and venue.');
+assert(staticHtmlItems[1]?.title === 'The Borderline 3' && staticHtmlItems[1]?.venue === 'Hickory Grove', 'A multi-word venue prefix was not retained.');
+assert(staticHtmlItems.filter((item) => item.title === 'Balloon Artist').length === 2, 'An identical attraction scheduled on two days was incorrectly deduplicated.');
+assert(staticHtmlItems[3]?.startsAt === '2026-08-08T17:00:00.000Z' && staticHtmlItems[3]?.endsAt === '2026-08-08T20:00:00.000Z', 'A compact static time range was not converted from Michigan local time.');
+assert(staticHtmlItems[7]?.sourceLocator.adapter === 'static-html-day-list-v1', 'Static HTML schedule provenance is missing.');
 
 const headingPairItems = scheduleItemsFromHeadingDatePairs({
   ...genericScheduleHeadingFixture,

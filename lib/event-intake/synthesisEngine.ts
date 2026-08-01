@@ -406,6 +406,7 @@ function planLinkLabel(snapshot: SynthesisSourceSnapshot) {
   if (snapshot.sourceKind === 'tickets') return /admission|gate|pass/.test(signal) ? 'Admission' : 'Tickets';
   if (snapshot.sourceKind === 'registration') {
     if (/fair[ -]?book/.test(signal)) return 'Fair Book & entries';
+    if (/applications?/.test(signal)) return 'Applications';
     return /livestock|exhibit|entry|entries/.test(signal) ? 'Entries & registration' : 'Registration';
   }
   if (/\b(?:transit|shuttle)\b/.test(signal)) return 'Transit & shuttles';
@@ -603,7 +604,15 @@ function mergedSources(baseManifest: EventPageManifest | undefined, snapshots: S
     });
     knownUrls.add(snapshot.canonicalUrl);
   });
-  return baseSources;
+  const officialTypes = new Set<EventPageManifest['sources'][number]['type']>([
+    'officialWebsite',
+    'officialSocial',
+    'organizer',
+    'municipal',
+  ]);
+  return baseSources.sort((left, right) => (
+    Number(!officialTypes.has(left.type)) - Number(!officialTypes.has(right.type))
+  ));
 }
 
 function sourceIdsForSnapshots(
@@ -1171,7 +1180,7 @@ function applyEditorialPlan(
               : highlight.kind === 'contests'
                 ? 'Competition categories and terms'
                 : highlight.kind === 'marketplace'
-                  ? `${plan.currentEditionYear ?? 'Event'} vendor directory`
+                  ? 'Artists & vendors'
                   : highlight.kind === 'liveArt' || highlight.kind === 'entertainment'
                     ? lifecycle === 'completed' && plan.currentEditionYear
                       ? `${plan.currentEditionYear} entertainment archive`

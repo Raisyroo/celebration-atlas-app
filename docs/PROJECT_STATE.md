@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: July 29, 2026
+Last updated: August 1, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -44,9 +44,9 @@ Current public Event Hub coverage:
 
 The seven factory-published packages are at 100 percent readiness. Existing package and manifest fallbacks must remain valid while the generalized pipeline expands.
 
-The bounded Macomb completion pilot now retains nine open completion
-exceptions across events that still need facts and one private Shelby Township
-Art Fair package ready for human review. None authorizes canonicalization or
+The bounded Macomb completion pilot retains event-scoped completion exceptions
+for records that still need facts and one fully content-and-art-ready private
+Shelby Township Art Fair package v7. None authorizes canonicalization or
 publication.
 
 ## Event Factory
@@ -56,6 +56,15 @@ The reduced art-optional publication path is implemented. A fully verified, iden
 Forward-only migration `027_art_optional_event_hubs.sql` was deployed to the linked Supabase project on July 29, 2026, with local and remote migration parity verified through `027`. It adds no table. It keeps all functions service-role-only, makes an image-free package review-ready only after the seven non-art checks plus verified diligence and identity clearance pass, permits null media only for an actually empty hero during atomic activation, and creates immutable manual-art and art-removal revisions. It cannot approve a workflow or package, materialize a candidate, or publish a page by itself.
 
 Forward-only migration `030_enforce_new_event_content_readiness.sql` is also deployed, with local and remote history aligned through `030`. It adds no table or public write path. Its service-role-only trigger blocks new root Event Factory packages from entering private review or publication states unless they contain exactly four substantive, source-backed topics. Existing published compatibility fixtures and linked correction revisions remain valid.
+
+Forward-only migrations `031_reprocess_retained_source_schedule.sql` and
+`032_fix_retained_schedule_conflict_target.sql` are deployed with local and
+remote history aligned through `032`. They add no table or publication path.
+The service-role-only RPC can attach newly derived deterministic schedule rows
+to an exact retained snapshot SHA-256 while its private bundle is reopened,
+deduplicates every row, and appends an audit action. Shelby proved the path by
+recovering eight current entertainment rows from an already retained official
+Wix page without replacing evidence or touching public domain tables.
 
 The operating loop is:
 
@@ -309,6 +318,33 @@ candidate matches, public Event Pages and versions, media, visual workflows,
 and discovery remained unchanged. The structured after-state is retained at
 `artifacts/michigan-completion/macomb/shelby-editorial-canary-v1.json`.
 
+That failed economical attempt is now historical. On August 1, one authorized
+`gpt-5.6-sol-ultra` editorial pass used twelve retained sources and a ten-row
+current program. Eight bounded prose fields, two audience groups, and one
+Monster Mural Scout Spotlight passed every immutable-fact, citation, numeric,
+sponsor, research-narration, repetition, and manifest check with zero rejected
+fields. The exact accepted output was replayed without another model call only
+to regenerate immutable link metadata after the reusable generator stopped
+calling an archived exhibitor page a current-year directory and began labeling
+closed application pages neutrally.
+
+Accepted synthesis `aba8107e-efcf-480a-83c1-90e214294663` now backs private
+package v7 `2cad824e-2a7b-43db-a58b-d4bcb133efc9`. The package is
+`ready_for_review`, content-ready, art-ready, and still unpublished. Ray's
+finished 1024 x 1536 hero is retained in approved visual workflow
+`d96410cc-110b-470e-9357-f5f3cddf74f2`; sixteen official event and exhibitor
+thumbnails supplied the existing visual-workflow review record. The private
+preview contains Why Go, Schedule, Highlights, and Plan; its Schedule names all
+six musical acts, both stages, the balloon artist, and both days' hours. Plan
+links to the closed applications page without implying registration is open.
+Review at
+`https://celebration-atlas-app.vercel.app/event-preview/2cad824e-2a7b-43db-a58b-d4bcb133efc9`.
+Mobile `390x844` and desktop `1440x900` inspection found zero horizontal
+overflow and zero browser-console errors. Counts and stable hashes for
+canonical events, public Event Pages, public page versions, and media remained
+identical. No canonicalization or publication occurred. The structured audit
+is `artifacts/michigan-completion/macomb/shelby-ultra-canary-v2.json`.
+
 The county operator remains deterministic and zero-cost by default. A new
 explicit `--editorial` option creates a different immutable contract with one
 economical attempt and a 15,000-token ceiling per event; `--plan-only` can
@@ -417,11 +453,10 @@ The package, canonical event, immutable Event Hub v1, approved media record, and
 
 ## Current Next Milestone
 
-Shelby Township Art Fair package v2 is intentionally rejected and held. Before
-another explicitly authorized editorial attempt, confirm the AI Gateway can
-complete the bounded prompt within the existing timeout. Do not retry the
-failed call automatically, accept deterministic-v22 merely because it is
-structurally valid, or publish the rejected package.
+Human-review Shelby Township Art Fair package v7 in its private preview. The
+next action is an explicit approve-and-publish or reject decision from Ray; do
+not publish it automatically and do not spend another model call polishing it
+before that review.
 
 Next, apply the same official-first rule to Shorewood Kiwanis Harper Charity
 Cruise. Do not clear Holland Ponds, Assumption GreekFest, or the Memorial Day

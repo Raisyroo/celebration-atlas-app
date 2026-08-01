@@ -9,6 +9,7 @@ import {
 } from './sourceBundlePayload';
 import { selectBoundedOfficialSourceLinks } from './sourceCollection';
 import { collectDynamicSchedule } from './dynamicSchedule';
+import type { EventScheduleCandidatePayload } from './dynamicSchedule';
 import type {
   EventSourceCollectionSummary,
   EventSourceBundleSummary,
@@ -287,6 +288,25 @@ export async function transitionEventSourceBundle(args: {
     p_action: args.action,
     p_actor_identity: args.actorIdentity,
     p_notes: args.notes ?? null,
+  });
+  if (error) throw new Error(error.message);
+  return firstRpcRow(data);
+}
+
+export async function reprocessEventSourceSchedule(args: {
+  snapshotId: string;
+  expectedContentHash: string;
+  scheduleItems: EventScheduleCandidatePayload[];
+  parserVersion: string;
+  actorIdentity: string;
+}) {
+  const supabase = requireServiceClient();
+  const { data, error } = await supabase.rpc('atlas_reprocess_event_source_schedule', {
+    p_snapshot_id: args.snapshotId,
+    p_expected_content_hash: args.expectedContentHash,
+    p_schedule_items: args.scheduleItems,
+    p_parser_version: args.parserVersion,
+    p_actor_identity: args.actorIdentity,
   });
   if (error) throw new Error(error.message);
   return firstRpcRow(data);
