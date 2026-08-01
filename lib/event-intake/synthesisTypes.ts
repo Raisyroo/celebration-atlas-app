@@ -119,6 +119,11 @@ export type ModelEditorialReviewSummary = {
   changedTargets: string[];
   addedAudienceGroupCount: number;
   addedSpotlight: boolean;
+  authoringMode?: 'bounded_rewrite' | 'full_manifest';
+  authoredModuleIds?: string[];
+  authoredNavigationIds?: string[];
+  authoredScoutSuggestionIds?: string[];
+  rejectedClaimCount?: number;
   qualityChecks: {
     immutableFactsLocked: boolean;
     sourceIdsVerified: boolean;
@@ -128,6 +133,11 @@ export type ModelEditorialReviewSummary = {
     spotlightNarrativeSourceRequired: boolean;
     editorialQualityPassed: boolean;
     manifestValid: boolean;
+    fullManifestAuthored?: boolean;
+    scheduleFactsLocked?: boolean;
+    sourceRegistryLocked?: boolean;
+    imageReferencesLocked?: boolean;
+    allVisitorClaimsGrounded?: boolean;
   };
 };
 

@@ -1,0 +1,707 @@
+{
+  "manifest": {
+    "schemaVersion": 1,
+    "id": "event-page-shelby-township-art-fair-shelby-township-mi",
+    "eventId": "shelby-township-art-fair-shelby-township-mi",
+    "slug": "shelby-township-art-fair-shelby-township-mi",
+    "recipe": "multiDayFestival",
+    "lifecycle": "upcoming",
+    "identity": {
+      "name": "Shelby Township Art Fair",
+      "venue": "River Bends Park",
+      "endsOn": "2026-08-09",
+      "dateText": "August 8-9, 2026",
+      "location": "5700 22 Mile Rd. Shelby Charter Twp, MI",
+      "startsOn": "2026-08-08",
+      "timezone": "America/Detroit",
+      "shortName": "Shelby Township Art Fair"
+    },
+    "hero": {
+      "credit": "Celebration Atlas artwork",
+      "eyebrow": "Juried Outdoor Art Fair",
+      "tagline": "A juried outdoor show of original work beneath River Bends Park’s mature trees.",
+      "imageAlt": "Visitors browse original artwork in white tents beneath mature trees at a warm evening outdoor art fair.",
+      "imageSrc": "https://hmytrcorqkqvoaedvgbf.supabase.co/storage/v1/object/public/celebration-atlas-media/events/shelby-township-art-fair/hero/2026-shelby-township-art-fair-hero-039024c59060.png"
+    },
+    "navigation": [
+      {
+        "id": "nav-why-go",
+        "icon": "sparkles",
+        "label": "Why Go",
+        "targetModuleId": "why-go"
+      },
+      {
+        "id": "nav-program",
+        "icon": "schedule",
+        "label": "Program",
+        "targetModuleId": "weekend-program"
+      },
+      {
+        "id": "nav-around-the-fair",
+        "icon": "artists",
+        "label": "Explore",
+        "targetModuleId": "around-the-fair"
+      },
+      {
+        "id": "nav-plan",
+        "icon": "plan",
+        "label": "Plan",
+        "targetModuleId": "plan-your-visit"
+      }
+    ],
+    "modules": [
+      {
+        "id": "why-go",
+        "type": "whyGo",
+        "title": "Why Go",
+        "eyebrow": "Made by the exhibitors",
+        "headline": "Meet the people who made what you’re browsing.",
+        "summary": "Its 43rd year brings more than 120 artist and marketplace vendors, including local, regional, and national exhibitors.",
+        "metrics": [],
+        "audienceGroups": [
+          {
+            "id": "collectors-and-gift-hunters",
+            "title": "For collectors and gift hunters",
+            "tone": "water",
+            "items": [
+              "The juried show is limited to original, handmade work.",
+              "Resale products and commercial distributors are excluded."
+            ],
+            "sourceIds": [
+              "source-11-2cbf66e1"
+            ]
+          },
+          {
+            "id": "families-who-make",
+            "title": "For families who want to make",
+            "tone": "sunset",
+            "items": [
+              "Pair the Kids’ Zone art craft with the all-ages coloring mural.",
+              "Visit the balloon artist on Saturday or Sunday."
+            ],
+            "sourceIds": [
+              "source-8-f861b8bc",
+              "source-10-99b6c53e",
+              "source-12-22fb3533"
+            ]
+          }
+        ],
+        "spotlight": {
+          "title": "Scout spotlight: One mural, many hands",
+          "body": "Monster Mural turns coloring into a group project for all ages: kids and grown-ups can add their own color to a giant shared artwork.",
+          "scoutPose": "curious",
+          "sourceIds": [
+            "source-8-f861b8bc",
+            "source-12-22fb3533"
+          ]
+        }
+      },
+      {
+        "id": "weekend-program",
+        "type": "schedule",
+        "title": "Weekend Program",
+        "eyebrow": "August 8-9",
+        "subtitle": "Both days run 10 AM-5 PM, with six live acts and a balloon artist.",
+        "filters": [
+          {
+            "id": "all",
+            "label": "Everything",
+            "mode": "all"
+          },
+          {
+            "id": "saturday",
+            "label": "Saturday",
+            "mode": "dateRange",
+            "startsOn": "2026-08-08",
+            "endsOn": "2026-08-08"
+          },
+          {
+            "id": "sunday",
+            "label": "Sunday",
+            "mode": "dateRange",
+            "startsOn": "2026-08-09",
+            "endsOn": "2026-08-09"
+          },
+          {
+            "id": "mainstage",
+            "label": "Mainstage",
+            "mode": "tag",
+            "value": "music"
+          },
+          {
+            "id": "balloon-artist",
+            "label": "Balloon Artist",
+            "mode": "tag",
+            "value": "family"
+          }
+        ],
+        "sourceIds": [
+          "source-6-cbf97b40",
+          "source-10-99b6c53e"
+        ]
+      },
+      {
+        "id": "around-the-fair",
+        "type": "highlights",
+        "title": "Around the Fair",
+        "eyebrow": "Three ways into the day",
+        "headline": "Look closely, then follow the music.",
+        "summary": "Juried exhibits anchor the grounds; Mainstage and Hickory Grove host music alongside children’s art and food.",
+        "items": [
+          {
+            "id": "original-work-many-media",
+            "kind": "artists",
+            "kicker": "Juried exhibitors",
+            "title": "Original work across many media",
+            "summary": "Accepted categories span painting, sculpture, photography, ceramics, glass, jewelry, fiber, metal, wood, and mixed media; every display must be the exhibitor’s own work.",
+            "sourceIds": [
+              "source-11-2cbf66e1"
+            ]
+          },
+          {
+            "id": "two-listening-spots",
+            "kind": "entertainment",
+            "kicker": "Mainstage + Hickory Grove",
+            "title": "Six acts, two listening spots",
+            "summary": "Saturday pairs American Ages, The Borderline 3, and Street Angel–Fleetwood Mac Tribute; Sunday follows with Wayback Machine, Steve and Trish, and Magic Bus.",
+            "sourceIds": [
+              "source-10-99b6c53e"
+            ]
+          },
+          {
+            "id": "make-something-together",
+            "kind": "community",
+            "kicker": "Family program",
+            "title": "Make something together",
+            "summary": "Kids’ Zone activities and an art craft join the collaborative mural; a balloon artist appears on both days.",
+            "sourceIds": [
+              "source-8-f861b8bc",
+              "source-10-99b6c53e",
+              "source-12-22fb3533"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "plan-your-visit",
+        "type": "planVisit",
+        "title": "Plan Your Visit",
+        "eyebrow": "Arrival notes",
+        "subtitle": "Free entry at River Bends Park, with on-site parking and a nearby shuttle lot.",
+        "details": [
+          {
+            "id": "fair-hours",
+            "label": "Fair hours",
+            "value": "10 AM-5 PM Saturday and Sunday",
+            "icon": "clock",
+            "sourceIds": [
+              "source-6-cbf97b40"
+            ]
+          },
+          {
+            "id": "park-entrance",
+            "label": "Park entrance",
+            "value": "River Bends Park, 5700 22 Mile Road, between Shelby and Ryan roads",
+            "icon": "mapPin",
+            "sourceIds": [
+              "source-6-cbf97b40"
+            ]
+          },
+          {
+            "id": "on-site-parking",
+            "label": "On-site parking",
+            "value": "Free parking is available in the River Bends Park lot",
+            "icon": "mapPin",
+            "sourceIds": [
+              "source-6-cbf97b40"
+            ]
+          },
+          {
+            "id": "shuttle-lot",
+            "label": "Shuttle lot",
+            "value": "Free shuttle buses are available from Woodall Neighborhood Park near Burgess-Shadbush Nature Center, 4101 River Bends Drive",
+            "icon": "info",
+            "sourceIds": [
+              "source-6-cbf97b40"
+            ]
+          },
+          {
+            "id": "walk-in-option",
+            "label": "Walk-in option",
+            "value": "From Woodall Neighborhood Park, a scenic walk to the bridge also reaches the fair",
+            "icon": "info",
+            "sourceIds": [
+              "source-6-cbf97b40"
+            ]
+          },
+          {
+            "id": "participant-applications",
+            "label": "Participant applications",
+            "value": "The 2026 application period is closed",
+            "icon": "info",
+            "sourceIds": [
+              "source-11-2cbf66e1"
+            ]
+          }
+        ],
+        "links": [
+          {
+            "id": "official-fair-details",
+            "label": "Official 2026 Fair Details",
+            "href": "https://police.shelbytwp.org/Home/Components/Calendar/Event/40842/639?locale=en",
+            "type": "officialInfo",
+            "sourceId": "source-6-cbf97b40"
+          },
+          {
+            "id": "fair-overview",
+            "label": "Fair Overview",
+            "href": "https://www.shelbyartfair.org/information",
+            "type": "officialInfo",
+            "sourceId": "source-8-f861b8bc"
+          },
+          {
+            "id": "entertainment-lineup",
+            "label": "2026 Entertainment Lineup",
+            "href": "https://www.shelbyartfair.org/lineup",
+            "type": "officialInfo",
+            "sourceId": "source-10-99b6c53e"
+          },
+          {
+            "id": "artist-vendor-archive",
+            "label": "2025 Artists & Vendors Archive",
+            "href": "https://www.shelbyartfair.org/2020-artists",
+            "type": "officialInfo",
+            "sourceId": "source-9-68b32c45"
+          },
+          {
+            "id": "participant-application-link",
+            "label": "Participant Applications (2026 Closed)",
+            "href": "https://www.shelbyartfair.org/applications",
+            "type": "registration",
+            "sourceId": "source-11-2cbf66e1"
+          }
+        ]
+      }
+    ],
+    "scheduleItems": [
+      {
+        "id": "shelby-township-art-fair-hours-2026-08-08t14-00-00-00-00-1",
+        "tags": [
+          "community",
+          "main-event",
+          "event-hours"
+        ],
+        "title": "Shelby Township Art Fair hours",
+        "venue": "River Bends Park",
+        "endsAt": "2026-08-08T21:00:00+00:00",
+        "category": "community",
+        "startsAt": "2026-08-08T14:00:00+00:00",
+        "sourceIds": [
+          "source-6-cbf97b40"
+        ],
+        "confidence": "verified"
+      },
+      {
+        "id": "american-ages-2026-08-08t15-00-00-00-00-2",
+        "tags": [
+          "music"
+        ],
+        "title": "American Ages",
+        "venue": "Mainstage",
+        "category": "music",
+        "startsAt": "2026-08-08T15:00:00+00:00",
+        "sourceIds": [
+          "source-10-99b6c53e"
+        ],
+        "confidence": "verified"
+      },
+      {
+        "id": "balloon-artist-2026-08-08t17-00-00-00-00-3",
+        "tags": [
+          "family"
+        ],
+        "title": "Balloon Artist",
+        "endsAt": "2026-08-08T20:00:00+00:00",
+        "category": "family",
+        "startsAt": "2026-08-08T17:00:00+00:00",
+        "sourceIds": [
+          "source-10-99b6c53e"
+        ],
+        "confidence": "verified"
+      },
+      {
+        "id": "the-borderline-3-2026-08-08t17-00-00-00-00-4",
+        "tags": [
+          "community"
+        ],
+        "title": "The Borderline 3",
+        "venue": "Hickory Grove",
+        "category": "community",
+        "startsAt": "2026-08-08T17:00:00+00:00",
+        "sourceIds": [
+          "source-10-99b6c53e"
+        ],
+        "confidence": "verified"
+      },
+      {
+        "id": "street-angel-fleetwood-mac-tribute-2026-08-08t19-00-00-00-00-5",
+        "tags": [
+          "music"
+        ],
+        "title": "Street Angel- Fleetwood Mac Tribute\u200b",
+        "venue": "Mainstage",
+        "category": "music",
+        "startsAt": "2026-08-08T19:00:00+00:00",
+        "sourceIds": [
+          "source-10-99b6c53e"
+        ],
+        "confidence": "verified"
+      },
+      {
+        "id": "shelby-township-art-fair-hours-2026-08-09t14-00-00-00-00-6",
+        "tags": [
+          "community",
+          "main-event",
+          "event-hours"
+        ],
+        "title": "Shelby Township Art Fair hours",
+        "venue": "River Bends Park",
+        "endsAt": "2026-08-09T21:00:00+00:00",
+        "category": "community",
+        "startsAt": "2026-08-09T14:00:00+00:00",
+        "sourceIds": [
+          "source-6-cbf97b40"
+        ],
+        "confidence": "verified"
+      },
+      {
+        "id": "wayback-machine-2026-08-09t15-00-00-00-00-7",
+        "tags": [
+          "music"
+        ],
+        "title": "Wayback Machine",
+        "venue": "Mainstage",
+        "category": "music",
+        "startsAt": "2026-08-09T15:00:00+00:00",
+        "sourceIds": [
+          "source-10-99b6c53e"
+        ],
+        "confidence": "verified"
+      },
+      {
+        "id": "steve-and-trish-2026-08-09t17-00-00-00-00-8",
+        "tags": [
+          "community"
+        ],
+        "title": "Steve and Trish",
+        "venue": "Hickory Grove",
+        "category": "community",
+        "startsAt": "2026-08-09T17:00:00+00:00",
+        "sourceIds": [
+          "source-10-99b6c53e"
+        ],
+        "confidence": "verified"
+      },
+      {
+        "id": "balloon-artist-2026-08-09t17-00-00-00-00-9",
+        "tags": [
+          "family"
+        ],
+        "title": "Balloon Artist",
+        "endsAt": "2026-08-09T20:00:00+00:00",
+        "category": "family",
+        "startsAt": "2026-08-09T17:00:00+00:00",
+        "sourceIds": [
+          "source-10-99b6c53e"
+        ],
+        "confidence": "verified"
+      },
+      {
+        "id": "magic-bus-2026-08-09t19-00-00-00-00-10",
+        "tags": [
+          "music"
+        ],
+        "title": "Magic Bus",
+        "venue": "Mainstage",
+        "category": "music",
+        "startsAt": "2026-08-09T19:00:00+00:00",
+        "sourceIds": [
+          "source-10-99b6c53e"
+        ],
+        "confidence": "verified"
+      }
+    ],
+    "scoutSuggestions": [
+      {
+        "id": "scout-art-media",
+        "label": "What kind of art can I browse?",
+        "response": "Painting, sculpture, photography, ceramics, glass, jewelry, fiber, metal, wood, and mixed media are accepted; displayed work must be made by the exhibitor.",
+        "scopeModuleIds": [
+          "why-go",
+          "around-the-fair"
+        ],
+        "command": {
+          "type": "openModule",
+          "moduleId": "around-the-fair"
+        },
+        "sourceIds": [
+          "source-11-2cbf66e1"
+        ]
+      },
+      {
+        "id": "scout-saturday-lineup",
+        "label": "Who plays Saturday?",
+        "response": "American Ages plays Mainstage at 11 AM; The Borderline 3 plays Hickory Grove at 1 PM; Street Angel–Fleetwood Mac Tribute plays Mainstage at 3 PM. The balloon artist is scheduled from 1-4 PM.",
+        "scopeModuleIds": [
+          "weekend-program"
+        ],
+        "command": {
+          "type": "filterSchedule",
+          "moduleId": "weekend-program",
+          "filterId": "saturday"
+        },
+        "sourceIds": [
+          "source-10-99b6c53e"
+        ]
+      },
+      {
+        "id": "scout-sunday-lineup",
+        "label": "Who plays Sunday?",
+        "response": "Wayback Machine plays Mainstage at 11 AM, Steve and Trish play Hickory Grove at 1 PM, and Magic Bus plays Mainstage at 3 PM. The balloon artist is also scheduled Sunday afternoon.",
+        "scopeModuleIds": [
+          "weekend-program"
+        ],
+        "command": {
+          "type": "filterSchedule",
+          "moduleId": "weekend-program",
+          "filterId": "sunday"
+        },
+        "sourceIds": [
+          "source-10-99b6c53e"
+        ]
+      },
+      {
+        "id": "scout-family-program",
+        "label": "What can kids do?",
+        "response": "Color the all-ages Monster Mural, use the Kids’ Zone activities and art craft, or visit the balloon artist.",
+        "scopeModuleIds": [
+          "why-go",
+          "around-the-fair"
+        ],
+        "command": {
+          "type": "openModule",
+          "moduleId": "around-the-fair"
+        },
+        "sourceIds": [
+          "source-8-f861b8bc",
+          "source-10-99b6c53e",
+          "source-12-22fb3533"
+        ]
+      },
+      {
+        "id": "scout-shuttle",
+        "label": "Where do I catch the shuttle?",
+        "response": "Catch the free shuttle at Woodall Neighborhood Park near Burgess-Shadbush Nature Center, 4101 River Bends Drive.",
+        "scopeModuleIds": [
+          "plan-your-visit"
+        ],
+        "command": {
+          "type": "openModule",
+          "moduleId": "plan-your-visit"
+        },
+        "sourceIds": [
+          "source-6-cbf97b40"
+        ]
+      },
+      {
+        "id": "scout-applications",
+        "label": "Can artists still apply?",
+        "response": "No. The 2026 Art Fair application period is closed.",
+        "scopeModuleIds": [
+          "plan-your-visit"
+        ],
+        "command": {
+          "type": "openExternal",
+          "href": "https://www.shelbyartfair.org/applications"
+        },
+        "sourceIds": [
+          "source-11-2cbf66e1"
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "source-1-ad079002",
+        "url": "https://www.shelbytwp.org/our-township/summer",
+        "type": "officialWebsite",
+        "notes": "Archived source snapshot 1.",
+        "title": "2026 Shelby Township Summer | Shelby Township, MI",
+        "accessedAt": "2026-07-29T17:02:14.862+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-07-29T17:02:14.862+00:00"
+      },
+      {
+        "id": "source-3-695b7907",
+        "url": "https://police.shelbytwp.org/Home/Components/Calendar/Event/40842/639",
+        "type": "officialWebsite",
+        "notes": "Archived source snapshot 3.",
+        "title": "Shelby Township Art Fair | Calendar | Shelby Township, MI",
+        "accessedAt": "2026-07-29T17:02:18.227+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-07-29T17:02:18.227+00:00"
+      },
+      {
+        "id": "source-4-2b45122b",
+        "url": "https://www.shelbytwp.org/Home/Components/Calendar/Event/40887/360",
+        "type": "officialWebsite",
+        "notes": "Archived source snapshot 4.",
+        "title": "www.shelbytwp.org",
+        "accessedAt": "2026-07-29T17:02:18.556+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-07-29T17:02:18.556+00:00"
+      },
+      {
+        "id": "source-5-05957973",
+        "url": "https://www.shelbytwp.org/Home/Components/Calendar/Event/40163/360",
+        "type": "officialWebsite",
+        "notes": "Archived source snapshot 5.",
+        "title": "www.shelbytwp.org",
+        "accessedAt": "2026-07-29T17:02:19.081+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-07-29T17:02:19.081+00:00"
+      },
+      {
+        "id": "source-6-cbf97b40",
+        "url": "https://police.shelbytwp.org/Home/Components/Calendar/Event/40842/639?locale=en",
+        "type": "officialWebsite",
+        "notes": "Archived source snapshot 6.",
+        "title": "Shelby Township Art Fair | Calendar | Shelby Township, MI",
+        "accessedAt": "2026-07-29T19:38:17.046+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-07-29T19:38:17.046+00:00"
+      },
+      {
+        "id": "source-7-8c59fb62",
+        "url": "https://www.shelbytwp.org/Home/Components/News/News/386/14?arch=1&npage=2",
+        "type": "officialWebsite",
+        "notes": "Archived source snapshot 7.",
+        "title": "Shelby Township Art Fair celebrates 42 years with exciting events | News List | Shelby Township, MI",
+        "accessedAt": "2026-07-29T22:59:43.343+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-07-29T22:59:43.343+00:00"
+      },
+      {
+        "id": "source-2-3b44c1b3",
+        "url": "https://littleguidedetroit.com/event/shelby-township-art-fair/2026-08-08/",
+        "type": "other",
+        "notes": "Archived source snapshot 2.",
+        "title": "Shelby Township Art Fair",
+        "accessedAt": "2026-07-29T17:02:17.053+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-07-29T17:02:17.053+00:00"
+      },
+      {
+        "id": "source-8-f861b8bc",
+        "url": "https://www.shelbyartfair.org/information",
+        "type": "other",
+        "notes": "Archived source snapshot 8.",
+        "title": "About | shelbyartfair",
+        "accessedAt": "2026-07-29T23:01:02.447+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-07-29T23:01:02.447+00:00"
+      },
+      {
+        "id": "source-9-68b32c45",
+        "url": "https://www.shelbyartfair.org/2020-artists",
+        "type": "other",
+        "notes": "Archived source snapshot 9.",
+        "title": "Artists & Vendors | shelbyartfair",
+        "accessedAt": "2026-07-29T23:12:08.796+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-07-29T23:12:08.796+00:00"
+      },
+      {
+        "id": "source-10-99b6c53e",
+        "url": "https://www.shelbyartfair.org/lineup",
+        "type": "other",
+        "notes": "Archived source snapshot 10.",
+        "title": "Entertainment | shelbyartfair",
+        "accessedAt": "2026-08-01T09:51:36.791+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-08-01T09:51:36.791+00:00"
+      },
+      {
+        "id": "source-11-2cbf66e1",
+        "url": "https://www.shelbyartfair.org/applications",
+        "type": "other",
+        "notes": "Archived source snapshot 11.",
+        "title": "Applications | shelbyartfair",
+        "accessedAt": "2026-08-01T09:51:38.772+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-08-01T09:51:38.772+00:00"
+      },
+      {
+        "id": "source-12-22fb3533",
+        "url": "https://www.monstermural.com/",
+        "type": "other",
+        "notes": "Archived source snapshot 12.",
+        "title": "Single-Use Tarps, Wipeable Plastics & Coloring Sheets | Monster Mural",
+        "accessedAt": "2026-08-01T09:51:40.96+00:00",
+        "confidence": "verified",
+        "lastVerifiedAt": "2026-08-01T09:51:40.96+00:00"
+      }
+    ],
+    "publishedAt": "2026-08-01",
+    "reviewedAt": "2026-08-01"
+  },
+  "citations": [
+    {
+      "path": "hero.tagline",
+      "sourceSnapshotIds": [
+        "20a5528e-3037-4c4e-be81-7fa45ccbeae2",
+        "cf1429ca-2d10-4fb6-9bed-dc6ba3e5b767"
+      ]
+    },
+    {
+      "path": "module.why-go.headline",
+      "sourceSnapshotIds": [
+        "20a5528e-3037-4c4e-be81-7fa45ccbeae2"
+      ]
+    },
+    {
+      "path": "module.why-go.summary",
+      "sourceSnapshotIds": [
+        "2d791bd1-2186-48d7-82c9-1cb49a39ade9",
+        "cf1429ca-2d10-4fb6-9bed-dc6ba3e5b767"
+      ]
+    },
+    {
+      "path": "module.weekend-program.subtitle",
+      "sourceSnapshotIds": [
+        "2d791bd1-2186-48d7-82c9-1cb49a39ade9",
+        "59ea569b-5341-4859-91f4-8d98864f3a2c"
+      ]
+    },
+    {
+      "path": "module.around-the-fair.headline",
+      "sourceSnapshotIds": [
+        "20a5528e-3037-4c4e-be81-7fa45ccbeae2",
+        "59ea569b-5341-4859-91f4-8d98864f3a2c"
+      ]
+    },
+    {
+      "path": "module.around-the-fair.summary",
+      "sourceSnapshotIds": [
+        "cf1429ca-2d10-4fb6-9bed-dc6ba3e5b767",
+        "59ea569b-5341-4859-91f4-8d98864f3a2c",
+        "20a5528e-3037-4c4e-be81-7fa45ccbeae2"
+      ]
+    },
+    {
+      "path": "module.plan-your-visit.subtitle",
+      "sourceSnapshotIds": [
+        "2d791bd1-2186-48d7-82c9-1cb49a39ade9"
+      ]
+    }
+  ]
+}

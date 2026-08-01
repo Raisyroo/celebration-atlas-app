@@ -41,13 +41,14 @@ Current public Event Hub coverage:
 | St. Clair County 4-H & Youth Fair | `st-clair-county-4-h-youth-fair` | Published package |
 | Grand Haven Coast Guard Festival | `coast-guard-festival` | Published package |
 | Armada Fair | `armada-fair` | Published package |
+| Shelby Township Art Fair | `shelby-township-art-fair-shelby-township-mi` | Published package |
 
-The seven factory-published packages are at 100 percent readiness. Existing package and manifest fallbacks must remain valid while the generalized pipeline expands.
+The eight factory-published packages are at 100 percent readiness. Existing package and manifest fallbacks must remain valid while the generalized pipeline expands.
 
 The bounded Macomb completion pilot retains event-scoped completion exceptions
-for records that still need facts and one fully content-and-art-ready private
-Shelby Township Art Fair package v7. None authorizes canonicalization or
-publication.
+for records that still need facts. Shelby Township Art Fair completed the first
+Ray-approved full-manifest authorship proof and was explicitly published; that
+approval does not authorize any other Macomb candidate.
 
 ## Event Factory
 
@@ -79,11 +80,11 @@ Key boundaries:
 - Official-source inspection creates research candidates only.
 - Evidence bundles retain source snapshots and field-level provenance.
 - Deterministic synthesis reconciles facts and preserves disagreements.
-- Model-assisted editorial work may refine allowlisted prose but cannot change immutable dates, times, locations, sources, or publication state.
+- Model-assisted editorial work may author the complete visitor-facing manifest when every claim remains grounded in retained evidence. Identity, dates, schedule rows, source identities, approved art, canonicalization, and publication state remain protected.
 - Private package previews render the exact package under review.
 - Human package approval is the only Michigan-pilot action that may publish a new event and add it to the public map.
 - Published package events overlay the checked-in catalog so the map can grow without expanding a hardcoded array for every event.
-- Deployed forward-only migration `021_atomic_event_factory_publication.sql` moves the Event Factory public boundary into one service-role-only transaction after canonical materialization, Event Hub approval, and hero registration. The transaction locks and verifies the package, canonical event, exact frozen manifest, approved version, and approved hero record; then it archives the prior version, activates the replacement, marks the package published, and appends both audit histories atomically. Failed media or activation leaves a new version private and preserves the old public version during revisions. Exact replay is a no-op. Until the matching server-service change in this working tree is deployed through the normal Git workflow, production package publication fails closed at the database guard; Shelby Township Art Fair is the current private review item.
+- Deployed forward-only migration `021_atomic_event_factory_publication.sql` moves the Event Factory public boundary into one service-role-only transaction after canonical materialization, Event Hub approval, and hero registration. The transaction locks and verifies the package, canonical event, exact frozen manifest, approved version, and approved hero record; then it archives the prior version, activates the replacement, marks the package published, and appends both audit histories atomically. Failed media or activation leaves a new version private and preserves the old public version during revisions. Exact replay is a no-op. Shelby Township Art Fair exercised this boundary successfully with package v8 and an approved Supabase hero.
 
 Canonical implementation notes live in:
 
@@ -384,7 +385,7 @@ Do not build one-off deep-question logic into individual event pages. The future
 
 ## Supabase And Atlas Control
 
-- Remote migrations `005` through `022` are applied.
+- Remote migrations `005` through `032` are applied.
 - Atlas Control is protected and uses server-side service-role routes for editorial mutations.
 - Public pages never receive the service-role key.
 - The Control Desk supports source inspection, bundle collection, synthesis, verification, package review, publication, and visual workflow approval.
@@ -443,22 +444,27 @@ The durable audit and multi-state recommendations are in `docs/MICHIGAN_HOMEPAGE
 
 ## Latest Completed Event Factory Milestone
 
-Armada Fair completed the Event Factory and is public at:
+Shelby Township Art Fair completed the first full-manifest, high-intelligence
+authorship proof and is public at:
 
-`https://celebration-atlas-app.vercel.app/events/armada-fair`
+`https://celebration-atlas-app.vercel.app/events/shelby-township-art-fair-shelby-township-mi`
 
-The package retains eight official snapshots, eight current schedule rows, a sourced OpenStreetMap fairgrounds record, a fully verified 2026 diligence case, and Ray's approved Supabase-hosted hero. Deterministic synthesis v19 excludes operational exhibitor copy, derives fair duration and experience claims from retained evidence, and enforces the four-section Why Go, Schedule, Highlights, and Plan structure.
+Retained evidence and deterministic synthesis remain upstream. Ultra-authored
+synthesis v20 owns the complete four-topic visitor manifest while validation
+locks identity, dates, ten schedule rows, twelve source identities, approved
+hero art, links, and publication state. Ray approved the final Scout wording,
+package v8, and publication. The accepted synthesis, package, canonical event,
+immutable Event Hub v1, approved media record, and homepage discovery record
+retain the normal review and audit lineage.
 
-The package, canonical event, immutable Event Hub v1, approved media record, and homepage entry were published together on July 23, 2026. Production mobile review at `390x844` confirmed the hero, all four sections, zero horizontal overflow, and a clean browser console.
+Production review confirmed the public hero and corrected Monster Mural Scout
+spotlight on desktop. Mobile DOM review at `390x844` confirmed all four topics,
+the approved hero identity, and zero horizontal overflow. No additional model
+call was used for Ray's final copy correction.
 
 ## Current Next Milestone
 
-Human-review Shelby Township Art Fair package v7 in its private preview. The
-next action is an explicit approve-and-publish or reject decision from Ray; do
-not publish it automatically and do not spend another model call polishing it
-before that review.
-
-Next, apply the same official-first rule to Shorewood Kiwanis Harper Charity
+Apply the same official-first rule to Shorewood Kiwanis Harper Charity
 Cruise. Do not clear Holland Ponds, Assumption GreekFest, or the Memorial Day
 Parade until their event-specific missing facts are supplied by retained
 sources. Do not wait for those events before reviewing a clean package.

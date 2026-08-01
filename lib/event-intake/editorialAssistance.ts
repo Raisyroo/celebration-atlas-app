@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type {
   EventPageAudienceGroup,
   EventPageManifest,
+  EventPageModuleManifest,
   ScoutSpotlightPose,
 } from '../../data/eventPageManifestTypes.ts';
 import {
@@ -17,7 +18,7 @@ import type {
   ModelEditorialReviewSummary,
 } from './synthesisTypes.ts';
 
-export const EDITORIAL_PROMPT_VERSION = 'celebration-atlas-editor-v6';
+export const EDITORIAL_PROMPT_VERSION = 'celebration-atlas-editor-v7-full-manifest';
 const SPONSOR_LANGUAGE = /\b(?:sponsor(?:ed|ing|ship|s)?|presented by|presenting partner|title partner|powered by|funder)\b/i;
 const PERSONAL_CONTACT = /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\b(?:email|call|text)\s+(?:me|us|the|to)\b/i;
 const SPECULATIVE_LANGUAGE = /\b(?:probably|presumably|apparently|we think|likely to|expected to return)\b/i;
@@ -57,6 +58,20 @@ export type EditorialModelOutput = {
   spotlight: EditorialModelSpotlight | null;
 };
 
+export type FullManifestEditorialCitation = {
+  path: string;
+  sourceSnapshotIds: string[];
+};
+
+export type FullManifestEditorialOutput = {
+  manifest: EventPageManifest;
+  citations: FullManifestEditorialCitation[];
+};
+
+export type AnyEditorialModelOutput =
+  | EditorialModelOutput
+  | FullManifestEditorialOutput;
+
 export type EditorialEvidencePackage = {
   event: {
     name: string;
@@ -84,6 +99,26 @@ export type EditorialEvidencePackage = {
     category: string;
     sourceSnapshotId: string;
   }>;
+  verifiedClaims: Array<{
+    fieldPath: string;
+    value: unknown;
+    confidence: string;
+    sourceSnapshotId: string;
+  }>;
+  protectedManifest: {
+    schemaVersion: EventPageManifest['schemaVersion'];
+    id: string;
+    eventId: string;
+    slug: string;
+    lifecycle: EventPageManifest['lifecycle'];
+    identity: EventPageManifest['identity'];
+    heroAsset: Pick<EventPageManifest['hero'], 'imageSrc' | 'imageAlt' | 'imagePosition' | 'credit'>;
+    scheduleItems: EventPageManifest['scheduleItems'];
+    sources: EventPageManifest['sources'];
+    publishedAt: string;
+    reviewedAt: string;
+  };
+  currentVisitorManifest: EventPageManifest;
 };
 
 type RejectedRewrite = {
@@ -96,6 +131,30 @@ type ApplyEditorialResult = {
   report: ModelEditorialReviewSummary;
   rejected: RejectedRewrite[];
 };
+
+const FULL_MANIFEST_CITATION_PATH = /^(?:hero\.tagline|module\.[a-z0-9]+(?:-[a-z0-9]+)*\.(?:headline|summary|subtitle|advisory|notes))$/;
+const FACT_SENSITIVE_TERMS = new Set([
+  'accessible',
+  'accessibility',
+  'admission',
+  'alcohol',
+  'cash',
+  'chair',
+  'chairs',
+  'cooler',
+  'coolers',
+  'free',
+  'hours',
+  'parking',
+  'pets',
+  'restroom',
+  'restrooms',
+  'shuttle',
+  'shuttles',
+  'ticket',
+  'tickets',
+  'wheelchair',
+]);
 
 function cleanText(value: unknown, maxLength: number) {
   if (typeof value !== 'string') return '';
@@ -230,9 +289,13 @@ export function buildEditorialEvidencePackage(
   plan: EditorialPlan,
 ): EditorialEvidencePackage {
   const roles = sourceRoleMap(plan);
-  let remainingCharacters = 36_000;
+  const perSourceCharacterBudget = Math.max(
+    500,
+    Math.min(4_000, Math.floor(30_000 / Math.max(1, input.snapshots.length))),
+  );
   const sources = input.snapshots.map((snapshot) => {
     const excerpts: string[] = [];
+    let remainingCharacters = perSourceCharacterBudget;
     for (const segment of snapshot.contentSegments ?? []) {
       if (remainingCharacters <= 0 || excerpts.length >= 50) break;
       const value = cleanText(segment.text, 1_000);
@@ -263,6 +326,15 @@ export function buildEditorialEvidencePackage(
       sourceSnapshotId: candidate.sourceSnapshotId,
     }] : []);
 
+  const verifiedClaims = input.claims
+    .filter((claim) => claim.reviewStatus !== 'rejected' && claim.reviewStatus !== 'superseded')
+    .map((claim) => ({
+      fieldPath: claim.fieldPath,
+      value: claim.value,
+      confidence: claim.confidence,
+      sourceSnapshotId: claim.sourceSnapshotId,
+    }));
+
   return {
     event: {
       name: manifest.identity.name,
@@ -278,7 +350,70 @@ export function buildEditorialEvidencePackage(
     },
     sources,
     currentProgram,
+    verifiedClaims,
+    protectedManifest: {
+      schemaVersion: manifest.schemaVersion,
+      id: manifest.id,
+      eventId: manifest.eventId,
+      slug: manifest.slug,
+      lifecycle: manifest.lifecycle,
+      identity: structuredClone(manifest.identity),
+      heroAsset: {
+        imageSrc: manifest.hero.imageSrc,
+        imageAlt: manifest.hero.imageAlt,
+        ...(manifest.hero.imagePosition ? { imagePosition: manifest.hero.imagePosition } : {}),
+        ...(manifest.hero.credit ? { credit: manifest.hero.credit } : {}),
+      },
+      scheduleItems: structuredClone(manifest.scheduleItems),
+      sources: structuredClone(manifest.sources),
+      publishedAt: manifest.publishedAt,
+      reviewedAt: manifest.reviewedAt,
+    },
+    currentVisitorManifest: structuredClone(manifest),
   };
+}
+
+export function fullManifestEditorialModelJsonSchema(snapshotIds: string[]) {
+  return {
+    name: 'celebration_atlas_full_manifest_editorial_draft',
+    strict: false,
+    schema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        manifest: { type: 'object' },
+        citations: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              path: { type: 'string' },
+              sourceSnapshotIds: {
+                type: 'array',
+                minItems: 1,
+                maxItems: 6,
+                items: { type: 'string', enum: snapshotIds },
+              },
+            },
+            required: ['path', 'sourceSnapshotIds'],
+          },
+        },
+      },
+      required: ['manifest', 'citations'],
+    },
+  };
+}
+
+export function isFullManifestEditorialOutput(
+  value: AnyEditorialModelOutput,
+): value is FullManifestEditorialOutput {
+  return Boolean(
+    value
+      && typeof value === 'object'
+      && 'manifest' in value
+      && 'citations' in value,
+  );
 }
 
 export function editorialModelJsonSchema(targets: EditorialRewriteTarget[], snapshotIds: string[]) {
@@ -403,6 +538,386 @@ function copyIsGrounded(value: string, sourceSnapshotIds: string[], evidence: Ma
   const unsupportedNumber = numericTokens(value).find((token) => !sourceText.includes(token));
   if (unsupportedNumber) return { ok: false, reason: `Numeric claim ${unsupportedNumber} is not present in its cited evidence.` };
   return { ok: true, reason: '' };
+}
+
+function normalizedWords(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function copyIsFullyGrounded(
+  value: string,
+  sourceSnapshotIds: string[],
+  evidence: Map<string, string>,
+) {
+  const grounded = copyIsGrounded(value, sourceSnapshotIds, evidence);
+  if (!grounded.ok) return grounded;
+  const sourceWords = new Set(normalizedWords(
+    sourceSnapshotIds.map((id) => evidence.get(id) ?? '').join(' '),
+  ));
+  const unsupportedSensitiveTerm = normalizedWords(value).find(
+    (word) => FACT_SENSITIVE_TERMS.has(word) && !sourceWords.has(word),
+  );
+  if (unsupportedSensitiveTerm) {
+    return {
+      ok: false,
+      reason: `Fact-sensitive term ${unsupportedSensitiveTerm} is not present in its cited evidence.`,
+    };
+  }
+  return grounded;
+}
+
+function normalizeSourceUrl(value: string) {
+  try {
+    const url = new URL(value);
+    url.hash = '';
+    return url.toString().replace(/\/$/, '').toLowerCase();
+  } catch {
+    return value.trim().replace(/\/$/, '').toLowerCase();
+  }
+}
+
+function protectedFullManifestProjection(manifest: EventPageManifest) {
+  return {
+    schemaVersion: manifest.schemaVersion,
+    id: manifest.id,
+    eventId: manifest.eventId,
+    slug: manifest.slug,
+    lifecycle: manifest.lifecycle,
+    identity: manifest.identity,
+    heroAsset: {
+      imageSrc: manifest.hero.imageSrc,
+      imageAlt: manifest.hero.imageAlt,
+      imagePosition: manifest.hero.imagePosition ?? null,
+      credit: manifest.hero.credit ?? null,
+    },
+    scheduleItems: manifest.scheduleItems,
+    sources: manifest.sources,
+    publishedAt: manifest.publishedAt,
+    reviewedAt: manifest.reviewedAt,
+  };
+}
+
+function protectedScheduleCollections(manifest: EventPageManifest) {
+  return manifest.modules
+    .filter((module) => module.type === 'schedule')
+    .map((module) => ({
+      recurringEvents: module.type === 'schedule' ? module.recurringEvents ?? null : null,
+      referenceSchedule: module.type === 'schedule' ? module.referenceSchedule ?? null : null,
+    }));
+}
+
+function publicSourceSnapshotIds(
+  sourceIds: string[],
+  input: EventSourceSynthesisInput,
+  manifest: EventPageManifest,
+) {
+  const snapshotsByUrl = new Map(
+    input.snapshots.map((snapshot) => [
+      normalizeSourceUrl(snapshot.canonicalUrl),
+      snapshot.id,
+    ]),
+  );
+  const sourcesById = new Map(manifest.sources.map((source) => [source.id, source]));
+  const snapshotIds: string[] = [];
+  for (const sourceId of sourceIds) {
+    const source = sourcesById.get(sourceId);
+    if (!source?.url) return [];
+    const snapshotId = snapshotsByUrl.get(normalizeSourceUrl(source.url));
+    if (!snapshotId) return [];
+    snapshotIds.push(snapshotId);
+  }
+  return [...new Set(snapshotIds)];
+}
+
+function validateFullManifestSchedulePresentation(manifest: EventPageManifest) {
+  const errors: string[] = [];
+  const scheduleTags = new Set(manifest.scheduleItems.flatMap((item) => item.tags));
+  const scheduleCategories = new Set(manifest.scheduleItems.map((item) => item.category));
+  const scheduleDates = new Set(
+    manifest.scheduleItems.map((item) => item.startsAt.slice(0, 10)),
+  );
+  for (const module of manifest.modules) {
+    if (module.type !== 'schedule') continue;
+    if (module.includedTags?.some((tag) => !scheduleTags.has(tag))) {
+      errors.push(`Schedule module ${module.id} includes an unknown protected schedule tag.`);
+    }
+    if (module.includedCategories?.some((category) => !scheduleCategories.has(category))) {
+      errors.push(`Schedule module ${module.id} includes an unknown protected schedule category.`);
+    }
+    for (const filter of module.filters) {
+      if (filter.mode === 'tag' && (!filter.value || !scheduleTags.has(filter.value))) {
+        errors.push(`Schedule filter ${filter.id} does not match a protected schedule tag.`);
+      }
+      if (
+        filter.mode === 'dateRange'
+        && (
+          !filter.startsOn
+          || !filter.endsOn
+          || ![...scheduleDates].some(
+            (date) => date >= filter.startsOn! && date <= filter.endsOn!,
+          )
+        )
+      ) {
+        errors.push(`Schedule filter ${filter.id} does not contain a protected schedule date.`);
+      }
+    }
+  }
+  return errors;
+}
+
+function isJsonRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+export function applyFullManifestEditorialOutput(args: {
+  parentSynthesisId: string;
+  provider: string;
+  model: string;
+  input: EventSourceSynthesisInput;
+  manifest: EventPageManifest;
+  output: FullManifestEditorialOutput;
+}): ApplyEditorialResult {
+  if (!isJsonRecord(args.output.manifest)) {
+    throw new Error('The editorial model did not return a complete manifest object.');
+  }
+  const proposedValidation = validateEventPageManifest(args.output.manifest);
+  if (!proposedValidation.ok) {
+    throw new Error(`The editorial model did not return a complete valid manifest: ${proposedValidation.errors.join(' ')}`);
+  }
+  const proposed = structuredClone(proposedValidation.value);
+  if (
+    stableStringifyEventPageManifest(protectedFullManifestProjection(proposed))
+    !== stableStringifyEventPageManifest(protectedFullManifestProjection(args.manifest))
+  ) {
+    throw new Error('Full-manifest editorial authorship attempted to change protected event facts.');
+  }
+  if (
+    stableStringifyEventPageManifest(protectedScheduleCollections(proposed))
+    !== stableStringifyEventPageManifest(protectedScheduleCollections(args.manifest))
+  ) {
+    throw new Error('Full-manifest editorial authorship attempted to change protected schedule collections.');
+  }
+
+  const manifest = structuredClone(proposed);
+  const protectedManifest = args.manifest;
+  manifest.schemaVersion = protectedManifest.schemaVersion;
+  manifest.id = protectedManifest.id;
+  manifest.eventId = protectedManifest.eventId;
+  manifest.slug = protectedManifest.slug;
+  manifest.lifecycle = protectedManifest.lifecycle;
+  manifest.identity = structuredClone(protectedManifest.identity);
+  manifest.hero.imageSrc = protectedManifest.hero.imageSrc;
+  manifest.hero.imageAlt = protectedManifest.hero.imageAlt;
+  if (protectedManifest.hero.imagePosition) {
+    manifest.hero.imagePosition = protectedManifest.hero.imagePosition;
+  } else {
+    delete manifest.hero.imagePosition;
+  }
+  if (protectedManifest.hero.credit) {
+    manifest.hero.credit = protectedManifest.hero.credit;
+  } else {
+    delete manifest.hero.credit;
+  }
+  manifest.scheduleItems = structuredClone(protectedManifest.scheduleItems);
+  manifest.sources = structuredClone(protectedManifest.sources);
+  manifest.publishedAt = protectedManifest.publishedAt;
+  manifest.reviewedAt = protectedManifest.reviewedAt;
+
+  const validation = validateEventPageManifest(manifest);
+  if (!validation.ok) {
+    throw new Error(`The full editorial manifest is invalid: ${validation.errors.join(' ')}`);
+  }
+  const scheduleErrors = validateFullManifestSchedulePresentation(validation.value);
+  if (scheduleErrors.length) {
+    throw new Error(`The full editorial schedule presentation is invalid: ${scheduleErrors.join(' ')}`);
+  }
+
+  const evidence = evidenceTextBySnapshot(args.input);
+  const citationMap = new Map<string, string[]>();
+  for (const citation of Array.isArray(args.output.citations) ? args.output.citations : []) {
+    if (
+      !FULL_MANIFEST_CITATION_PATH.test(citation.path)
+      || citationMap.has(citation.path)
+      || !Array.isArray(citation.sourceSnapshotIds)
+      || !citation.sourceSnapshotIds.length
+      || citation.sourceSnapshotIds.some((id) => !evidence.has(id))
+    ) {
+      throw new Error(`Full-manifest editorial citation ${citation.path || '(missing path)'} is invalid.`);
+    }
+    citationMap.set(citation.path, [...new Set(citation.sourceSnapshotIds)]);
+  }
+
+  const groundingErrors: string[] = [];
+  const groundSnapshots = (path: string, text: string, snapshotIds: string[]) => {
+    const result = copyIsFullyGrounded(text, snapshotIds, evidence);
+    if (!result.ok) groundingErrors.push(`${path}: ${result.reason}`);
+  };
+  const groundPublicSources = (path: string, text: string, sourceIds: string[]) => {
+    const snapshotIds = publicSourceSnapshotIds(sourceIds, args.input, manifest);
+    if (!snapshotIds.length) {
+      groundingErrors.push(`${path}: public source IDs do not resolve to retained snapshots.`);
+      return;
+    }
+    groundSnapshots(path, text, snapshotIds);
+  };
+  const groundCited = (path: string, text: string) => {
+    const snapshotIds = citationMap.get(path) ?? [];
+    if (!snapshotIds.length) {
+      groundingErrors.push(`${path}: a retained-snapshot citation is required.`);
+      return;
+    }
+    groundSnapshots(path, text, snapshotIds);
+  };
+
+  groundCited('hero.tagline', manifest.hero.tagline);
+  if (manifest.editionStatus) {
+    groundPublicSources(
+      'editionStatus',
+      `${manifest.editionStatus.label} ${manifest.editionStatus.title} ${manifest.editionStatus.summary}`,
+      manifest.editionStatus.sourceIds,
+    );
+  }
+  for (const module of manifest.modules) {
+    if (module.type === 'whyGo') {
+      groundCited(`module.${module.id}.headline`, module.headline);
+      groundCited(`module.${module.id}.summary`, module.summary);
+      module.metrics.forEach((metric) => groundPublicSources(
+        `module.${module.id}.metric.${metric.id}`,
+        `${metric.value} ${metric.label} ${metric.detail ?? ''}`,
+        metric.sourceIds,
+      ));
+      module.audienceGroups.forEach((group) => groundPublicSources(
+        `module.${module.id}.audience.${group.id}`,
+        `${group.title} ${group.items.join(' ')}`,
+        group.sourceIds,
+      ));
+      if (module.spotlight) {
+        groundPublicSources(
+          `module.${module.id}.spotlight`,
+          `${module.spotlight.title} ${module.spotlight.body}`,
+          module.spotlight.sourceIds,
+        );
+      }
+    } else if (module.type === 'schedule') {
+      groundCited(`module.${module.id}.subtitle`, module.subtitle);
+      if (module.notes?.length) {
+        groundCited(`module.${module.id}.notes`, module.notes.join(' '));
+      }
+    } else if (module.type === 'highlights' || module.type === 'traditions') {
+      groundCited(`module.${module.id}.headline`, module.headline);
+      groundCited(`module.${module.id}.summary`, module.summary);
+      module.items.forEach((item) => groundPublicSources(
+        `module.${module.id}.item.${item.id}`,
+        `${item.kicker} ${item.title} ${item.summary}`,
+        item.sourceIds,
+      ));
+      if (module.type === 'highlights') {
+        module.links?.forEach((link) => {
+          const source = manifest.sources.find((item) => item.id === link.sourceId);
+          if (
+            !source?.url
+            || !link.href
+            || normalizeSourceUrl(source.url) !== normalizeSourceUrl(link.href)
+          ) {
+            groundingErrors.push(`module.${module.id}.link.${link.id}: link does not match its retained source.`);
+          }
+        });
+      }
+    } else {
+      groundCited(`module.${module.id}.subtitle`, module.subtitle);
+      if (module.advisory) groundCited(`module.${module.id}.advisory`, module.advisory);
+      module.details.forEach((detail) => groundPublicSources(
+        `module.${module.id}.detail.${detail.id}`,
+        `${detail.label} ${detail.value}`,
+        detail.sourceIds,
+      ));
+      module.links.forEach((link) => {
+        const source = manifest.sources.find((item) => item.id === link.sourceId);
+        if (!source?.url || !link.href || normalizeSourceUrl(source.url) !== normalizeSourceUrl(link.href)) {
+          groundingErrors.push(`module.${module.id}.link.${link.id}: link does not match its retained source.`);
+        }
+      });
+    }
+  }
+  manifest.scoutSuggestions.forEach((suggestion) => groundPublicSources(
+    `scout.${suggestion.id}`,
+    `${suggestion.label} ${suggestion.response}`,
+    suggestion.sourceIds,
+  ));
+  manifest.scoutSuggestions.forEach((suggestion) => {
+    if (suggestion.command.type !== 'openExternal') return;
+    const citedUrls = suggestion.sourceIds.flatMap((sourceId) => {
+      const source = manifest.sources.find((item) => item.id === sourceId);
+      return source?.url ? [normalizeSourceUrl(source.url)] : [];
+    });
+    if (!citedUrls.includes(normalizeSourceUrl(suggestion.command.href))) {
+      groundingErrors.push(`scout.${suggestion.id}: external action does not match a cited retained source.`);
+    }
+  });
+  if (manifest.primaryAction) {
+    const source = manifest.sources.find((item) => item.id === manifest.primaryAction?.sourceId);
+    if (
+      !source?.url
+      || !manifest.primaryAction.href
+      || normalizeSourceUrl(source.url) !== normalizeSourceUrl(manifest.primaryAction.href)
+    ) {
+      groundingErrors.push('primaryAction: link does not match its retained source.');
+    }
+  }
+  if (groundingErrors.length) {
+    throw new Error(`Unsupported full-manifest editorial claims were rejected: ${groundingErrors.join(' ')}`);
+  }
+
+  const editorialQuality = evaluateEventPageEditorialQuality(validation.value);
+  const authoredModules = validation.value.modules.map((module: EventPageModuleManifest) => module.id);
+  const whyGo = validation.value.modules.find((module) => module.type === 'whyGo');
+  const report: ModelEditorialReviewSummary = {
+    parentSynthesisId: args.parentSynthesisId,
+    provider: args.provider,
+    model: args.model,
+    promptVersion: EDITORIAL_PROMPT_VERSION,
+    proposedRewriteCount: 1,
+    appliedRewriteCount: 1 + authoredModules.length + validation.value.scoutSuggestions.length,
+    rejectedRewriteCount: 0,
+    changedTargets: [
+      'hero',
+      'navigation',
+      ...authoredModules.map((id) => `module.${id}`),
+      ...validation.value.scoutSuggestions.map((item) => `scout.${item.id}`),
+    ],
+    addedAudienceGroupCount: whyGo?.type === 'whyGo' ? whyGo.audienceGroups.length : 0,
+    addedSpotlight: validation.value.modules.some(
+      (module) => module.type === 'whyGo' && Boolean(module.spotlight),
+    ),
+    authoringMode: 'full_manifest',
+    authoredModuleIds: authoredModules,
+    authoredNavigationIds: validation.value.navigation.map((item) => item.id),
+    authoredScoutSuggestionIds: validation.value.scoutSuggestions.map((item) => item.id),
+    rejectedClaimCount: 0,
+    qualityChecks: {
+      immutableFactsLocked: true,
+      sourceIdsVerified: true,
+      numericClaimsGrounded: true,
+      sponsorLanguageExcluded: true,
+      researchNarrationExcluded: true,
+      spotlightNarrativeSourceRequired: true,
+      editorialQualityPassed: editorialQuality.ok,
+      manifestValid: validation.ok,
+      fullManifestAuthored: true,
+      scheduleFactsLocked: true,
+      sourceRegistryLocked: true,
+      imageReferencesLocked: true,
+      allVisitorClaimsGrounded: true,
+    },
+  };
+  return { manifest: validation.value, report, rejected: [] };
 }
 
 function hasNarrativeSpotlightSource(sourceSnapshotIds: string[], input: EventSourceSynthesisInput) {
@@ -674,6 +1189,7 @@ export function applyEditorialModelOutput(args: {
     changedTargets,
     addedAudienceGroupCount,
     addedSpotlight,
+    authoringMode: 'bounded_rewrite',
     qualityChecks: {
       immutableFactsLocked,
       sourceIdsVerified: true,

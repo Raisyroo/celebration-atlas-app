@@ -6,10 +6,12 @@ import { validateEventPageManifest } from '@/data/eventPageManifestValidation';
 import { validateEventPageContentReadiness } from '@/data/eventPageContentReadiness';
 import type { EventPageManifest } from '@/data/eventPageManifestTypes';
 import {
+  applyFullManifestEditorialOutput,
   applyEditorialModelOutput,
   editorialInputHash,
   EDITORIAL_PROMPT_VERSION,
-  type EditorialModelOutput,
+  isFullManifestEditorialOutput,
+  type AnyEditorialModelOutput,
 } from './editorialAssistance';
 import { generateEditorialModelDraft } from './editorialModel';
 import { buildEditorialPlan } from './editorialPlanning';
@@ -164,6 +166,21 @@ function modelEditorialReviewSummary(value: unknown): ModelEditorialReviewSummar
     changedTargets: stringArray(record.changedTargets),
     addedAudienceGroupCount: typeof record.addedAudienceGroupCount === 'number' ? record.addedAudienceGroupCount : 0,
     addedSpotlight: record.addedSpotlight === true,
+    ...(record.authoringMode === 'bounded_rewrite' || record.authoringMode === 'full_manifest'
+      ? { authoringMode: record.authoringMode }
+      : {}),
+    ...(Array.isArray(record.authoredModuleIds)
+      ? { authoredModuleIds: stringArray(record.authoredModuleIds) }
+      : {}),
+    ...(Array.isArray(record.authoredNavigationIds)
+      ? { authoredNavigationIds: stringArray(record.authoredNavigationIds) }
+      : {}),
+    ...(Array.isArray(record.authoredScoutSuggestionIds)
+      ? { authoredScoutSuggestionIds: stringArray(record.authoredScoutSuggestionIds) }
+      : {}),
+    ...(typeof record.rejectedClaimCount === 'number'
+      ? { rejectedClaimCount: record.rejectedClaimCount }
+      : {}),
     qualityChecks: {
       immutableFactsLocked: quality.immutableFactsLocked === true,
       sourceIdsVerified: quality.sourceIdsVerified === true,
@@ -173,6 +190,21 @@ function modelEditorialReviewSummary(value: unknown): ModelEditorialReviewSummar
       spotlightNarrativeSourceRequired: quality.spotlightNarrativeSourceRequired === true,
       editorialQualityPassed: quality.editorialQualityPassed === true,
       manifestValid: quality.manifestValid === true,
+      ...(typeof quality.fullManifestAuthored === 'boolean'
+        ? { fullManifestAuthored: quality.fullManifestAuthored }
+        : {}),
+      ...(typeof quality.scheduleFactsLocked === 'boolean'
+        ? { scheduleFactsLocked: quality.scheduleFactsLocked }
+        : {}),
+      ...(typeof quality.sourceRegistryLocked === 'boolean'
+        ? { sourceRegistryLocked: quality.sourceRegistryLocked }
+        : {}),
+      ...(typeof quality.imageReferencesLocked === 'boolean'
+        ? { imageReferencesLocked: quality.imageReferencesLocked }
+        : {}),
+      ...(typeof quality.allVisitorClaimsGrounded === 'boolean'
+        ? { allVisitorClaimsGrounded: quality.allVisitorClaimsGrounded }
+        : {}),
     },
   };
 }
@@ -433,8 +465,8 @@ async function loadEditorialSynthesisContext(synthesisId: string) {
     throw new Error('Editorial assistance requires an unsubmitted deterministic proposal.');
   }
   const manifestValidation = validateEventPageManifest(parent.manifest_proposal);
-  const parentManifest = (manifestValidation.ok ? manifestValidation.value : parent.manifest_proposal) as EventPageManifest;
-  if (!isRecord(parentManifest)) throw new Error('The deterministic manifest proposal is unavailable.');
+  if (!manifestValidation.ok) throw new Error('The deterministic manifest proposal is invalid.');
+  const parentManifest = manifestValidation.value;
   const input = await loadSynthesisInput(parent.bundle_id);
   return { parent, parentManifest, input };
 }
@@ -457,18 +489,27 @@ async function persistModelAssistedEditorialSynthesis(args: {
   model: string;
   requestedModel: string;
   responseId: string | null;
-  output: EditorialModelOutput;
+  output: AnyEditorialModelOutput;
 }) {
   const { parent, parentManifest, input } = await loadEditorialSynthesisContext(args.synthesisId);
   const supabase = requireServiceClient();
-  const editorial = applyEditorialModelOutput({
-    parentSynthesisId: parent.id,
-    provider: args.provider,
-    model: args.model,
-    input,
-    manifest: parentManifest,
-    output: args.output,
-  });
+  const editorial = isFullManifestEditorialOutput(args.output)
+    ? applyFullManifestEditorialOutput({
+        parentSynthesisId: parent.id,
+        provider: args.provider,
+        model: args.model,
+        input,
+        manifest: parentManifest,
+        output: args.output,
+      })
+    : applyEditorialModelOutput({
+        parentSynthesisId: parent.id,
+        provider: args.provider,
+        model: args.model,
+        input,
+        manifest: parentManifest,
+        output: args.output,
+      });
   if (!editorial.report.appliedRewriteCount && !editorial.report.addedAudienceGroupCount && !editorial.report.addedSpotlight) {
     throw new Error('The editorial model produced no grounded improvements.');
   }
@@ -537,7 +578,7 @@ export async function createModelAssistedEditorialSynthesisFromOutput(args: {
   provider: string;
   model: string;
   responseId?: string | null;
-  output: EditorialModelOutput;
+  output: AnyEditorialModelOutput;
 }) {
   return persistModelAssistedEditorialSynthesis({
     ...args,

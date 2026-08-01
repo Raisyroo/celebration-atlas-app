@@ -9,6 +9,7 @@ import {
 } from '../lib/event-intake/synthesisEngine.ts';
 import { buildEditorialPlan } from '../lib/event-intake/editorialPlanning.ts';
 import {
+  applyFullManifestEditorialOutput,
   applyEditorialModelOutput,
   buildBoundedEditorialRewriteTargets,
 } from '../lib/event-intake/editorialAssistance.ts';
@@ -1342,6 +1343,125 @@ assert.equal(
   shelbyEditorialContent.ok,
   true,
   `Distinct, grounded Shelby visitor copy should pass: ${shelbyEditorialContent.ok ? '' : shelbyEditorialContent.errors.join(' ')}`,
+);
+
+const shelbyFullManifest = structuredClone(shelbyEditorial.manifest);
+shelbyFullManifest.hero.tagline = 'More than 120 artist and marketplace vendors gather for two days at River Bends Park.';
+shelbyFullManifest.navigation = shelbyFullManifest.navigation.map((item) =>
+  item.targetModuleId === 'highlights'
+    ? { ...item, label: 'What to See' }
+    : item,
+);
+const shelbyFullWhyGo = shelbyFullManifest.modules.find((module) => module.type === 'whyGo');
+const shelbyFullSchedule = shelbyFullManifest.modules.find((module) => module.type === 'schedule');
+const shelbyFullHighlights = shelbyFullManifest.modules.find((module) => module.type === 'highlights');
+const shelbyFullPlan = shelbyFullManifest.modules.find((module) => module.type === 'planVisit');
+assert(
+  shelbyFullWhyGo?.type === 'whyGo'
+  && shelbyFullSchedule?.type === 'schedule'
+  && shelbyFullHighlights?.type === 'highlights'
+  && shelbyFullPlan?.type === 'planVisit',
+);
+shelbyFullWhyGo.headline = 'Original work fills a shaded park instead of a convention aisle.';
+shelbyFullWhyGo.summary = 'The juried fair combines artist booths, marketplace vendors, music, food, and a hands-on children’s area.';
+shelbyFullSchedule.subtitle = 'Use the two official event-day listings to choose a Saturday or Sunday visit.';
+shelbyFullHighlights.headline = 'Start with original work, then find the parts of the fair that move and make noise.';
+shelbyFullHighlights.summary = 'Artist booths anchor the visit while music, food, and children’s activities create natural breaks.';
+shelbyFullPlan.subtitle = 'River Bends Park is the fixed point for both days of the fair.';
+shelbyFullManifest.scoutSuggestions = [
+  {
+    id: 'scout-original-work',
+    label: 'How large is the artist marketplace?',
+    response: 'The fair brings together more than 120 artist and marketplace vendors.',
+    scopeModuleIds: ['why-go', 'highlights'],
+    command: { type: 'openModule', moduleId: 'highlights' },
+    sourceIds: [shelbyManifest.sources[0].id],
+  },
+  {
+    id: 'scout-family',
+    label: 'What can children do?',
+    response: 'A dedicated craft and activity area gives children a hands-on stop between the booths.',
+    scopeModuleIds: ['why-go', 'highlights'],
+    command: { type: 'openModule', moduleId: 'highlights' },
+    sourceIds: [shelbyManifest.sources[0].id],
+  },
+];
+const shelbyFullCitations = [
+  'hero.tagline',
+  `module.${shelbyFullWhyGo.id}.headline`,
+  `module.${shelbyFullWhyGo.id}.summary`,
+  `module.${shelbyFullSchedule.id}.subtitle`,
+  `module.${shelbyFullHighlights.id}.headline`,
+  `module.${shelbyFullHighlights.id}.summary`,
+  `module.${shelbyFullPlan.id}.subtitle`,
+  ...(shelbyFullSchedule.notes?.length ? [`module.${shelbyFullSchedule.id}.notes`] : []),
+  ...(shelbyFullPlan.advisory ? [`module.${shelbyFullPlan.id}.advisory`] : []),
+].map((path) => ({ path, sourceSnapshotIds: [shelbySnapshotId] }));
+const shelbyFullEditorial = applyFullManifestEditorialOutput({
+  parentSynthesisId: '00000000-0000-4000-8000-000000000005',
+  provider: 'fixture-codex-session',
+  model: 'fixture-ultra',
+  input: shelbyInput,
+  manifest: shelbyEditorial.manifest,
+  output: {
+    manifest: shelbyFullManifest,
+    citations: shelbyFullCitations,
+  },
+});
+assert.equal(shelbyFullEditorial.report.authoringMode, 'full_manifest');
+assert.equal(shelbyFullEditorial.report.qualityChecks.fullManifestAuthored, true);
+assert.equal(shelbyFullEditorial.report.qualityChecks.scheduleFactsLocked, true);
+assert.deepEqual(
+  shelbyFullEditorial.manifest.scheduleItems,
+  shelbyEditorial.manifest.scheduleItems,
+  'Full-manifest authorship must preserve every verified schedule row.',
+);
+assert.deepEqual(
+  shelbyFullEditorial.manifest.identity,
+  shelbyEditorial.manifest.identity,
+  'Full-manifest authorship must preserve verified identity, dates, and location.',
+);
+assert(
+  shelbyFullEditorial.manifest.navigation.some((item) => item.label === 'What to See'),
+  'Full-manifest authorship must be able to make event-specific navigation decisions.',
+);
+assert.equal(
+  shelbyFullEditorial.manifest.scoutSuggestions[0].label,
+  'How large is the artist marketplace?',
+  'Full-manifest authorship must replace generic Scout structure with event-specific questions.',
+);
+assert.equal(validateEventPageContentReadiness(shelbyFullEditorial.manifest).ok, true);
+
+const changedScheduleManifest = structuredClone(shelbyFullManifest);
+changedScheduleManifest.scheduleItems[0].title = 'Invented schedule title';
+assert.throws(
+  () => applyFullManifestEditorialOutput({
+    parentSynthesisId: '00000000-0000-4000-8000-000000000006',
+    provider: 'fixture-codex-session',
+    model: 'fixture-ultra',
+    input: shelbyInput,
+    manifest: shelbyEditorial.manifest,
+    output: { manifest: changedScheduleManifest, citations: shelbyFullCitations },
+  }),
+  /protected event facts/,
+  'A model-authored manifest must not change retained schedule facts.',
+);
+
+const unsupportedPlanningManifest = structuredClone(shelbyFullManifest);
+const unsupportedPlan = unsupportedPlanningManifest.modules.find((module) => module.type === 'planVisit');
+assert(unsupportedPlan?.type === 'planVisit');
+unsupportedPlan.details[0].value = '99 complimentary valet parking stations';
+assert.throws(
+  () => applyFullManifestEditorialOutput({
+    parentSynthesisId: '00000000-0000-4000-8000-000000000007',
+    provider: 'fixture-codex-session',
+    model: 'fixture-ultra',
+    input: shelbyInput,
+    manifest: shelbyEditorial.manifest,
+    output: { manifest: unsupportedPlanningManifest, citations: shelbyFullCitations },
+  }),
+  /Unsupported full-manifest editorial claims were rejected/,
+  'Unsupported model-authored visitor claims must block the complete manifest.',
 );
 
 const shellOnlyManifest = structuredClone(shelbyManifest);
