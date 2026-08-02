@@ -43,6 +43,25 @@ An extracted `identity.description` is not automatically suitable as a general o
 
 AI may discover events, inspect sources, archive evidence, reconcile facts, classify the event, geocode the location, generate a manifest, prepare Scout context, create an art brief, generate artwork, and assemble a private preview.
 
+### Ray-approved list Fast Track
+
+`docs/FAST_TRACK_APPROVED_EVENTS.md` defines the Codex-operated lane for an
+event list Ray has already approved for inclusion. It reuses this Event Factory
+rather than creating another publication system. Discovery qualification,
+county batching, cohort waits, a mandatory supporting-source quota, and a
+separate verification queue are omitted when the same retained official
+evidence already proves all required facts. The deployed verification record
+remains as a thin compatibility input to package assembly and is populated from
+that evidence pass.
+
+Every list item is isolated. A missing date, ambiguous identity, factual
+conflict, failed hero, or invalid manifest holds only that event. Each event
+receives one Ultra full-manifest authorship handoff and, at the image stage, one
+Luna Max `$create-celebration-atlas-hero` handoff. The normal source grounding,
+content validation, visual approval, private package preview, and explicit
+human publication boundary remain intact. Fast Track exposes no publication
+action.
+
 During the Michigan pilot, only a human approval may release a package publicly. Approval is a single package-level decision after all blockers are visible and the preview has been reviewed. Canonical materialization and approved Event Hub preparation remain private effects underneath that decision. Migration 021 established the atomic public boundary. Forward-only migration 027, once separately deployed, retains that transaction while allowing a null hero media id only for a genuinely image-free manifest whose seven non-art checks all pass. A package with art still requires matching approved media.
 
 Package preparation never creates or updates a public canonical event. Migration 011 stores packages and their action history behind service-role-only access. The `Approve and publish` control is the first action allowed to materialize the candidate into `events` and publish the reviewed Event Hub version.

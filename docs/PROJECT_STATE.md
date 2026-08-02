@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: August 1, 2026
+Last updated: August 2, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -462,14 +462,39 @@ spotlight on desktop. Mobile DOM review at `390x844` confirmed all four topics,
 the approved hero identity, and zero horizontal overflow. No additional model
 call was used for Ray's final copy correction.
 
+The Ray-approved list Fast Track contract is now implemented for the next
+growth phase. `npm run atlas:prepare-fast-track -- --input <list.json>` creates
+an immutable normalized list plus isolated operator, Ultra full-manifest, Luna
+Max hero-skill, and private-package handoffs for every event. List approval
+authorizes private preparation but never publication. Clean events do not wait
+for failed list-mates, one official source may clear the existing verification
+record when it proves every required fact, and no separate supporting-source or
+verification queue is introduced. Identity, current dates, recurrence,
+location, coordinates, factual conflicts, content grounding, visual approval,
+and explicit package approval remain protected.
+
+The repository-local `$create-celebration-atlas-hero` skill is installed at
+`.agents/skills/create-celebration-atlas-hero/`. Every Fast Track event that
+reaches the hero stage must use GPT-5.6 Luna at Max reasoning, generate one
+primary image, and create a focused alternative only after rejection or low
+confidence. A local image is not approval; the existing specification and
+Supabase visual workflow remain authoritative.
+
 ## Current Next Milestone
 
-Apply the same official-first rule to Shorewood Kiwanis Harper Charity
-Cruise. Do not clear Holland Ponds, Assumption GreekFest, or the Memorial Day
-Parade until their event-specific missing facts are supplied by retained
-sources. Do not wait for those events before reviewing a clean package.
+Run the first Ray-approved list through the new Fast Track contract. Prepare
+each event independently through retained evidence, Ultra full-manifest
+authorship, Luna Max hero creation, the approved visual workflow, and its exact
+private package preview. Stop before publication and present each successful
+package for an explicit human decision.
 
-Continue county growth in bounded five-event cohorts. Successful events may
+Shorewood Kiwanis Harper Charity Cruise remains the clean official-first
+continuation if it appears on that list. Do not clear Holland Ponds, Assumption
+GreekFest, or the Memorial Day Parade until their event-specific missing facts
+are supplied by retained sources. Do not wait for those events before reviewing
+a clean package.
+
+Outside Fast Track, continue county growth in bounded five-event cohorts. Successful events may
 advance to individual private package review while failed events enter the
 separate verification queue. A cohort's aggregate `waiting_for_exceptions`
 status is not a reason to hold a clean event, but no event bypasses its own

@@ -231,7 +231,7 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 ### 27. Build the versioned illustrated-map position and coded-star resolver
 
 - **Type:** architecture + implementation
-- **Status:** next
+- **Status:** future
 - **Scope:** reusable state map presentation profile, artwork-fit transform, Michigan calibration compatibility, and one accessible marker control per event
 - **Protected files/areas:** verified event coordinates, Event Hub publication state, approved artwork assets, universal Scout runtime
 - **Notes:** Preserve real coordinates as source truth. Resolve one reviewed artwork-relative layout for markers, labels, atmosphere, constellation lines, and audits; account for object-fit crop; keep Michigan peninsulas in separate calibration regions; introduce compatibility v1 before reviewed v2; and render reachable 44px coded stars on every supported viewport without hidden duplicate controls.
@@ -246,6 +246,24 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - **Notes:** Verified exact identity, Music category, Detroit city, September month, Detroit Metro region, upcoming status, combined Music + Detroit + September intent, and a legitimate no-results query against the state-owned resolver. Added reviewed upcoming-status intent using the rail timing contract. Removed the public filter trigger, mobile filter sheet, and desktop filter controls only after the query gates passed; retained category, city, region, date, facet, and discovery APIs.
 - **Verification:** `npm run lint`, `npm run build`, deterministic search regressions, 390×844 portrait, 844×390 compact landscape, 1440×900 desktop, exact Event Hub navigation, keyboard result tags, screenshots, no overflow, no browser errors; visual smoke explicitly not run
 
+### 29. Build the Ray-approved list Fast Track
+
+- **Type:** architecture + implementation
+- **Status:** complete
+- **Scope:** approved-list manifest, event-isolated operator plan, Ultra full-manifest handoff, Luna Max hero-skill handoff, and private-review stop
+- **Protected files/areas:** public publication state, canonical event materialization, approved packages, published Event Hubs, homepage discovery, county completion semantics
+- **Notes:** Added a local planner and build validator that remove redundant discovery, supporting-source, verification-queue, and cohort ceremony while preserving event-local factual, content, visual, package, and human-publication safeguards. No database or public state changed.
+- **Verification:** `npm run validate:fast-track-events`, `npm run build`
+
+### 30. Run the first Ray-approved Fast Track event list
+
+- **Type:** event operations
+- **Status:** next
+- **Scope:** only the exact events in the next list Ray supplies, from retained evidence through private package preview
+- **Protected files/areas:** publication before explicit package approval, unrelated candidates/events, county batches not named by Ray, existing published packages, public map/discovery until approval
+- **Notes:** Process events independently. Use one `gpt-5.6-sol` Ultra full-manifest pass and one Luna Max `$create-celebration-atlas-hero` primary image per event; alternatives only after rejection or low confidence. Stop before publication.
+- **Verification:** focused Fast Track validator, full build, and each real private preview at phone width with no overflow, rendering errors, or missing approved media
+
 ## Completed Tasks
 
 - Define Celebration Search command model — completed in current queue item 6 as a data/model architecture step.
@@ -255,6 +273,7 @@ This queue coordinates one safe Atlas Dev Loop task at a time. Each run should t
 - Task 25: Deterministic state-owned exact and broad homepage search completed.
 - Task 26: Shared viewport modes and functional fact-based discovery filters completed.
 - Task 28: Search-first Michigan homepage completed after the required deterministic query gates passed; public filter controls were removed while their data APIs were retained.
+- Task 29: Ray-approved list Fast Track contract, isolated Ultra and Luna Max handoffs, and pre-publication stop completed.
 
 ## Paused / Needs Human Review
 

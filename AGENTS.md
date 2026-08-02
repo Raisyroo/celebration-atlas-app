@@ -54,3 +54,12 @@ Current operational state overrides older historical notes. Do not restore a sup
 - County operation is deterministic-only with zero model budget. It may not canonicalize, search for or create images, approve packages, publish Event Pages, or change public discovery.
 - Preserve every inventory disposition, retained exception, immutable hash, replay identity, and human verification/publication gate. Never auto-resolve an exception to make a county continue.
 - Read `docs/COUNTY_COMPLETION_OPERATOR.md` before changing or operating the county command.
+
+## Ray-Approved Event List Operations
+
+- For a list Ray explicitly approves for inclusion, use the Approved-List Fast Track contract in `docs/FAST_TRACK_APPROVED_EVENTS.md`; do not route it through county-completion batching or repeat discovery qualification.
+- Treat list approval as authorization for event-isolated private preparation only. It is never hero approval, package approval, canonicalization approval, or publication approval.
+- Retain the factual checks that protect identity, current dates, recurrence, location, coordinates, sources, schedules, and manifest grounding. Populate the existing verification record from the same evidence pass instead of creating a redundant research or review queue when those facts are complete.
+- Give every event one `gpt-5.6-sol` Ultra full-manifest authorship pass. Protected identity, date, location, schedule, source, art, and lifecycle values must remain unchanged.
+- At the hero-image stage, use `$create-celebration-atlas-hero` with GPT-5.6 Luna at Max reasoning. Generate one image per event; create a focused alternative only after rejection or low confidence.
+- Process failures per event and continue the rest of the approved list. Stop every successful event at its existing private Event Factory package preview before publication.
