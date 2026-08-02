@@ -1,0 +1,14 @@
+interface:
+  display_name: Celebration Atlas Hero Images
+  short_description: Research and create accurate event hero images
+  default_prompt: Use $create-celebration-atlas-hero to create a truthful, text-free
+    hero image for this event.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
