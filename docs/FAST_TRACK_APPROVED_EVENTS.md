@@ -114,9 +114,16 @@ authoring stage.
 7. Validate the 1024 x 1536 asset and use the existing Supabase visual workflow.
    A local image is never approval. Hero failure may leave this event art
    pending, but it does not hold content preparation or other events.
-8. Freeze the existing Event Factory package and review the exact private Event
-   Hub at mobile width.
-9. Stop. Publication remains a later explicit human package action.
+8. Freeze the existing Event Factory package and open its combined private
+   review surface. The exact phone-width Event Hub and the event's hero appear
+   in one session, but the page-content/layout decision and hero decision are
+   recorded independently. An approved page may wait on a pending or rejected
+   hero without losing its decision.
+9. If a hero is approved after the page, rebuild only the private package's
+   hero fields. Preserve the page decision when the normalized reviewed
+   manifest is unchanged; automatically reset it when page content changes.
+10. Stop. The combined review surface has no publication action. Publication
+    remains a later, separate explicit human package action.
 
 ## Required Checks
 

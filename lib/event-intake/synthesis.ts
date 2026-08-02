@@ -592,6 +592,8 @@ export async function generateModelAssistedEditorialSynthesis(args: {
   actorIdentity: string;
   configuredModel?: string;
   maxCompletionTokens?: number;
+  reasoningEffort?: 'none' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+  additionalInstructions?: string[];
 }) {
   const { input, manifest, plan } = await prepareEventSourceEditorialWorkspace(args.synthesisId);
   const generated = await generateEditorialModelDraft({
@@ -600,6 +602,8 @@ export async function generateModelAssistedEditorialSynthesis(args: {
     plan,
     configuredModel: args.configuredModel,
     maxCompletionTokens: args.maxCompletionTokens,
+    reasoningEffort: args.reasoningEffort,
+    additionalInstructions: args.additionalInstructions,
   });
   const persisted = await persistModelAssistedEditorialSynthesis({
     synthesisId: args.synthesisId,

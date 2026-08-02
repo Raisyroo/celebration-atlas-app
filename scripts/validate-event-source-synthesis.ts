@@ -1475,4 +1475,18 @@ assert(
   'The content gate must explain the missing fourth topic in plain language.',
 );
 
+const dateOnlyManifest = structuredClone(shelbyFullManifest);
+dateOnlyManifest.scheduleItems = [];
+const dateOnlySchedule = dateOnlyManifest.modules.find((module) => module.type === 'schedule');
+assert(dateOnlySchedule?.type === 'schedule');
+delete dateOnlySchedule.recurringEvents;
+delete dateOnlySchedule.referenceSchedule;
+dateOnlySchedule.sourceIds = [dateOnlyManifest.sources[0].id];
+const dateOnlyContent = validateEventPageContentReadiness(dateOnlyManifest);
+assert.equal(
+  dateOnlyContent.ok,
+  true,
+  'A verified, source-backed edition date must remain package-ready when no current-edition start time is retained.',
+);
+
 console.log('Event source synthesis validations passed.');

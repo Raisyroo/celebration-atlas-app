@@ -67,6 +67,25 @@ deduplicates every row, and appends an audit action. Shelby proved the path by
 recovering eight current entertainment rows from an already retained official
 Wix page without replacing evidence or touching public domain tables.
 
+Forward-only migrations `033_fast_track_identity_and_date_only_schedule.sql`
+and `034_fix_fast_track_function_coalesce.sql` are deployed with local and
+remote history aligned through `034`. They add no table, approval, canonical
+event, or publication path. Migration 033 adds an audited service-role-only
+exact-identity clearance for Approved-List Fast Track candidates and lets the
+four-topic package gate accept a source-backed edition date when no current
+edition start time is retained. Migration 034 corrects only the two deployed
+function bodies from 033 after its first live call exposed an invalid
+schema-qualified PostgreSQL `COALESCE` special form.
+
+Forward-only migration `035_independent_event_page_review.sql` is deployed with
+local and remote history aligned through `035`. It adds an audited
+private Event Hub content/layout decision alongside the existing package and
+visual states. The combined Atlas Control review desk shows the exact mobile
+Event Hub and matching hero together, while allowing either decision to finish
+without the other. Hero-only manifest fields do not invalidate an approved
+page; any normalized page-content change resets that decision. The review RPC
+cannot approve a hero or package, materialize a candidate, or publish.
+
 The operating loop is:
 
 ```text
@@ -480,13 +499,33 @@ primary image, and create a focused alternative only after rejection or low
 confidence. A local image is not approval; the existing specification and
 Supabase visual workflow remain authoritative.
 
+The first Ray-approved Fast Track list is now prepared through private review
+for Yale Bologna Festival, Algonac Lions Pickerel Tournament & Festival, Blue
+Water Fest, Bayview Mackinac Race, and St. Clair River Classic Offshore
+Powerboat Race. Every event retains official evidence, a verified case,
+source-backed coordinates, one accepted `gpt-5.6-sol` Ultra full-manifest
+authorship pass, a generated 1024 x 1536 hero in a `ready_for_review` Supabase
+visual workflow, and a `ready_for_review` art-pending Event Factory package.
+Bayview preserves an intentionally date-only 2026 schedule rather than
+inventing a start time. Blue Water Fest and Bayview remain distinct canonical
+event candidates, and the St. Clair page contains no IHRA or sponsor claim.
+
+The five private previews passed a `390x844` browser review with zero broken
+images, runtime errors, or horizontal overflow. The review exposed and fixed a
+shared mobile defect for long image-free hero names and long tab labels. No
+hero or package was approved, no candidate was canonicalized, and hashes and
+counts for `events`, `event_pages`, `event_page_versions`, and `event_media`
+remained unchanged.
+
 ## Current Next Milestone
 
-Run the first Ray-approved list through the new Fast Track contract. Prepare
-each event independently through retained evidence, Ultra full-manifest
-authorship, Luna Max hero creation, the approved visual workflow, and its exact
-private package preview. Stop before publication and present each successful
-package for an explicit human decision.
+Review each of the five first-batch events through its combined private review
+desk. The exact phone-width Event Hub and hero appear in one session, while the
+page content/layout decision and hero decision remain independent. Approve a
+finished page even when its hero is still uncertain. Reject a hero only for a
+concrete visual failure and request a focused alternative rather than a new
+concept. The combined desk cannot publish. Do not canonicalize or publish any
+event until Ray later invokes the separate reviewed-package publication action.
 
 Shorewood Kiwanis Harper Charity Cruise remains the clean official-first
 continuation if it appears on that list. Do not clear Holland Ponds, Assumption

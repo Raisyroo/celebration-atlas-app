@@ -329,13 +329,20 @@ assert(
 const privatePackagePreview = read('app/atlas-control/event-preview/[packageId]/page.tsx');
 assert(privatePackagePreview.includes('requireAtlasAdmin'), 'private package preview is not protected by Atlas admin authorization');
 assert(
-  privatePackagePreview.includes('homeLink={{ href: "/atlas-control", label: "Atlas Control" }}'),
-  'private package preview does not return authors to Atlas Control',
+  privatePackagePreview.includes('getEventFactoryCombinedReview') && privatePackagePreview.includes('EventReviewDesk'),
+  'private package preview does not load the combined page-and-hero review surface',
 );
+
+const combinedEventReview = read('app/atlas-control/event-preview/[packageId]/EventReviewDesk.tsx');
+assert(combinedEventReview.includes('Approve content + layout'), 'combined review does not expose an independent page decision');
+assert(combinedEventReview.includes('Approve hero'), 'combined review does not expose an independent hero decision');
+assert(combinedEventReview.includes('No publication on this screen') || combinedEventReview.includes('nothing was published'), 'combined review does not preserve the publication boundary');
+assert(combinedEventReview.includes("action: 'prepare'"), 'approved hero is not attached back to the private package');
 
 const controlDesk = read('app/atlas-control/ControlDesk.tsx');
 assert(controlDesk.includes('/atlas-control/synthesis-preview/${synthesis.id}'), 'Atlas Control does not link valid synthesis proposals to their private Event Hub preview');
-assert(controlDesk.includes('/event-preview/${item.packageId}'), 'Atlas Control does not link packages to the instant read-only review surface');
+assert(controlDesk.includes('/atlas-control/event-preview/${item.packageId}'), 'Atlas Control does not link packages to the combined private review surface');
+assert(controlDesk.includes('publish_reviewed') && !controlDesk.includes('Approve and publish'), 'Atlas Control still couples review approval to publication');
 assert(controlDesk.includes('Visual signature workflow') && controlDesk.includes('Save visual brief') && controlDesk.includes('Approve visual'), 'Atlas Control does not expose the visual-signature review workflow');
 
 const publicPackagePreview = read('app/event-preview/[packageId]/page.tsx');

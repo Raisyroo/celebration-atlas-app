@@ -7,7 +7,7 @@ import {
 } from "./eventPageManifestValidation.ts";
 
 export const EVENT_PAGE_CONTENT_READINESS_VERSION =
-  "event-page-content-readiness-v3";
+  "event-page-content-readiness-v4";
 
 export type EventPageContentReadinessOptions = {
   allowLegacyStructure?: boolean;
@@ -165,9 +165,19 @@ function newPackageContentErrors(manifest: EventPageManifest) {
     const recurringItems = schedule.recurringEvents?.items ?? [];
     const referenceItems =
       schedule.referenceSchedule?.groups.flatMap((group) => group.items) ?? [];
-    if (!currentItems.length && !recurringItems.length && !referenceItems.length) {
+    const hasSourceBackedDateOnlySchedule = Boolean(
+      schedule.sourceIds?.length
+      && manifest.identity.startsOn
+      && manifest.identity.endsOn,
+    );
+    if (
+      !currentItems.length
+      && !recurringItems.length
+      && !referenceItems.length
+      && !hasSourceBackedDateOnlySchedule
+    ) {
       errors.push(
-        "Schedule needs retained event hours, current program items, recurring guidance, or a clearly labeled reference program.",
+        "Schedule needs retained event dates or hours, current program items, recurring guidance, or a clearly labeled reference program.",
       );
     }
     if (

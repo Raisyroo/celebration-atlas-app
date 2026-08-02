@@ -11,6 +11,7 @@ import type {
   EventFactoryItem,
   EventFactoryOverview,
   EventFactoryPackageStatus,
+  EventFactoryPageReviewStatus,
   EventFactoryStage,
 } from "./types";
 
@@ -88,6 +89,7 @@ type PackageRow = {
   candidate_id: string;
   event_id: string | null;
   status: EventFactoryPackageStatus;
+  page_review_status: EventFactoryPageReviewStatus;
   readiness_checks: Partial<Record<EventFactoryGateKey, boolean>>;
   package_version: number;
   page_manifest: unknown;
@@ -257,7 +259,7 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
     supabase.from("event_source_syntheses").select("bundle_id,status,is_manifest_valid,manifest_proposal,reconciled_profile").eq("status", "accepted").eq("is_manifest_valid", true).limit(1000),
     supabase.from("event_page_versions").select("status,is_valid,event_pages!event_page_versions_event_page_id_fkey!inner(event_id,event_key,slug)").limit(1000),
     supabase.from("event_verification_cases").select("id,candidate_id,event_id,target_year,status,existence_status,recurrence_status,dates_status,location_status,official_source_count,supporting_source_count").or(`candidate_id.in.(${candidateFilter.join(",")}),event_id.in.(${eventFilter.join(",")})`).order("target_year", { ascending: false }).limit(1000),
-    supabase.from("event_factory_packages").select("id,candidate_id,event_id,status,readiness_checks,package_version,page_manifest,art_asset,published_at,updated_at").or(`candidate_id.in.(${candidateFilter.join(",")}),event_id.in.(${eventFilter.join(",")})`).order("package_version", { ascending: false }).order("updated_at", { ascending: false }).limit(1000),
+    supabase.from("event_factory_packages").select("id,candidate_id,event_id,status,page_review_status,readiness_checks,package_version,page_manifest,art_asset,published_at,updated_at").or(`candidate_id.in.(${candidateFilter.join(",")}),event_id.in.(${eventFilter.join(",")})`).order("package_version", { ascending: false }).order("updated_at", { ascending: false }).limit(1000),
     supabase.from("event_visual_workflows").select("id,candidate_id,event_id,event_key,lane,status,asset,generation_brief,revision_number,updated_at").or(`candidate_id.in.(${candidateFilter.join(",")}),event_id.in.(${eventFilter.join(",")})`).order("revision_number", { ascending: false }).order("updated_at", { ascending: false }).limit(1000),
   ]);
 
@@ -410,6 +412,7 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
       packageId: eventPackage?.id ?? null,
       publishedPackageId: publishedPackage?.id ?? null,
       packageStatus: eventPackage?.status ?? null,
+      pageReviewStatus: eventPackage?.page_review_status ?? null,
       publicationArtState,
       visualWorkflowId: visualWorkflow?.id ?? null,
       visualWorkflowStatus: visualWorkflow?.status ?? null,

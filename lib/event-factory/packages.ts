@@ -12,15 +12,17 @@ import {
   submitEventPageVersion,
 } from "@/lib/event-pages/publishing";
 import type { ScoutContentReference } from "@/lib/scout/composerContext";
-import { getApprovedEventVisualWorkflow } from "./visuals";
+import { getApprovedEventVisualWorkflow, getLatestEventVisualWorkflow } from "./visuals";
 import {
   ART_PROVENANCE_CATEGORIES,
   type ArtProvenanceCategory,
 } from "@/lib/michigan-completion/types";
 import type {
   EventFactoryGateKey,
+  EventFactoryPageReviewStatus,
   EventFactoryPackageStatus,
   EventFactoryPackageSummary,
+  EventVisualWorkflowSummary,
 } from "./types";
 
 type CandidateRow = {
@@ -85,16 +87,43 @@ type PackageRow = {
   event_key: string;
   slug: string;
   status: EventFactoryPackageStatus;
+  page_review_status: EventFactoryPageReviewStatus;
   package_version: number;
   content_hash: string;
   page_manifest: unknown;
   art_asset: Record<string, unknown>;
 };
 
+type PackageReviewRow = PackageRow & {
+  target_year: number;
+  page_review_status: EventFactoryPageReviewStatus;
+  page_reviewed_by: string | null;
+  page_review_notes: string | null;
+  page_reviewed_at: string | null;
+};
+
 export type EventFactoryPackagePreview = {
   manifest: EventPageManifest;
   scoutContentReference: ScoutContentReference;
   artPending: boolean;
+};
+
+export type EventFactoryCombinedReview = EventFactoryPackagePreview & {
+  package: {
+    id: string;
+    candidateId: string;
+    verificationCaseId: string;
+    eventKey: string;
+    eventName: string;
+    targetYear: number;
+    status: EventFactoryPackageStatus;
+    packageVersion: number;
+    pageReviewStatus: EventFactoryPageReviewStatus;
+    pageReviewedBy: string | null;
+    pageReviewNotes: string | null;
+    pageReviewedAt: string | null;
+  };
+  visualWorkflow: EventVisualWorkflowSummary | null;
 };
 
 type PackageListRow = {
@@ -107,6 +136,7 @@ type PackageListRow = {
   event_name: string;
   target_year: number;
   status: EventFactoryPackageStatus;
+  page_review_status?: EventFactoryPageReviewStatus;
   package_version: number;
   readiness_checks: Record<EventFactoryGateKey, boolean>;
   readiness_score: number | string;
@@ -180,6 +210,7 @@ function mapPackageRow(row: PackageListRow): EventFactoryPackageSummary {
     eventName: row.event_name,
     targetYear: row.target_year,
     status: row.status,
+    pageReviewStatus: row.page_review_status ?? "pending",
     packageVersion: row.package_version,
     readinessChecks: row.readiness_checks,
     readinessScore: Number(row.readiness_score),
@@ -198,9 +229,22 @@ function mapPackageRow(row: PackageListRow): EventFactoryPackageSummary {
 export async function listEventFactoryPackages(): Promise<{ items: EventFactoryPackageSummary[]; error: string | null }> {
   const supabase = createAtlasServiceClient();
   if (!supabase) return { items: [], error: "Atlas Control Plane configuration is incomplete." };
-  const { data, error } = await supabase.rpc("atlas_list_event_factory_packages", { p_limit: 200 });
-  if (error) return { items: [], error: error.message };
-  return { items: ((data ?? []) as PackageListRow[]).map(mapPackageRow), error: null };
+  const [listResult, reviewResult] = await Promise.all([
+    supabase.rpc("atlas_list_event_factory_packages", { p_limit: 200 }),
+    supabase.from("event_factory_packages").select("id,page_review_status").limit(200),
+  ]);
+  if (listResult.error) return { items: [], error: listResult.error.message };
+  if (reviewResult.error) return { items: [], error: reviewResult.error.message };
+  const reviewById = new Map(
+    (reviewResult.data ?? []).map((row) => [row.id, row.page_review_status as EventFactoryPageReviewStatus]),
+  );
+  return {
+    items: ((listResult.data ?? []) as PackageListRow[]).map((row) => mapPackageRow({
+      ...row,
+      page_review_status: reviewById.get(row.package_id) ?? "pending",
+    })),
+    error: null,
+  };
 }
 
 export async function prepareEventFactoryPackage(args: {
@@ -504,7 +548,7 @@ async function getPackage(packageId: string): Promise<PackageRow> {
   const supabase = requireServiceClient();
   const { data, error } = await supabase
     .from("event_factory_packages")
-    .select("id,supersedes_package_id,verification_case_id,candidate_id,event_id,event_key,slug,status,package_version,content_hash,page_manifest,art_asset")
+    .select("id,supersedes_package_id,verification_case_id,candidate_id,event_id,event_key,slug,status,page_review_status,package_version,content_hash,page_manifest,art_asset")
     .eq("id", packageId)
     .single();
   if (error || !data) throw new Error(error?.message ?? "Event package was not found.");
@@ -534,6 +578,58 @@ export async function getEventFactoryPackagePreview(
       packageVersion: String(packageRow.package_version),
     },
     artPending: validation.artPending,
+  };
+}
+
+export async function getEventFactoryCombinedReview(
+  packageId: string,
+): Promise<EventFactoryCombinedReview> {
+  const supabase = requireServiceClient();
+  const { data, error } = await supabase
+    .from("event_factory_packages")
+    .select("id,supersedes_package_id,verification_case_id,candidate_id,event_id,event_key,slug,status,target_year,package_version,content_hash,page_manifest,art_asset,page_review_status,page_reviewed_by,page_review_notes,page_reviewed_at")
+    .eq("id", packageId)
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Event package was not found.");
+  const packageRow = data as PackageReviewRow;
+  const validation = validateEventPageContentReadiness(
+    packageRow.page_manifest,
+    {
+      allowLegacyStructure:
+        packageRow.status === "published"
+        || Boolean(packageRow.supersedes_package_id),
+    },
+  );
+  if (!validation.ok) {
+    throw new Error(`Event package preview is invalid: ${validation.errors.join(" ")}`);
+  }
+  const visualWorkflow = await getLatestEventVisualWorkflow({
+    candidateId: packageRow.candidate_id,
+    targetYear: packageRow.target_year,
+  });
+  return {
+    manifest: validation.value,
+    scoutContentReference: {
+      sourceKind: "event-factory-package",
+      packageId: packageRow.id,
+      packageVersion: String(packageRow.package_version),
+    },
+    artPending: validation.artPending,
+    package: {
+      id: packageRow.id,
+      candidateId: packageRow.candidate_id,
+      verificationCaseId: packageRow.verification_case_id,
+      eventKey: packageRow.event_key,
+      eventName: validation.value.identity.name,
+      targetYear: packageRow.target_year,
+      status: packageRow.status,
+      packageVersion: packageRow.package_version,
+      pageReviewStatus: packageRow.page_review_status,
+      pageReviewedBy: packageRow.page_reviewed_by,
+      pageReviewNotes: packageRow.page_review_notes,
+      pageReviewedAt: packageRow.page_reviewed_at,
+    },
+    visualWorkflow,
   };
 }
 
@@ -611,6 +707,23 @@ async function finishEventFactoryPublication(args: {
   const { data, error } = await supabase.rpc("atlas_finish_event_factory_publication", {
     p_package_id: args.packageId,
     p_succeeded: args.succeeded,
+    p_actor_identity: args.actorIdentity,
+    p_notes: args.notes ?? null,
+  });
+  if (error) throw new Error(error.message);
+  return firstRpcRow(data);
+}
+
+export async function reviewEventFactoryPage(args: {
+  packageId: string;
+  decision: "approve" | "reject" | "reopen";
+  actorIdentity: string;
+  notes?: string;
+}) {
+  const supabase = requireServiceClient();
+  const { data, error } = await supabase.rpc("atlas_review_event_factory_page", {
+    p_package_id: args.packageId,
+    p_decision: args.decision,
     p_actor_identity: args.actorIdentity,
     p_notes: args.notes ?? null,
   });
@@ -825,4 +938,16 @@ export async function approveAndPublishEventFactoryPackage(args: {
     }
     throw error;
   }
+}
+
+export async function publishReviewedEventFactoryPackage(args: {
+  packageId: string;
+  actorIdentity: string;
+  notes?: string;
+}) {
+  const packageRow = await getPackage(args.packageId);
+  if (packageRow.page_review_status !== "approved") {
+    throw new Error("Approve the Event Hub content and layout before publication.");
+  }
+  return approveAndPublishEventFactoryPackage(args);
 }

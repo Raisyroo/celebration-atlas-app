@@ -29,6 +29,8 @@ export type EventFactoryPackageStatus =
   | "failed"
   | "archived";
 
+export type EventFactoryPageReviewStatus = "pending" | "approved" | "rejected";
+
 export type EventFactoryItem = {
   key: string;
   candidateId: string | null;
@@ -38,6 +40,7 @@ export type EventFactoryItem = {
   packageId: string | null;
   publishedPackageId: string | null;
   packageStatus: EventFactoryPackageStatus | null;
+  pageReviewStatus: EventFactoryPageReviewStatus | null;
   publicationArtState:
     | "published_with_approved_art"
     | "published_without_art"
@@ -153,6 +156,7 @@ export type EventFactoryPackageSummary = {
   eventName: string;
   targetYear: number;
   status: EventFactoryPackageStatus;
+  pageReviewStatus: EventFactoryPageReviewStatus;
   packageVersion: number;
   readinessChecks: Record<EventFactoryGateKey, boolean>;
   readinessScore: number;

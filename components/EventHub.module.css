@@ -1939,11 +1939,21 @@
 }
 
 @media (max-width: 480px) {
+  .artPending strong {
+    display: none;
+  }
+
   .navigationButton,
   .navigationActive {
     flex-direction: column;
     gap: 3px;
     font-size: 0.68rem;
+  }
+
+  .navigationButton span,
+  .navigationActive span {
+    width: 100%;
+    max-width: 100%;
   }
 }
 

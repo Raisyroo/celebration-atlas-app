@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import EventHub from "@/components/EventHub";
 import { requireAtlasAdmin } from "@/lib/atlas-control/auth";
-import { getEventFactoryPackagePreview } from "@/lib/event-factory/packages";
+import { getEventFactoryCombinedReview } from "@/lib/event-factory/packages";
+import EventReviewDesk from "./EventReviewDesk";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ type EventPackagePreviewPageProps = {
 
 async function loadManifest(packageId: string) {
   try {
-    return await getEventFactoryPackagePreview(packageId);
+    return await getEventFactoryCombinedReview(packageId);
   } catch {
     notFound();
   }
@@ -28,14 +28,6 @@ export default async function EventPackagePreviewPage({ params }: EventPackagePr
   if (!auth.ok) redirect("/atlas-login");
 
   const { packageId } = await params;
-  const preview = await loadManifest(packageId);
-  return (
-    <EventHub
-      key={preview.manifest.eventId}
-      manifest={preview.manifest}
-      scoutContentReference={preview.scoutContentReference}
-      homeLink={{ href: "/atlas-control", label: "Atlas Control" }}
-      artPending={preview.artPending}
-    />
-  );
+  const review = await loadManifest(packageId);
+  return <EventReviewDesk review={review} />;
 }

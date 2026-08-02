@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   parseFastTrackApprovedList,
   stableFastTrackJson,
@@ -123,6 +124,24 @@ assert.equal(missingEdition.ok, false);
 assert(
   !missingEdition.ok &&
     missingEdition.errors.some((error) => error.includes("targetYear")),
+);
+
+const fastTrackGateMigration = readFileSync(
+  "supabase/migrations/033_fast_track_identity_and_date_only_schedule.sql",
+  "utf8",
+);
+assert.match(fastTrackGateMigration, /atlas_clear_fast_track_candidate_identity/);
+assert.match(fastTrackGateMigration, /deterministic_clean_no_collision/);
+assert.match(fastTrackGateMigration, /canonicalization_attempted', false/);
+assert.match(fastTrackGateMigration, /v_has_source_backed_date_schedule/);
+assert.doesNotMatch(fastTrackGateMigration, /pg_catalog\.coalesce/);
+assert.match(
+  fastTrackGateMigration,
+  /revoke all on function public\.atlas_clear_fast_track_candidate_identity[\s\S]*from public, anon, authenticated/,
+);
+assert.match(
+  fastTrackGateMigration,
+  /grant execute on function public\.atlas_clear_fast_track_candidate_identity[\s\S]*to service_role/,
 );
 
 console.log("Fast Track approved-list validation passed.");

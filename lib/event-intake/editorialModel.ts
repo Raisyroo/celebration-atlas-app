@@ -87,15 +87,30 @@ export async function generateEditorialModelDraft(args: {
   plan: EditorialPlan;
   configuredModel?: string;
   maxCompletionTokens?: number;
+  reasoningEffort?: 'none' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+  additionalInstructions?: string[];
+  providerRoute?: 'gateway' | 'openai_direct';
 }) {
-  const token = await gatewayToken();
+  const providerRoute = args.providerRoute ?? 'gateway';
+  const token = providerRoute === 'openai_direct'
+    ? process.env.OPENAI_API_KEY?.trim() || ''
+    : await gatewayToken();
   if (!token) {
-    throw new Error('AI Gateway authentication is unavailable. Vercel OIDC or AI_GATEWAY_API_KEY is required.');
+    throw new Error(providerRoute === 'openai_direct'
+      ? 'Direct OpenAI authentication is unavailable. OPENAI_API_KEY is required.'
+      : 'AI Gateway authentication is unavailable. Vercel OIDC or AI_GATEWAY_API_KEY is required.');
   }
-  const model = args.configuredModel?.trim() || editorialModel();
+  const requestedModel = args.configuredModel?.trim() || editorialModel();
+  const model = providerRoute === 'openai_direct'
+    ? requestedModel.replace(/^openai\//, '')
+    : requestedModel;
   const evidence = buildEditorialEvidencePackage(args.input, args.manifest, args.plan);
   const snapshotIds = args.input.snapshots.map((snapshot) => snapshot.id);
-  const response = await fetch(AI_GATEWAY_URL, {
+  const response = await fetch(
+    providerRoute === 'openai_direct'
+      ? 'https://api.openai.com/v1/chat/completions'
+      : AI_GATEWAY_URL,
+    {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -108,7 +123,8 @@ export async function generateEditorialModelDraft(args: {
         {
           role: 'user',
           content: JSON.stringify({
-            instruction: 'Author the complete visitor-facing Event Hub manifest from the dossier. Keep every protected value byte-for-byte equivalent, but make all visitor-facing editorial and structural decisions yourself. Return exactly four useful topics, event-specific navigation, a visitor-organized schedule, factual planning guidance, and specific Scout questions. Do not copy Detroit Jazz Festival wording or force its stage-oriented structure onto this outdoor juried art fair.',
+            instruction: 'Author the complete visitor-facing Event Hub manifest from the dossier. Keep every protected value byte-for-byte equivalent, but make all visitor-facing editorial and structural decisions yourself. Return exactly four useful topics, event-specific navigation, a visitor-organized schedule, factual planning guidance, and specific Scout questions. Do not copy wording or force a structure from an unrelated event.',
+            additionalInstructions: args.additionalInstructions ?? [],
             qualityBenchmark: {
               source: 'The checked-in Detroit Jazz Festival Event Hub',
               traits: [
@@ -133,10 +149,12 @@ export async function generateEditorialModelDraft(args: {
         1,
         Math.min(8_000, args.maxCompletionTokens ?? 6_000),
       ),
+      ...(args.reasoningEffort ? { reasoning_effort: args.reasoningEffort } : {}),
       stream: false,
     }),
     signal: AbortSignal.timeout(90_000),
-  });
+    },
+  );
   const payload = await response.json().catch(() => ({})) as GatewayResponse;
   if (!response.ok) {
     throw new Error(payload.error?.message || `AI Gateway returned HTTP ${response.status}.`);
@@ -153,9 +171,10 @@ export async function generateEditorialModelDraft(args: {
   }
   return {
     output,
-    provider: 'vercel-ai-gateway',
+    provider: providerRoute === 'openai_direct' ? 'openai' : 'vercel-ai-gateway',
     model: payload.model || model,
-    requestedModel: model,
+    requestedModel,
+    reasoningEffort: args.reasoningEffort ?? null,
     responseId: payload.id ?? null,
     usage: {
       inputTokens:

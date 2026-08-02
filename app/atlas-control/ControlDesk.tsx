@@ -266,9 +266,9 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
   }
 
   async function eventFactoryAction(payload: Record<string, string>, pendingLabel: string) {
-    if (payload.action === "approve_and_publish" && !window.confirm("Approve this complete package and publish its canonical event, map record, Event Hub, Scout context, and selected art?")) return;
+    if (payload.action === "publish_reviewed" && !window.confirm("Publish this separately reviewed Event Hub package? This will materialize its canonical event and make the page public.")) return;
     setFactoryPending(pendingLabel);
-    setFactoryResult(payload.action === "prepare" ? "Freezing the complete review package..." : payload.action === "approve_and_publish" ? "Applying the approved package and publishing its outputs..." : "Updating the editorial decision...");
+    setFactoryResult(payload.action === "prepare" ? "Freezing the complete review package..." : payload.action === "publish_reviewed" ? "Publishing the separately reviewed package..." : "Updating the editorial decision...");
     const response = await fetch("/api/atlas-control/event-factory", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -284,8 +284,8 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
     setFactoryResult(
       payload.action === "prepare"
         ? "Review package assembled. Preview it before approval; nothing was published."
-        : payload.action === "approve_and_publish"
-          ? "Event package approved and published."
+        : payload.action === "publish_reviewed"
+          ? "Reviewed event package published."
           : payload.action === "reject"
             ? "Package returned for changes. Nothing was published."
             : "Package reopened for revision.",
@@ -750,8 +750,8 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
                 <div className="factory-actions">
                   <div>
                     {item.packageId ? (
-                      <a href={`/event-preview/${item.packageId}`} target="_blank" rel="noreferrer">
-                        Preview review package <ExternalLink size={14} aria-hidden="true" />
+                      <a href={`/atlas-control/event-preview/${item.packageId}`} target="_blank" rel="noreferrer">
+                        Review page + hero <ExternalLink size={14} aria-hidden="true" />
                       </a>
                     ) : item.stage === "live" ? (
                       <a href={`/events/${item.slug}`} target="_blank" rel="noreferrer">
@@ -783,29 +783,23 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
                       )}
                     {item.packageId && item.packageStatus === "ready_for_review" && (
                       <>
-                        <button
-                          type="button"
-                          disabled={Boolean(factoryPending)}
-                          onClick={() => eventFactoryAction({ action: "approve_and_publish", packageId: item.packageId ?? "" }, `approve:${item.key}`)}
-                        >
-                          <FileCheck size={14} aria-hidden="true" />
-                          {factoryPending === `approve:${item.key}` ? "Publishing..." : "Approve and publish"}
-                        </button>
-                        <button
-                          type="button"
-                          className="factory-reject"
-                          disabled={Boolean(factoryPending)}
-                          onClick={() => eventFactoryAction({ action: "reject", packageId: item.packageId ?? "", notes: "Returned for editorial changes." }, `reject:${item.key}`)}
-                        >
-                          Needs changes
-                        </button>
+                        {item.pageReviewStatus === "approved" && (
+                          <button
+                            type="button"
+                            disabled={Boolean(factoryPending)}
+                            onClick={() => eventFactoryAction({ action: "publish_reviewed", packageId: item.packageId ?? "" }, `publish:${item.key}`)}
+                          >
+                            <FileCheck size={14} aria-hidden="true" />
+                            {factoryPending === `publish:${item.key}` ? "Publishing..." : "Publish reviewed event"}
+                          </button>
+                        )}
                       </>
                     )}
                     {item.packageId && item.packageStatus === "failed" && (
                       <button
                         type="button"
                         disabled={Boolean(factoryPending)}
-                        onClick={() => eventFactoryAction({ action: "approve_and_publish", packageId: item.packageId ?? "" }, `retry:${item.key}`)}
+                        onClick={() => eventFactoryAction({ action: "publish_reviewed", packageId: item.packageId ?? "" }, `retry:${item.key}`)}
                       >
                         {factoryPending === `retry:${item.key}` ? "Retrying..." : "Retry publication"}
                       </button>
@@ -820,7 +814,9 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
                       </button>
                     )}
                   </div>
-                  {item.packageStatus === "ready_for_review" && <span>Complete package ready for editorial approval</span>}
+                  {item.packageStatus === "ready_for_review" && item.pageReviewStatus === "approved" && <span>Page approved; publication remains separate</span>}
+                  {item.packageStatus === "ready_for_review" && item.pageReviewStatus === "rejected" && <span>Page changes requested; hero review remains independent</span>}
+                  {item.packageStatus === "ready_for_review" && item.pageReviewStatus === "pending" && <span>Review page and hero together</span>}
                   {item.packageStatus === "published" && <span>Approved and published</span>}
                 </div>
               )}

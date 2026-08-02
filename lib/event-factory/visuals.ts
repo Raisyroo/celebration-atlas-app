@@ -235,6 +235,25 @@ export async function getEventVisualWorkflow(workflowId: string): Promise<EventV
   return mapWorkflowRow(data as StoredVisualWorkflowRow);
 }
 
+export async function getLatestEventVisualWorkflow(args: {
+  candidateId: string;
+  targetYear: number;
+}): Promise<EventVisualWorkflowSummary | null> {
+  const supabase = requireServiceClient();
+  const { data, error } = await supabase
+    .from("event_visual_workflows")
+    .select("id,revision_number,supersedes_workflow_id,candidate_id,event_id,source_bundle_id,target_year,event_key,event_name,location_label,lane,status,search_query,reviewed_thumbnail_count,reference_sources,visual_signature,generation_brief,asset,qa_checks,content_hash,reviewed_by,review_notes,created_at,updated_at,reviewed_at")
+    .eq("candidate_id", args.candidateId)
+    .eq("target_year", args.targetYear)
+    .neq("status", "archived")
+    .order("revision_number", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? mapWorkflowRow(data as StoredVisualWorkflowRow) : null;
+}
+
 export async function getApprovedEventVisualWorkflow(args: {
   candidateId?: string | null;
   eventKey?: string | null;

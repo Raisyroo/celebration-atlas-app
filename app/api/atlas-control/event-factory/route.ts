@@ -5,6 +5,8 @@ import {
   approveAndPublishEventFactoryPackage,
   createEventFactoryArtRevision,
   prepareEventFactoryPackage,
+  publishReviewedEventFactoryPackage,
+  reviewEventFactoryPage,
   reviewEventFactoryPackage,
 } from "@/lib/event-factory/packages";
 import { getEventFactoryOverview } from "@/lib/event-factory/readiness";
@@ -59,6 +61,31 @@ export async function POST(request: Request) {
       if (!UUID.test(packageId)) return noStoreJson({ error: "A valid event package id is required." }, 400);
       const result = await approveAndPublishEventFactoryPackage({
         packageId,
+        actorIdentity: auth.admin.email,
+        notes: notes || undefined,
+      });
+      return noStoreJson({ result });
+    }
+
+    if (action === "publish_reviewed") {
+      if (!UUID.test(packageId)) return noStoreJson({ error: "A valid event package id is required." }, 400);
+      const result = await publishReviewedEventFactoryPackage({
+        packageId,
+        actorIdentity: auth.admin.email,
+        notes: notes || undefined,
+      });
+      return noStoreJson({ result });
+    }
+
+    if (action === "review_page") {
+      const decision = text(payload.decision);
+      if (!UUID.test(packageId)) return noStoreJson({ error: "A valid event package id is required." }, 400);
+      if (!['approve', 'reject', 'reopen'].includes(decision)) {
+        return noStoreJson({ error: "A valid page review decision is required." }, 400);
+      }
+      const result = await reviewEventFactoryPage({
+        packageId,
+        decision: decision as "approve" | "reject" | "reopen",
         actorIdentity: auth.admin.email,
         notes: notes || undefined,
       });

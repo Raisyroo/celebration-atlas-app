@@ -50,7 +50,6 @@ const eventHubStyles = readFileSync(
 const eventHubCallSites = [
   '../app/events/[id]/page.tsx',
   '../app/dev/event-package-preview/[packageId]/page.tsx',
-  '../app/atlas-control/event-preview/[packageId]/page.tsx',
   '../app/atlas-control/synthesis-preview/[synthesisId]/page.tsx',
   '../app/event-preview/[packageId]/page.tsx',
 ] as const;
@@ -340,6 +339,16 @@ for (const callSitePath of eventHubCallSites) {
     `${callSitePath} must key EventHub by event ID so Scout history resets on event changes.`,
   );
 }
+
+const combinedReviewSource = readFileSync(
+  new URL('../app/atlas-control/event-preview/[packageId]/EventReviewDesk.tsx', import.meta.url),
+  'utf8',
+);
+assert(
+  combinedReviewSource.includes('src={previewUrl}')
+    && combinedReviewSource.includes('/event-preview/${review.package.id}'),
+  'Combined package review must embed the keyed read-only EventHub preview.',
+);
 
 assert(
   /\.scoutForm input:not\(\[type='hidden'\]\)[\s\S]*?font-size:\s*1rem;/.test(
