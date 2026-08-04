@@ -334,7 +334,7 @@ The registry contains exactly the eleven Michigan v1 stages below. A registry ch
 - Processor: deterministic.
 - Prerequisites: a source bundle ready for synthesis.
 - Idempotency: bundle evidence plus deterministic engine version and input hash.
-- Completion: a deterministic proposal exists with visible conflicts/missing fields, validation report, quality score, and proposed Event Hub content. For new packages, the deterministic proposal must establish the four-topic structure before optional editorial assistance can refine its prose.
+- Completion: a deterministic proposal exists with visible conflicts/missing fields, validation report, quality score, and proposed Event Hub content. For new packages, the deterministic proposal supplies protected facts and a conservative semantic scaffold; full-manifest authorship may replace the visitor-facing structure before review.
 - Retry: exact replay reuses the proposal; changed evidence or engine version produces a new immutable proposal.
 - Exceptions: `deterministic_synthesis_failure`, `conflicting_event_dates`, `missing_or_ambiguous_location`, `archive_current_program_ambiguity`, `unexpected_system_failure`.
 - Blocking: engine failure or unsafe facts block content; weak but factually safe prose does not.
@@ -358,7 +358,7 @@ The registry contains exactly the eleven Michigan v1 stages below. A registry ch
 - Processor: deterministic.
 - Prerequisites: deterministic or accepted editorial content and resolved publication-sensitive factual exceptions.
 - Idempotency: chosen synthesis ID, validator version, and content projection hash.
-- Completion: identity, evidence, dates/lifecycle, location/map provenance, official link, exactly four substantive topics (`Why Go`, `Schedule`, one evidence-backed `Highlights` or `Traditions` topic, and `Plan`), citations, sponsor exclusion, and public-copy checks pass independently of art. Identity echoes, template placeholders, uncited practical details, empty schedules, three-topic shells, repeated hero/Why Go attraction lists, factory phrases, and multiple generic Highlight summaries fail this gate.
+- Completion: identity, evidence, dates/lifecycle, location/map provenance, official link, four to six substantive topics (one `Why Go`, one `Schedule`, one `Plan`, and one to three evidence-backed `Highlights` or `Traditions` topics), citations, sponsor exclusion, and public-copy checks pass independently of art. Identity echoes, template placeholders, scant Why Go copy, generic Scout advice, uncited practical details, empty schedules, three-topic shells, repeated hero/Why Go attraction lists, factory phrases, and multiple generic Highlight summaries fail this gate.
 - Retry: after content/evidence/validator-version changes.
 - Exceptions: `conflicting_event_dates`, `missing_official_source`, `missing_or_ambiguous_location`, `editorial_quality_failure`, `event_factory_readiness_failure`.
 - Blocking: blocks package preparation if content is unsafe; does not wait for art.

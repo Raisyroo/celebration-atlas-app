@@ -1213,7 +1213,7 @@ const shelbyContent = validateEventPageContentReadiness(shelbyManifest);
 const shelbyBoundedEditorial = buildBoundedEditorialRewriteTargets(
   shelbyManifest,
 );
-assert.equal(shelbySynthesis.engineVersion, 'deterministic-v22');
+assert.equal(shelbySynthesis.engineVersion, 'deterministic-v23-ultra-first');
 assert.equal(shelbyManifest.navigation.length, 4, 'A new art-fair manifest must contain all four primary topics.');
 assert.equal(shelbyManifest.scheduleItems.length, 2, 'Official event-day hours must appear as useful Schedule rows.');
 assert.equal(
@@ -1272,7 +1272,7 @@ const shelbyEditorial = applyEditorialModelOutput({
       },
       {
         target: 'module.why-go.summary',
-        text: 'Free entry and parking make it easy to browse at your own pace, and nearby shuttle buses add another arrival option.',
+        text: 'Admission costs nothing, and visitors can leave their cars in designated lots near the grounds. Shuttle buses connect those lots to River Bends Park, making the outing easier to pace across either official event day.',
         sourceSnapshotIds: [shelbySnapshotId],
       },
       {
@@ -1363,8 +1363,15 @@ assert(
   && shelbyFullPlan?.type === 'planVisit',
 );
 shelbyFullWhyGo.headline = 'Original work fills a shaded park instead of a convention aisle.';
-shelbyFullWhyGo.summary = 'The juried fair combines artist booths, marketplace vendors, music, food, and a hands-on children’s area.';
+shelbyFullWhyGo.summary = 'Saturday and Sunday use the same River Bends Park setting, so the experience can expand beyond booth browsing. Musical entertainment, food, a children’s craft area, free lots, and shuttle buses make it practical to alternate discovery with breaks.';
 shelbyFullSchedule.subtitle = 'Use the two official event-day listings to choose a Saturday or Sunday visit.';
+shelbyFullSchedule.presentationGroups = [{
+  id: 'river-bends-weekend',
+  title: 'River Bends Park weekend',
+  summary: 'Saturday and Sunday share the same park setting.',
+  itemIds: shelbyFullManifest.scheduleItems.map((item) => item.id),
+  sourceIds: [shelbyManifest.sources[0].id],
+}];
 shelbyFullHighlights.headline = 'Start with original work, then find the parts of the fair that move and make noise.';
 shelbyFullHighlights.summary = 'Artist booths anchor the visit while music, food, and children’s activities create natural breaks.';
 shelbyFullPlan.subtitle = 'River Bends Park is the fixed point for both days of the fair.';
@@ -1426,6 +1433,11 @@ assert(
   'Full-manifest authorship must be able to make event-specific navigation decisions.',
 );
 assert.equal(
+  shelbyFullEditorial.manifest.modules.find((module) => module.type === 'schedule')?.presentationGroups?.[0]?.title,
+  'River Bends Park weekend',
+  'Full-manifest authorship must be able to organize protected schedule rows with source-backed event-specific headings.',
+);
+assert.equal(
   shelbyFullEditorial.manifest.scoutSuggestions[0].label,
   'How large is the artist marketplace?',
   'Full-manifest authorship must replace generic Scout structure with event-specific questions.',
@@ -1445,6 +1457,23 @@ assert.throws(
   }),
   /protected event facts/,
   'A model-authored manifest must not change retained schedule facts.',
+);
+
+const incompleteSchedulePresentation = structuredClone(shelbyFullManifest);
+const incompletePresentationModule = incompleteSchedulePresentation.modules.find((module) => module.type === 'schedule');
+assert(incompletePresentationModule?.type === 'schedule' && incompletePresentationModule.presentationGroups);
+incompletePresentationModule.presentationGroups[0].itemIds = incompletePresentationModule.presentationGroups[0].itemIds.slice(0, 1);
+assert.throws(
+  () => applyFullManifestEditorialOutput({
+    parentSynthesisId: '00000000-0000-4000-8000-000000000006',
+    provider: 'fixture-codex-session',
+    model: 'fixture-ultra',
+    input: shelbyInput,
+    manifest: shelbyEditorial.manifest,
+    output: { manifest: incompleteSchedulePresentation, citations: shelbyFullCitations },
+  }),
+  /presentation groups must organize every protected schedule item exactly once/,
+  'Event-specific schedule presentation must never hide or duplicate a protected row.',
 );
 
 const unsupportedPlanningManifest = structuredClone(shelbyFullManifest);
@@ -1471,7 +1500,7 @@ shellOnlyManifest.scoutSuggestions = [];
 const shellOnlyContent = validateEventPageContentReadiness(shellOnlyManifest);
 assert.equal(shellOnlyContent.ok, false, 'A three-topic shell must never pass new-package content readiness.');
 assert(
-  !shellOnlyContent.ok && shellOnlyContent.errors.some((error) => error.includes('four primary topics')),
+  !shellOnlyContent.ok && shellOnlyContent.errors.some((error) => error.includes('four to six primary topics')),
   'The content gate must explain the missing fourth topic in plain language.',
 );
 
@@ -1481,6 +1510,7 @@ const dateOnlySchedule = dateOnlyManifest.modules.find((module) => module.type =
 assert(dateOnlySchedule?.type === 'schedule');
 delete dateOnlySchedule.recurringEvents;
 delete dateOnlySchedule.referenceSchedule;
+delete dateOnlySchedule.presentationGroups;
 dateOnlySchedule.sourceIds = [dateOnlyManifest.sources[0].id];
 const dateOnlyContent = validateEventPageContentReadiness(dateOnlyManifest);
 assert.equal(

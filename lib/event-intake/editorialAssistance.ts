@@ -18,7 +18,7 @@ import type {
   ModelEditorialReviewSummary,
 } from './synthesisTypes.ts';
 
-export const EDITORIAL_PROMPT_VERSION = 'celebration-atlas-editor-v7-full-manifest';
+export const EDITORIAL_PROMPT_VERSION = 'celebration-atlas-editor-v8-ultra-first';
 const SPONSOR_LANGUAGE = /\b(?:sponsor(?:ed|ing|ship|s)?|presented by|presenting partner|title partner|powered by|funder)\b/i;
 const PERSONAL_CONTACT = /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\b(?:email|call|text)\s+(?:me|us|the|to)\b/i;
 const SPECULATIVE_LANGUAGE = /\b(?:probably|presumably|apparently|we think|likely to|expected to return)\b/i;
@@ -668,6 +668,17 @@ function validateFullManifestSchedulePresentation(manifest: EventPageManifest) {
         errors.push(`Schedule filter ${filter.id} does not contain a protected schedule date.`);
       }
     }
+    if (module.presentationGroups?.length) {
+      const protectedItemIds = new Set(manifest.scheduleItems.map((item) => item.id));
+      const presentedItemIds = module.presentationGroups.flatMap((group) => group.itemIds);
+      if (
+        presentedItemIds.some((itemId) => !protectedItemIds.has(itemId))
+        || new Set(presentedItemIds).size !== presentedItemIds.length
+        || presentedItemIds.length !== protectedItemIds.size
+      ) {
+        errors.push(`Schedule module ${module.id} presentation groups must organize every protected schedule item exactly once.`);
+      }
+    }
   }
   return errors;
 }
@@ -810,6 +821,11 @@ export function applyFullManifestEditorialOutput(args: {
       if (module.notes?.length) {
         groundCited(`module.${module.id}.notes`, module.notes.join(' '));
       }
+      module.presentationGroups?.forEach((group) => groundPublicSources(
+        `module.${module.id}.presentation.${group.id}`,
+        `${group.title} ${group.summary ?? ''}`,
+        group.sourceIds,
+      ));
     } else if (module.type === 'highlights' || module.type === 'traditions') {
       groundCited(`module.${module.id}.headline`, module.headline);
       groundCited(`module.${module.id}.summary`, module.summary);
@@ -1033,6 +1049,7 @@ function immutableManifestProjection(manifest: EventPageManifest) {
         includedCategories: module.includedCategories ?? null,
         includedTags: module.includedTags ?? null,
         filters: module.filters,
+        presentationGroups: module.presentationGroups ?? null,
         recurringEvents: module.recurringEvents ?? null,
         referenceSchedule: module.referenceSchedule ? {
           observedYear: module.referenceSchedule.observedYear,

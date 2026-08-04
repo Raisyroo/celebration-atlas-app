@@ -96,12 +96,19 @@ authoring stage.
 ## Per-Event Execution
 
 1. Reuse an exact candidate or canonical event, or retain a unique candidate.
-2. Capture the smallest sufficient official source set. Expand only for a
-   missing fact, a material conflict, a schedule, or useful page content.
+2. Start with the organizer-controlled home page, then retain the useful
+   official subpages that reveal the event: schedule, visitor planning,
+   history, traditions, competitions, stages, lineup, parade, or equivalent
+   event-specific material. This is one focused official-site exploration,
+   not another discovery qualification pass.
 3. Reconcile facts and populate the existing verification record from that
    same evidence pass.
-4. Give the complete protected dossier to `gpt-5.6-sol` at Ultra reasoning.
-   Ultra owns the full visitor-facing manifest, not a small rewrite allowlist.
+4. Give the complete protected dossier to `gpt-5.6-sol` at Ultra reasoning
+   before a Factory layout becomes authoritative. Ultra owns the full
+   visitor-facing manifest, not a small rewrite allowlist or a four-topic
+   form. It chooses four to six useful topics, their order and labels, and any
+   source-backed schedule presentation groups such as actual stages, venues,
+   days, or competition classes.
    Identity, dates, location, schedule facts, source identities, approved art,
    and lifecycle state remain protected.
 5. Run the existing immutable-fact, grounding, content, citation, sponsor,
@@ -124,6 +131,37 @@ authoring stage.
    manifest is unchanged; automatically reset it when page content changes.
 10. Stop. The combined review surface has no publication action. Publication
     remains a later, separate explicit human package action.
+
+## Grouped Supplied Hero Upload
+
+Ray may attach a batch of finished hero images directly to the Codex task. No
+image-generation gateway is involved. Use either the full event key or the
+event-name slug as each filename, for example:
+
+```text
+yale-bologna-festival.jpg
+algonac-lions-pickerel-tournament-festival.png
+blue-water-fest.webp
+bayview-mackinac-race.jpg
+st-clair-river-classic-offshore-powerboat-race.png
+```
+
+Codex first runs the batch attachment command without write authorization to
+prove every filename has one unambiguous private visual workflow. After image
+specification, full-frame, event identity, text/mark, mobile crop, and supplied
+asset rights checks are complete, Codex repeats it with the explicit private
+write flags. The command uploads each image to Supabase and moves only its
+existing visual workflow back to `ready_for_review`; it does not approve the
+hero, approve the page, attach art to a package, or publish.
+
+```text
+npm run atlas:attach-fast-track-heroes -- \
+  --input <file-or-directory> \
+  --actor <identity>
+```
+
+Atlas Control remains the fallback for individual self-service uploads or any
+filename whose event mapping is ambiguous.
 
 ## Required Checks
 

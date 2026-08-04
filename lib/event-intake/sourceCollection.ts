@@ -104,16 +104,16 @@ export function selectBoundedOfficialSourceLinks(
   const selectedUrls = new Set<string>();
   const buckets = [
     'schedule',
+    'history',
+    'traditions',
+    'planning',
+    'parade',
     'artists',
     'competitions',
     'vendors',
     'entertainment',
     'lineup',
-    'planning',
-    'history',
     'personalities',
-    'parade',
-    'traditions',
   ];
 
   for (const bucket of buckets) {

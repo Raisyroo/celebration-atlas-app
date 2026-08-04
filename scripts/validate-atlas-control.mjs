@@ -382,7 +382,7 @@ assert(editorialPlanning.includes('currentScheduleProtected'), 'editorial planni
 assert(editorialPlanning.includes('cherry queen') && editorialPlanning.includes('festival-parades'), 'editorial planning does not cover general festival royalty and parade traditions');
 
 const synthesisEngine = read('lib/event-intake/synthesisEngine.ts');
-assert(synthesisEngine.includes("DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v22'"), 'the editorial synthesis engine version was not advanced');
+assert(synthesisEngine.includes("DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v23-ultra-first'"), 'the Ultra-first synthesis engine version was not advanced');
 assert(synthesisEngine.includes('applyEditorialPlan'), 'source synthesis does not compose the editorial plan into Event Hub proposals');
 assert(synthesisEngine.includes("candidate.startsAt?.startsWith(`${editionYear}-`)"), 'source synthesis does not filter dated items to the current edition year');
 assert(

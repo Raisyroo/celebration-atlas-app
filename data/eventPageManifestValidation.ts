@@ -288,6 +288,7 @@ export function validateEventPageManifest(input: unknown): EventPageManifestVali
   optionalString(hero, 'credit', 'manifest.hero', errors);
 
   const sourceReferences: Array<{ id: string; path: string }> = [];
+  const presentationItemReferences: Array<{ id: string; path: string }> = [];
 
   if (input.editionStatus !== undefined) {
     if (!isRecord(input.editionStatus)) {
@@ -394,6 +395,22 @@ export function validateEventPageManifest(input: unknown): EventPageManifestVali
       const scheduleSourceIds = optionalStringArray(module, 'sourceIds', path, errors);
       if (scheduleSourceIds) {
         collectSourceReferences(scheduleSourceIds, `${path}.sourceIds`, sourceReferences);
+      }
+      if (module.presentationGroups !== undefined) {
+        const presentationGroups = requiredArray(module, 'presentationGroups', path, errors);
+        validateUniqueIds(presentationGroups, `${path}.presentationGroups`, errors).forEach((group, groupId) => {
+          const groupPath = `${path}.presentationGroups[${groupId}]`;
+          requiredString(group, 'title', groupPath, errors);
+          optionalString(group, 'summary', groupPath, errors);
+          requiredStringArray(group, 'itemIds', groupPath, errors).forEach((id) => {
+            presentationItemReferences.push({ id, path: `${groupPath}.itemIds` });
+          });
+          collectSourceReferences(
+            requiredStringArray(group, 'sourceIds', groupPath, errors),
+            `${groupPath}.sourceIds`,
+            sourceReferences,
+          );
+        });
       }
       if (module.recurringEvents !== undefined) {
         if (!isRecord(module.recurringEvents)) {
@@ -556,7 +573,8 @@ export function validateEventPageManifest(input: unknown): EventPageManifestVali
   });
 
   const scheduleItems = requiredArray(input, 'scheduleItems', 'manifest', errors);
-  validateUniqueIds(scheduleItems, 'manifest.scheduleItems', errors).forEach((item, itemId) => {
+  const scheduleItemMap = validateUniqueIds(scheduleItems, 'manifest.scheduleItems', errors);
+  scheduleItemMap.forEach((item, itemId) => {
     const path = `manifest.scheduleItems[${itemId}]`;
     requiredString(item, 'title', path, errors);
     const startsAt = requiredString(item, 'startsAt', path, errors);
@@ -575,6 +593,9 @@ export function validateEventPageManifest(input: unknown): EventPageManifestVali
     validateEnum(item.confidence, CONFIDENCE_LEVELS, `${path}.confidence`, errors);
     optionalString(item, 'venue', path, errors);
     optionalString(item, 'details', path, errors);
+  });
+  presentationItemReferences.forEach(({ id, path }) => {
+    if (!scheduleItemMap.has(id)) errors.push(`${path} references unknown schedule item "${id}".`);
   });
 
   const suggestions = requiredArray(input, 'scoutSuggestions', 'manifest', errors);

@@ -153,6 +153,14 @@ export interface EventReferenceSchedule {
   groups: EventReferenceScheduleGroup[];
 }
 
+export interface EventSchedulePresentationGroup {
+  id: string;
+  title: string;
+  summary?: string;
+  itemIds: string[];
+  sourceIds: string[];
+}
+
 export interface ScheduleModuleManifest {
   id: string;
   type: 'schedule';
@@ -162,6 +170,7 @@ export interface ScheduleModuleManifest {
   includedCategories?: EventScheduleCategory[];
   includedTags?: string[];
   filters: EventScheduleFilter[];
+  presentationGroups?: EventSchedulePresentationGroup[];
   sourceIds?: string[];
   recurringEvents?: EventRecurringCollection;
   referenceSchedule?: EventReferenceSchedule;

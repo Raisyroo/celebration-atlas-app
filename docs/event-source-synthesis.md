@@ -25,20 +25,40 @@ When a current program is explicitly pending but an earlier complete program rem
 
 Sponsor-bearing evidence remains in the reconciled profile for audit but is not copied into generated display text. The standard manifest validator also rejects sponsor language if it appears elsewhere in a proposal.
 
-## Evidence-bound editorial pass
+## Evidence-bound editorial authorship
 
-The optional `model_assisted` pass is a child of one unsubmitted deterministic proposal. The deterministic parent remains `generated` while the editorial child is `generated`, `in_review`, or `rejected`; it becomes `superseded` only in the same accepted transition that accepts the child. It receives a bounded package of official source excerpts, current schedule rows, the deterministic editorial plan, the current semantic editorial-quality findings, and an allowlist of prose targets. It may:
+The current full-manifest `model_assisted` pass is a child of one unsubmitted
+deterministic proposal. The deterministic parent remains `generated` while
+the editorial child is `generated`, `in_review`, or `rejected`; it becomes
+`superseded` only in the same accepted transition that accepts the child.
+Before Fast Track authorship, the official source collector retains up to eight
+useful same-site pages and gives history, traditions, planning, and program
+coverage explicit priority.
 
-1. Rewrite the hero tagline and existing module copy.
-2. Rewrite existing Scout prompt labels and responses.
-3. Add or replace up to two source-backed Why Go audience groups.
-4. Add one source-backed Scout Spotlight when none exists.
+The model owns the complete visitor-facing composition. It chooses four to six
+topics, event-specific navigation, one to three Highlights or Traditions
+modules, schedule filters and presentation groups, planning guidance, and
+Scout content. Identity, dates, locations, lifecycle, media identity, source
+records, current schedule facts, recurring/reference schedule facts, and
+review/publication state remain immutable. A schedule presentation group may
+organize protected item IDs but may not omit, duplicate, rename, retime, or
+relocate a schedule fact.
 
-It cannot change identity, dates, locations, lifecycle, media, links, navigation, modules, filters, commands, source records, or schedule rows. The application hashes that immutable projection before and after applying model output and rejects the result if it moves.
+Every proposed visitor claim must cite retained source snapshot IDs or public
+source IDs that resolve to them. The application independently rejects unknown
+sources, sponsor language, speculative language, unsupported numbers,
+research narration, protected-fact changes, incomplete schedule grouping, and
+generic or scant editorial output. Why Go requires a substantive story plus at
+least two source-backed visitor insights. A Scout Spotlight must reveal a
+distinctive event fact or tradition; generic planning advice fails, and the
+Spotlight should be omitted when the retained evidence cannot support one.
+Model output remains a private proposal and never publishes content.
 
-Every proposed copy change must cite retained source snapshot ids. The application independently rejects unknown targets, unknown sources, duplicate targets, sponsor language, speculative language, and numeric claims that do not appear in the cited evidence. Prompt v6 assigns different jobs to the hero, Why Go headline, and Why Go summary; prohibits recycling one attraction list across them; and asks Highlights to provide concrete visitor value instead of factory filler. When the deterministic gate identifies that specific failure, the request exposes only the hero, Why Go, and experience-copy targets; passing Schedule, Plan, and Scout fields are omitted to reduce token use and latency. The structural manifest validator and full content-readiness validator then run again. A structurally valid child is not content-ready when those semantic checks still fail. Model output remains a private proposal and never publishes content.
-
-Vercel AI Gateway supplies the production model call through `VERCEL_OIDC_TOKEN` or `AI_GATEWAY_API_KEY`. The default model is `openai/gpt-5.4-mini`; `AI_GATEWAY_EDITORIAL_MODEL` can override it. Vercel currently requires the team to have a valid card on file before Gateway will serve requests, including free-credit usage.
+The reusable server route can call Vercel AI Gateway through project OIDC or a
+configured gateway key. The Codex-operated Approved-List Fast Track does not
+require Ray to supply a separate gateway key: its handoff pins
+`gpt-5.6-sol` at Ultra reasoning in the Codex host. Direct supplied-image
+upload also has no model or image-generation gateway dependency.
 
 ## Records
 

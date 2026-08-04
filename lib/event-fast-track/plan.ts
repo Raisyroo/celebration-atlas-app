@@ -44,12 +44,12 @@ function stages(): FastTrackStage[] {
     {
       sequence: 2,
       id: "retain_official_evidence",
-      label: "Retain the smallest sufficient official evidence set",
+      label: "Explore and retain the official event story",
       executor: "codex_operator",
       failureScope: "event_only",
       requiredForPrivatePreview: true,
       completionRule:
-        "At least one organizer-controlled snapshot retains identity, current dates, location, recurrence, and useful visitor facts; collect more only for missing or conflicting fields.",
+        "The organizer-controlled home page and useful schedule, planning, history, tradition, competition, or lineup pages are retained before authorship, without repeating discovery qualification.",
     },
     {
       sequence: 3,
@@ -79,7 +79,7 @@ function stages(): FastTrackStage[] {
       failureScope: "event_only",
       requiredForPrivatePreview: true,
       completionRule:
-        "One complete, event-specific four-topic manifest is returned with protected facts unchanged and every visitor claim grounded.",
+        "One complete, event-specific four-to-six-topic manifest is returned with protected facts unchanged and every visitor claim grounded.",
     },
     {
       sequence: 6,
@@ -147,8 +147,9 @@ function ultraHandoff(event: FastTrackApprovedEvent): FastTrackUltraHandoff {
     repairPolicy: "one_targeted_repair_only_after_validation_failure",
     editableScope: [
       "Hero tagline and visitor hook",
-      "Event-specific navigation labels and topic order",
-      "Why Go, Schedule, Highlights or Traditions, and Plan presentation",
+      "Event-specific topic count, navigation labels, and topic order",
+      "Why Go, Schedule, one to three Highlights or Traditions topics, and Plan presentation",
+      "Source-backed schedule presentation groups such as real stages, venues, days, or competition classes",
       "Source-backed visitor guidance, links, audience framing, and Scout content",
       "Complete visitor-facing hierarchy and prose across the manifest",
     ],
@@ -161,11 +162,12 @@ function ultraHandoff(event: FastTrackApprovedEvent): FastTrackUltraHandoff {
       "Lifecycle, review, package, and publication state",
     ],
     acceptanceChecks: [
-      "Exactly four substantive Event Hub topics",
+      "Four to six substantive Event Hub topics chosen from the event evidence",
       "Every factual claim resolves to retained evidence",
       "No invented or altered event facts",
       "No sponsor or research-narration copy",
       "No core-copy repetition or generic factory language",
+      "Why Go tells a complete event story and any Scout Spotlight is distinctive enough to keep",
       "All protected values remain equivalent",
     ],
   };

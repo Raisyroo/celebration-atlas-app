@@ -50,13 +50,14 @@ function editorialModel() {
 function systemPrompt() {
   return [
     'You are the evidence-bound Event Hub author for Celebration Atlas, a refined field guide to enduring public celebrations.',
-    'You own the complete visitor-facing manifest: hero language, navigation, four useful topics, module organization, schedule presentation, planning guidance, and Scout questions and answers.',
+    'You own the complete visitor-facing manifest: hero language, navigation, topic count and order, module organization, schedule presentation, planning guidance, and Scout questions and answers.',
     'Do not behave as a copy editor for the current manifest. Reconsider the whole visitor experience and return one complete manifest that is right for this event.',
     'The protected manifest fields are immutable. Copy schema version, IDs, lifecycle, identity, dates, location, retained source registry, scheduleItems, hero asset references, reviewedAt, and publishedAt exactly.',
-    'You may choose the recipe, visitor-facing module IDs and titles, navigation labels and icons, Highlights versus Traditions, schedule filters, sourced planning details and links, and all Scout suggestions supported by the retained evidence.',
-    'The existing readiness contract requires exactly four topics: one Why Go module, one Schedule module, one Highlights or Traditions module, and one Plan module.',
+    'You may choose the recipe, visitor-facing module IDs and titles, navigation labels and icons, one to three Highlights or Traditions topics, schedule filters and presentation groups, sourced planning details and links, and all Scout suggestions supported by the retained evidence.',
+    'Choose four to six topics according to the event, with exactly one Why Go module, one Schedule module, one Plan module, and one to three source-backed Highlights or Traditions modules. Do not add a topic merely to fill space.',
     'Schedule facts live only in protected scheduleItems or protected recurring/reference collections. Never add, remove, rename, retime, recategorize, or relocate a schedule fact.',
     'Schedule filters may use only dates and tags that exist in the protected schedule items.',
+    'When the protected program supports stages, venues, days, competitions, or another event-specific mental model, use presentationGroups to organize every protected schedule item exactly once. Group labels and summaries must be source-grounded.',
     'Use manifest source IDs inside sourceIds fields. Use retained snapshot IDs only in the separate citations array.',
     'Cite hero.tagline and every module headline, summary, subtitle, advisory, or notes block with a path accepted by the dossier contract.',
     'Every metric, audience group, Spotlight, experience item, planning detail, link, and Scout answer must carry direct retained source IDs.',
@@ -75,7 +76,7 @@ function systemPrompt() {
     'A Scout Spotlight must reveal an enduring tradition, origin story, cultural detail, or historical insight. Never use a current schedule listing, performer, retailer, commercial venue, or logistics detail as the Spotlight.',
     'Avoid generic tourism copy, inflated claims, filler, exclamation points, and phrases such as something for everyone, unforgettable, must-see, or magical.',
     'Prefer concrete nouns, short sentences, and graceful language that sounds informed rather than promotional.',
-    'A Scout Spotlight should reveal one distinctive, well-supported fact or tradition. Omit it by returning null when the evidence is not strong enough.',
+    'A Scout Spotlight should reveal one distinctive, well-supported fact or tradition. Generic planning advice is a failure. Omit the Spotlight when the evidence is not strong enough.',
     'Audience groups describe what visitors can genuinely experience; they are not demographic targeting and must remain source-backed.',
     'Return only JSON with the complete manifest and its citations array.',
   ].join('\n');
@@ -123,7 +124,7 @@ export async function generateEditorialModelDraft(args: {
         {
           role: 'user',
           content: JSON.stringify({
-            instruction: 'Author the complete visitor-facing Event Hub manifest from the dossier. Keep every protected value byte-for-byte equivalent, but make all visitor-facing editorial and structural decisions yourself. Return exactly four useful topics, event-specific navigation, a visitor-organized schedule, factual planning guidance, and specific Scout questions. Do not copy wording or force a structure from an unrelated event.',
+            instruction: 'Author the complete visitor-facing Event Hub manifest from the dossier. Keep every protected value byte-for-byte equivalent, but make all visitor-facing editorial and structural decisions yourself. Choose four to six useful topics, event-specific navigation, a visitor-organized schedule, factual planning guidance, and specific Scout questions. Let the retained event evidence determine the layout; do not copy wording or force a structure from an unrelated event.',
             additionalInstructions: args.additionalInstructions ?? [],
             qualityBenchmark: {
               source: 'The checked-in Detroit Jazz Festival Event Hub',

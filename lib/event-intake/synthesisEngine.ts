@@ -17,7 +17,7 @@ import type {
   SynthesisSourceSnapshot,
 } from './synthesisTypes.ts';
 
-export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v22';
+export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v23-ultra-first';
 
 const CONFIDENCE_RANK: Record<SourceClaimConfidence, number> = {
   unknown: 0,
@@ -1839,7 +1839,7 @@ function proposalMissingFields(
     const hasExperienceModule = navigation.some((item) => (
       item.targetModuleId === 'highlights' || item.targetModuleId === 'traditions'
     ));
-    if (navigation.length !== 4 || !hasExperienceModule) missing.push('modules.experience');
+    if (navigation.length < 4 || navigation.length > 6 || !hasExperienceModule) missing.push('modules.experience');
   }
   return [...new Set(missing)];
 }

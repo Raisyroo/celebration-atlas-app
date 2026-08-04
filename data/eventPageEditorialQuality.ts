@@ -1,7 +1,7 @@
 import type { EventPageManifest } from "./eventPageManifestTypes.ts";
 
 export const EVENT_PAGE_EDITORIAL_QUALITY_VERSION =
-  "event-page-editorial-quality-v1";
+  "event-page-editorial-quality-v2";
 
 export type EventPageEditorialRepetition = {
   left: string;
@@ -125,7 +125,7 @@ export function evaluateEventPageEditorialQuality(
 ): EventPageEditorialQualityResult {
   const errors: string[] = [];
   const whyGo = manifest.modules.find((module) => module.type === "whyGo");
-  const experience = manifest.modules.find(
+  const experiences = manifest.modules.filter(
     (module) => module.type === "highlights" || module.type === "traditions",
   );
   const identityTerms = new Set(
@@ -189,14 +189,11 @@ export function evaluateEventPageEditorialQuality(
 
   const visitorCopy = [
     ...coreFields.map((field) => field.text),
-    ...(experience?.type === "highlights" ||
-    experience?.type === "traditions"
-      ? [
-          experience.headline,
-          experience.summary,
-          ...experience.items.map((item) => item.summary),
-        ]
-      : []),
+    ...experiences.flatMap((experience) => [
+      experience.headline,
+      experience.summary,
+      ...experience.items.map((item) => item.summary),
+    ]),
   ].join(" ");
   if (FACTORY_PHRASES.some((pattern) => pattern.test(visitorCopy))) {
     errors.push(
@@ -204,14 +201,15 @@ export function evaluateEventPageEditorialQuality(
     );
   }
 
-  const genericHighlightCount =
-    experience?.type === "highlights"
-      ? experience.items.filter((item) =>
+  const genericHighlightCount = experiences
+    .filter((experience) => experience.type === "highlights")
+    .reduce((total, experience) => (
+      total + experience.items.filter((item) =>
           GENERIC_HIGHLIGHT_COPY.some((pattern) =>
             pattern.test(item.summary),
           ),
         ).length
-      : 0;
+    ), 0);
   if (genericHighlightCount >= 2) {
     errors.push(
       "Highlights need concrete, distinct visitor value; multiple summaries still use generic event filler.",

@@ -84,6 +84,14 @@ for (const event of plan.events) {
   assert.equal(event.ultraHandoff.executionProfile.reasoningEffort, "ultra");
   assert.equal(event.ultraHandoff.task, "full_event_hub_manifest_authorship");
   assert.equal(event.ultraHandoff.initialAttemptLimit, 1);
+  assert(
+    event.ultraHandoff.acceptanceChecks.some((check) => check.includes("Four to six")),
+    "Ultra must choose the event-specific topic count instead of filling a fixed four-topic form",
+  );
+  assert(
+    event.stages.find((stage) => stage.id === "retain_official_evidence")?.completionRule.includes("history"),
+    "official-site exploration must retain story and tradition material before Ultra authorship",
+  );
   assert.equal(event.heroHandoff.skill, "$create-celebration-atlas-hero");
   assert.equal(event.heroHandoff.executionProfile.model, "GPT-5.6 Luna");
   assert.equal(event.heroHandoff.executionProfile.reasoningEffort, "max");
@@ -138,6 +146,23 @@ assert.doesNotMatch(fastTrackGateMigration, /pg_catalog\.coalesce/);
 assert.match(
   fastTrackGateMigration,
   /revoke all on function public\.atlas_clear_fast_track_candidate_identity[\s\S]*from public, anon, authenticated/,
+);
+
+const ultraFirstMigration = readFileSync(
+  "supabase/migrations/036_enable_ultra_first_event_topics.sql",
+  "utf8",
+);
+assert.match(ultraFirstMigration, /atlas_event_factory_content_ready_v3/);
+assert.match(ultraFirstMigration, /jsonb_array_length\(v_modules\) not between 4 and 6/);
+assert.match(ultraFirstMigration, /presentationGroups/);
+assert.match(ultraFirstMigration, /atlas_event_factory_content_ready_v2\(v_core_manifest\)/);
+assert.match(
+  ultraFirstMigration,
+  /revoke all on function public\.atlas_event_factory_content_ready_v3[\s\S]*from public, anon, authenticated/,
+);
+assert.match(
+  ultraFirstMigration,
+  /grant execute on function public\.atlas_event_factory_content_ready_v3[\s\S]*to service_role/,
 );
 assert.match(
   fastTrackGateMigration,

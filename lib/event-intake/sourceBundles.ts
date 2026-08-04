@@ -246,7 +246,7 @@ export async function collectRelatedEventSources(args: {
 }): Promise<EventSourceCollectionSummary> {
   const links = selectBoundedOfficialSourceLinks(
     args.seedInspection,
-    args.maxRelatedSources ?? 5,
+    args.maxRelatedSources ?? 8,
   );
   const summary: EventSourceCollectionSummary = {
     attempted: links.length,

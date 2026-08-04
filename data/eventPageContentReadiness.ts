@@ -7,7 +7,7 @@ import {
 } from "./eventPageManifestValidation.ts";
 
 export const EVENT_PAGE_CONTENT_READINESS_VERSION =
-  "event-page-content-readiness-v4";
+  "event-page-content-readiness-v5";
 
 export type EventPageContentReadinessOptions = {
   allowLegacyStructure?: boolean;
@@ -28,6 +28,9 @@ export type EventPageContentReadinessResult =
 
 const PLACEHOLDER_COPY =
   /\b(?:start with the moments that define|start with the essentials|plan your visit to|daily details are still being confirmed|location details need review)\b/i;
+
+const GENERIC_SCOUT_COPY =
+  /\b(?:arrive early|check the (?:official )?(?:site|website|schedule)|plan ahead|before you go|details (?:can|may) change|something for everyone)\b/i;
 
 function normalizedCopy(value: string) {
   return value
@@ -55,19 +58,24 @@ function newPackageContentErrors(manifest: EventPageManifest) {
   );
   const planModules = manifest.modules.filter((module) => module.type === "planVisit");
 
-  if (manifest.navigation.length !== 4 || manifest.modules.length !== 4) {
+  if (
+    manifest.modules.length < 4
+    || manifest.modules.length > 6
+    || manifest.navigation.length !== manifest.modules.length
+  ) {
     errors.push(
-      "New Event Hubs require exactly four primary topics: Why Go, Schedule, one source-backed experience topic, and Plan.",
+      "New Event Hubs require four to six primary topics with one navigation destination per topic.",
     );
   }
   if (
     whyGoModules.length !== 1
     || scheduleModules.length !== 1
-    || experienceModules.length !== 1
+    || experienceModules.length < 1
+    || experienceModules.length > 3
     || planModules.length !== 1
   ) {
     errors.push(
-      "New Event Hubs require one Why Go module, one Schedule module, one Highlights or Traditions module, and one Plan module.",
+      "New Event Hubs require one Why Go module, one Schedule module, one Plan module, and one to three event-specific Highlights or Traditions topics.",
     );
   }
 
@@ -115,47 +123,57 @@ function newPackageContentErrors(manifest: EventPageManifest) {
         "Why Go needs a substantive event-specific overview instead of the event name or generic template copy.",
       );
     }
-    if (!supportingItems.length || supportingItems.some((item) => !hasSourceIds(item.sourceIds))) {
+    if (wordCount(whyGo.summary) < 30) {
+      errors.push("Why Go needs enough source-grounded context to tell the event's story, not a short listing description.");
+    }
+    if (supportingItems.length < 2 || supportingItems.some((item) => !hasSourceIds(item.sourceIds))) {
       errors.push(
-        "Why Go needs at least one retained, source-backed visitor insight.",
+        "Why Go needs at least two retained, source-backed visitor insights.",
       );
+    }
+    if (
+      whyGo.spotlight
+      && (wordCount(whyGo.spotlight.body) < 18 || GENERIC_SCOUT_COPY.test(`${whyGo.spotlight.title} ${whyGo.spotlight.body}`))
+    ) {
+      errors.push("Scout Spotlight must reveal a distinctive event fact or tradition; omit it when only generic advice is available.");
     }
   }
 
-  const experience = experienceModules[0];
-  if (experience?.type === "highlights") {
-    const distinctTitles = new Set(
-      experience.items.map((item) => normalizedCopy(item.title)),
-    );
-    const distinctSummaries = new Set(
-      experience.items.map((item) => normalizedCopy(item.summary)),
-    );
-    if (
-      experience.items.length < 3
-      || experience.items.some((item) => !hasSourceIds(item.sourceIds))
-      || distinctTitles.size !== experience.items.length
-      || distinctSummaries.size !== experience.items.length
-    ) {
-      errors.push(
-        "Highlights needs at least three distinct source-backed experiences with non-duplicated visitor copy.",
+  for (const experience of experienceModules) {
+    if (experience.type === "highlights") {
+      const distinctTitles = new Set(
+        experience.items.map((item) => normalizedCopy(item.title)),
       );
-    }
-  } else if (experience?.type === "traditions") {
-    const distinctTitles = new Set(
-      experience.items.map((item) => normalizedCopy(item.title)),
-    );
-    const distinctSummaries = new Set(
-      experience.items.map((item) => normalizedCopy(item.summary)),
-    );
-    if (
-      experience.items.length < 2
-      || experience.items.some((item) => !hasSourceIds(item.sourceIds))
-      || distinctTitles.size !== experience.items.length
-      || distinctSummaries.size !== experience.items.length
-    ) {
-      errors.push(
-        "Traditions needs at least two distinct source-backed experiences with non-duplicated visitor copy.",
+      const distinctSummaries = new Set(
+        experience.items.map((item) => normalizedCopy(item.summary)),
       );
+      if (
+        experience.items.length < 3
+        || experience.items.some((item) => !hasSourceIds(item.sourceIds))
+        || distinctTitles.size !== experience.items.length
+        || distinctSummaries.size !== experience.items.length
+      ) {
+        errors.push(
+          "Highlights needs at least three distinct source-backed experiences with non-duplicated visitor copy.",
+        );
+      }
+    } else if (experience.type === "traditions") {
+      const distinctTitles = new Set(
+        experience.items.map((item) => normalizedCopy(item.title)),
+      );
+      const distinctSummaries = new Set(
+        experience.items.map((item) => normalizedCopy(item.summary)),
+      );
+      if (
+        experience.items.length < 2
+        || experience.items.some((item) => !hasSourceIds(item.sourceIds))
+        || distinctTitles.size !== experience.items.length
+        || distinctSummaries.size !== experience.items.length
+      ) {
+        errors.push(
+          "Traditions needs at least two distinct source-backed experiences with non-duplicated visitor copy.",
+        );
+      }
     }
   }
 
@@ -186,6 +204,18 @@ function newPackageContentErrors(manifest: EventPageManifest) {
       || referenceItems.some((item) => !hasSourceIds(item.sourceIds))
     ) {
       errors.push("Every Schedule item must retain source provenance.");
+    }
+    if (schedule.presentationGroups?.length) {
+      const protectedItemIds = new Set(currentItems.map((item) => item.id));
+      const presentedItemIds = schedule.presentationGroups.flatMap((group) => group.itemIds);
+      if (
+        presentedItemIds.some((itemId) => !protectedItemIds.has(itemId))
+        || new Set(presentedItemIds).size !== presentedItemIds.length
+        || presentedItemIds.length !== protectedItemIds.size
+        || schedule.presentationGroups.some((group) => !group.itemIds.length || !hasSourceIds(group.sourceIds))
+      ) {
+        errors.push("Schedule presentation groups must source, uniquely organize, and preserve every protected current schedule item.");
+      }
     }
   }
 

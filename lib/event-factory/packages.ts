@@ -369,7 +369,12 @@ export async function prepareEventFactoryPackage(args: {
       }
       synthesisId = synthesis.id;
       acceptedManifest = validation.value;
-      acceptedMapRecord = synthesisMapRecord(synthesis.reconciled_profile);
+      acceptedMapRecord = synthesisMapRecord(synthesis.reconciled_profile)
+        ?? syntheses
+          .filter((item) => item.status === "accepted" || item.status === "superseded")
+          .map((item) => synthesisMapRecord(item.reconciled_profile))
+          .find((item): item is VerifiedMapRecord => Boolean(item))
+        ?? null;
     }
   }
 

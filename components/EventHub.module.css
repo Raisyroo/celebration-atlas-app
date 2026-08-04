@@ -394,20 +394,26 @@
   position: sticky;
   top: var(--hub-topbar-height);
   z-index: 50;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
   width: 100%;
   min-height: 60px;
   border-bottom: 1px solid rgba(239, 164, 61, 0.28);
   background: rgba(4, 15, 22, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.primaryNavigation::-webkit-scrollbar {
+  display: none;
 }
 
 .navigationButton,
 .navigationActive {
   position: relative;
   display: flex;
+  flex: 1 0 86px;
   min-width: 0;
   min-height: 60px;
   align-items: center;
@@ -1955,6 +1961,15 @@
     width: 100%;
     max-width: 100%;
   }
+}
+
+.scheduleGroupSummary {
+  max-width: 760px;
+  margin: -5px auto 14px;
+  color: rgba(255, 240, 210, 0.7);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  text-align: center;
 }
 
 @media (max-width: 410px) {

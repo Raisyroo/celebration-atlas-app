@@ -280,6 +280,7 @@ function getSourceIdsForModule(module: EventPageManifest['modules'][number]): st
   if (module.type === 'schedule') {
     return Array.from(new Set([
       ...(module.sourceIds ?? []),
+      ...(module.presentationGroups?.flatMap((group) => group.sourceIds) ?? []),
       ...(module.recurringEvents?.items.flatMap((item) => item.sourceIds) ?? []),
       ...(module.referenceSchedule?.groups.flatMap((group) =>
         group.items.flatMap((item) => item.sourceIds),
@@ -426,7 +427,30 @@ function ScheduleModule({
   manifest: EventPageManifest;
   todayKey: string;
 }) {
-  const groups = groupScheduleItems(items, manifest.identity.timezone);
+  const itemsById = new Map(items.map((item) => [item.id, item]));
+  const scheduleSections: Array<{
+    id: string;
+    title: string;
+    summary?: string;
+    items: EventScheduleItem[];
+  }> = module.presentationGroups?.length
+    ? module.presentationGroups.flatMap((group) => {
+        const groupItems = group.itemIds.flatMap((itemId) => {
+          const item = itemsById.get(itemId);
+          return item ? [item] : [];
+        });
+        return groupItems.length ? [{
+          id: group.id,
+          title: group.title,
+          summary: group.summary,
+          items: groupItems,
+        }] : [];
+      })
+    : groupScheduleItems(items, manifest.identity.timezone).map(([dateKey, dayItems]) => ({
+        id: dateKey,
+        title: formatDayLabel(dateKey),
+        items: dayItems,
+      }));
   const activeFilter = module.filters.find((filter) => filter.id === activeFilterId);
   const [activeReferenceGroupId, setActiveReferenceGroupId] = useState(
     module.referenceSchedule?.groups[0]?.id ?? '',
@@ -485,13 +509,16 @@ function ScheduleModule({
         </div>
       ) : null}
 
-      {groups.length ? (
+      {scheduleSections.length ? (
         <div className={styles.scheduleDays}>
-          {groups.map(([dateKey, dayItems]) => (
-            <section className={styles.scheduleDay} key={dateKey}>
-              <h3>{formatDayLabel(dateKey)}</h3>
+          {scheduleSections.map((section) => (
+            <section className={styles.scheduleDay} key={section.id}>
+              <h3>{section.title}</h3>
+              {section.summary ? (
+                <p className={styles.scheduleGroupSummary}>{section.summary}</p>
+              ) : null}
               <div className={styles.scheduleRows}>
-                {dayItems.map((item) => {
+                {section.items.map((item) => {
                   const CategoryIcon = CATEGORY_ICONS[item.category];
                   const startTime = formatScheduleTime(
                     item.startsAt,
