@@ -104,16 +104,21 @@ authoring stage.
 3. Reconcile facts and populate the existing verification record from that
    same evidence pass.
 4. Give the complete protected dossier to `gpt-5.6-sol` at Ultra reasoning
-   before a Factory layout becomes authoritative. Ultra owns the full
-   visitor-facing manifest, not a small rewrite allowlist or a four-topic
-   form. It chooses four to six useful topics, their order and labels, and any
-   source-backed schedule presentation groups such as actual stages, venues,
-   days, or competition classes.
+   before a Factory layout becomes authoritative. Ultra receives every
+   retained useful excerpt from the official site plus any retained reputable
+   source needed to resolve a visitor fact. It owns the complete visitor-facing
+   manifest inside one durable navigation contract: exactly four topics in the
+   order `Why Go`, `Schedule`, one concise event-specific topic, and `Plan`.
+   Ultra chooses that third topic, the content hierarchy, and any source-backed
+   schedule presentation groups such as actual stages, venues, days, or
+   competition classes.
    Identity, dates, location, schedule facts, source identities, approved art,
    and lifecycle state remain protected.
 5. Run the existing immutable-fact, grounding, content, citation, sponsor,
-   schedule, and semantic-quality validators. Permit one targeted Ultra repair
-   only after a concrete validation failure.
+   schedule, and semantic-quality validators. Why Go must be brief and
+   evergreen, each fact may appear only once, Plan must add value beyond an
+   address, and official event-site links may render only in the source footer.
+   Permit one targeted Ultra repair only after a concrete validation failure.
 6. At the hero-image stage, invoke
    `$create-celebration-atlas-hero` with GPT-5.6 Luna at Max reasoning. Generate
    one image. Create at most one focused alternative only after rejection or a

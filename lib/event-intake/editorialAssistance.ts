@@ -18,7 +18,7 @@ import type {
   ModelEditorialReviewSummary,
 } from './synthesisTypes.ts';
 
-export const EDITORIAL_PROMPT_VERSION = 'celebration-atlas-editor-v8-ultra-first';
+export const EDITORIAL_PROMPT_VERSION = 'celebration-atlas-editor-v9-concise-four-topic';
 const SPONSOR_LANGUAGE = /\b(?:sponsor(?:ed|ing|ship|s)?|presented by|presenting partner|title partner|powered by|funder)\b/i;
 const PERSONAL_CONTACT = /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\b(?:email|call|text)\s+(?:me|us|the|to)\b/i;
 const SPECULATIVE_LANGUAGE = /\b(?:probably|presumably|apparently|we think|likely to|expected to return)\b/i;
@@ -289,20 +289,12 @@ export function buildEditorialEvidencePackage(
   plan: EditorialPlan,
 ): EditorialEvidencePackage {
   const roles = sourceRoleMap(plan);
-  const perSourceCharacterBudget = Math.max(
-    500,
-    Math.min(4_000, Math.floor(30_000 / Math.max(1, input.snapshots.length))),
-  );
   const sources = input.snapshots.map((snapshot) => {
     const excerpts: string[] = [];
-    let remainingCharacters = perSourceCharacterBudget;
     for (const segment of snapshot.contentSegments ?? []) {
-      if (remainingCharacters <= 0 || excerpts.length >= 50) break;
       const value = cleanText(segment.text, 1_000);
       if (!value || !usefulSegment(value)) continue;
-      const bounded = value.slice(0, Math.min(remainingCharacters, 700));
-      excerpts.push(bounded);
-      remainingCharacters -= bounded.length;
+      excerpts.push(value);
     }
     return {
       snapshotId: snapshot.id,

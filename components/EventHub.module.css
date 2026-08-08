@@ -727,15 +727,45 @@
   color: var(--hub-green);
 }
 
-.verificationLine a {
+.sourceFooter {
+  display: grid;
+  width: min(100%, 940px);
+  gap: 10px;
+  margin: 0 auto;
+  padding: 18px clamp(18px, 4vw, 28px) 118px;
+  border-top: 1px solid rgba(121, 179, 141, 0.24);
+  color: rgba(200, 178, 142, 0.72);
+}
+
+.sourceFooter > strong {
+  color: var(--hub-green);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sourceFooter > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.sourceFooter a {
   display: inline-flex;
+  min-width: 0;
   align-items: center;
   gap: 5px;
   color: var(--hub-gold-soft);
+  font-size: 0.72rem;
+  line-height: 1.35;
   text-decoration: none;
 }
 
-.verificationLine a:hover {
+.sourceFooter a span {
+  overflow-wrap: anywhere;
+}
+
+.sourceFooter a:hover {
   text-decoration: underline;
 }
 

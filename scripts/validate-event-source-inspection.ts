@@ -304,6 +304,17 @@ assert(boundedLinks[0]?.kind === 'schedule', 'Bounded source collection did not 
 assert(boundedLinks.every((link) => new URL(link.url).hostname === 'festival.example'), 'Bounded source collection accepted a third-party URL.');
 assert(new Set(boundedLinks.map((link) => link.url)).size === boundedLinks.length, 'Bounded source collection retained duplicate URLs.');
 
+const completeLinks = selectBoundedOfficialSourceLinks({
+  ...inspection,
+  usefulLinks: [
+    ...inspection.usefulLinks,
+    { label: 'Festival Map', url: 'https://festival.example/plan', kind: 'plan' },
+    { label: 'Festival History', url: 'https://festival.example/history', kind: 'other' },
+  ],
+});
+assert(completeLinks.length >= 3, 'Default source collection did not preserve every useful same-site official page.');
+assert(completeLinks.some((link) => link.url === 'https://festival.example/history'), 'Complete source collection omitted official history evidence.');
+
 for (const blocked of [
   'http://localhost/event',
   'http://127.0.0.1/event',

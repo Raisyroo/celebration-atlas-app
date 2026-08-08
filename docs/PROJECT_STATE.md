@@ -87,14 +87,17 @@ page; any normalized page-content change resets that decision. The review RPC
 cannot approve a hero or package, materialize a candidate, or publish.
 
 Forward-only migration `036_enable_ultra_first_event_topics.sql` is deployed
-with local and remote history aligned through `036`. It supersedes the fixed
-four-topic gate for new private packages with a source-driven four-to-six-topic
-contract. Every page still requires one substantive Why Go, Schedule, and Plan
-module; Ultra may choose one to three event-specific experience modules and may
-organize protected schedule rows into evidence-grounded presentation groups.
-The gate requires a fuller Why Go story and rejects generic Scout Spotlights,
-which should be omitted when the evidence does not support a distinctive one.
-It creates no approval or publication path.
+as the earlier Ultra-first topic experiment. Forward-only migration
+`037_require_concise_four_topic_event_hubs.sql` is now deployed, with local and
+remote history aligned through `037`, and supersedes that experiment for new
+root packages. The current contract requires exactly four tabs in this order:
+Why Go, Schedule, one event-specific topic, and Plan. Why Go is a concise
+30-45-word evergreen pitch; Plan must add practical value beyond an address;
+official-site links appear only in the Sources footer; and repeated facts,
+hero actions, and generic topic labels are rejected. Ultra still owns the
+visitor-facing story and schedule grouping while protected evidence and
+lifecycle fields remain immutable. The migration creates no approval or
+publication path.
 
 The operating loop is:
 
@@ -134,7 +137,7 @@ This trial also hardened the reusable path before more fairs enter the queue:
 - Fair schedules now use first-class `livestock`, `exhibits`, `grandstand`, and `midway` categories through synthesis, validation, filtering, and Event Hub rendering.
 - Fair schedule categories now create source-bound Grandstand, Livestock, Midway, and Exhibits Scout shortcuts when matching current items exist.
 - Operational homepage notices such as exhibitor drop-off instructions remain retained as evidence but are excluded from general Event Hub copy; synthesis falls back to a restrained overview derived from source-backed schedule categories.
-- Every new Event Hub must materialize four to six source-driven sections: one Why Go, one Schedule, one Plan, and one to three evidence-backed experience sections chosen for the event. Ultra owns the visitor-facing arrangement while protected facts and provenance remain immutable.
+- Every new Event Hub must materialize exactly four source-driven sections in this order: Why Go, Schedule, one evidence-backed event-specific experience section, and Plan. Ultra owns the visitor-facing arrangement while protected facts and provenance remain immutable.
 - Visitor headlines, summaries, and module introductions must invite attendance. Factory phrases such as `official program` and `source-backed event times` belong in retained provenance and review surfaces, not public-facing promotional copy.
 - A protected fixed API action exposes the existing audited source-synthesis map-record operation.
 - Forward-only migration `020_preserve_deterministic_editorial_parent.sql` keeps a deterministic synthesis `generated` while its model-assisted editorial child is generated, reviewed, or rejected. A rejected child may be retried without defeating deterministic replay; only acceptance supersedes the parent, and accepted uniqueness remains enforced per evidence bundle. The migration appends a compensating `restored` action for any legacy parent that was superseded only by a non-accepted editorial child.
@@ -512,41 +515,42 @@ Supabase visual workflow remain authoritative.
 The first Ray-approved Fast Track list is now prepared through private review
 for Yale Bologna Festival, Algonac Lions Pickerel Tournament & Festival, Blue
 Water Fest, Bayview Mackinac Race, and St. Clair River Classic Offshore
-Powerboat Race. Every event retains official evidence, a verified case,
+Powerboat Race. Every event retains official evidence, useful related official
+pages without arbitrary default link or segment caps, a verified case,
 source-backed coordinates, and one accepted Codex-hosted `gpt-5.6-sol` Ultra
-full-manifest authorship pass. Ultra chose four or five event-specific topics,
-wrote substantive Why Go sections, omitted an unsupported Scout Spotlight for
-St. Clair, and organized every protected current schedule row exactly once
-where day-based presentation improved the story. Bayview preserves an
-intentionally date-only 2026 schedule rather than inventing a start time. Blue
-Water Fest and Bayview remain distinct candidates, and the St. Clair page
-contains no IHRA or sponsor claim.
+full-manifest authorship pass. Each page now has exactly Why Go, Schedule, a
+distinct event-specific third tab, and Plan. The evergreen Why Go pitches are
+brief; each fact has one visitor-facing home; every event has one distinctive
+Scout Spotlight; and no official link appears outside the Sources footer.
+Bayview preserves an intentionally date-only 2026 schedule rather than
+inventing a start time. Blue Water Fest and Bayview remain distinct candidates,
+and the St. Clair page contains no IHRA or sponsor claim.
 
 All five Event Factory packages are `ready_for_review` with page review pending
-and art pending. Ray asked not to regenerate the first five hero concepts and
-will supply replacement files. The new batch attachment command matches an
-event-slug filename, verifies the 1024 x 1536 JPG/PNG/WebP contract, uploads
-through the existing Supabase visual workflow only after explicit private-write,
-QA, and rights confirmations, and never approves or publishes. This upload path
-does not use an image gateway or require a separate paid gateway key.
+and package art pending. Ray supplied five event-slug-named replacement heroes;
+the existing batch attachment path matched them, verified the 1024 x 1536 PNG
+contract, and uploaded them through the approved Supabase visual workflow after
+explicit private-write, QA, and rights confirmations. Each visual workflow is
+`ready_for_review`, but no hero is approved or frozen into a package. This upload
+path does not use an image gateway or require a separate paid gateway key.
 
 The five refreshed private previews passed a `390x844` browser review with no
-page-level horizontal overflow, broken images, or runtime errors. Five-topic
-pages use an intentional horizontal topic rail; the four-topic St. Clair page
-fits its rail at phone width. Public fingerprints for `events`, `event_pages`,
+page-level horizontal overflow, broken images, external links outside the
+Sources footer, or runtime errors. Every required tab rendered substantive
+content, and each supplied 1024 x 1536 hero loaded in the matching combined
+review desk. Public fingerprints for `events`, `event_pages`,
 `event_page_versions`, and `event_media` remained unchanged. No page, hero, or
-package was approved, no candidate was canonicalized, and nothing was
-published.
+package was approved, no candidate was canonicalized, and nothing was published.
 
 ## Current Next Milestone
 
-Receive Ray's five replacement hero files, preferably named with their event
-slugs, inspect them, and run the batch attachment dry-run before any authorized
-private upload. Then review each event through its combined private review desk.
-The exact phone-width Event Hub and matching hero appear in one session, while
-the page content/layout decision and hero decision remain independent. The
-combined desk cannot publish. Do not approve, canonicalize, or publish any event
-until Ray makes the corresponding explicit decision.
+Ray reviews each event through its combined private review desk. The exact
+phone-width Event Hub and matching supplied hero appear in one session, while
+the page content/layout decision and hero decision remain independent. A page
+may be approved while its hero remains pending or is sent back for a focused
+alternative. The combined desk cannot publish. Do not approve on Ray's behalf,
+canonicalize, or publish any event until Ray makes the corresponding explicit
+decision.
 
 Shorewood Kiwanis Harper Charity Cruise remains the clean official-first
 continuation if it appears on that list. Do not clear Holland Ponds, Assumption

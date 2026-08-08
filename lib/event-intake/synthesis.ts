@@ -244,7 +244,7 @@ function inspectionContentSegments(value: unknown): SynthesisContentSegment[] {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
   const segments = (value as Record<string, unknown>).contentSegments;
   if (!Array.isArray(segments)) return [];
-  return segments.slice(0, 240).flatMap((segment) => {
+  return segments.flatMap((segment) => {
     if (!segment || typeof segment !== 'object' || Array.isArray(segment)) return [];
     const record = segment as Record<string, unknown>;
     if (!['heading', 'paragraph', 'listItem', 'detail', 'time'].includes(String(record.kind))) return [];

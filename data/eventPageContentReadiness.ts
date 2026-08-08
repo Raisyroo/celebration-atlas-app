@@ -7,7 +7,7 @@ import {
 } from "./eventPageManifestValidation.ts";
 
 export const EVENT_PAGE_CONTENT_READINESS_VERSION =
-  "event-page-content-readiness-v5";
+  "event-page-content-readiness-v6";
 
 export type EventPageContentReadinessOptions = {
   allowLegacyStructure?: boolean;
@@ -32,6 +32,15 @@ const PLACEHOLDER_COPY =
 const GENERIC_SCOUT_COPY =
   /\b(?:arrive early|check the (?:official )?(?:site|website|schedule)|plan ahead|before you go|details (?:can|may) change|something for everyone)\b/i;
 
+const GENERIC_THIRD_TOPIC =
+  /^(?:highlights?|traditions?|experience|what to expect|three days|weekend rhythm)$/i;
+
+const EDITION_BOUND_WHY_GO_COPY =
+  /\b(?:this year|this edition|current edition|has ended|is over|was held|ran from|returned for|concluded|wrapped up)\b/i;
+
+const ADDRESS_ONLY_PLAN_LABEL =
+  /\b(?:address|location|venue|where|grounds|map)\b/i;
+
 function normalizedCopy(value: string) {
   return value
     .toLowerCase()
@@ -49,6 +58,33 @@ function hasSourceIds(sourceIds: string[]) {
   return sourceIds.length > 0;
 }
 
+function normalizedHost(value: string) {
+  try {
+    return new URL(value).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function officialHosts(manifest: EventPageManifest) {
+  return new Set(
+    manifest.sources
+      .filter((source) => ["officialWebsite", "officialSocial", "organizer"].includes(source.type))
+      .flatMap((source) => source.url ? [normalizedHost(source.url)] : [])
+      .filter(Boolean),
+  );
+}
+
+function isOfficialHostLink(value: string, hosts: Set<string>) {
+  const host = normalizedHost(value);
+  if (!host) return false;
+  return [...hosts].some((officialHost) => (
+    host === officialHost
+    || host.endsWith(`.${officialHost}`)
+    || officialHost.endsWith(`.${host}`)
+  ));
+}
+
 function newPackageContentErrors(manifest: EventPageManifest) {
   const errors: string[] = [];
   const whyGoModules = manifest.modules.filter((module) => module.type === "whyGo");
@@ -58,24 +94,45 @@ function newPackageContentErrors(manifest: EventPageManifest) {
   );
   const planModules = manifest.modules.filter((module) => module.type === "planVisit");
 
-  if (
-    manifest.modules.length < 4
-    || manifest.modules.length > 6
-    || manifest.navigation.length !== manifest.modules.length
-  ) {
+  if (manifest.modules.length !== 4 || manifest.navigation.length !== 4) {
     errors.push(
-      "New Event Hubs require four to six primary topics with one navigation destination per topic.",
+      "New Event Hubs require exactly four primary topics with one navigation destination per topic.",
     );
   }
   if (
     whyGoModules.length !== 1
     || scheduleModules.length !== 1
-    || experienceModules.length < 1
-    || experienceModules.length > 3
+    || experienceModules.length !== 1
     || planModules.length !== 1
   ) {
     errors.push(
-      "New Event Hubs require one Why Go module, one Schedule module, one Plan module, and one to three event-specific Highlights or Traditions topics.",
+      "New Event Hubs require one Why Go module, one Schedule module, one event-specific Highlights or Traditions topic, and one Plan module.",
+    );
+  }
+
+  const orderedNavigation = manifest.navigation.map((item) => ({
+    label: item.label,
+    module: manifest.modules.find((module) => module.id === item.targetModuleId),
+  }));
+  if (
+    orderedNavigation[0]?.label !== "Why Go"
+    || orderedNavigation[0]?.module?.type !== "whyGo"
+    || orderedNavigation[1]?.label !== "Schedule"
+    || orderedNavigation[1]?.module?.type !== "schedule"
+    || !["highlights", "traditions"].includes(orderedNavigation[2]?.module?.type ?? "")
+    || orderedNavigation[3]?.label !== "Plan"
+    || orderedNavigation[3]?.module?.type !== "planVisit"
+  ) {
+    errors.push(
+      "Primary navigation must read Why Go, Schedule, an event-specific topic, and Plan in that order.",
+    );
+  }
+  if (
+    !orderedNavigation[2]?.label?.trim()
+    || GENERIC_THIRD_TOPIC.test(orderedNavigation[2].label.trim())
+  ) {
+    errors.push(
+      "The third navigation title must be a clear event-specific noun phrase, not a generic editorial category.",
     );
   }
 
@@ -123,8 +180,11 @@ function newPackageContentErrors(manifest: EventPageManifest) {
         "Why Go needs a substantive event-specific overview instead of the event name or generic template copy.",
       );
     }
-    if (wordCount(whyGo.summary) < 30) {
-      errors.push("Why Go needs enough source-grounded context to tell the event's story, not a short listing description.");
+    if (wordCount(whyGo.summary) < 30 || wordCount(whyGo.summary) > 45) {
+      errors.push("Why Go needs a concise 30-to-45-word evergreen event pitch.");
+    }
+    if (EDITION_BOUND_WHY_GO_COPY.test(`${whyGo.headline} ${whyGo.summary}`)) {
+      errors.push("Why Go must remain useful from year to year instead of describing the status of one edition.");
     }
     if (supportingItems.length < 2 || supportingItems.some((item) => !hasSourceIds(item.sourceIds))) {
       errors.push(
@@ -229,6 +289,30 @@ function newPackageContentErrors(manifest: EventPageManifest) {
         "Plan needs at least two source-backed practical details.",
       );
     }
+    if (!plan.details.some((detail) => !ADDRESS_ONLY_PLAN_LABEL.test(detail.label))) {
+      errors.push(
+        "Plan needs at least one useful access, viewing, transportation, timing, or orientation detail beyond the address.",
+      );
+    }
+  }
+
+  const footerOnlyHosts = officialHosts(manifest);
+  const topicLinks = manifest.modules.flatMap((module) => (
+    module.type === "planVisit" || module.type === "highlights"
+      ? module.links ?? []
+      : []
+  ));
+  const scoutExternalLinks = manifest.scoutSuggestions.flatMap((suggestion) => (
+    suggestion.command.type === "openExternal" ? [suggestion.command.href] : []
+  ));
+  if (
+    manifest.primaryAction
+    || topicLinks.some((link) => isOfficialHostLink(link.href, footerOnlyHosts))
+    || scoutExternalLinks.some((href) => isOfficialHostLink(href, footerOnlyHosts))
+  ) {
+    errors.push(
+      "Official event-site links may appear only in the Event Hub source footer.",
+    );
   }
 
   errors.push(...evaluateEventPageEditorialQuality(manifest).errors);

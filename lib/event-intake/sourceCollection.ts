@@ -71,7 +71,7 @@ function normalizedUrl(value: string) {
 
 export function selectBoundedOfficialSourceLinks(
   inspection: OfficialEventSourceInspection,
-  limit = 5,
+  limit?: number,
 ): EventSourceLink[] {
   const source = new URL(inspection.finalUrl);
   const excluded = new Set(
@@ -99,7 +99,9 @@ export function selectBoundedOfficialSourceLinks(
       || left.label.localeCompare(right.label)
       || left.url.localeCompare(right.url)
     ));
-  const boundedLimit = Math.max(0, Math.min(limit, 8));
+  const selectedLimit = limit === undefined
+    ? Number.POSITIVE_INFINITY
+    : Math.max(0, Math.floor(limit));
   const selected: EventSourceLink[] = [];
   const selectedUrls = new Set<string>();
   const buckets = [
@@ -121,14 +123,14 @@ export function selectBoundedOfficialSourceLinks(
     if (!match) continue;
     selected.push(match);
     selectedUrls.add(match.url);
-    if (selected.length >= boundedLimit) return selected;
+    if (selected.length >= selectedLimit) return selected;
   }
 
   for (const link of ranked) {
     if (selectedUrls.has(link.url)) continue;
     selected.push(link);
     selectedUrls.add(link.url);
-    if (selected.length >= boundedLimit) break;
+    if (selected.length >= selectedLimit) break;
   }
   return selected;
 }

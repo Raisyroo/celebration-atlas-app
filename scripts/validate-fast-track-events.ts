@@ -85,8 +85,8 @@ for (const event of plan.events) {
   assert.equal(event.ultraHandoff.task, "full_event_hub_manifest_authorship");
   assert.equal(event.ultraHandoff.initialAttemptLimit, 1);
   assert(
-    event.ultraHandoff.acceptanceChecks.some((check) => check.includes("Four to six")),
-    "Ultra must choose the event-specific topic count instead of filling a fixed four-topic form",
+    event.ultraHandoff.acceptanceChecks.some((check) => check.includes("Exactly four")),
+    "Ultra must use the concise four-topic navigation contract",
   );
   assert(
     event.stages.find((stage) => stage.id === "retain_official_evidence")?.completionRule.includes("history"),
@@ -159,6 +159,20 @@ assert.match(ultraFirstMigration, /atlas_event_factory_content_ready_v2\(v_core_
 assert.match(
   ultraFirstMigration,
   /revoke all on function public\.atlas_event_factory_content_ready_v3[\s\S]*from public, anon, authenticated/,
+);
+const conciseFourTopicMigration = readFileSync(
+  "supabase/migrations/037_require_concise_four_topic_event_hubs.sql",
+  "utf8",
+);
+assert.match(conciseFourTopicMigration, /atlas_event_factory_content_ready_v4/);
+assert.match(conciseFourTopicMigration, /jsonb_array_length\(v_modules\) <> 4/);
+assert.match(conciseFourTopicMigration, /Why Go/);
+assert.match(conciseFourTopicMigration, /Schedule/);
+assert.match(conciseFourTopicMigration, /Plan/);
+assert.match(conciseFourTopicMigration, /official-site links may appear only/i);
+assert.match(
+  conciseFourTopicMigration,
+  /grant execute on function public\.atlas_event_factory_content_ready_v4[\s\S]*to service_role/,
 );
 assert.match(
   ultraFirstMigration,

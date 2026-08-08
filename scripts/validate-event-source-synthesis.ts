@@ -1234,7 +1234,7 @@ assert(
 );
 assert.equal(shelbyContent.ok, false, 'A source-rich page must still fail when its core visitor copy only repeats one experience list.');
 assert(
-  !shelbyContent.ok && shelbyContent.errors.some((error) => error.includes('must do different jobs')),
+  !shelbyContent.ok && shelbyContent.errors.some((error) => error.includes('Each visitor fact belongs in one place')),
   'The content gate must explain the repeated hero and Why Go copy in plain language.',
 );
 assert(
@@ -1326,6 +1326,11 @@ const shelbyEditorial = applyEditorialModelOutput({
     spotlight: null,
   },
 });
+shelbyEditorial.manifest.navigation[2].label = 'Art Fair';
+delete shelbyEditorial.manifest.primaryAction;
+for (const module of shelbyEditorial.manifest.modules) {
+  if (module.type === 'planVisit' || module.type === 'highlights') module.links = [];
+}
 const shelbyEditorialContent = validateEventPageContentReadiness(
   shelbyEditorial.manifest,
 );
@@ -1346,10 +1351,10 @@ assert.equal(
 );
 
 const shelbyFullManifest = structuredClone(shelbyEditorial.manifest);
-shelbyFullManifest.hero.tagline = 'More than 120 artist and marketplace vendors gather for two days at River Bends Park.';
+shelbyFullManifest.hero.tagline = 'A shaded township park becomes an open-air route through original art.';
 shelbyFullManifest.navigation = shelbyFullManifest.navigation.map((item) =>
   item.targetModuleId === 'highlights'
-    ? { ...item, label: 'What to See' }
+    ? { ...item, label: 'Art Fair' }
     : item,
 );
 const shelbyFullWhyGo = shelbyFullManifest.modules.find((module) => module.type === 'whyGo');
@@ -1362,32 +1367,41 @@ assert(
   && shelbyFullHighlights?.type === 'highlights'
   && shelbyFullPlan?.type === 'planVisit',
 );
-shelbyFullWhyGo.headline = 'Original work fills a shaded park instead of a convention aisle.';
-shelbyFullWhyGo.summary = 'Saturday and Sunday use the same River Bends Park setting, so the experience can expand beyond booth browsing. Musical entertainment, food, a children’s craft area, free lots, and shuttle buses make it practical to alternate discovery with breaks.';
+shelbyFullWhyGo.headline = 'Meet the people behind the work.';
+shelbyFullWhyGo.summary = 'The open-air route favors slow looking: visitors can talk with makers, compare pieces across several mediums, and let the informal setting turn a shopping trip into a more personal exchange.';
+shelbyFullWhyGo.metrics = [
+  {
+    id: 'free-entry',
+    value: 'Free',
+    label: 'Entry',
+    icon: 'ticket',
+    sourceIds: [shelbyManifest.sources[0].id],
+  },
+  {
+    id: 'weekend-format',
+    value: '2 days',
+    label: 'Weekend format',
+    icon: 'calendar',
+    sourceIds: [shelbyManifest.sources[0].id],
+  },
+];
+shelbyFullWhyGo.audienceGroups = [];
 shelbyFullSchedule.subtitle = 'Use the two official event-day listings to choose a Saturday or Sunday visit.';
 shelbyFullSchedule.presentationGroups = [{
   id: 'river-bends-weekend',
   title: 'River Bends Park weekend',
-  summary: 'Saturday and Sunday share the same park setting.',
   itemIds: shelbyFullManifest.scheduleItems.map((item) => item.id),
   sourceIds: [shelbyManifest.sources[0].id],
 }];
-shelbyFullHighlights.headline = 'Start with original work, then find the parts of the fair that move and make noise.';
-shelbyFullHighlights.summary = 'Artist booths anchor the visit while music, food, and children’s activities create natural breaks.';
+shelbyFullHighlights.headline = 'Three ways to change the pace.';
+shelbyFullHighlights.summary = 'Live music, food service, and a children’s activity area give the browsing route distinct pauses.';
+shelbyFullHighlights.items.find((item) => item.id === 'highlight-marketplace')!.summary = 'Booth displays make it easy to compare materials, styles, and price points at close range.';
 shelbyFullPlan.subtitle = 'River Bends Park is the fixed point for both days of the fair.';
 shelbyFullManifest.scoutSuggestions = [
   {
     id: 'scout-original-work',
     label: 'How large is the artist marketplace?',
     response: 'The fair brings together more than 120 artist and marketplace vendors.',
-    scopeModuleIds: ['why-go', 'highlights'],
-    command: { type: 'openModule', moduleId: 'highlights' },
-    sourceIds: [shelbyManifest.sources[0].id],
-  },
-  {
-    id: 'scout-family',
-    label: 'What can children do?',
-    response: 'A dedicated craft and activity area gives children a hands-on stop between the booths.',
     scopeModuleIds: ['why-go', 'highlights'],
     command: { type: 'openModule', moduleId: 'highlights' },
     sourceIds: [shelbyManifest.sources[0].id],
@@ -1429,7 +1443,7 @@ assert.deepEqual(
   'Full-manifest authorship must preserve verified identity, dates, and location.',
 );
 assert(
-  shelbyFullEditorial.manifest.navigation.some((item) => item.label === 'What to See'),
+  shelbyFullEditorial.manifest.navigation.some((item) => item.label === 'Art Fair'),
   'Full-manifest authorship must be able to make event-specific navigation decisions.',
 );
 assert.equal(
@@ -1442,7 +1456,12 @@ assert.equal(
   'How large is the artist marketplace?',
   'Full-manifest authorship must replace generic Scout structure with event-specific questions.',
 );
-assert.equal(validateEventPageContentReadiness(shelbyFullEditorial.manifest).ok, true);
+const shelbyFullReadiness = validateEventPageContentReadiness(shelbyFullEditorial.manifest);
+assert.equal(
+  shelbyFullReadiness.ok,
+  true,
+  shelbyFullReadiness.ok ? undefined : `${shelbyFullReadiness.errors.join(' ')} ${JSON.stringify(evaluateEventPageEditorialQuality(shelbyFullEditorial.manifest).repetitionPairs)}`,
+);
 
 const changedScheduleManifest = structuredClone(shelbyFullManifest);
 changedScheduleManifest.scheduleItems[0].title = 'Invented schedule title';
@@ -1500,7 +1519,7 @@ shellOnlyManifest.scoutSuggestions = [];
 const shellOnlyContent = validateEventPageContentReadiness(shellOnlyManifest);
 assert.equal(shellOnlyContent.ok, false, 'A three-topic shell must never pass new-package content readiness.');
 assert(
-  !shellOnlyContent.ok && shellOnlyContent.errors.some((error) => error.includes('four to six primary topics')),
+  !shellOnlyContent.ok && shellOnlyContent.errors.some((error) => error.includes('exactly four primary topics')),
   'The content gate must explain the missing fourth topic in plain language.',
 );
 

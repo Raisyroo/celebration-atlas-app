@@ -280,13 +280,13 @@ for (const rpc of ['atlas_create_event_source_bundle', 'atlas_add_event_source_s
 }
 assert(sourceBundles.includes("EVENT_SOURCE_ARCHIVE_BUCKET = 'event-source-archive'"), 'source bundle service does not use the private source archive');
 assert(sourceBundles.includes('gzipSync'), 'source bundle service does not compress raw source archives');
-assert(sourceBundles.includes('selectBoundedOfficialSourceLinks'), 'source bundle service does not bound related official-page collection');
+assert(sourceBundles.includes('selectBoundedOfficialSourceLinks'), 'source bundle service does not select related official-page evidence');
 assert(!/rpc\([^"'`]/.test(sourceBundles), 'source bundle service appears to accept a dynamic RPC name');
 
 const sourceCollection = read('lib/event-intake/sourceCollection.ts');
-assert(sourceCollection.includes('sameOfficialSite'), 'bounded source collection does not enforce a same-site policy');
-assert(sourceCollection.includes('Math.min(limit, 8)'), 'bounded source collection has no absolute page cap');
-assert(sourceCollection.includes('editorialPriority'), 'bounded source collection does not prioritize official editorial sources');
+assert(sourceCollection.includes('sameOfficialSite'), 'official source collection does not enforce a same-site policy');
+assert(sourceCollection.includes('Number.POSITIVE_INFINITY'), 'default official source collection still imposes an editorial page-count cap');
+assert(sourceCollection.includes('editorialPriority'), 'official source collection does not prioritize editorial evidence');
 
 const sourceIntelligenceMigration = read('supabase/migrations/006_event_source_intelligence.sql');
 assert(sourceIntelligenceMigration.includes("'event-source-archive'") && sourceIntelligenceMigration.includes('false,'), 'source intelligence migration does not create a private archive bucket');

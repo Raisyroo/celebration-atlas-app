@@ -79,7 +79,7 @@ function stages(): FastTrackStage[] {
       failureScope: "event_only",
       requiredForPrivatePreview: true,
       completionRule:
-        "One complete, event-specific four-to-six-topic manifest is returned with protected facts unchanged and every visitor claim grounded.",
+        "One complete, event-specific four-topic manifest is returned in the required order with protected facts unchanged and every visitor claim grounded.",
     },
     {
       sequence: 6,
@@ -147,8 +147,8 @@ function ultraHandoff(event: FastTrackApprovedEvent): FastTrackUltraHandoff {
     repairPolicy: "one_targeted_repair_only_after_validation_failure",
     editableScope: [
       "Hero tagline and visitor hook",
-      "Event-specific topic count, navigation labels, and topic order",
-      "Why Go, Schedule, one to three Highlights or Traditions topics, and Plan presentation",
+      "The event-specific third topic, visitor-facing hierarchy, and concise prose",
+      "Why Go, Schedule, one Highlights or Traditions topic, and Plan presentation in the fixed navigation order",
       "Source-backed schedule presentation groups such as real stages, venues, days, or competition classes",
       "Source-backed visitor guidance, links, audience framing, and Scout content",
       "Complete visitor-facing hierarchy and prose across the manifest",
@@ -162,12 +162,12 @@ function ultraHandoff(event: FastTrackApprovedEvent): FastTrackUltraHandoff {
       "Lifecycle, review, package, and publication state",
     ],
     acceptanceChecks: [
-      "Four to six substantive Event Hub topics chosen from the event evidence",
+      "Exactly four substantive Event Hub topics ordered Why Go, Schedule, event-specific topic, and Plan",
       "Every factual claim resolves to retained evidence",
       "No invented or altered event facts",
       "No sponsor or research-narration copy",
-      "No core-copy repetition or generic factory language",
-      "Why Go tells a complete event story and any Scout Spotlight is distinctive enough to keep",
+      "No repeated fact, official-site link outside the source footer, or generic factory language",
+      "Why Go is brief, accurate, enticing, and evergreen; any Scout Spotlight is distinctive enough to keep",
       "All protected values remain equivalent",
     ],
   };

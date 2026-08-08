@@ -302,6 +302,30 @@ function getSourceIdsForModule(module: EventPageManifest['modules'][number]): st
   return [];
 }
 
+function normalizedSourceHost(value: string) {
+  try {
+    return new URL(value).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+function isOfficialSourceHref(manifest: EventPageManifest, href: string) {
+  const targetHost = normalizedSourceHost(href);
+  if (!targetHost) return false;
+  return manifest.sources.some((source) => {
+    if (!source.url || !['officialWebsite', 'officialSocial', 'organizer'].includes(source.type)) {
+      return false;
+    }
+    const sourceHost = normalizedSourceHost(source.url);
+    return Boolean(sourceHost) && (
+      targetHost === sourceHost
+      || targetHost.endsWith(`.${sourceHost}`)
+      || sourceHost.endsWith(`.${targetHost}`)
+    );
+  });
+}
+
 function VerificationLine({
   manifest,
   sourceIds,
@@ -309,32 +333,32 @@ function VerificationLine({
   manifest: EventPageManifest;
   sourceIds: string[];
 }) {
-  const firstSource = manifest.sources.find((source) => sourceIds.includes(source.id));
-  const sourceLabel = firstSource?.type === 'tourismBoard'
-    ? 'Tourism source'
-    : firstSource?.type === 'municipal'
-      ? 'Government source'
-      : firstSource?.type === 'newsArticle'
-        ? 'News source'
-        : firstSource?.type === 'archive'
-          ? 'Archive source'
-          : firstSource?.type === 'officialWebsite'
-            || firstSource?.type === 'officialSocial'
-            || firstSource?.type === 'organizer'
-            ? 'Official source'
-            : 'Source';
-
   return (
-    <div className={styles.verificationLine}>
+    <div className={styles.verificationLine} data-source-count={sourceIds.length}>
       <BadgeCheck size={16} aria-hidden="true" />
       <span>Verified {formatReviewedDate(manifest.reviewedAt)}</span>
-      {firstSource?.url ? (
-        <a href={firstSource.url} target="_blank" rel="noreferrer">
-          {sourceLabel}
-          <ExternalLink size={14} aria-hidden="true" />
-        </a>
-      ) : null}
     </div>
+  );
+}
+
+function SourceFooter({ manifest }: { manifest: EventPageManifest }) {
+  const sources = manifest.sources.filter((source, index, collection) => (
+    source.url
+    && collection.findIndex((candidate) => candidate.url === source.url) === index
+  ));
+  if (!sources.length) return null;
+  return (
+    <footer className={styles.sourceFooter} aria-label="Event sources">
+      <strong>Sources</strong>
+      <div>
+        {sources.map((source) => (
+          <a href={source.url} target="_blank" rel="noreferrer" key={source.id}>
+            <span>{source.title}</span>
+            <ExternalLink size={14} aria-hidden="true" />
+          </a>
+        ))}
+      </div>
+    </footer>
   );
 }
 
@@ -717,6 +741,9 @@ function HighlightsModule({
   module: HighlightsModuleManifest;
   manifest: EventPageManifest;
 }) {
+  const visibleLinks = (module.links ?? []).filter((link) => (
+    !isOfficialSourceHref(manifest, link.href)
+  ));
   return (
     <section className={styles.moduleBody} aria-labelledby={`${module.id}-title`}>
       <header className={styles.moduleHeader}>
@@ -746,9 +773,9 @@ function HighlightsModule({
         })}
       </div>
 
-      {module.links?.length ? (
+      {visibleLinks.length ? (
         <div className={styles.highlightLinks}>
-          {module.links.map((link) => (
+          {visibleLinks.map((link) => (
             <a href={link.href} target="_blank" rel="noreferrer" key={link.id}>
               <span>{link.label}</span>
               <ExternalLink size={17} aria-hidden="true" />
@@ -769,6 +796,9 @@ function PlanVisitModule({
   module: PlanVisitModuleManifest;
   manifest: EventPageManifest;
 }) {
+  const visibleLinks = module.links.filter((link) => (
+    !isOfficialSourceHref(manifest, link.href)
+  ));
   return (
     <section className={styles.moduleBody} aria-labelledby={`${module.id}-title`}>
       <header className={styles.moduleHeader}>
@@ -793,14 +823,16 @@ function PlanVisitModule({
           })}
         </div>
 
-        <div className={styles.planLinks}>
-          {module.links.map((link) => (
-            <a href={link.href} target="_blank" rel="noreferrer" key={link.id}>
-              <span>{link.label}</span>
-              <ExternalLink size={17} aria-hidden="true" />
-            </a>
-          ))}
-        </div>
+        {visibleLinks.length ? (
+          <div className={styles.planLinks}>
+            {visibleLinks.map((link) => (
+              <a href={link.href} target="_blank" rel="noreferrer" key={link.id}>
+                <span>{link.label}</span>
+                <ExternalLink size={17} aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {module.advisory ? <p className={styles.advisory}>{module.advisory}</p> : null}
@@ -1094,17 +1126,6 @@ export default function EventHub({ manifest, scoutContentReference, homeLink, ar
               {manifest.identity.dateText}
             </span>
           </div>
-          {manifest.primaryAction ? (
-            <a
-              className={styles.primaryAction}
-              href={manifest.primaryAction.href}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {manifest.primaryAction.label}
-              <ExternalLink size={18} aria-hidden="true" />
-            </a>
-          ) : null}
         </div>
       </section>
 
@@ -1174,6 +1195,8 @@ export default function EventHub({ manifest, scoutContentReference, homeLink, ar
           <PlanVisitModule module={activeModule} manifest={manifest} />
         ) : null}
       </div>
+
+      <SourceFooter manifest={manifest} />
 
       <section
         ref={scoutDockRef}

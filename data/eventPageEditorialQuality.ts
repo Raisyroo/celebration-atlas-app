@@ -1,7 +1,7 @@
 import type { EventPageManifest } from "./eventPageManifestTypes.ts";
 
 export const EVENT_PAGE_EDITORIAL_QUALITY_VERSION =
-  "event-page-editorial-quality-v2";
+  "event-page-editorial-quality-v3";
 
 export type EventPageEditorialRepetition = {
   left: string;
@@ -138,34 +138,78 @@ export function evaluateEventPageEditorialQuality(
       ].join(" "),
     ),
   );
-  const coreFields = [
+  const schedule = manifest.modules.find((module) => module.type === "schedule");
+  const plan = manifest.modules.find((module) => module.type === "planVisit");
+  const visitorFields = [
     { label: "Hero summary", text: manifest.hero.tagline },
     ...(whyGo?.type === "whyGo"
       ? [
           { label: "Why Go headline", text: whyGo.headline },
           { label: "Why Go summary", text: whyGo.summary },
+          ...whyGo.metrics.flatMap((metric) => [
+            { label: `Why Go metric ${metric.id}`, text: `${metric.value} ${metric.label} ${metric.detail ?? ""}` },
+          ]),
+          ...whyGo.audienceGroups.map((group) => ({
+            label: `Why Go audience ${group.id}`,
+            text: `${group.title} ${group.items.join(" ")}`,
+          })),
+          ...(whyGo.spotlight ? [{
+            label: "Scout Spotlight",
+            text: `${whyGo.spotlight.title} ${whyGo.spotlight.body}`,
+          }] : []),
         ]
       : []),
+    ...experiences.flatMap((experience) => [
+      { label: `${experience.title} headline`, text: experience.headline },
+      { label: `${experience.title} summary`, text: experience.summary },
+      ...experience.items.map((item) => ({
+        label: `${experience.title} item ${item.id}`,
+        text: `${item.title} ${item.summary}`,
+      })),
+    ]),
+    ...(schedule?.type === "schedule" ? [
+      { label: "Schedule subtitle", text: schedule.subtitle },
+      ...(schedule.presentationGroups ?? []).map((group) => ({
+        label: `Schedule group ${group.id}`,
+        text: `${group.title} ${group.summary ?? ""}`,
+      })),
+      ...(schedule.notes ?? []).map((note, index) => ({
+        label: `Schedule note ${index + 1}`,
+        text: note,
+      })),
+    ] : []),
+    ...(plan?.type === "planVisit" ? [
+      { label: "Plan subtitle", text: plan.subtitle },
+      ...plan.details.map((detail) => ({
+        label: `Plan detail ${detail.id}`,
+        text: `${detail.label} ${detail.value}`,
+      })),
+      ...(plan.advisory ? [{ label: "Plan advisory", text: plan.advisory }] : []),
+    ] : []),
+    ...manifest.scoutSuggestions.map((suggestion) => ({
+      label: `Scout answer ${suggestion.id}`,
+      text: `${suggestion.label} ${suggestion.response}`,
+    })),
   ];
   const repetitionPairs: EventPageEditorialRepetition[] = [];
-  for (let leftIndex = 0; leftIndex < coreFields.length; leftIndex += 1) {
+  for (let leftIndex = 0; leftIndex < visitorFields.length; leftIndex += 1) {
     for (
       let rightIndex = leftIndex + 1;
-      rightIndex < coreFields.length;
+      rightIndex < visitorFields.length;
       rightIndex += 1
     ) {
       const repeated = repetition(
-        coreFields[leftIndex],
-        coreFields[rightIndex],
+        visitorFields[leftIndex],
+        visitorFields[rightIndex],
         identityTerms,
       );
       if (repeated) repetitionPairs.push(repeated);
     }
   }
 
-  if (repetitionPairs.length || exactRepeatedSentences(coreFields)) {
+  if (repetitionPairs.length || exactRepeatedSentences(visitorFields)) {
     errors.push(
-      "Hero, Why Go headline, and Why Go summary must do different jobs instead of repeating the same experience list.",
+      "Each visitor fact belongs in one place; remove repeated or lightly rephrased content across Hero, Why Go, Schedule, the event-specific topic, Scout, and Plan.",
     );
   }
 
@@ -188,12 +232,7 @@ export function evaluateEventPageEditorialQuality(
   }
 
   const visitorCopy = [
-    ...coreFields.map((field) => field.text),
-    ...experiences.flatMap((experience) => [
-      experience.headline,
-      experience.summary,
-      ...experience.items.map((item) => item.summary),
-    ]),
+    ...visitorFields.map((field) => field.text),
   ].join(" ");
   if (FACTORY_PHRASES.some((pattern) => pattern.test(visitorCopy))) {
     errors.push(

@@ -486,8 +486,7 @@ function usefulOfficialLinks(
     other: 8,
   };
   return [...links.values()]
-    .sort((left, right) => priority[left.kind] - priority[right.kind] || left.label.localeCompare(right.label))
-    .slice(0, 48);
+    .sort((left, right) => priority[left.kind] - priority[right.kind] || left.label.localeCompare(right.label));
 }
 
 function contentSegments(
