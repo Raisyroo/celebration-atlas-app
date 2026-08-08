@@ -54,6 +54,13 @@ const eventHubCallSites = [
   '../app/event-preview/[packageId]/page.tsx',
 ] as const;
 
+assert(
+  eventHubSource.includes('showScoutTools = false') &&
+    eventHubSource.includes('{showScoutTools ? (') &&
+    eventHubStyles.includes('.rootWithoutScout'),
+  'Scout tools must remain implemented but hidden by default on Event Hub pages.',
+);
+
 for (const removedComposerBehavior of [
   'scopedScoutSuggestions',
   'runScoutSuggestion',

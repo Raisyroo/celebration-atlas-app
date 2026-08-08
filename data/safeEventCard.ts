@@ -2,6 +2,7 @@ import type { AtlasEvent } from './events.ts';
 import { resolveExplicitEventThumbnail } from './eventThumbnail.ts';
 import type { EventFlyerResolutionMap } from './eventMediaResolutionTypes.ts';
 import type { ResolvedEventMedia } from './eventMedia.ts';
+import { getCanonicalEventSlug } from './eventCanonicalSlugs.ts';
 
 export type SafeAtlasEventCard = {
   id: AtlasEvent['id'];
@@ -91,7 +92,7 @@ export function deriveSafeAtlasEventCard(
     detailAction: event.eventPageKind === 'manifest'
       ? {
           label: 'Open full event',
-          href: `/events/${event.id}`,
+          href: `/events/${getCanonicalEventSlug(event)}`,
         }
       : undefined,
     trustStatusCopy: 'Details not yet source-verified',

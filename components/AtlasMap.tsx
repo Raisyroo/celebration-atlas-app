@@ -8,6 +8,7 @@ import { useMobileFavorite } from './mobileFavorite';
 import { useRouter } from 'next/navigation';
 import type { CSSProperties, PointerEvent, ReactNode, RefObject, SyntheticEvent } from 'react';
 import type { AtlasEvent } from '../data/events';
+import { getCanonicalEventSlug } from '../data/eventCanonicalSlugs';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
 import type {
   EventFlyerResolution,
@@ -318,7 +319,7 @@ function EventNavigationControl({
   if (event.eventPageKind === 'manifest') {
     return (
       <Link
-        href={`/events/${event.id}`}
+        href={`/events/${getCanonicalEventSlug(event)}`}
         aria-label={ariaLabel}
         aria-hidden={ariaHidden}
         aria-current={ariaCurrent}
@@ -643,7 +644,7 @@ function adaptSearchClusterEventToDeckItem({
       thumbnail.kind === 'image' && thumbnail.src === imageUrl
         ? thumbnail.alt
         : `${safeCard.name} Celebration Atlas event image`,
-    href: `/events/${event.id}`,
+    href: `/events/${getCanonicalEventSlug(event)}`,
     badge: status
       ? {
           label: status,
@@ -2332,7 +2333,7 @@ export default function AtlasMap({
     const event = events.find((candidate) => candidate.id === eventId);
     if (event?.eventPageKind === 'manifest') {
       prepareEventHubNavigation(event.id);
-      router.push(`/events/${event.id}`);
+      router.push(`/events/${getCanonicalEventSlug(event)}`);
       return;
     }
     const activeElement = document.activeElement;

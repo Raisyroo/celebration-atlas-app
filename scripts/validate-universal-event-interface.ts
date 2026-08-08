@@ -66,6 +66,13 @@ assert.deepEqual(
   'manifest events retain their Event Hub route',
 );
 
+const romeoCard = deriveSafeAtlasEventCard(eventById('romeo-peach'));
+assert.deepEqual(
+  romeoCard.detailAction,
+  { label: 'Open full event', href: '/events/romeo-peach-festival' },
+  'Romeo mobile discovery must navigate to the canonical Event Hub instead of reopening the flyer',
+);
+
 const hostedFlyerResolutions: EventFlyerResolutionMap = {
   [armada.id]: {
     eventId: armada.id,

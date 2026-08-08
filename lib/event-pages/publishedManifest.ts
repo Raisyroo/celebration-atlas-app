@@ -3,6 +3,7 @@ import { cache } from 'react';
 import type { EventPageManifest } from '@/data/eventPageManifestTypes';
 import { validateEventPageManifest } from '@/data/eventPageManifestValidation';
 import { getEventPageManifest } from '@/data/eventPageManifests';
+import { getCanonicalEventSlug } from '@/data/eventCanonicalSlugs';
 import { createAtlasServiceClient } from '@/lib/atlas-control/service';
 import {
   getManifestScoutContentReference,
@@ -37,9 +38,10 @@ async function resolveEventPageResult(identifier: string): Promise<ResolvedEvent
   const localFallback = getLocalEventPage(identifier);
   const supabase = createAtlasServiceClient();
   if (!supabase) return localFallback;
+  const publishedIdentifier = getCanonicalEventSlug({ id: identifier });
 
   const { data, error } = await supabase
-    .rpc('atlas_get_published_event_page', { p_identifier: identifier })
+    .rpc('atlas_get_published_event_page', { p_identifier: publishedIdentifier })
     .maybeSingle<PublishedEventPageRow>();
 
   if (error || !data) return localFallback;

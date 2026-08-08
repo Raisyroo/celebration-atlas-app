@@ -170,6 +170,7 @@ type EventHubProps = {
   scoutContentReference?: ScoutContentReference;
   homeLink?: EventHubHomeLink;
   artPending?: boolean;
+  showScoutTools?: boolean;
 };
 
 function getTodayKey(timeZone: string): string {
@@ -824,7 +825,13 @@ function PlanVisitModule({
   );
 }
 
-export default function EventHub({ manifest, scoutContentReference, homeLink, artPending = false }: EventHubProps) {
+export default function EventHub({
+  manifest,
+  scoutContentReference,
+  homeLink,
+  artPending = false,
+  showScoutTools = false,
+}: EventHubProps) {
   const initialModuleId = manifest.navigation[0]?.targetModuleId ?? manifest.modules[0]?.id;
   const [activeModuleId, setActiveModuleId] = useState(initialModuleId);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>(() =>
@@ -1033,7 +1040,7 @@ export default function EventHub({ manifest, scoutContentReference, homeLink, ar
     <main
       className={`${styles.root}${
         hasVisibleScoutHistory ? ` ${styles.rootWithScoutResponse}` : ''
-      }`}
+      }${showScoutTools ? '' : ` ${styles.rootWithoutScout}`}`}
     >
       <header className={styles.topBar}>
         <Link
@@ -1181,129 +1188,131 @@ export default function EventHub({ manifest, scoutContentReference, homeLink, ar
 
       <SourceFooter manifest={manifest} />
 
-      <section
-        ref={scoutDockRef}
-        className={styles.scoutDock}
-        aria-label="Scout question composer"
-        data-testid="scout-composer"
-        data-scout-contract-version={scoutComposerContext.contractVersion}
-        data-scout-event-id={scoutComposerContext.eventId}
-        data-scout-package-id={scoutComposerContext.packageId}
-        data-scout-package-version={scoutComposerContext.packageVersion}
-        data-scout-source-kind={scoutComposerContext.sourceKind}
-        data-scout-active-section-id={scoutComposerContext.activeSectionId}
-        data-scout-input-focused={isScoutInputFocused ? 'true' : 'false'}
-        data-scout-history-visible={hasVisibleScoutHistory ? 'true' : 'false'}
-      >
-        {hasVisibleScoutHistory ? (
-          <div className={styles.scoutHistory}>
-            <button
-              type="button"
-              className={styles.scoutHistoryClose}
-              aria-controls="scout-conversation-history"
-              aria-label="Hide Scout conversation history"
-              title="Hide Scout conversation history"
-              onClick={dismissScoutHistory}
-            >
-              <X size={19} strokeWidth={2} aria-hidden="true" />
-            </button>
-            <ol
-              ref={scoutHistoryRef}
-              id="scout-conversation-history"
-              className={styles.scoutResponse}
-              aria-label="Scout conversation history"
-              data-testid="scout-response-preview"
-              data-scout-response-mode="demo"
-              data-scout-turn-count={scoutConversation.length}
-              tabIndex={0}
-            >
-              {scoutConversation.map((turn) => (
-                <li className={styles.scoutTurn} key={turn.id}>
-                  <div className={styles.scoutExchange}>
-                    <span className={styles.scoutTurnLabel}>You</span>
-                    <p className={styles.scoutQuestion}>{turn.question}</p>
-                  </div>
-                  <div className={styles.scoutExchange}>
-                    <span className={styles.scoutTurnLabel}>Scout</span>
-                    <p className={styles.scoutAnswer}>{turn.answer}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        ) : null}
-        <div
-          className={styles.srOnly}
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
+      {showScoutTools ? (
+        <section
+          ref={scoutDockRef}
+          className={styles.scoutDock}
+          aria-label="Scout question composer"
+          data-testid="scout-composer"
+          data-scout-contract-version={scoutComposerContext.contractVersion}
+          data-scout-event-id={scoutComposerContext.eventId}
+          data-scout-package-id={scoutComposerContext.packageId}
+          data-scout-package-version={scoutComposerContext.packageVersion}
+          data-scout-source-kind={scoutComposerContext.sourceKind}
+          data-scout-active-section-id={scoutComposerContext.activeSectionId}
+          data-scout-input-focused={isScoutInputFocused ? 'true' : 'false'}
+          data-scout-history-visible={hasVisibleScoutHistory ? 'true' : 'false'}
         >
-          {latestScoutTurn
-            ? `Conversation turn ${scoutConversation.length}. You asked: ${latestScoutTurn.question}. Scout answered: ${latestScoutTurn.answer}`
-            : ''}
-        </div>
-        <form
-          className={styles.scoutForm}
-          data-testid="scout-composer-form"
-          onSubmit={submitScoutQuery}
-        >
-          <input type="hidden" name="eventId" value={scoutComposerContext.eventId} />
-          <input type="hidden" name="packageId" value={scoutComposerContext.packageId} />
-          <input
-            type="hidden"
-            name="packageVersion"
-            value={scoutComposerContext.packageVersion}
-          />
-          <input
-            type="hidden"
-            name="activeSectionId"
-            value={scoutComposerContext.activeSectionId}
-          />
-          <div className={styles.scoutPortrait}>
-            <Image
-              src="/scout/scout-guide-icon.png"
-              alt=""
-              fill
-              loading="eager"
-              sizes="58px"
-              aria-hidden="true"
-            />
-          </div>
-          <div className={styles.scoutField}>
-            {!isScoutActive ? (
-              <div className={styles.scoutTitle} aria-hidden="true">
-                <strong>Ask Scout</strong>
-                <small>Verified guidance for this event</small>
-              </div>
-            ) : null}
-            <label htmlFor="scout-event-question" className={styles.srOnly}>
-              Ask Scout about {manifest.identity.shortName}
-            </label>
-            <input
-              ref={scoutInputRef}
-              id="scout-event-question"
-              name="question"
-              value={scoutQuery}
-              autoComplete="off"
-              autoCapitalize="sentences"
-              enterKeyHint="send"
-              maxLength={500}
-              onBlur={() => setIsScoutInputFocused(false)}
-              onChange={(event) => setScoutQuery(event.target.value)}
-              onFocus={activateScoutInput}
-              placeholder=""
-            />
-          </div>
-          <button
-            ref={scoutSubmitButtonRef}
-            type="submit"
-            aria-label="Submit question to Scout composer"
-            title="Submit question to Scout composer"
+          {hasVisibleScoutHistory ? (
+            <div className={styles.scoutHistory}>
+              <button
+                type="button"
+                className={styles.scoutHistoryClose}
+                aria-controls="scout-conversation-history"
+                aria-label="Hide Scout conversation history"
+                title="Hide Scout conversation history"
+                onClick={dismissScoutHistory}
+              >
+                <X size={19} strokeWidth={2} aria-hidden="true" />
+              </button>
+              <ol
+                ref={scoutHistoryRef}
+                id="scout-conversation-history"
+                className={styles.scoutResponse}
+                aria-label="Scout conversation history"
+                data-testid="scout-response-preview"
+                data-scout-response-mode="demo"
+                data-scout-turn-count={scoutConversation.length}
+                tabIndex={0}
+              >
+                {scoutConversation.map((turn) => (
+                  <li className={styles.scoutTurn} key={turn.id}>
+                    <div className={styles.scoutExchange}>
+                      <span className={styles.scoutTurnLabel}>You</span>
+                      <p className={styles.scoutQuestion}>{turn.question}</p>
+                    </div>
+                    <div className={styles.scoutExchange}>
+                      <span className={styles.scoutTurnLabel}>Scout</span>
+                      <p className={styles.scoutAnswer}>{turn.answer}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
+          <div
+            className={styles.srOnly}
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
           >
-            <Send size={19} aria-hidden="true" />
-          </button>
-        </form>
-      </section>
+            {latestScoutTurn
+              ? `Conversation turn ${scoutConversation.length}. You asked: ${latestScoutTurn.question}. Scout answered: ${latestScoutTurn.answer}`
+              : ''}
+          </div>
+          <form
+            className={styles.scoutForm}
+            data-testid="scout-composer-form"
+            onSubmit={submitScoutQuery}
+          >
+            <input type="hidden" name="eventId" value={scoutComposerContext.eventId} />
+            <input type="hidden" name="packageId" value={scoutComposerContext.packageId} />
+            <input
+              type="hidden"
+              name="packageVersion"
+              value={scoutComposerContext.packageVersion}
+            />
+            <input
+              type="hidden"
+              name="activeSectionId"
+              value={scoutComposerContext.activeSectionId}
+            />
+            <div className={styles.scoutPortrait}>
+              <Image
+                src="/scout/scout-guide-icon.png"
+                alt=""
+                fill
+                loading="eager"
+                sizes="58px"
+                aria-hidden="true"
+              />
+            </div>
+            <div className={styles.scoutField}>
+              {!isScoutActive ? (
+                <div className={styles.scoutTitle} aria-hidden="true">
+                  <strong>Ask Scout</strong>
+                  <small>Verified guidance for this event</small>
+                </div>
+              ) : null}
+              <label htmlFor="scout-event-question" className={styles.srOnly}>
+                Ask Scout about {manifest.identity.shortName}
+              </label>
+              <input
+                ref={scoutInputRef}
+                id="scout-event-question"
+                name="question"
+                value={scoutQuery}
+                autoComplete="off"
+                autoCapitalize="sentences"
+                enterKeyHint="send"
+                maxLength={500}
+                onBlur={() => setIsScoutInputFocused(false)}
+                onChange={(event) => setScoutQuery(event.target.value)}
+                onFocus={activateScoutInput}
+                placeholder=""
+              />
+            </div>
+            <button
+              ref={scoutSubmitButtonRef}
+              type="submit"
+              aria-label="Submit question to Scout composer"
+              title="Submit question to Scout composer"
+            >
+              <Send size={19} aria-hidden="true" />
+            </button>
+          </form>
+        </section>
+      ) : null}
     </main>
   );
 }
