@@ -6,6 +6,7 @@ import {
   stableStringifyEventPageManifest,
   validateEventPageManifest,
 } from '../data/eventPageManifestValidation.ts';
+import { selectPrimaryOfficialEventSource } from '../data/eventPageSourcePolicy.ts';
 import { getDateKeyInTimeZone } from '../lib/eventScheduleDates.ts';
 
 const manifests = [
@@ -47,6 +48,10 @@ for (const manifest of manifests) {
     Object.fromEntries(Object.entries(manifest).reverse()),
   );
   if (first !== reordered) failures.push(`${manifest.eventId}: stable serialization changed with key order.`);
+  const publicFooterSource = selectPrimaryOfficialEventSource(manifest);
+  if (!publicFooterSource?.url || publicFooterSource.type !== 'officialWebsite') {
+    failures.push(`${manifest.eventId}: the public footer could not resolve one primary official event webpage.`);
+  }
   console.log(
     `${manifest.eventId}: valid (${manifest.modules.length} modules, ${manifest.scheduleItems.length} schedule items, ${manifest.sources.length} sources)`,
   );

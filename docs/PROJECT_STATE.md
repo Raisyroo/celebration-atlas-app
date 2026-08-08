@@ -103,6 +103,13 @@ visitor-facing story and schedule grouping while protected evidence and
 lifecycle fields remain immutable. The migration creates no approval or
 publication path.
 
+The shared Event Hub footer renders exactly one public source link: the first
+retained `officialWebsite`, which is the primary official event webpage. Every
+additional official subpage and reputable supporting source remains in the
+manifest for grounding, citations, validation, and Scout, but is not repeated
+in the public footer. This renderer rule applies to every Event Hub without an
+event-by-event authorship pass.
+
 The operating loop is:
 
 ```text

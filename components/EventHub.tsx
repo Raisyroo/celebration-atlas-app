@@ -76,6 +76,7 @@ import {
   isOfficialSourceHref,
   isUsefulPlanLink,
 } from '../data/eventPageLinkPolicy';
+import { selectPrimaryOfficialEventSource } from '../data/eventPageSourcePolicy';
 import styles from './EventHub.module.css';
 
 const NAVIGATION_ICONS: Record<EventPageNavigationIcon, LucideIcon> = {
@@ -331,21 +332,16 @@ function VerificationLine({
 }
 
 function SourceFooter({ manifest }: { manifest: EventPageManifest }) {
-  const sources = manifest.sources.filter((source, index, collection) => (
-    source.url
-    && collection.findIndex((candidate) => candidate.url === source.url) === index
-  ));
-  if (!sources.length) return null;
+  const source = selectPrimaryOfficialEventSource(manifest);
+  if (!source?.url) return null;
   return (
     <footer className={styles.sourceFooter} aria-label="Event sources">
-      <strong>Sources</strong>
+      <strong>Source</strong>
       <div>
-        {sources.map((source) => (
-          <a href={source.url} target="_blank" rel="noreferrer" key={source.id}>
-            <span>{source.title}</span>
-            <ExternalLink size={14} aria-hidden="true" />
-          </a>
-        ))}
+        <a href={source.url} target="_blank" rel="noreferrer">
+          <span>{source.title}</span>
+          <ExternalLink size={14} aria-hidden="true" />
+        </a>
       </div>
     </footer>
   );

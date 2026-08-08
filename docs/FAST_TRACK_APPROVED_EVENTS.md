@@ -121,8 +121,9 @@ authoring stage.
    distinctive Scout Spotlight. Each fact may appear only once. Plan must add
    value beyond an address and should retain useful task-specific official deep
    links such as Schedule, FAQ, registration, tickets, parking, rules, or
-   directions. Generic official-homepage calls to action belong only in the
-   source footer and never in the hero.
+   directions. The footer renders exactly one link: the primary official event
+   webpage. All other retained sources remain internal evidence. A generic
+   official-homepage call to action never appears in the hero.
    Permit one targeted Ultra repair only after a concrete validation failure.
 6. At the hero-image stage, invoke
    `$create-celebration-atlas-hero` with GPT-5.6 Luna at Max reasoning. Generate
