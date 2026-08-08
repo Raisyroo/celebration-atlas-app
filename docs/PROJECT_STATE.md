@@ -546,9 +546,9 @@ image gateway or require a separate paid gateway key. Algonac package v5
 `b650d793-8db9-4f8d-ae30-aefb6ae8b4ff`, Blue Water Fest package v5
 `c528293e-43cd-431d-b3ae-935f8ca58e3e`, Bayview package v4
 `28543942-39ae-4cb0-ae5c-aa780d117b93`, and St. Clair package v5
-`eaa76eff-c2ca-4622-b7ce-65ed081c468e` remain private at
-`ready_for_review`, with page review pending, package art pending, and their
-supplied 1024 x 1536 visual workflows `ready_for_review`. Their accepted richer
+`eaa76eff-c2ca-4622-b7ce-65ed081c468e` reached combined private review with
+page review pending, package art pending, and their supplied 1024 x 1536 visual
+workflows `ready_for_review`. Their accepted richer
 authorship syntheses are `bbaf5896-d169-45f6-9519-e8b449dddf72`,
 `43af0e0b-6328-4c8b-8f6e-8f5e37379a29`,
 `e396b288-b529-49dd-b1e8-f2524fb0afac`, and
@@ -559,6 +559,34 @@ cross-topic repetition. Phone-width review confirmed the four ordered tabs,
 one official footer source, no hero link, no horizontal overflow, and no browser
 warnings. Public event, page, version, and media fingerprints remained
 unchanged.
+
+Ray then approved the remaining four combined page-and-hero reviews and their
+publication. The direct audited approval path attached only the reviewed hero,
+preserved the accepted manifest, approved the page, and published each event in
+about eight seconds without replaying research, Ultra authorship, a repository
+build, or deployment:
+
+- Algonac package v6 materialized event
+  `6c2c413a-0d29-402f-a9e7-323d7cd9b5ed`, version
+  `84bab775-c7c5-4f80-bde4-7ebd8bb645d1`, and media
+  `bd01e467-f0c2-4b7d-b862-c93d365d02ab`.
+- Blue Water Fest package v6 materialized event
+  `81a31a2f-baa4-4297-a885-9ee39613e6fc`, version
+  `75eb38b1-bbe3-4639-8dec-0338ad83e2c5`, and media
+  `c18e8008-2b4a-41de-8132-6929bcfc8511`.
+- Bayview package v5 materialized event
+  `909da038-f30e-4609-8dd6-23db4d4360eb`, version
+  `a7475dff-f1c4-46b4-96b0-c4cee4e15369`, and media
+  `ef409558-9d27-4f7f-9ab2-e8b98edc6060`.
+- St. Clair package v6 materialized event
+  `56292abc-84d0-4ad3-ae09-6bbf4023bacb`, version
+  `3cedbe07-c472-4a2c-b70b-bbab5cac099f`, and media
+  `381d3978-fd2a-4d88-b30b-e30336b77974`.
+
+Production mobile review at `390x844` confirmed each approved hero at its
+native 1024 x 1536 size, the exact four approved tabs in order, one footer
+source, useful Plan links, no hero link, zero horizontal overflow, and no
+browser warnings or errors.
 
 Ray explicitly approved Yale's page, supplied hero, package, and publication
 after the shared one-official-source footer correction. Published package v7
@@ -574,14 +602,15 @@ and no browser warnings. The public page is live at
 
 ## Current Next Milestone
 
-Ray reviews Algonac, Blue Water Fest, Bayview, and St. Clair in their combined
-private review desks, where each richer page appears with its supplied hero.
-The shared one-official-source footer rule already applies without per-event
-rewriting. Do not approve, canonicalize, or publish another event until Ray
-makes the corresponding explicit decision. For approval-only actions with no
-shared code or schema change, use the direct audited approval and publication
-sequence plus one live mobile check; do not replay source inspection,
-authorship, package preparation, repository build, or deployment.
+The first five-event Ray-approved Fast Track list is complete and published.
+For the next approved list, prepare each event independently through one Ultra
+full-manifest pass, hero review, and combined private page-and-image approval.
+The shared one-official-source footer rule applies without per-event rewriting.
+Do not approve, canonicalize, or publish another event until Ray makes the
+corresponding explicit decision. For approval-only actions with no shared code
+or schema change, use the direct audited approval and publication sequence plus
+one live mobile check; do not replay source inspection, authorship, package
+preparation, repository build, or deployment.
 
 Shorewood Kiwanis Harper Charity Cruise remains the clean official-first
 continuation if it appears on that list. Do not clear Holland Ponds, Assumption
