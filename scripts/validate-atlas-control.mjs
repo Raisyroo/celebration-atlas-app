@@ -373,6 +373,14 @@ assert(editorialAssistance.includes('SPONSOR_LANGUAGE'), 'model editorial assist
 const editorialModel = read('lib/event-intake/editorialModel.ts');
 assert(editorialModel.includes('getVercelOidcToken'), 'AI Gateway editorial calls do not use the Vercel runtime OIDC token');
 assert(editorialModel.includes("type: 'json_schema'"), 'AI editorial output is not constrained by a JSON schema');
+assert(editorialModel.includes('Detroit Jazz Festival Why Go'), 'Ultra authorship does not use Detroit Jazz Why Go as the value-density golden master');
+assert(editorialModel.includes('task-specific deep links'), 'Ultra authorship does not preserve useful Plan deep links');
+
+const combinedReviewDesk = read('app/atlas-control/event-preview/[packageId]/EventReviewDesk.tsx');
+const proposedPhonePreview = read('app/atlas-control/event-preview/[packageId]/phone/page.tsx');
+assert(combinedReviewDesk.includes('/atlas-control/event-preview/${review.package.id}/phone'), 'combined review does not use the authenticated proposed phone preview');
+assert(proposedPhonePreview.includes('ready_for_review') && proposedPhonePreview.includes('asset.publicUrl'), 'proposed phone preview does not show a pending review asset inside the Event Hub');
+assert(proposedPhonePreview.includes('requireAtlasAdmin'), 'provisional visual preview is not restricted to Atlas Control administrators');
 
 const editorialPlanning = read('lib/event-intake/editorialPlanning.ts');
 assert(editorialPlanning.includes('current_pending_with_reference'), 'editorial planning does not separate a pending current program from historical reference');
@@ -382,7 +390,7 @@ assert(editorialPlanning.includes('currentScheduleProtected'), 'editorial planni
 assert(editorialPlanning.includes('cherry queen') && editorialPlanning.includes('festival-parades'), 'editorial planning does not cover general festival royalty and parade traditions');
 
 const synthesisEngine = read('lib/event-intake/synthesisEngine.ts');
-assert(synthesisEngine.includes("DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v23-ultra-first'"), 'the Ultra-first synthesis engine version was not advanced');
+assert(synthesisEngine.includes("DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v24-detroit-jazz-golden-master'"), 'the Detroit Jazz golden-master synthesis engine version was not advanced');
 assert(synthesisEngine.includes('applyEditorialPlan'), 'source synthesis does not compose the editorial plan into Event Hub proposals');
 assert(synthesisEngine.includes("candidate.startsAt?.startsWith(`${editionYear}-`)"), 'source synthesis does not filter dated items to the current edition year');
 assert(

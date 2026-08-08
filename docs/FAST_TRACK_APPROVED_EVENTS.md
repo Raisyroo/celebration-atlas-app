@@ -115,9 +115,14 @@ authoring stage.
    Identity, dates, location, schedule facts, source identities, approved art,
    and lifecycle state remain protected.
 5. Run the existing immutable-fact, grounding, content, citation, sponsor,
-   schedule, and semantic-quality validators. Why Go must be brief and
-   evergreen, each fact may appear only once, Plan must add value beyond an
-   address, and official event-site links may render only in the source footer.
+   schedule, and semantic-quality validators. Why Go follows the checked-in
+   Detroit Jazz Festival's compact but substantive pattern: a brief evergreen
+   introduction, source-backed proof points, visitor-value groups, and one
+   distinctive Scout Spotlight. Each fact may appear only once. Plan must add
+   value beyond an address and should retain useful task-specific official deep
+   links such as Schedule, FAQ, registration, tickets, parking, rules, or
+   directions. Generic official-homepage calls to action belong only in the
+   source footer and never in the hero.
    Permit one targeted Ultra repair only after a concrete validation failure.
 6. At the hero-image stage, invoke
    `$create-celebration-atlas-hero` with GPT-5.6 Luna at Max reasoning. Generate

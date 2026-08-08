@@ -91,7 +91,7 @@ export default function EventReviewDesk({ review }: { review: EventFactoryCombin
     }
   }
 
-  const previewUrl = `/event-preview/${review.package.id}?packageVersion=${review.package.packageVersion}`;
+  const previewUrl = `/atlas-control/event-preview/${review.package.id}/phone?packageVersion=${review.package.packageVersion}&visualRevision=${workflow?.revisionNumber ?? 0}`;
 
   return (
     <main className={styles.shell}>
@@ -116,7 +116,7 @@ export default function EventReviewDesk({ review }: { review: EventFactoryCombin
           <div className={styles.panelHeading}>
             <div>
               <p className={styles.eyebrow}>Page content + layout</p>
-              <h2 id="page-preview-heading">Exact phone preview</h2>
+              <h2 id="page-preview-heading">Exact proposed phone preview</h2>
             </div>
             <span className={`${styles.status} ${styles[review.package.pageReviewStatus]}`}>
               {statusLabel(review.package.pageReviewStatus)}

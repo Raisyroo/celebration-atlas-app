@@ -1213,7 +1213,7 @@ const shelbyContent = validateEventPageContentReadiness(shelbyManifest);
 const shelbyBoundedEditorial = buildBoundedEditorialRewriteTargets(
   shelbyManifest,
 );
-assert.equal(shelbySynthesis.engineVersion, 'deterministic-v23-ultra-first');
+assert.equal(shelbySynthesis.engineVersion, 'deterministic-v24-detroit-jazz-golden-master');
 assert.equal(shelbyManifest.navigation.length, 4, 'A new art-fair manifest must contain all four primary topics.');
 assert.equal(shelbyManifest.scheduleItems.length, 2, 'Official event-day hours must appear as useful Schedule rows.');
 assert.equal(
@@ -1331,6 +1331,32 @@ delete shelbyEditorial.manifest.primaryAction;
 for (const module of shelbyEditorial.manifest.modules) {
   if (module.type === 'planVisit' || module.type === 'highlights') module.links = [];
 }
+const shelbyEditorialWhyGo = shelbyEditorial.manifest.modules.find((module) => module.type === 'whyGo');
+assert(shelbyEditorialWhyGo?.type === 'whyGo');
+shelbyEditorialWhyGo.metrics = [
+  {
+    id: 'proof-admission',
+    value: 'Free',
+    label: 'Admission',
+    detail: 'General admission and parking cost nothing',
+    icon: 'ticket',
+    sourceIds: [shelbyEditorial.manifest.sources[0].id],
+  },
+  {
+    id: 'proof-duration',
+    value: '2 days',
+    label: 'Weekend format',
+    detail: 'Saturday and Sunday at River Bends Park',
+    icon: 'calendar',
+    sourceIds: [shelbyEditorial.manifest.sources[0].id],
+  },
+];
+shelbyEditorialWhyGo.spotlight = {
+  title: 'Scout spotlight: a township tradition',
+  body: "The 2026 edition marks the fair's 43rd anniversary, a useful clue to how long this community has gathered around original art.",
+  scoutPose: 'curious',
+  sourceIds: [shelbyEditorial.manifest.sources[0].id],
+};
 const shelbyEditorialContent = validateEventPageContentReadiness(
   shelbyEditorial.manifest,
 );
@@ -1385,7 +1411,28 @@ shelbyFullWhyGo.metrics = [
     sourceIds: [shelbyManifest.sources[0].id],
   },
 ];
-shelbyFullWhyGo.audienceGroups = [];
+shelbyFullWhyGo.audienceGroups = [
+  {
+    id: 'full-manifest-browsers',
+    title: 'For art-fair browsers',
+    tone: 'water',
+    items: [
+      'Food service and live music create natural pauses between the booth rows.',
+      'Two official event days give visitors room to pace the park loop.',
+    ],
+    sourceIds: [shelbyManifest.sources[0].id],
+  },
+  {
+    id: 'full-manifest-families',
+    title: 'For families',
+    tone: 'sunset',
+    items: [
+      "A dedicated children's craft area adds a hands-on stop.",
+      'Free parking and shuttle buses simplify the visit to River Bends Park.',
+    ],
+    sourceIds: [shelbyManifest.sources[0].id],
+  },
+];
 shelbyFullSchedule.subtitle = 'Use the two official event-day listings to choose a Saturday or Sunday visit.';
 shelbyFullSchedule.presentationGroups = [{
   id: 'river-bends-weekend',

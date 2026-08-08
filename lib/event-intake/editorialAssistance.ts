@@ -18,7 +18,7 @@ import type {
   ModelEditorialReviewSummary,
 } from './synthesisTypes.ts';
 
-export const EDITORIAL_PROMPT_VERSION = 'celebration-atlas-editor-v9-concise-four-topic';
+export const EDITORIAL_PROMPT_VERSION = 'celebration-atlas-editor-v10-detroit-jazz-golden-master';
 const SPONSOR_LANGUAGE = /\b(?:sponsor(?:ed|ing|ship|s)?|presented by|presenting partner|title partner|powered by|funder)\b/i;
 const PERSONAL_CONTACT = /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\b(?:email|call|text)\s+(?:me|us|the|to)\b/i;
 const SPECULATIVE_LANGUAGE = /\b(?:probably|presumably|apparently|we think|likely to|expected to return)\b/i;

@@ -174,6 +174,20 @@ assert.match(
   conciseFourTopicMigration,
   /grant execute on function public\.atlas_event_factory_content_ready_v4[\s\S]*to service_role/,
 );
+const richWhyGoMigration = readFileSync(
+  "supabase/migrations/038_restore_rich_why_go_and_plan_links.sql",
+  "utf8",
+);
+assert.match(richWhyGoMigration, /atlas_event_factory_content_ready_v5/);
+assert.match(richWhyGoMigration, /v_summary_words not between 18 and 60/);
+assert.match(richWhyGoMigration, /jsonb_array_length\(v_why_go->'metrics'\) < 2/);
+assert.match(richWhyGoMigration, /jsonb_array_length\(v_why_go->'audienceGroups'\) < 2/);
+assert.match(richWhyGoMigration, /task-specific Plan deep links/i);
+assert.match(richWhyGoMigration, /schedule\|program\|faq/);
+assert.match(
+  richWhyGoMigration,
+  /grant execute on function public\.atlas_event_factory_content_ready_v5\(jsonb\) to service_role/,
+);
 assert.match(
   ultraFirstMigration,
   /grant execute on function public\.atlas_event_factory_content_ready_v3[\s\S]*to service_role/,

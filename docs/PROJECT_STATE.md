@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: August 4, 2026
+Last updated: August 8, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -86,15 +86,19 @@ without the other. Hero-only manifest fields do not invalidate an approved
 page; any normalized page-content change resets that decision. The review RPC
 cannot approve a hero or package, materialize a candidate, or publish.
 
-Forward-only migration `036_enable_ultra_first_event_topics.sql` is deployed
-as the earlier Ultra-first topic experiment. Forward-only migration
-`037_require_concise_four_topic_event_hubs.sql` is now deployed, with local and
-remote history aligned through `037`, and supersedes that experiment for new
-root packages. The current contract requires exactly four tabs in this order:
-Why Go, Schedule, one event-specific topic, and Plan. Why Go is a concise
-30-45-word evergreen pitch; Plan must add practical value beyond an address;
-official-site links appear only in the Sources footer; and repeated facts,
-hero actions, and generic topic labels are rejected. Ultra still owns the
+Forward-only migrations `036_enable_ultra_first_event_topics.sql` and
+`037_require_concise_four_topic_event_hubs.sql` retain the earlier Ultra-first
+and four-topic experiments. Forward-only migration
+`038_restore_rich_why_go_and_plan_links.sql` is now deployed, with local and
+remote history aligned through `038`, and supersedes their content/link gate
+for new root packages. The current contract requires exactly four tabs in this
+order: Why Go, Schedule, one event-specific topic, and Plan. Why Go follows the
+checked-in Detroit Jazz value-density pattern: a compact evergreen
+introduction, at least two source-backed proof points, two visitor-value groups,
+and one distinctive Scout Spotlight. Generic official-homepage calls to action
+and hero links are rejected, while useful retained Schedule, FAQ, registration,
+ticket, parking, rules, and directions deep links belong in Plan. Repeated
+facts and generic topic labels remain rejected. Ultra still owns the
 visitor-facing story and schedule grouping while protected evidence and
 lifecycle fields remain immutable. The migration creates no approval or
 publication path.
@@ -519,9 +523,10 @@ Powerboat Race. Every event retains official evidence, useful related official
 pages without arbitrary default link or segment caps, a verified case,
 source-backed coordinates, and one accepted Codex-hosted `gpt-5.6-sol` Ultra
 full-manifest authorship pass. Each page now has exactly Why Go, Schedule, a
-distinct event-specific third tab, and Plan. The evergreen Why Go pitches are
-brief; each fact has one visitor-facing home; every event has one distinctive
-Scout Spotlight; and no official link appears outside the Sources footer.
+distinct event-specific third tab, and Plan. Yale is the canary for the richer
+Detroit Jazz value-density contract; the remaining four have not yet been
+rewritten to that new standard. Generic official-homepage calls to action stay
+out of the hero and topics, while task-specific official links belong in Plan.
 Bayview preserves an intentionally date-only 2026 schedule rather than
 inventing a start time. Blue Water Fest and Bayview remain distinct candidates,
 and the St. Clair page contains no IHRA or sponsor claim.
@@ -534,23 +539,26 @@ explicit private-write, QA, and rights confirmations. Each visual workflow is
 `ready_for_review`, but no hero is approved or frozen into a package. This upload
 path does not use an image gateway or require a separate paid gateway key.
 
-The five refreshed private previews passed a `390x844` browser review with no
-page-level horizontal overflow, broken images, external links outside the
-Sources footer, or runtime errors. Every required tab rendered substantive
-content, and each supplied 1024 x 1536 hero loaded in the matching combined
-review desk. Public fingerprints for `events`, `event_pages`,
+The Yale package is now private package v6. Its authenticated proposed-phone
+route overlays the pending Supabase visual only for review, so Ray can judge the
+page and supplied image together without approving or freezing the hero. At
+`390x844`, Yale rendered the supplied 1024 x 1536 image, exactly four ordered
+tabs, a substantive Why Go, the protected nine-row schedule, Bolognaville, and
+Plan with Schedule and parking/closure FAQ deep links. It had zero horizontal
+overflow, no hero link, no broken image, and no browser errors. Public
+fingerprints for `events`, `event_pages`,
 `event_page_versions`, and `event_media` remained unchanged. No page, hero, or
 package was approved, no candidate was canonicalized, and nothing was published.
 
 ## Current Next Milestone
 
-Ray reviews each event through its combined private review desk. The exact
-phone-width Event Hub and matching supplied hero appear in one session, while
-the page content/layout decision and hero decision remain independent. A page
-may be approved while its hero remains pending or is sent back for a focused
-alternative. The combined desk cannot publish. Do not approve on Ray's behalf,
-canonicalize, or publish any event until Ray makes the corresponding explicit
-decision.
+Ray reviews Yale through its combined private review desk as the canary for the
+new content contract. The exact phone-width Event Hub and matching supplied
+hero appear in one session, while the page content/layout decision and hero
+decision remain independent. If Ray accepts the Yale direction, apply the same
+contract to the other four events without copying Yale's categories or prose.
+The combined desk cannot publish. Do not approve on Ray's behalf, canonicalize,
+or publish any event until Ray makes the corresponding explicit decision.
 
 Shorewood Kiwanis Harper Charity Cruise remains the clean official-first
 continuation if it appears on that list. Do not clear Holland Ponds, Assumption

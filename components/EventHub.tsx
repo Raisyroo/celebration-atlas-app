@@ -72,6 +72,10 @@ import {
   resolveEventHubHomeLink,
   type EventHubHomeLink,
 } from '../data/eventHubNavigation';
+import {
+  isOfficialSourceHref,
+  isUsefulPlanLink,
+} from '../data/eventPageLinkPolicy';
 import styles from './EventHub.module.css';
 
 const NAVIGATION_ICONS: Record<EventPageNavigationIcon, LucideIcon> = {
@@ -302,28 +306,13 @@ function getSourceIdsForModule(module: EventPageManifest['modules'][number]): st
   return [];
 }
 
-function normalizedSourceHost(value: string) {
-  try {
-    return new URL(value).hostname.toLowerCase().replace(/^www\./, '');
-  } catch {
-    return '';
-  }
-}
-
-function isOfficialSourceHref(manifest: EventPageManifest, href: string) {
-  const targetHost = normalizedSourceHost(href);
-  if (!targetHost) return false;
-  return manifest.sources.some((source) => {
-    if (!source.url || !['officialWebsite', 'officialSocial', 'organizer'].includes(source.type)) {
-      return false;
-    }
-    const sourceHost = normalizedSourceHost(source.url);
-    return Boolean(sourceHost) && (
-      targetHost === sourceHost
-      || targetHost.endsWith(`.${sourceHost}`)
-      || sourceHost.endsWith(`.${targetHost}`)
-    );
-  });
+function isRedundantScheduleDetail(title: string, details?: string) {
+  if (!details?.trim()) return true;
+  const normalized = (value: string) => value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+  return normalized(title) === normalized(details);
 }
 
 function VerificationLine({
@@ -564,14 +553,14 @@ function ScheduleModule({
                       </time>
                       <div className={styles.scheduleEvent}>
                         <strong>{item.title}</strong>
-                        {item.details ? <span>{item.details}</span> : null}
+                        {!isRedundantScheduleDetail(item.title, item.details) ? <span>{item.details}</span> : null}
                       </div>
                       <div className={styles.scheduleMeta}>
                         <span>
                           <CategoryIcon size={15} aria-hidden="true" />
                           {CATEGORY_LABELS[item.category]}
                         </span>
-                        {item.venue ? <small>{item.venue}</small> : null}
+                        {!isRedundantScheduleDetail(item.title, item.venue) ? <small>{item.venue}</small> : null}
                       </div>
                     </article>
                   );
@@ -632,8 +621,8 @@ function ScheduleModule({
                   <time className={styles.referenceTime}>{item.timeText}</time>
                   <div className={styles.referenceEvent}>
                     <strong>{item.title}</strong>
-                    {item.details ? <span>{item.details}</span> : null}
-                    {item.venue ? <small>{item.venue}</small> : null}
+                    {!isRedundantScheduleDetail(item.title, item.details) ? <span>{item.details}</span> : null}
+                    {!isRedundantScheduleDetail(item.title, item.venue) ? <small>{item.venue}</small> : null}
                   </div>
                 </article>
               ))}
@@ -661,8 +650,8 @@ function ScheduleModule({
                 <div>
                   <strong>{item.title}</strong>
                   {item.typicalTiming ? <span>{item.typicalTiming}</span> : null}
-                  {item.details ? <p>{item.details}</p> : null}
-                  {item.venue ? <small>{item.venue}</small> : null}
+                  {!isRedundantScheduleDetail(item.title, item.details) ? <p>{item.details}</p> : null}
+                  {!isRedundantScheduleDetail(item.title, item.venue) ? <small>{item.venue}</small> : null}
                 </div>
               </article>
             ))}
@@ -796,9 +785,7 @@ function PlanVisitModule({
   module: PlanVisitModuleManifest;
   manifest: EventPageManifest;
 }) {
-  const visibleLinks = module.links.filter((link) => (
-    !isOfficialSourceHref(manifest, link.href)
-  ));
+  const visibleLinks = module.links.filter((link) => isUsefulPlanLink(manifest, link));
   return (
     <section className={styles.moduleBody} aria-labelledby={`${module.id}-title`}>
       <header className={styles.moduleHeader}>

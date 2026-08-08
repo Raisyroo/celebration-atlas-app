@@ -5,9 +5,13 @@ import {
 import {
   validateEventPageManifest,
 } from "./eventPageManifestValidation.ts";
+import {
+  isOfficialSourceHref,
+  isUsefulPlanLink,
+} from "./eventPageLinkPolicy.ts";
 
 export const EVENT_PAGE_CONTENT_READINESS_VERSION =
-  "event-page-content-readiness-v6";
+  "event-page-content-readiness-v7";
 
 export type EventPageContentReadinessOptions = {
   allowLegacyStructure?: boolean;
@@ -56,33 +60,6 @@ function wordCount(value: string) {
 
 function hasSourceIds(sourceIds: string[]) {
   return sourceIds.length > 0;
-}
-
-function normalizedHost(value: string) {
-  try {
-    return new URL(value).hostname.toLowerCase().replace(/^www\./, "");
-  } catch {
-    return "";
-  }
-}
-
-function officialHosts(manifest: EventPageManifest) {
-  return new Set(
-    manifest.sources
-      .filter((source) => ["officialWebsite", "officialSocial", "organizer"].includes(source.type))
-      .flatMap((source) => source.url ? [normalizedHost(source.url)] : [])
-      .filter(Boolean),
-  );
-}
-
-function isOfficialHostLink(value: string, hosts: Set<string>) {
-  const host = normalizedHost(value);
-  if (!host) return false;
-  return [...hosts].some((officialHost) => (
-    host === officialHost
-    || host.endsWith(`.${officialHost}`)
-    || officialHost.endsWith(`.${host}`)
-  ));
 }
 
 function newPackageContentErrors(manifest: EventPageManifest) {
@@ -166,11 +143,6 @@ function newPackageContentErrors(manifest: EventPageManifest) {
 
   const whyGo = whyGoModules[0];
   if (whyGo?.type === "whyGo") {
-    const supportingItems = [
-      ...whyGo.metrics,
-      ...whyGo.audienceGroups,
-      ...(whyGo.spotlight ? [whyGo.spotlight] : []),
-    ];
     if (
       wordCount(whyGo.summary) < 10
       || identityEchoes.has(normalizedCopy(whyGo.summary))
@@ -180,22 +152,34 @@ function newPackageContentErrors(manifest: EventPageManifest) {
         "Why Go needs a substantive event-specific overview instead of the event name or generic template copy.",
       );
     }
-    if (wordCount(whyGo.summary) < 30 || wordCount(whyGo.summary) > 45) {
-      errors.push("Why Go needs a concise 30-to-45-word evergreen event pitch.");
+    if (wordCount(whyGo.summary) < 18 || wordCount(whyGo.summary) > 60) {
+      errors.push("Why Go needs a compact 18-to-60-word evergreen event pitch.");
     }
     if (EDITION_BOUND_WHY_GO_COPY.test(`${whyGo.headline} ${whyGo.summary}`)) {
       errors.push("Why Go must remain useful from year to year instead of describing the status of one edition.");
     }
-    if (supportingItems.length < 2 || supportingItems.some((item) => !hasSourceIds(item.sourceIds))) {
+    if (whyGo.metrics.length < 2 || whyGo.metrics.some((metric) => !hasSourceIds(metric.sourceIds))) {
       errors.push(
-        "Why Go needs at least two retained, source-backed visitor insights.",
+        "Why Go needs at least two compact, retained, source-backed proof points.",
       );
     }
     if (
-      whyGo.spotlight
-      && (wordCount(whyGo.spotlight.body) < 18 || GENERIC_SCOUT_COPY.test(`${whyGo.spotlight.title} ${whyGo.spotlight.body}`))
+      whyGo.audienceGroups.length < 2
+      || whyGo.audienceGroups.some((group) => (
+        !hasSourceIds(group.sourceIds)
+        || group.items.length < 2
+        || group.items.some((item) => wordCount(item) < 5)
+      ))
     ) {
-      errors.push("Scout Spotlight must reveal a distinctive event fact or tradition; omit it when only generic advice is available.");
+      errors.push("Why Go needs at least two source-backed visitor groups with two concrete reasons each.");
+    }
+    if (
+      !whyGo.spotlight
+      || !hasSourceIds(whyGo.spotlight.sourceIds)
+      || wordCount(whyGo.spotlight.body) < 18
+      || GENERIC_SCOUT_COPY.test(`${whyGo.spotlight.title} ${whyGo.spotlight.body}`)
+    ) {
+      errors.push("Why Go needs a distinctive, source-backed Scout Spotlight rather than generic advice.");
     }
   }
 
@@ -296,22 +280,23 @@ function newPackageContentErrors(manifest: EventPageManifest) {
     }
   }
 
-  const footerOnlyHosts = officialHosts(manifest);
-  const topicLinks = manifest.modules.flatMap((module) => (
-    module.type === "planVisit" || module.type === "highlights"
-      ? module.links ?? []
-      : []
+  const highlightLinks = manifest.modules.flatMap((module) => (
+    module.type === "highlights" ? module.links ?? [] : []
   ));
+  const invalidPlanLinks = plan?.type === "planVisit"
+    ? plan.links.filter((link) => !isUsefulPlanLink(manifest, link))
+    : [];
   const scoutExternalLinks = manifest.scoutSuggestions.flatMap((suggestion) => (
     suggestion.command.type === "openExternal" ? [suggestion.command.href] : []
   ));
   if (
     manifest.primaryAction
-    || topicLinks.some((link) => isOfficialHostLink(link.href, footerOnlyHosts))
-    || scoutExternalLinks.some((href) => isOfficialHostLink(href, footerOnlyHosts))
+    || highlightLinks.some((link) => isOfficialSourceHref(manifest, link.href))
+    || invalidPlanLinks.length
+    || scoutExternalLinks.some((href) => isOfficialSourceHref(manifest, href))
   ) {
     errors.push(
-      "Official event-site links may appear only in the Event Hub source footer.",
+      "Hero and generic official-site calls to action are forbidden; useful task-specific official links belong in Plan.",
     );
   }
 

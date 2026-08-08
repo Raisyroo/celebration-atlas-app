@@ -17,7 +17,7 @@ import type {
   SynthesisSourceSnapshot,
 } from './synthesisTypes.ts';
 
-export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v23-ultra-first';
+export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v24-detroit-jazz-golden-master';
 
 const CONFIDENCE_RANK: Record<SourceClaimConfidence, number> = {
   unknown: 0,
