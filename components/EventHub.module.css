@@ -55,6 +55,14 @@
   --hub-scout-clearance: 390px;
 }
 
+.rootWithoutScout {
+  --hub-scout-clearance: 24px;
+}
+
+.rootWithoutScout .sourceFooter {
+  padding-bottom: 24px;
+}
+
 .root,
 .root * {
   box-sizing: border-box;
