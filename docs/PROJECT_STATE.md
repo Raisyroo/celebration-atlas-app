@@ -600,6 +600,41 @@ useful Schedule and FAQ links in Plan, no hero link, zero horizontal overflow,
 and no browser warnings. The public page is live at
 `https://celebration-atlas-app.vercel.app/events/yale-bologna-festival-yale-mi`.
 
+Event hero delivery optimization is now automatic in both Atlas Control and
+the grouped Fast Track upload. A validated 1024 x 1536 JPG, PNG, or WebP is
+encoded once as quality-85 WebP, stored at a unique Supabase URL with a one-year
+cache lifetime, and retains its source filename, source type, source size,
+delivery size, and reduction percentage in the visual asset record. Atlas
+Control reports the before/after sizes to the operator, while Fast Track dry
+runs report the expected savings before private writes. Creative review,
+rights, visual approval, package approval, and publication remain unchanged.
+
+Ray approved hero-only optimization revisions for the first five Fast Track
+events. The approved compositions, alt text, page content, layout, and old PNG
+media remain retained; only the active delivery asset changed:
+
+- Yale package `84a551db-820e-4a87-9678-2aa511553dbf`, version
+  `9266c3e3-78bb-4b4b-a180-b58689501492`, and media
+  `6d8932f5-033a-4ae9-bcb6-57d327ec1eba`: 3,858,467 to 247,346 bytes (94%).
+- Algonac package `4ee81923-0345-4c15-a812-5b4957e18bf0`, version
+  `112288df-665f-4d3a-84ad-abc76e9dec68`, and media
+  `ba8efa58-56b7-4b31-b26e-7d92a6de5bcc`: 2,497,535 to 242,778 bytes (90%).
+- Blue Water Fest package `c6417199-e93d-4d3a-8a47-b30fffd76a71`, version
+  `093b9eb7-d76b-4123-955a-f8dbf88473ac`, and media
+  `bca38660-7a0e-4ecc-be88-9497ce38e2ea`: 2,429,633 to 221,132 bytes (91%).
+- Bayview package `66fa7e1e-89e8-46cd-aa0a-bbfbd39388a7`, version
+  `b8aec8bc-56b6-4d66-b2b6-e346e8a0c484`, and media
+  `837c22d7-d9b9-4393-9d14-32e07d412676`: 2,905,221 to 361,274 bytes (88%).
+- St. Clair package `0fca1e2d-cf7a-4762-985c-ecf64064cc27`, version
+  `143ebc38-0e0a-4d87-b7ae-656aaf90c06f`, and media
+  `e90d2534-9a1e-4f67-8533-47fb99bc1714`: 3,705,524 to 272,706 bytes (93%).
+
+Production mobile review at `390x844` confirmed all five WebPs decode at 1024
+x 1536, retain the exact approved four-tab pages, remain unlinked in the hero,
+have zero horizontal overflow, and emit no browser warnings or errors. Partial
+delivery requests confirmed `image/webp`, the expected full byte size, and
+`max-age=31536000` for every active asset.
+
 ## Current Next Milestone
 
 The first five-event Ray-approved Fast Track list is complete and published.
