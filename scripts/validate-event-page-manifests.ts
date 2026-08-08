@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { BROWN_TROUT_EVENT_PAGE_MANIFEST } from '../data/brownTroutEventPageManifest.ts';
 import { DETROIT_JAZZ_EVENT_PAGE_MANIFEST } from '../data/detroitJazzEventPageManifest.ts';
 import { ATLAS_CONSTELLATIONS } from '../data/atlasConstellations.ts';
@@ -15,6 +16,24 @@ const manifests = [
 ];
 
 const failures: string[] = [];
+
+const eventHubSource = readFileSync(new URL('../components/EventHub.tsx', import.meta.url), 'utf8');
+const eventHubStyles = readFileSync(new URL('../components/EventHub.module.css', import.meta.url), 'utf8');
+const verificationStart = eventHubSource.indexOf('function VerificationLine');
+const verificationEnd = eventHubSource.indexOf('function WhyGoModule');
+const verificationSource = eventHubSource.slice(verificationStart, verificationEnd);
+
+if (
+  verificationStart < 0
+  || verificationEnd < 0
+  || !verificationSource.includes('selectPrimaryOfficialEventSource(manifest)')
+  || !verificationSource.includes('Official source')
+) {
+  failures.push('The verified-date line must render the primary official event webpage as “Official source”.');
+}
+if (eventHubSource.includes('function SourceFooter') || eventHubStyles.includes('.sourceFooter')) {
+  failures.push('Event Hubs must not render a separate public source footer.');
+}
 
 const coastGuardPlaceholders = ATLAS_EVENTS.filter((event) => (
   event.location === 'Grand Haven, MI' && /coast guard festival/i.test(event.name)
@@ -48,9 +67,9 @@ for (const manifest of manifests) {
     Object.fromEntries(Object.entries(manifest).reverse()),
   );
   if (first !== reordered) failures.push(`${manifest.eventId}: stable serialization changed with key order.`);
-  const publicFooterSource = selectPrimaryOfficialEventSource(manifest);
-  if (!publicFooterSource?.url || publicFooterSource.type !== 'officialWebsite') {
-    failures.push(`${manifest.eventId}: the public footer could not resolve one primary official event webpage.`);
+  const publicOfficialSource = selectPrimaryOfficialEventSource(manifest);
+  if (!publicOfficialSource?.url || publicOfficialSource.type !== 'officialWebsite') {
+    failures.push(`${manifest.eventId}: the inline Official source link could not resolve one primary official event webpage.`);
   }
   console.log(
     `${manifest.eventId}: valid (${manifest.modules.length} modules, ${manifest.scheduleItems.length} schedule items, ${manifest.sources.length} sources)`,

@@ -324,27 +324,19 @@ function VerificationLine({
   manifest: EventPageManifest;
   sourceIds: string[];
 }) {
+  const source = selectPrimaryOfficialEventSource(manifest);
+
   return (
     <div className={styles.verificationLine} data-source-count={sourceIds.length}>
       <BadgeCheck size={16} aria-hidden="true" />
       <span>Verified {formatReviewedDate(manifest.reviewedAt)}</span>
-    </div>
-  );
-}
-
-function SourceFooter({ manifest }: { manifest: EventPageManifest }) {
-  const source = selectPrimaryOfficialEventSource(manifest);
-  if (!source?.url) return null;
-  return (
-    <footer className={styles.sourceFooter} aria-label="Event sources">
-      <strong>Source</strong>
-      <div>
+      {source?.url ? (
         <a href={source.url} target="_blank" rel="noreferrer">
-          <span>{source.title}</span>
+          Official source
           <ExternalLink size={14} aria-hidden="true" />
         </a>
-      </div>
-    </footer>
+      ) : null}
+    </div>
   );
 }
 
@@ -1185,8 +1177,6 @@ export default function EventHub({
           <PlanVisitModule module={activeModule} manifest={manifest} />
         ) : null}
       </div>
-
-      <SourceFooter manifest={manifest} />
 
       {showScoutTools ? (
         <section

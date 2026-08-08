@@ -19,7 +19,7 @@ This file is the current operational handoff for new Codex tasks. Read `MASTER_A
 2. Flyer cards and collectible artifacts remain optional add-ons generated from the same approved event intelligence.
 3. Scout represents the verified intelligence layer inside Event Hub pages.
 4. Event sponsors are omitted unless they are Celebration Atlas sponsors or a reviewed requirement says otherwise.
-5. Official event sources appear in the footer, not as a competing hero call to action.
+5. The primary official event webpage appears as `Official source` beside the verified date, never as a hero call to action or a separate source footer.
 6. Historical schedules can add value when a current schedule is unavailable, but they must retain their original year and a visible caveat.
 7. Map marker placement on the illustrated Michigan artwork is approximate presentation. Verified real coordinates remain canonical data.
 
@@ -103,12 +103,13 @@ visitor-facing story and schedule grouping while protected evidence and
 lifecycle fields remain immutable. The migration creates no approval or
 publication path.
 
-The shared Event Hub footer renders exactly one public source link: the first
-retained `officialWebsite`, which is the primary official event webpage. Every
-additional official subpage and reputable supporting source remains in the
-manifest for grounding, citations, validation, and Scout, but is not repeated
-in the public footer. This renderer rule applies to every Event Hub without an
-event-by-event authorship pass.
+The shared Event Hub verified-date line renders exactly one public `Official
+source` link: the first retained `officialWebsite`, which is the primary
+official event webpage. Every additional official subpage and reputable
+supporting source remains in the manifest for grounding, citations, validation,
+and Scout, but is not repeated in the public interface. Event Hubs render no
+separate source footer. This renderer rule applies to every Event Hub without
+an event-by-event authorship pass.
 
 The operating loop is:
 
@@ -556,7 +557,7 @@ authorship syntheses are `bbaf5896-d169-45f6-9519-e8b449dddf72`,
 proof points, two visitor-value groups, a distinctive source-backed Scout
 Spotlight, one event-specific third topic, useful Plan links, and zero detected
 cross-topic repetition. Phone-width review confirmed the four ordered tabs,
-one official footer source, no hero link, no horizontal overflow, and no browser
+one inline `Official source` link, no hero link, no horizontal overflow, and no browser
 warnings. Public event, page, version, and media fingerprints remained
 unchanged.
 
@@ -584,18 +585,18 @@ build, or deployment:
   `381d3978-fd2a-4d88-b30b-e30336b77974`.
 
 Production mobile review at `390x844` confirmed each approved hero at its
-native 1024 x 1536 size, the exact four approved tabs in order, one footer
-source, useful Plan links, no hero link, zero horizontal overflow, and no
+native 1024 x 1536 size, the exact four approved tabs in order, one inline
+`Official source` link, useful Plan links, no hero link, zero horizontal overflow, and no
 browser warnings or errors.
 
 Ray explicitly approved Yale's page, supplied hero, package, and publication
-after the shared one-official-source footer correction. Published package v7
+after the shared one-official-source correction. Published package v7
 `893d674c-74ce-4aa2-a104-f956f2c20010` materialized canonical event
 `a975009c-8601-4ffa-a00d-27ad59d8c666`, immutable Event Hub version
 `8ab465b7-3d27-4b48-a7ff-8451bc87db4c`, and approved media record
 `aa8fa224-9a43-4084-9649-88e7ccef9030`. Production mobile review at `390x844`
 confirmed the supplied 1024 x 1536 hero, exactly Why Go, Schedule,
-Bolognaville, and Plan, one footer link to the official festival homepage,
+Bolognaville, and Plan, one inline `Official source` link to the official festival homepage,
 useful Schedule and FAQ links in Plan, no hero link, zero horizontal overflow,
 and no browser warnings. The public page is live at
 `https://celebration-atlas-app.vercel.app/events/yale-bologna-festival-yale-mi`.
@@ -640,7 +641,7 @@ delivery requests confirmed `image/webp`, the expected full byte size, and
 The first five-event Ray-approved Fast Track list is complete and published.
 For the next approved list, prepare each event independently through one Ultra
 full-manifest pass, hero review, and combined private page-and-image approval.
-The shared one-official-source footer rule applies without per-event rewriting.
+The shared inline `Official source` rule applies without per-event rewriting.
 Do not approve, canonicalize, or publish another event until Ray makes the
 corresponding explicit decision. For approval-only actions with no shared code
 or schema change, use the direct audited approval and publication sequence plus
