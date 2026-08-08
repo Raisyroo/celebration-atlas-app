@@ -94,7 +94,7 @@ export default function ManualEventHeroUpload({ items, workflows, onComplete }: 
       }
       setFile(nextFile);
       setPreviewUrl(URL.createObjectURL(nextFile));
-      setMessage("Image specification verified locally. Review the complete frame before upload.");
+      setMessage("Image specification verified locally. Upload will automatically optimize it to WebP; review the complete frame before upload.");
     } catch (error) {
       event.target.value = "";
       setMessage(error instanceof Error ? error.message : "The selected image could not be inspected.");
@@ -108,7 +108,7 @@ export default function ManualEventHeroUpload({ items, workflows, onComplete }: 
       return;
     }
     setPending("upload");
-    setMessage("Uploading the finished asset and retaining its provenance...");
+    setMessage("Optimizing the finished asset to WebP, uploading it, and retaining its provenance...");
     const body = new FormData();
     body.set("sourcePackageId", selected.publishedPackageId);
     body.set("altText", altText.trim());
@@ -127,7 +127,10 @@ export default function ManualEventHeroUpload({ items, workflows, onComplete }: 
       return;
     }
     setWorkflowId(nextWorkflowId);
-    setMessage("Upload retained. It is awaiting explicit approval and attachment.");
+    const sourceKilobytes = Math.round(Number(result.sourceByteSize ?? file.size) / 1024);
+    const optimizedKilobytes = Math.round(Number(result.byteSize ?? 0) / 1024);
+    const savingsPercent = Math.round(Number(result.savingsPercent ?? 0));
+    setMessage(`Upload retained as WebP: ${sourceKilobytes} KB to ${optimizedKilobytes} KB (${savingsPercent}% smaller). It is awaiting explicit approval and attachment.`);
     await onComplete();
   }
 
@@ -189,7 +192,7 @@ export default function ManualEventHeroUpload({ items, workflows, onComplete }: 
           <h3 id="manual-hero-heading">Attach external Event Hub art</h3>
           <p>
             Exact canvas: {EVENT_HERO_UPLOAD_SPEC.width} x {EVENT_HERO_UPLOAD_SPEC.height}px ({EVENT_HERO_UPLOAD_SPEC.aspectRatio}).
-            JPG, PNG, or WebP; maximum {EVENT_HERO_UPLOAD_SPEC.maxMegabytes} MB. The complete canvas is shown without cropping.
+            JPG, PNG, or WebP; maximum {EVENT_HERO_UPLOAD_SPEC.maxMegabytes} MB. Uploads are automatically optimized to WebP for fast delivery. The complete canvas is shown without cropping.
           </p>
         </div>
       </div>

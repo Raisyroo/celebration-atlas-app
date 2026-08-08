@@ -170,9 +170,12 @@ Codex first runs the batch attachment command without write authorization to
 prove every filename has one unambiguous private visual workflow. After image
 specification, full-frame, event identity, text/mark, mobile crop, and supplied
 asset rights checks are complete, Codex repeats it with the explicit private
-write flags. The command uploads each image to Supabase and moves only its
-existing visual workflow back to `ready_for_review`; it does not approve the
-hero, approve the page, attach art to a package, or publish.
+write flags. Both the dry run and write run automatically encode the validated
+canvas as quality-85 WebP and report the source size, delivery size, and
+reduction percentage. The stored output uses a unique URL with a one-year cache
+lifetime. The command moves only the existing visual workflow back to
+`ready_for_review`; it does not approve the hero, approve the page, attach art
+to a package, or publish.
 
 ```text
 npm run atlas:attach-fast-track-heroes -- \

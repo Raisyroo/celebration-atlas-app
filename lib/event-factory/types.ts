@@ -105,6 +105,15 @@ export type EventVisualAsset = {
   width?: number;
   height?: number;
   sourceFilename?: string;
+  sourceContentType?: string;
+  sourceByteSize?: number;
+  optimization?: {
+    strategy: "webp";
+    quality: number;
+    originalByteSize: number;
+    optimizedByteSize: number;
+    savingsPercent: number;
+  };
   uploadedBy?: string;
   uploadedAt?: string;
   provenanceCategory?: "externally_supplied";

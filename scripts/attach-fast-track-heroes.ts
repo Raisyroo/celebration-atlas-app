@@ -1,12 +1,11 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import sharp from "sharp";
 import { CELEBRATION_ATLAS_MEDIA_BUCKET } from "../data/eventMedia.ts";
 import { createAtlasServiceClient } from "../lib/atlas-control/service.ts";
 import {
-  eventHeroFormatForMimeType,
-  validateEventHeroUploadMetadata,
-} from "../lib/event-factory/heroUploadSpec.ts";
+  EVENT_HERO_OPTIMIZATION_SPEC,
+  optimizeEventHeroUpload,
+} from "../lib/event-factory/heroOptimization.ts";
 import {
   matchHeroFileToWorkflow,
   normalizedHeroFilename,
@@ -85,17 +84,6 @@ function imageFiles(inputs: string[]) {
   return [...new Set(files)].sort((left, right) => left.localeCompare(right));
 }
 
-function mimeType(format: string) {
-  if (format === "jpeg") return "image/jpeg";
-  if (format === "png") return "image/png";
-  if (format === "webp") return "image/webp";
-  return "";
-}
-
-function extensionFor(format: string) {
-  return format === "jpeg" ? "jpg" : format;
-}
-
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   const files = imageFiles(options.inputs);
@@ -106,27 +94,33 @@ async function main() {
   const planned: Array<{
     file: string;
     bytes: Buffer;
-    format: string;
     contentType: string;
+    sourceByteSize: number;
+    savingsPercent: number;
+    cacheControl: string;
     workflow: EventVisualWorkflowSummary;
   }> = [];
   for (const file of files) {
     const matched = matchHeroFileToWorkflow(file, workflows);
     if (!matched.ok) throw new Error(`${path.basename(file)}: ${matched.reason}`);
-    const bytes = readFileSync(file);
-    const metadata = await sharp(bytes, { animated: false }).metadata();
-    const format = metadata.format ?? "";
-    const contentType = mimeType(format);
-    const validation = validateEventHeroUploadMetadata({
-      width: metadata.width ?? 0,
-      height: metadata.height ?? 0,
-      byteSize: bytes.byteLength,
-      mimeType: contentType,
-      format: eventHeroFormatForMimeType(contentType),
-      pages: metadata.pages,
+    const sourceBytes = readFileSync(file);
+    const extension = path.extname(file).toLowerCase();
+    const sourceContentType = extension === ".png"
+      ? "image/png"
+      : extension === ".webp"
+      ? "image/webp"
+      : "image/jpeg";
+    const optimized = await optimizeEventHeroUpload(sourceBytes, sourceContentType);
+    if (!optimized.ok) throw new Error(`${path.basename(file)}: ${optimized.errors.join(" ")}`);
+    planned.push({
+      file,
+      bytes: optimized.hero.bytes,
+      contentType: optimized.hero.contentType,
+      sourceByteSize: optimized.hero.sourceByteSize,
+      savingsPercent: optimized.hero.savingsPercent,
+      cacheControl: optimized.hero.cacheControl,
+      workflow: matched.workflow,
     });
-    if (!validation.ok) throw new Error(`${path.basename(file)}: ${validation.errors.join(" ")}`);
-    planned.push({ file, bytes, format, contentType, workflow: matched.workflow });
   }
 
   const duplicateWorkflows = planned.filter((item, index) => (
@@ -145,6 +139,10 @@ async function main() {
         eventName: item.workflow.eventName,
         workflowId: item.workflow.id,
         targetYear: item.workflow.targetYear,
+        sourceByteSize: item.sourceByteSize,
+        optimizedByteSize: item.bytes.byteLength,
+        savingsPercent: item.savingsPercent,
+        outputFormat: "webp",
       })),
     }, null, 2));
     return;
@@ -154,10 +152,14 @@ async function main() {
   if (!supabase) throw new Error("Atlas Supabase service configuration is incomplete.");
   const uploaded = [];
   for (const item of planned) {
-    const storagePath = `events/${item.workflow.eventKey}/hero/${Date.now()}-${normalizedHeroFilename(item.file)}.${extensionFor(item.format)}`;
+    const storagePath = `events/${item.workflow.eventKey}/hero/${Date.now()}-${normalizedHeroFilename(item.file)}.webp`;
     const storage = await supabase.storage
       .from(CELEBRATION_ATLAS_MEDIA_BUCKET)
-      .upload(storagePath, item.bytes, { contentType: item.contentType, upsert: false });
+      .upload(storagePath, item.bytes, {
+        contentType: item.contentType,
+        cacheControl: item.cacheControl,
+        upsert: false,
+      });
     if (storage.error) throw new Error(`${item.workflow.eventName}: ${storage.error.message}`);
     try {
       const publicUrl = supabase.storage
@@ -195,6 +197,19 @@ async function main() {
           width: 1024,
           height: 1536,
           sourceFilename: path.basename(item.file).slice(0, 255),
+          sourceContentType: path.extname(item.file).toLowerCase() === ".png"
+            ? "image/png"
+            : path.extname(item.file).toLowerCase() === ".webp"
+            ? "image/webp"
+            : "image/jpeg",
+          sourceByteSize: item.sourceByteSize,
+          optimization: {
+            strategy: "webp",
+            quality: EVENT_HERO_OPTIMIZATION_SPEC.quality,
+            originalByteSize: item.sourceByteSize,
+            optimizedByteSize: item.bytes.byteLength,
+            savingsPercent: item.savingsPercent,
+          },
           uploadedBy: options.actor.trim(),
           uploadedAt: new Date().toISOString(),
           provenanceCategory: "externally_supplied",

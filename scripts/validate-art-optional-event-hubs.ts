@@ -485,6 +485,7 @@ async function main() {
     publishedResolver,
     publicRoute,
     uploadRoute,
+    heroOptimization,
     visualRoute,
     factoryRoute,
     manualControl,
@@ -501,6 +502,7 @@ async function main() {
     read("lib/event-pages/publishedManifest.ts"),
     read("app/events/[id]/page.tsx"),
     read("app/api/atlas-control/event-visuals/upload/route.ts"),
+    read("lib/event-factory/heroOptimization.ts"),
     read("app/api/atlas-control/event-visuals/route.ts"),
     read("app/api/atlas-control/event-factory/route.ts"),
     read("app/atlas-control/ManualEventHeroUpload.tsx"),
@@ -521,8 +523,9 @@ async function main() {
   assert(publishedResolver.includes("artPending: !validation.value.hero.imageSrc.trim()"));
   assert(publicRoute.includes("artPending={resolvedEventPage.artPending}"));
 
-  assert(uploadRoute.includes("sharp(bytes"));
-  assert(uploadRoute.includes("validateEventHeroUploadMetadata"));
+  assert(uploadRoute.includes("optimizeEventHeroUpload"));
+  assert(heroOptimization.includes("sharp(input"));
+  assert(heroOptimization.includes("validateEventHeroUploadMetadata"));
   assert(uploadRoute.includes("sourceFilename: file.name"));
   assert(uploadRoute.includes("uploadedBy: auth.admin.email"));
   assert(uploadRoute.includes('provenanceCategory: "externally_supplied"'));

@@ -127,6 +127,7 @@ function mapGenerationBrief(value: unknown): EventVisualGenerationBrief {
 
 function mapAsset(value: unknown): EventVisualAsset | null {
   const source = record(value);
+  const optimization = record(source?.optimization);
   const publicUrl = text(source?.publicUrl);
   const storagePath = text(source?.storagePath);
   const altText = text(source?.altText);
@@ -143,6 +144,23 @@ function mapAsset(value: unknown): EventVisualAsset | null {
     ...(Number.isFinite(Number(source.width)) ? { width: Number(source.width) } : {}),
     ...(Number.isFinite(Number(source.height)) ? { height: Number(source.height) } : {}),
     ...(text(source.sourceFilename) ? { sourceFilename: text(source.sourceFilename) } : {}),
+    ...(text(source.sourceContentType) ? { sourceContentType: text(source.sourceContentType) } : {}),
+    ...(Number.isFinite(Number(source.sourceByteSize)) ? { sourceByteSize: Number(source.sourceByteSize) } : {}),
+    ...(optimization?.strategy === "webp"
+      && Number.isFinite(Number(optimization.quality))
+      && Number.isFinite(Number(optimization.originalByteSize))
+      && Number.isFinite(Number(optimization.optimizedByteSize))
+      && Number.isFinite(Number(optimization.savingsPercent))
+      ? {
+          optimization: {
+            strategy: "webp" as const,
+            quality: Number(optimization.quality),
+            originalByteSize: Number(optimization.originalByteSize),
+            optimizedByteSize: Number(optimization.optimizedByteSize),
+            savingsPercent: Number(optimization.savingsPercent),
+          },
+        }
+      : {}),
     ...(text(source.uploadedBy) ? { uploadedBy: text(source.uploadedBy) } : {}),
     ...(text(source.uploadedAt) ? { uploadedAt: text(source.uploadedAt) } : {}),
     ...(source.provenanceCategory === "externally_supplied"
