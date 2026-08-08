@@ -530,10 +530,10 @@ Powerboat Race. Every event retains official evidence, useful related official
 pages without arbitrary default link or segment caps, a verified case,
 source-backed coordinates, and one accepted Codex-hosted `gpt-5.6-sol` Ultra
 full-manifest authorship pass. Each page now has exactly Why Go, Schedule, a
-distinct event-specific third tab, and Plan. Yale is the canary for the richer
-Detroit Jazz value-density contract; the remaining four have not yet been
-rewritten to that new standard. Generic official-homepage calls to action stay
-out of the hero and topics, while task-specific official links belong in Plan.
+distinct event-specific third tab, and Plan. Yale is the accepted canary for the
+richer Detroit Jazz value-density contract, and the remaining four are now
+rewritten to that standard. Generic official-homepage calls to action stay out
+of the hero and topics, while task-specific official links belong in Plan.
 Bayview preserves an intentionally date-only 2026 schedule rather than
 inventing a start time. Blue Water Fest and Bayview remain distinct candidates,
 and the St. Clair page contains no IHRA or sponsor claim.
@@ -542,10 +542,23 @@ Ray supplied five event-slug-named replacement heroes; the existing batch
 attachment path matched them, verified the 1024 x 1536 PNG contract, and
 uploaded them through the approved Supabase visual workflow after explicit
 private-write, QA, and rights confirmations. This upload path does not use an
-image gateway or require a separate paid gateway key. Algonac, Blue Water Fest,
-Bayview, and St. Clair remain private packages at `ready_for_review`, with page
-review pending, package art pending, and their visual workflows
-`ready_for_review`.
+image gateway or require a separate paid gateway key. Algonac package v5
+`b650d793-8db9-4f8d-ae30-aefb6ae8b4ff`, Blue Water Fest package v5
+`c528293e-43cd-431d-b3ae-935f8ca58e3e`, Bayview package v4
+`28543942-39ae-4cb0-ae5c-aa780d117b93`, and St. Clair package v5
+`eaa76eff-c2ca-4622-b7ce-65ed081c468e` remain private at
+`ready_for_review`, with page review pending, package art pending, and their
+supplied 1024 x 1536 visual workflows `ready_for_review`. Their accepted richer
+authorship syntheses are `bbaf5896-d169-45f6-9519-e8b449dddf72`,
+`43af0e0b-6328-4c8b-8f6e-8f5e37379a29`,
+`e396b288-b529-49dd-b1e8-f2524fb0afac`, and
+`8ab58618-bf57-4960-b503-1e89f2dd841f`, respectively. Each has three Why Go
+proof points, two visitor-value groups, a distinctive source-backed Scout
+Spotlight, one event-specific third topic, useful Plan links, and zero detected
+cross-topic repetition. Phone-width review confirmed the four ordered tabs,
+one official footer source, no hero link, no horizontal overflow, and no browser
+warnings. Public event, page, version, and media fingerprints remained
+unchanged.
 
 Ray explicitly approved Yale's page, supplied hero, package, and publication
 after the shared one-official-source footer correction. Published package v7
@@ -561,14 +574,14 @@ and no browser warnings. The public page is live at
 
 ## Current Next Milestone
 
-Use published Yale as the accepted value-density canary for the remaining four
-Fast Track events. The shared one-official-source footer rule already applies to
-them without per-event rewriting. Their visitor-facing content still requires
-an event-isolated Ultra full-manifest pass so each page can use its own evidence,
-schedule groupings, third topic, and Scout insight without copying Yale's
-categories or prose. Present each resulting page and supplied hero together in
-the combined private review desk. Do not approve, canonicalize, or publish
-another event until Ray makes the corresponding explicit decision.
+Ray reviews Algonac, Blue Water Fest, Bayview, and St. Clair in their combined
+private review desks, where each richer page appears with its supplied hero.
+The shared one-official-source footer rule already applies without per-event
+rewriting. Do not approve, canonicalize, or publish another event until Ray
+makes the corresponding explicit decision. For approval-only actions with no
+shared code or schema change, use the direct audited approval and publication
+sequence plus one live mobile check; do not replay source inspection,
+authorship, package preparation, repository build, or deployment.
 
 Shorewood Kiwanis Harper Charity Cruise remains the clean official-first
 continuation if it appears on that list. Do not clear Holland Ponds, Assumption

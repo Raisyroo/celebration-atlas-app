@@ -143,6 +143,15 @@ authoring stage.
 10. Stop. The combined review surface has no publication action. Publication
     remains a later, separate explicit human package action.
 
+When Ray later approves the page, hero, package, and publication in one explicit
+instruction, and no shared code or schema changed, use the existing audited
+direct sequence: approve the visual workflow, rebuild only the package hero
+fields, approve the reviewed page, publish, and perform one targeted live mobile
+check. Do not rerun discovery, source inspection, authorship, package-creation
+validators, a repository build, or a deployment for that approval-only action.
+Shared code or schema changes still require their normal build and deployment
+gate before publication.
+
 ## Grouped Supplied Hero Upload
 
 Ray may attach a batch of finished hero images directly to the Codex task. No
