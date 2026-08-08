@@ -538,34 +538,37 @@ Bayview preserves an intentionally date-only 2026 schedule rather than
 inventing a start time. Blue Water Fest and Bayview remain distinct candidates,
 and the St. Clair page contains no IHRA or sponsor claim.
 
-All five Event Factory packages are `ready_for_review` with page review pending
-and package art pending. Ray supplied five event-slug-named replacement heroes;
-the existing batch attachment path matched them, verified the 1024 x 1536 PNG
-contract, and uploaded them through the approved Supabase visual workflow after
-explicit private-write, QA, and rights confirmations. Each visual workflow is
-`ready_for_review`, but no hero is approved or frozen into a package. This upload
-path does not use an image gateway or require a separate paid gateway key.
+Ray supplied five event-slug-named replacement heroes; the existing batch
+attachment path matched them, verified the 1024 x 1536 PNG contract, and
+uploaded them through the approved Supabase visual workflow after explicit
+private-write, QA, and rights confirmations. This upload path does not use an
+image gateway or require a separate paid gateway key. Algonac, Blue Water Fest,
+Bayview, and St. Clair remain private packages at `ready_for_review`, with page
+review pending, package art pending, and their visual workflows
+`ready_for_review`.
 
-The Yale package is now private package v6. Its authenticated proposed-phone
-route overlays the pending Supabase visual only for review, so Ray can judge the
-page and supplied image together without approving or freezing the hero. At
-`390x844`, Yale rendered the supplied 1024 x 1536 image, exactly four ordered
-tabs, a substantive Why Go, the protected nine-row schedule, Bolognaville, and
-Plan with Schedule and parking/closure FAQ deep links. It had zero horizontal
-overflow, no hero link, no broken image, and no browser errors. Public
-fingerprints for `events`, `event_pages`,
-`event_page_versions`, and `event_media` remained unchanged. No page, hero, or
-package was approved, no candidate was canonicalized, and nothing was published.
+Ray explicitly approved Yale's page, supplied hero, package, and publication
+after the shared one-official-source footer correction. Published package v7
+`893d674c-74ce-4aa2-a104-f956f2c20010` materialized canonical event
+`a975009c-8601-4ffa-a00d-27ad59d8c666`, immutable Event Hub version
+`8ab465b7-3d27-4b48-a7ff-8451bc87db4c`, and approved media record
+`aa8fa224-9a43-4084-9649-88e7ccef9030`. Production mobile review at `390x844`
+confirmed the supplied 1024 x 1536 hero, exactly Why Go, Schedule,
+Bolognaville, and Plan, one footer link to the official festival homepage,
+useful Schedule and FAQ links in Plan, no hero link, zero horizontal overflow,
+and no browser warnings. The public page is live at
+`https://celebration-atlas-app.vercel.app/events/yale-bologna-festival-yale-mi`.
 
 ## Current Next Milestone
 
-Ray reviews Yale through its combined private review desk as the canary for the
-new content contract. The exact phone-width Event Hub and matching supplied
-hero appear in one session, while the page content/layout decision and hero
-decision remain independent. If Ray accepts the Yale direction, apply the same
-contract to the other four events without copying Yale's categories or prose.
-The combined desk cannot publish. Do not approve on Ray's behalf, canonicalize,
-or publish any event until Ray makes the corresponding explicit decision.
+Use published Yale as the accepted value-density canary for the remaining four
+Fast Track events. The shared one-official-source footer rule already applies to
+them without per-event rewriting. Their visitor-facing content still requires
+an event-isolated Ultra full-manifest pass so each page can use its own evidence,
+schedule groupings, third topic, and Scout insight without copying Yale's
+categories or prose. Present each resulting page and supplied hero together in
+the combined private review desk. Do not approve, canonicalize, or publish
+another event until Ray makes the corresponding explicit decision.
 
 Shorewood Kiwanis Harper Charity Cruise remains the clean official-first
 continuation if it appears on that list. Do not clear Holland Ponds, Assumption
