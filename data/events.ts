@@ -118,6 +118,7 @@ export const ATLAS_EVENTS: AtlasEvent[] = [
     atmosphereLabel: 'First Peach Queen',
     blurb: 'A hometown peach celebration with orchard charm, live performances, and summer food traditions.',
     category: 'Festivals',
+    eventPageKind: 'manifest',
     iconType: 'harvest',
     x: 66,
     y: 40,
