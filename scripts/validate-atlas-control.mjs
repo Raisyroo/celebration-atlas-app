@@ -251,6 +251,7 @@ for (const rpc of ['atlas_upsert_event_visual_workflow', 'atlas_create_event_vis
   assert(visualWorkflowService.includes(`"${rpc}"`), `visual workflow service does not call fixed RPC ${rpc}`);
 }
 assert(!/rpc\([^"'`]/.test(visualWorkflowService), 'visual workflow service appears to accept a dynamic RPC name');
+assert(visualWorkflowService.includes('sourceByteSize') && visualWorkflowService.includes('optimization?.strategy === "webp"'), 'visual workflow reads discard retained optimization provenance');
 const visualPrompt = read('lib/event-factory/visualPrompt.ts');
 assert(visualPrompt.includes('text-free cinematic Celebration Atlas hero image'), 'visual workflow does not create the retained Celebration Atlas generation prompt');
 assert(visualPrompt.includes('original composition') && visualPrompt.includes('compact mobile hero crop'), 'visual generation prompt does not protect composition independence and mobile framing');
@@ -260,6 +261,8 @@ const visualUploadRoute = read('app/api/atlas-control/event-visuals/upload/route
 assert(visualWorkflowRoute.includes('requireAtlasAdmin') && visualWorkflowRoute.includes('private, no-store'), 'visual workflow API is not protected and non-cacheable');
 assert(visualUploadRoute.includes('requireAtlasAdmin') && visualUploadRoute.includes('CELEBRATION_ATLAS_MEDIA_BUCKET'), 'hero upload does not use the protected Atlas media bridge');
 assert(visualUploadRoute.includes('method: "HEAD"') && visualUploadRoute.includes('publicAssetVerified: true'), 'hero upload does not verify the public asset before advancing readiness');
+assert(visualUploadRoute.includes('optimizeEventHeroUpload') && visualUploadRoute.includes('cacheControl: hero.cacheControl'), 'hero upload does not optimize delivery bytes and apply long-lived caching');
+assert(visualUploadRoute.includes('sourceByteSize') && visualUploadRoute.includes('savingsPercent'), 'hero upload does not retain optimization provenance');
 
 const sourceBundleRoute = read('app/api/atlas-control/source-bundles/route.ts');
 assert(sourceBundleRoute.includes('requireAtlasAdmin'), 'source bundle route does not require Atlas admin authorization');

@@ -15,6 +15,21 @@ Status: authoritative contract for finished Event Hub hero assets.
 
 The uploaded bytes must decode to the declared format. Renaming another file type is not accepted. Atlas Control validates MIME type, decoded format, dimensions, page count, and byte size before storage.
 
+## Automatic delivery optimization
+
+Atlas Control and the grouped Fast Track upload accept a finished JPG, PNG, or
+WebP, validate the submitted full-resolution canvas, and automatically encode
+the public asset as quality-85 WebP. The operation preserves the exact 1024 x
+1536 canvas, strips nonessential metadata, retains the source filename, source
+content type, source byte size, output byte size, and reduction percentage in
+the visual asset record, and applies a one-year cache lifetime to the unique
+timestamped storage URL.
+
+The optimized WebP is the reviewed and published asset. Optimization never
+changes the event mapping, composition, crop, alt text, rights confirmation,
+visual approval, package approval, or publication boundary. A visually
+different replacement still requires the normal visual workflow.
+
 ## Composition and viewport behavior
 
 Prepare the entire 1024 x 1536 canvas as the finished composition. Do not depend on transparent padding, upload-time cropping, or a later repositioning step.

@@ -8,21 +8,15 @@ import {
   getEventVisualWorkflow,
   saveEventVisualWorkflow,
 } from "@/lib/event-factory/visuals";
-import sharp from "sharp";
 import {
   EVENT_HERO_UPLOAD_SPEC,
-  eventHeroFormatForMimeType,
-  validateEventHeroUploadMetadata,
 } from "@/lib/event-factory/heroUploadSpec";
+import { optimizeEventHeroUpload } from "@/lib/event-factory/heroOptimization";
+
+export const runtime = "nodejs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ALLOWED_CONTENT_TYPES = new Set<string>(EVENT_HERO_UPLOAD_SPEC.acceptedMimeTypes);
-
-function extensionFor(file: File) {
-  if (file.type === "image/jpeg") return "jpg";
-  if (file.type === "image/png") return "png";
-  return "webp";
-}
 
 function safeFilename(name: string) {
   return name
@@ -69,20 +63,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const metadata = await sharp(bytes, { animated: false }).metadata();
-    const format = eventHeroFormatForMimeType(file.type);
-    const metadataValidation = validateEventHeroUploadMetadata({
-      width: metadata.width ?? 0,
-      height: metadata.height ?? 0,
-      byteSize: file.size,
-      mimeType: file.type,
-      format: format ?? metadata.format ?? "",
-      pages: metadata.pages,
-    });
-    if (!metadataValidation.ok) {
-      return NextResponse.json({ error: metadataValidation.errors.join(" ") }, { status: 400 });
+    const sourceBytes = new Uint8Array(await file.arrayBuffer());
+    const optimized = await optimizeEventHeroUpload(sourceBytes, file.type);
+    if (!optimized.ok) {
+      return NextResponse.json({ error: optimized.errors.join(" ") }, { status: 400 });
     }
+    const hero = optimized.hero;
 
     let eventKey = "";
     let workflow = null;
@@ -107,9 +93,10 @@ export async function POST(request: Request) {
       eventKey = packageResult.data.event_key;
     }
 
-    const storagePath = `events/${eventKey}/hero/${Date.now()}-${safeFilename(file.name)}.${extensionFor(file)}`;
-    const upload = await supabase.storage.from(CELEBRATION_ATLAS_MEDIA_BUCKET).upload(storagePath, bytes, {
-      contentType: file.type,
+    const storagePath = `events/${eventKey}/hero/${Date.now()}-${safeFilename(file.name)}.${hero.extension}`;
+    const upload = await supabase.storage.from(CELEBRATION_ATLAS_MEDIA_BUCKET).upload(storagePath, hero.bytes, {
+      contentType: hero.contentType,
+      cacheControl: hero.cacheControl,
       upsert: false,
     });
     if (upload.error) throw new Error(`Hero upload failed: ${upload.error.message}`);
@@ -131,11 +118,20 @@ export async function POST(request: Request) {
       sourceKind: "supabase" as const,
       storageBucket: CELEBRATION_ATLAS_MEDIA_BUCKET,
       storagePath,
-      contentType: file.type,
-      byteSize: file.size,
-      width: metadata.width!,
-      height: metadata.height!,
+      contentType: hero.contentType,
+      byteSize: hero.byteSize,
+      width: hero.width,
+      height: hero.height,
       sourceFilename: file.name.slice(0, 255),
+      sourceContentType: hero.sourceContentType,
+      sourceByteSize: hero.sourceByteSize,
+      optimization: {
+        strategy: "webp" as const,
+        quality: hero.quality,
+        originalByteSize: hero.sourceByteSize,
+        optimizedByteSize: hero.byteSize,
+        savingsPercent: hero.savingsPercent,
+      },
       uploadedBy: auth.admin.email,
       uploadedAt: new Date().toISOString(),
       provenanceCategory: "externally_supplied" as const,
@@ -178,8 +174,12 @@ export async function POST(request: Request) {
       ok: true,
       publicUrl,
       storagePath,
-      width: metadata.width,
-      height: metadata.height,
+      width: hero.width,
+      height: hero.height,
+      contentType: hero.contentType,
+      sourceByteSize: hero.sourceByteSize,
+      byteSize: hero.byteSize,
+      savingsPercent: hero.savingsPercent,
       result,
     });
   } catch (error) {
