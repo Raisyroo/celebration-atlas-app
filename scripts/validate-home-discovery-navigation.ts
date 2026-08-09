@@ -33,6 +33,7 @@ const nextInternalState = mergeHomeDiscoveryHistoryEntry(
     openClusterId: 'cluster-lakeshore-1',
     experienceDeckOpen: true,
     experienceDeckIndex: 6.8,
+    mapCameraProfileId: 'michigan-clouds-mobile-camera-v2',
     mapTransform: {
       scale: 1.75,
       translateX: -42,
@@ -52,6 +53,7 @@ assert.deepEqual(nextInternalState[HOME_DISCOVERY_HISTORY_KEY], {
   openClusterId: 'cluster-lakeshore-1',
   experienceDeckOpen: true,
   experienceDeckIndex: 6,
+  mapCameraProfileId: 'michigan-clouds-mobile-camera-v2',
   mapTransform: {
     scale: 1.75,
     translateX: -42,
@@ -68,6 +70,7 @@ assert.deepEqual(readHomeDiscoveryHistoryEntry(nextInternalState), {
   openClusterId: 'cluster-lakeshore-1',
   experienceDeckOpen: true,
   experienceDeckIndex: 6,
+  mapCameraProfileId: 'michigan-clouds-mobile-camera-v2',
   mapTransform: {
     scale: 1.75,
     translateX: -42,
@@ -102,6 +105,7 @@ assert.deepEqual(
     openClusterId: null,
     experienceDeckOpen: false,
     experienceDeckIndex: 0,
+    mapCameraProfileId: null,
     mapTransform: {
       scale: 1,
       translateX: 0,
@@ -126,6 +130,7 @@ assert.deepEqual(
     openClusterId: 'legacy-cluster',
     experienceDeckOpen: true,
     experienceDeckIndex: 0,
+    mapCameraProfileId: null,
     mapTransform: {
       scale: 1,
       translateX: 0,

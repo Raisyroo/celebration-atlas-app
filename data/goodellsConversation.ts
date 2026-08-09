@@ -53,7 +53,7 @@ const GOOD_ELLS_FAIR_CARDS = {
       label: 'Fairgrounds Map',
       caption: 'Use this field-note insert to get your bearings: entry gates, barn lanes, midway lights, and the food corridor are shown in a quick visual sweep.',
       localTip: 'Local tip: The west-side entry is usually calmer right after opening hour.',
-      src: '/maps/michigan-atlas-base.webp',
+      src: '/maps/michigan-atlas-clouds-desktop-2026-08.webp',
       guideNotes: [
         'Parking guidance: East lots fill first near headline windows, so overflow signage is usually fastest after 5:30 PM.',
         'Midway timing: Hit rides before dusk if you want shorter lines and smoother stroller flow.',

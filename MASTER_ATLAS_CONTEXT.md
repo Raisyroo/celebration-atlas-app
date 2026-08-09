@@ -275,8 +275,8 @@ The style should feel handcrafted and place-rooted, not generic “travel app.�
 The map is the stage; interface elements should support it, not overpower it.
 
 Current interaction policy (intentional):
-- Fixed-scale atlas rendering (no custom pinch/drag gesture system yet).
-- Tap reliability prioritized over interaction complexity.
+- Portrait Michigan opens in a bounded, deliberately zoomed artwork pose and supports responsive drag/pinch exploration; its marker plane follows the artwork's real rendered rectangle and it cannot pan south into the synthetic lower-water extension. Desktop retains bounded wheel zoom.
+- Drag thresholds and tap suppression preserve marker reliability while users move the artwork.
 - Discovery through marker selection, featured prompts, and search highlighting.
 
 Layering contract (must remain clear):
@@ -559,11 +559,11 @@ Implementation status:
 - This is a future-direction context definition only.
 - Do not implement gallery ingestion, curation pipelines, or transformation tooling yet.
 
-## 20. Future Atlas Zoom + Clustering Strategy
-This roadmap defines how map scale should evolve once the current baseline is stable. It is a strategy document only; no immediate behavior change is intended.
+## 20. Atlas Zoom + Clustering Strategy
+The first bounded implementation of this roadmap is active on the Michigan homepage. Real-coordinate cluster membership, result-scoped counts, pinch/wheel splitting, close-scale leaves, and Experience Deck handoff are implemented while the illustrated artwork remains the visual map.
 
 Guiding principles:
-- The current home map intentionally avoids custom pinch/drag zoom to preserve mobile tap reliability.
+- The current home map supports bounded pinch/drag and desktop wheel zoom with stable cluster steps and existing tap-suppression safeguards.
 - Scaling to hundreds or thousands of events will require zoom and clustering support.
 - The intended interaction model is guided cinematic zoom, not generic Google Maps-style behavior.
 - Marker density should never become visual noise.
@@ -580,7 +580,10 @@ Conversation-triggered focus expectations:
   - “music festivals near the lakeshore”
   - “all July fireworks”
 
-Sequencing + implementation timing:
-- Do not implement zoom/clustering until the current map-fit behavior, event page flows, and conversation layer are stable.
-- When implementation begins, it should be data-driven (region/event/category metadata + intent routing), preserving current atmospheric hierarchy and mobile tap trust.
+Implementation boundary:
+- Cluster membership is data-driven from canonical coordinates and the current result set; it is not a second illustrated-map placement path.
+- The shared map-presentation resolver remains a separate needed milestone. Cluster anchors currently reuse the existing calibrated event positions rather than introducing hand-placed coordinates.
+- ASK candidate membership is now server-authoritative across the complete public state catalog. Search enrichment may read only the exact validated published package selected by public discovery; private previews remain excluded. Ranked matches may expose compact retained-fact cues selected by evidence ID, never generated explanation prose.
+- ASK operational diagnostics are anonymous and bucketed by contract: no query text or hash, event identity, request identity, or persistent user/device/session identifier enters the diagnostic event. A permanent synthetic benchmark bank protects smart-result intent, grounding, evidence IDs, order, and factual cues without depending on mutable published events or a model call during the required build.
+- Larger state and national catalogs still require indexed retrieval before model reasoning. See `docs/ASK_ATLAS_MAP_SEARCH_ARCHITECTURE.md`.
 

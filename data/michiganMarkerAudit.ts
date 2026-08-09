@@ -1,7 +1,6 @@
 import { ATLAS_EVENTS } from './events';
 import { EVENT_PROFILES, getEventProfileSearchText } from './eventProfiles';
 import { projectLatLngToCalibratedMichiganArtworkPosition } from './michiganArtworkCalibration';
-import { resolveExactMichiganMobileUpperPeninsulaAnchorPosition } from './michiganMobileUpperPeninsulaAnchors';
 import type { AtlasEvent } from './events';
 import type { MichiganArtworkVariant } from './michiganArtworkCalibration';
 
@@ -34,24 +33,9 @@ export function projectAuditEventToMichiganArtworkPosition(
     artworkVariant,
   );
 
-  const baselinePosition = {
+  return {
     x: clampMarkerPercent(artworkPosition.x),
     y: clampMarkerPercent(artworkPosition.y),
-  };
-
-  if (artworkVariant !== 'mobile') return baselinePosition;
-
-  const upperPeninsulaAnchorPosition =
-    resolveExactMichiganMobileUpperPeninsulaAnchorPosition(
-      event.latitude,
-      event.longitude,
-    );
-
-  if (!upperPeninsulaAnchorPosition) return baselinePosition;
-
-  return {
-    x: clampMarkerPercent(upperPeninsulaAnchorPosition.x),
-    y: clampMarkerPercent(upperPeninsulaAnchorPosition.y),
   };
 }
 

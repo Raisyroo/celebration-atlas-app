@@ -1,6 +1,6 @@
 # Michigan Homepage Audit
 
-Last reviewed: July 15, 2026
+Last reviewed: August 8, 2026
 
 ## Scope
 
@@ -78,6 +78,60 @@ Real coordinates remain canonical. An editorial offset is presentation data, not
 
 Do not add another independent star-placement path or place stars by eye directly inside a component.
 
+August 8 implementation note: the production homepage now renders accessible
+coded cluster and event markers on mobile and desktop from the existing
+calibrated artwork positions. Geographic cluster membership uses canonical real
+coordinates, while a cluster anchor averages those already-resolved artwork
+positions. This improves practical marker reliability without claiming that
+the still-missing unified versioned presentation profile is complete.
+
+August 9 artwork note: Michigan now uses a versioned cloud-and-water asset
+from one 1024×1536 source. Desktop and compact landscape retain that source
+unchanged. The phone variant keeps the complete source at the top and extends
+only its lower ocean/cloud field to 1024×2216, so both peninsulas remain visible
+without letterboxing or destructive cropping while the lower atmosphere frames
+the ASK dock and dated rail. Presentation v3 starts portrait phones in a
+reviewed enlarged pose modeled on Ray's reference: the Lower Peninsula is
+centered, the eastern U.P. remains visible, and users drag horizontally to
+reveal the western U.P. Drag and pinch transforms track the active gesture
+without easing, pan movement is amplified to avoid repeated swipes, touch-like
+WebKit pointers remain active until pointer-up/cancel, and the
+portrait camera cannot move south past the reviewed pose into the synthetic
+lower water. The start pose uses a moderate zoom and reduced top spacing that
+keeps more of the southern Lower Peninsula above ASK without filling the frame.
+That pose is also the portrait zoom floor, preventing a pinch or restored
+history entry from returning to the undersized full-state view.
+Beyond that floor, upward travel expands with zoom so Detroit and the southern
+border can be inspected without making the synthetic lower-water extension an
+unbounded destination.
+Artwork and marker layers use the same transform and settle timing. Restored
+camera transforms are profile-scoped so an obsolete pose cannot replace the
+current reviewed opening composition.
+
+The active two-axis projection is now named
+`michigan-clouds-artwork-calibration-v2` and is scoped only to this artwork.
+It adds an asset-specific Lower Peninsula perspective shear and converts
+intrinsic artwork percentages through the browser's actual `cover`/`contain`
+rendered rectangle before placing a marker. This keeps shoreline coordinates
+stable when mobile browser chrome changes the viewport height. The former
+painterly-map anchors, exact mobile U.P. anchors, old regional corrections, and
+obsolete workbenches remain removed. Real coordinates remain canonical, and a
+future shared presentation resolver is still required for multi-state scale.
+
+The same August 8 ASK milestone now treats the complete publication-gated
+Michigan catalog as a server-owned candidate universe; the browser no longer
+submits candidate IDs. Search enrichment reads only the exact validated
+published Event Hub package selected by public discovery. Ranked results may
+carry up to three compact retained-fact cues across desktop rows, mobile cards,
+and cluster-deck cards without moving ASK or adding AI-authored prose.
+
+The August 9 follow-up adds privacy-safe outcome diagnostics and a permanent
+synthetic smart-search benchmark bank. Diagnostic records expose only broad
+matcher, volume, cue-coverage, and latency buckets; they contain no query text
+or hash, event identity, request identity, or persistent identifier. The build
+now protects seven representative intents, their grounded fixture results,
+evidence IDs, ordering, and retained-fact cues without contacting a model.
+
 ## Responsive State-Atlas Contract
 
 | Mode | Required behavior |
@@ -148,4 +202,7 @@ Each check should assert visible Ask/menu/filter access, expected rail eligibili
 
 Diagnose and define the shared `StateMapPresentationProfile` and position resolver before changing marker visuals. The diagnostic should inventory every current coordinate consumer, specify asset-versioned calibration and override data, and produce acceptance fixtures for portrait, landscape, and desktop. After that contract is reviewed, implement one accessible mobile star layer from the same resolved positions.
 
-This sequence preserves the approved Michigan artwork, keeps verified coordinates canonical, and creates the reusable foundation needed for the remaining states.
+The August 8 clustering milestone deliberately reused the current calibrated
+positions rather than bypassing this recommendation. The versioned shared
+presentation profile and reviewed override contract remain the next placement
+milestone needed for reusable multi-state precision.

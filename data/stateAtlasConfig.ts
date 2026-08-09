@@ -9,7 +9,7 @@ export type StateAtlasArtworkAsset = {
 };
 
 export type StateAtlasCalibrationProfileId =
-  | 'michigan-artwork-calibration-v1';
+  | 'michigan-clouds-artwork-calibration-v2';
 
 export type StateAtlasRegionRule = {
   atmosphere: NonNullable<AtlasEvent['regionAtmosphere']>;
@@ -62,23 +62,23 @@ export const MICHIGAN_STATE_ATLAS_CONFIG = {
   },
   defaultTimeZone: 'America/Detroit',
   presentation: {
-    profileId: 'michigan-illustrated-map-v1',
-    assetVersion: '2026-07-15',
-    calibrationProfileId: 'michigan-artwork-calibration-v1',
+    profileId: 'michigan-illustrated-map-v3',
+    assetVersion: '2026-08-09',
+    calibrationProfileId: 'michigan-clouds-artwork-calibration-v2',
     titleArtworkSrc: '/brand/michigan-landing-lockup.png',
     desktopArtwork: {
-      id: 'michigan-desktop-2026-07',
-      src: '/maps/michigan-atlas-base.webp',
-      width: 2814,
-      height: 5000,
-      sha256: '2636363779F15D3B876C28845F09FED50E574C43A5427D9F3B0309855E588279',
+      id: 'michigan-clouds-desktop-2026-08',
+      src: '/maps/michigan-atlas-clouds-desktop-2026-08.webp',
+      width: 1024,
+      height: 1536,
+      sha256: 'C3A3BE1A3B9A272B709CE164B284B833F281BC6C609EDB9E7602251C625C742D',
     },
     mobileArtwork: {
-      id: 'michigan-mobile-tall-2026-07',
-      src: '/maps/michigan-atlas-base-tall.webp',
-      width: 972,
-      height: 1619,
-      sha256: '55A01F3FD221D153BB901425DAFB101FF6343B8A3EB04761692462B626EC9E49',
+      id: 'michigan-clouds-mobile-2026-08',
+      src: '/maps/michigan-atlas-clouds-mobile-2026-08.webp',
+      width: 1024,
+      height: 2216,
+      sha256: '8B8DFA45277CB6AB381098F76B0EC1E00C4103CF37E973A49C90D6305F06280B',
     },
     atmosphereToken: 'great-lakes-cinematic',
     defaultRegionAtmosphere: 'lakeshore',
