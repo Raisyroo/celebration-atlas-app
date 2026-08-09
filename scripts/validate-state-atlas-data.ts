@@ -6,6 +6,7 @@ import { getEventRailStatus, selectEventRailEvents } from '../data/eventRail.ts'
 import type { AtlasEvent } from '../data/events.ts';
 import { groupPublishedAtlasPackagesByEvent } from '../data/publishedAtlasPackageSelection.ts';
 import { EVENT_TIMING_METADATA } from '../data/eventTimingMetadata.ts';
+import { projectLatLngToCalibratedMichiganArtworkPosition } from '../data/michiganArtworkCalibration.ts';
 import {
   resolveAtlasEventProfileDateRange,
   resolveReviewedAtlasEventSeason,
@@ -35,6 +36,34 @@ assert(isStateAtlasDatabaseValue(config, 'MI'), 'Michigan postal state value is 
 assert(isStateAtlasDatabaseValue(config, ' michigan '), 'Michigan full state value is not accepted case-insensitively');
 assert(!isStateAtlasDatabaseValue(config, 'Ohio'), 'a different state is accepted by the Michigan configuration');
 assert(isValidIanaTimeZone(config.defaultTimeZone), 'default state timezone is not a valid IANA timezone');
+assert.equal(
+  config.presentation.calibrationProfileId,
+  'michigan-clouds-artwork-calibration-v2',
+  'Michigan is not using the current clouds-artwork calibration profile',
+);
+
+const grandHavenArtworkPosition =
+  projectLatLngToCalibratedMichiganArtworkPosition(
+    43.0631,
+    -86.2284,
+    'mobile',
+  );
+assert(
+  grandHavenArtworkPosition.x >= 43.8
+    && grandHavenArtworkPosition.x <= 45,
+  'Grand Haven no longer lands on the reviewed west-coast artwork band',
+);
+const portHuronArtworkPosition =
+  projectLatLngToCalibratedMichiganArtworkPosition(
+    42.99856,
+    -82.42682,
+    'mobile',
+  );
+assert(
+  portHuronArtworkPosition.x >= 82.5
+    && portHuronArtworkPosition.x <= 83.8,
+  'Port Huron no longer lands on the reviewed east-coast artwork band',
+);
 
 for (const artwork of [
   config.presentation.desktopArtwork,

@@ -947,3 +947,8 @@ body.dev-geospatial-map-scroll::-webkit-scrollbar {
   transform: translateY(1px) !important;
   background: linear-gradient(to top, rgba(255, 232, 179, 0.11), rgba(255, 232, 179, 0.012)) !important;
 }
+/* Map movement must be immediate while a pointer is active. The data flag is
+   also set synchronously for WebKit, before React can commit gesture state. */
+.atlas-map-frame[data-map-gesture-active="true"] .atlas-map-camera-layer {
+  transition: none !important;
+}

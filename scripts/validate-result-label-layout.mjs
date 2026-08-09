@@ -60,37 +60,36 @@ for (const cluster of crowdedClusters) {
 assert(crowdedLabels[0].tier === 'hero', 'lower-ranked labels yield before higher-ranked labels move down-tier');
 
 const atlasMapSource = readFileSync(resolve('components/AtlasMap.tsx'), 'utf8');
-const fieldBlock = atlasMapSource.slice(atlasMapSource.indexOf('function SearchResultTextField'), atlasMapSource.indexOf('function formatMobileEventDate'));
-const styleBlock = atlasMapSource.slice(atlasMapSource.indexOf('resultTextField:'), atlasMapSource.indexOf('markerLabel:'));
-assert(!/(rotate|skew|perspective|rotateX|rotateY|rotateZ)/i.test(`${fieldBlock}\n${styleBlock}\n${helperSource}`), 'result text field must not use rotate, skew, or perspective transforms');
-assert(!/(textOverflow\s*:\s*['"]ellipsis|whiteSpace\s*:\s*['"]nowrap)/i.test(`${fieldBlock}\n${styleBlock}`), 'result label titles must not use ellipsis or nowrap');
 assert(
-  atlasMapSource.includes('displayMarkerLayouts.map((layout) => [layout.event.id, layout])') &&
-    atlasMapSource.includes('isFiniteMarkerPosition(position)') &&
-    helperSource.includes('position.x') &&
-    helperSource.includes('position.y'),
-  'floating search labels should use existing projected marker positions and omit invalid projections',
+  atlasMapSource.includes('resolveAtlasGeographicMarkerGroups({') &&
+    atlasMapSource.includes('mapScale: mapTransform.scale') &&
+    atlasMapSource.includes('groupLayouts.reduce((sum, layout) => sum + layout.position.x'),
+  'production search markers should use zoom-aware geographic membership and the existing projected artwork positions',
 );
 assert(!/(SLOTS|type Slot|const [A-Z_]*SLOTS)/.test(helperSource), 'result label helper must not contain arbitrary composition slot coordinates');
-assert(helperSource.includes("export type ResultLabelAlign") && fieldBlock.includes('data-result-label-align') && fieldBlock.includes('placement.align'), 'floating result labels should expose and render adaptive side alignment');
-assert(fieldBlock.includes('resultTextLabelHalo') && styleBlock.includes('radial-gradient(ellipse at center'), 'floating result labels should include a subtle text-bound readability halo');
-assert(atlasMapSource.includes('rankedSubmittedSearchResults.length > 0 ?') && atlasMapSource.includes('<SearchResultTextField') && atlasMapSource.includes('if (exactEventIntent || !shouldUseMapSearchTitleTags) return [];'), 'exact-event and filtered-list discovery should remain separate from query-only map title tags');
-assert(atlasMapSource.includes('searchHomeAtlas({') && !atlasMapSource.includes('getLegacyHighlightedIdsFromQuery') && !atlasMapSource.includes('searchEventProfiles'), 'AtlasMap search should use only the deterministic state-scoped resolver');
-assert(fieldBlock.includes('data-search-event-id') && fieldBlock.includes('data-search-mode="results"') && fieldBlock.includes('data-search-result-count'), 'broad result fields should expose stable deterministic smoke selectors');
-assert(fieldBlock.includes('<button') && fieldBlock.includes('onClick={() => onEventSelect(placement.event.id)}') && fieldBlock.includes('aria-label="Search result title tags"'), 'query-only map title tags must remain interactive accessible controls');
+assert(
+  atlasMapSource.includes("fetch('/api/atlas-search'") &&
+    atlasMapSource.includes('applyAtlasSearchResultSet({') &&
+    atlasMapSource.includes('parseAtlasSearchResultSet(body'),
+  'AtlasMap should consume one structured ASK result set with a safe immediate fallback',
+);
+assert(
+  atlasMapSource.includes('data-atlas-cluster-count={isCluster ? events.length : undefined}') &&
+    atlasMapSource.includes('<span style={styles.clusterCount}>{events.length}</span>') &&
+    atlasMapSource.includes('handleOpenSearchCluster(id);'),
+  'production geographic clusters should expose the scoped count and open the existing deck',
+);
 assert(atlasMapSource.includes('data-search-mode={submittedSearchMode}') && atlasMapSource.includes('data-search-result-count={isSubmittedSearchActive ? homeAtlasDiscovery.events.length : 0}'), 'homepage search state should expose stable mode and result-count diagnostics');
-assert(atlasMapSource.includes('!isQueryOnlyDiscovery &&') && atlasMapSource.includes('shouldUseMapSearchTitleTags'), 'query-only mobile search must not open the discovery/filter panel over map title tags');
-assert(atlasMapSource.includes('data-testid="event-rail"') && atlasMapSource.includes('areMobileAmbientControlsVisible'), 'bottom event rail should remain present in ambient/broad search UI');
+assert(
+  atlasMapSource.includes('displayedRailEvents = isSubmittedSearchActive') &&
+    atlasMapSource.includes('data-event-rail-scope={isSubmittedSearchActive ? \'atlas-search\' : \'live-upcoming\'}'),
+  'the mobile card rail should switch to the exact structured ASK result set',
+);
 assert(
   atlasMapSource.includes("data-atlas-experience-deck-host=\"search-result-cluster\"") &&
     atlasMapSource.includes('adaptSearchClusterEventToDeckItem') &&
     atlasMapSource.includes('router.push(item.href)'),
-  'search-result fallback clusters should open the shared Experience Deck and route active production event IDs through their existing Event Hub hrefs',
-);
-assert(
-  !fieldBlock.includes('Local event cluster') &&
-    !fieldBlock.includes('resultTextClusterPanel'),
-  'the superseded intermediate search-cluster selection sheet should not return',
+  'geographic clusters should reuse the shared Experience Deck and existing Event Hub hrefs',
 );
 assert(
   atlasMapSource.includes("process.env.NODE_ENV === 'development'") &&
@@ -98,4 +97,4 @@ assert(
     atlasMapSource.includes('development-multi-event-experience-deck-fixture'),
   'the multi-event Experience Deck validation fixture must remain development-only and explicitly query-gated',
 );
-console.log('Result label layout validation passed.');
+console.log('Legacy result-label helper and production cluster integration validation passed.');

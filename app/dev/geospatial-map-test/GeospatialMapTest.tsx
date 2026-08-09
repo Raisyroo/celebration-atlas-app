@@ -279,7 +279,7 @@ export default function GeospatialMapTest() {
         <ul className="geospatialTestAuditList" style={styles.auditList}>
           <li>Reuses ATLAS_EVENTS latitude/longitude as the GeoJSON source of truth.</li>
           <li>Reuses exact-event search resolution and safe event card derivation.</li>
-          <li>Does not import or alter AtlasMap, MICHIGAN_MAP_ANCHORS, latLngToAtlasPosition, or illustrated-map calibration.</li>
+          <li>Does not import or alter AtlasMap or the illustrated-map projection.</li>
           <li>Uses the installed maplibre-gl package and stylesheet without CDN runtime loading.</li>
         </ul>
       </section>

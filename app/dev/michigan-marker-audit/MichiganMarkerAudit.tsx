@@ -59,8 +59,8 @@ export default function MichiganMarkerAudit() {
     <main className="marker-audit-page">
       <section className="audit-map-shell" aria-label="Michigan all-events marker audit map">
         <picture>
-          <source media="(max-width: 767px)" srcSet="/maps/michigan-atlas-base-tall.webp" />
-          <img className="audit-map-image" src="/maps/michigan-atlas-base.webp" alt="Michigan Atlas audit basemap" draggable={false} />
+          <source media="(max-width: 767px)" srcSet="/maps/michigan-atlas-clouds-mobile-2026-08.webp" />
+          <img className="audit-map-image" src="/maps/michigan-atlas-clouds-desktop-2026-08.webp" alt="Michigan Atlas audit basemap" draggable={false} />
         </picture>
         <svg className="audit-leader-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           {audit.records.map((record, index) => {
@@ -112,7 +112,7 @@ export default function MichiganMarkerAudit() {
 
       <aside className="audit-panel" aria-label="Marker reconciliation panel">
         <h1>Michigan marker audit</h1>
-        <p>Authoritative source: <code>ATLAS_EVENTS</code> from <code>data/events.ts</code>, projected with the same calibrated artwork helper and mobile U.P. anchor override used by production.</p>
+        <p>Authoritative source: <code>ATLAS_EVENTS</code> from <code>data/events.ts</code>, projected with the same asset-scoped clouds-artwork calibration helper used by production.</p>
         <dl className="audit-stats">
           <div><dt>Total source-event count</dt><dd>{audit.sourceEventCount}</dd></div>
           <div><dt>Total rendered-marker count</dt><dd>{audit.renderedMarkerCount}</dd></div>
@@ -129,7 +129,7 @@ export default function MichiganMarkerAudit() {
           <h2>Production path audit</h2>
           <ul>
             <li>Production source is ATLAS_EVENTS; this page does not mutate source data.</li>
-            <li><strong>Production clustering: disabled.</strong> Production marker groups are one event per event ID; no aggregate cluster marker replaces multiple events.</li>
+            <li><strong>Production clustering: enabled.</strong> Stable real-coordinate groups use these calibrated artwork positions only for their rendered anchors.</li>
             <li><strong>Production display-spacing: disabled.</strong> Marker positions use the final projected/calibrated map coordinates directly; overlap is intentionally allowed.</li>
             <li><strong>Production visible-result cap: disabled.</strong> Search result rows and mobile event rails render all matching/source events instead of silently slicing to a smaller count.</li>
             <li>Search and exact-event modes can still highlight or focus their intended event IDs, but every rendered marker remains an individual event target.</li>

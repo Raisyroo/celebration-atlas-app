@@ -12,6 +12,7 @@ export type HomeDiscoveryResultRow = {
   category?: string;
   atmosphereLabel?: string;
   blurb?: string;
+  matchCues?: readonly string[];
 };
 
 type HomeDiscoveryLayerProps = {
@@ -264,7 +265,9 @@ export function HomeDiscoveryLayer({
           <p style={styles.resultLabel}>Matching Discoveries</p>
           <ol style={styles.resultList}>
             {results?.map((result) => {
-              const meta = result.atmosphereLabel || result.category;
+              const meta = result.matchCues?.length
+                ? result.matchCues.join(' \u00b7 ')
+                : result.atmosphereLabel || result.category;
 
               return (
                 <li key={result.id} style={styles.resultRow}>
@@ -290,7 +293,14 @@ export function HomeDiscoveryLayer({
                       <span style={styles.resultName}>{result.name}</span>
                       <span style={styles.resultLocation}>{result.location}</span>
                     </span>
-                    {meta ? <span style={styles.resultMeta}>{meta}</span> : null}
+                    {meta ? (
+                      <span
+                        style={styles.resultMeta}
+                        data-atlas-match-cues={result.matchCues?.join('|') || undefined}
+                      >
+                        {meta}
+                      </span>
+                    ) : null}
                   </button>
                 </li>
               );

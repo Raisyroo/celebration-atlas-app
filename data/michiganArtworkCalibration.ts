@@ -1,4 +1,4 @@
-import { latLngToMichiganSvgPosition } from './michiganGeoMap';
+import { latLngToMichiganSvgPosition } from './michiganGeoMap.ts';
 
 export type MichiganArtworkVariant = 'desktop' | 'mobile';
 
@@ -6,7 +6,9 @@ export type MichiganArtworkCalibration = {
   imageSrc: string;
   offsetXPercent: number;
   offsetYPercent: number;
-  scale: number;
+  scaleX: number;
+  scaleY: number;
+  southernPerspectiveShiftXPercent: number;
 };
 
 export type MichiganArtworkPosition = {
@@ -14,68 +16,38 @@ export type MichiganArtworkPosition = {
   y: number;
 };
 
-type MobileLatitudeVerticalCorrection = {
-  /** Latitude where the mobile-only downward correction begins. */
-  startLatitude: number;
-  /** Latitude where the mobile-only downward correction reaches its maximum. */
-  endLatitude: number;
-  /** Maximum additional y-percentage applied at and north of endLatitude. */
-  maxYOffsetPercent: number;
-};
-
 export const MICHIGAN_ARTWORK_MOBILE_MEDIA_QUERY = '(max-width: 767px)';
 
-// The tall mobile artwork visually stretches northern Michigan more than the
-// shared desktop/mobile calibrated projection expects. Keep real event
-// latitude/longitude as the source of truth, then add this smooth mobile-only
-// y-axis presentation correction after the shared calibration. Southern Lower
-// Peninsula markers stay unchanged; Traverse City, the Straits, Alpena, and the
-// U.P. ease progressively downward. Tune this one block when the mobile artwork
-// changes or after future device testing.
-export const MICHIGAN_MOBILE_LATITUDE_VERTICAL_CORRECTION: MobileLatitudeVerticalCorrection = {
-  startLatitude: 43.2,
-  endLatitude: 46.2,
-  maxYOffsetPercent: 12.5,
-} as const;
-
+// These values are scoped only to Ray's 2026-08 Michigan clouds artwork.
+// The v2 southward perspective shear follows this asset's illustrated Lower
+// Peninsula; it is not the former painterly-map or tall-mobile correction.
+// Real latitude/longitude remains the source of truth.
 export const MICHIGAN_ARTWORK_CALIBRATIONS: Record<
   MichiganArtworkVariant,
   MichiganArtworkCalibration
 > = {
   desktop: {
-    imageSrc: '/maps/michigan-atlas-base.webp',
-    offsetXPercent: 13.7,
-    offsetYPercent: 9.8,
-    scale: 1.11,
+    imageSrc: '/maps/michigan-atlas-clouds-desktop-2026-08.webp',
+    offsetXPercent: 1.5,
+    offsetYPercent: 17.2,
+    scaleX: 0.95,
+    scaleY: 1.43,
+    southernPerspectiveShiftXPercent: 5.7,
   },
   mobile: {
-    imageSrc: '/maps/michigan-atlas-base-tall.webp',
-    offsetXPercent: 18.6,
-    offsetYPercent: 31.2,
-    scale: 0.94,
+    imageSrc: '/maps/michigan-atlas-clouds-mobile-2026-08.webp',
+    offsetXPercent: 1.5,
+    offsetYPercent: 48.9,
+    scaleX: 1.125,
+    scaleY: 2.066,
+    southernPerspectiveShiftXPercent: 5.7,
   },
 } as const;
 
+const MICHIGAN_ARTWORK_PERSPECTIVE_NORTH_LATITUDE = 45.85;
+const MICHIGAN_ARTWORK_PERSPECTIVE_SOUTH_LATITUDE = 42.3;
+
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
-
-const smoothStep = (value: number) => value * value * (3 - (2 * value));
-
-const getMobileLatitudeYOffset = (latitude: number) => {
-  const {
-    startLatitude,
-    endLatitude,
-    maxYOffsetPercent,
-  } = MICHIGAN_MOBILE_LATITUDE_VERTICAL_CORRECTION;
-
-  if (latitude <= startLatitude) return 0;
-
-  const latitudeProgress = Math.min(
-    1,
-    (latitude - startLatitude) / (endLatitude - startLatitude),
-  );
-
-  return smoothStep(latitudeProgress) * maxYOffsetPercent;
-};
 
 const invertArtworkOverlayAxis = (
   geographicPercent: number,
@@ -90,32 +62,32 @@ export function projectLatLngToCalibratedMichiganArtworkPosition(
 ): MichiganArtworkPosition {
   const calibration = MICHIGAN_ARTWORK_CALIBRATIONS[variant];
   const geographicPosition = latLngToMichiganSvgPosition(latitude, longitude);
+  const southernPerspectiveFactor = clampPercent(
+    ((MICHIGAN_ARTWORK_PERSPECTIVE_NORTH_LATITUDE - latitude)
+      / (MICHIGAN_ARTWORK_PERSPECTIVE_NORTH_LATITUDE
+        - MICHIGAN_ARTWORK_PERSPECTIVE_SOUTH_LATITUDE))
+      * 100,
+  ) / 100;
 
-  // The developer workbench moves the artwork over the static geographic
-  // reference with: translate(-50%, -50%) translate(offsetX%, offsetY%) scale(s).
-  // Production keeps the artwork static, so markers use the inverse of that
-  // overlay transform to land in the equivalent artwork-relative position.
-  const calibratedPosition = {
+  // The base inverse transform maps geographic scaffold percentages into this
+  // asset's artwork plane. The latitude-weighted X shift then follows the
+  // current illustration's perspective without changing canonical coordinates.
+  return {
     x: clampPercent(
       invertArtworkOverlayAxis(
         geographicPosition.x,
         calibration.offsetXPercent,
-        calibration.scale,
-      ),
+        calibration.scaleX,
+      )
+        - southernPerspectiveFactor
+          * calibration.southernPerspectiveShiftXPercent,
     ),
     y: clampPercent(
       invertArtworkOverlayAxis(
         geographicPosition.y,
         calibration.offsetYPercent,
-        calibration.scale,
+        calibration.scaleY,
       ),
     ),
-  };
-
-  if (variant !== 'mobile') return calibratedPosition;
-
-  return {
-    ...calibratedPosition,
-    y: clampPercent(calibratedPosition.y + getMobileLatitudeYOffset(latitude)),
   };
 }

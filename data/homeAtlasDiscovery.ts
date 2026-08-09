@@ -42,6 +42,7 @@ export type HomeAtlasDiscoveryResultRow = {
   profile?: EventProfile;
   score: number | null;
   reasons: readonly HomeAtlasSearchReason[];
+  matchCues: readonly string[];
   reviewedStartDate: string | null;
   railStatus: EventRailStatus | null;
 };
@@ -248,6 +249,7 @@ function createCatalogCandidates(
       profile,
       score: null,
       reasons: [],
+      matchCues: [],
       reviewedStartDate: reviewedTiming?.dateStart ?? null,
       railStatus: getEventRailStatus(event, {
         now,
@@ -266,8 +268,9 @@ function withSearchResult(
   candidate: DiscoveryCandidate,
   score: number,
   reasons: readonly HomeAtlasSearchReason[],
+  matchCues: readonly string[],
 ): DiscoveryCandidate {
-  return { ...candidate, score, reasons };
+  return { ...candidate, score, reasons, matchCues };
 }
 
 function createSearchCandidates(
@@ -285,7 +288,12 @@ function createSearchCandidates(
     const catalogCandidate = candidateByEventId.get(result.event.id);
     if (!catalogCandidate) continue;
     seenEventIds.add(result.event.id);
-    candidates.push(withSearchResult(catalogCandidate, result.score, result.reasons));
+    candidates.push(withSearchResult(
+      catalogCandidate,
+      result.score,
+      result.reasons,
+      result.matchCues ?? [],
+    ));
   }
 
   return candidates;
@@ -561,6 +569,7 @@ function toPublicResultRow(candidate: DiscoveryCandidate): HomeAtlasDiscoveryRes
     profile: candidate.profile,
     score: candidate.score,
     reasons: candidate.reasons,
+    matchCues: candidate.matchCues,
     reviewedStartDate: candidate.reviewedStartDate,
     railStatus: candidate.railStatus,
   };
@@ -649,6 +658,7 @@ export function resolveHomeAtlasDiscovery(
         exactCandidate,
         exactSearchResult?.score ?? 10_000,
         exactSearchResult?.reasons ?? ['exact-identity'],
+        exactSearchResult?.matchCues ?? [],
       );
       const resultRows = [toPublicResultRow(exactRow)];
       return {

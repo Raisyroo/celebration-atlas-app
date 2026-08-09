@@ -225,6 +225,12 @@ Manual x/y positions are allowed, but they are display overrides only.
 
 Calibration data should be versioned or documented enough that future map assets can be swapped without losing the event's real coordinates or the reason a marker was visually adjusted.
 
+Marker percentages must be resolved through the artwork's actual rendered
+rectangle. When responsive CSS uses `cover` or `contain`, the marker plane must
+apply the same rendered width, height, and alignment offsets; viewport-relative
+percentages alone will drift away from the image as browser chrome changes the
+available aspect ratio.
+
 ## Event Marker Types
 
 Marker presentation should be driven by event profile metadata.
@@ -340,6 +346,12 @@ AI-generated map suggestions should be treated as proposed presentation data unt
 ### Phone Portrait
 
 * illustrated map creates wonder
+* a state may open in a reviewed enlarged pose when the full artwork remains reachable through bounded drag
+* when a smaller neutral artwork view is not an approved composition, the reviewed opening pose may also define portrait's minimum zoom
+* portrait panning must stop at the reviewed meaningful-geography boundary rather than expose synthetic extension fields below the state
+* portrait vertical travel may expand progressively with zoom when the increased scale provides safe overscan needed to inspect southern geography behind fixed discovery controls
+* artwork, marker, cluster, and label layers must share the same camera transform and transition timing
+* persisted camera transforms must carry an artwork/camera profile identity so an obsolete pose cannot override the reviewed opening composition after an artwork or camera revision
 * discovery sections scroll below
 * stars should be legible but not noisy
 * search/list handles precision

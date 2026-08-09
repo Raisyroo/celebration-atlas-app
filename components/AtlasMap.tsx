@@ -6,7 +6,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useSearchParams } from 'next/navigation';
 import { useMobileFavorite } from './mobileFavorite';
 import { useRouter } from 'next/navigation';
-import type { CSSProperties, PointerEvent, ReactNode, RefObject, SyntheticEvent } from 'react';
+import type { CSSProperties, PointerEvent, ReactNode, SyntheticEvent, WheelEvent } from 'react';
 import type { AtlasEvent } from '../data/events';
 import { getCanonicalEventSlug } from '../data/eventCanonicalSlugs';
 import { deriveSafeAtlasEventCard } from '../data/safeEventCard';
@@ -22,6 +22,12 @@ import {
   searchHomeAtlas,
   type HomeAtlasSearchRules,
 } from '../data/homeAtlasSearch';
+import {
+  applyAtlasSearchResultSet,
+  parseAtlasSearchResultSet,
+  type AtlasSearchResultSet,
+} from '../data/atlasSearch';
+import { resolveAtlasGeographicMarkerGroups } from '../data/atlasMapClustering';
 import {
   getEventRailStatus,
   selectEventRailEvents,
@@ -46,12 +52,7 @@ import {
 import type { MarkerIntensity } from '../data/eventMarkerPresentation';
 import type { MapPresentationPlan } from '../data/mapPresentationPlan';
 import type { StateAtlasConfig } from '../data/stateAtlasConfig';
-import { MICHIGAN_MAP_ANCHORS } from '../data/mapCalibration';
-import { resolveExactMichiganMobileUpperPeninsulaAnchorPosition } from '../data/michiganMobileUpperPeninsulaAnchors';
-import type { MichiganMapAnchor } from '../data/mapCalibration';
-import {
-  projectLatLngToCalibratedMichiganArtworkPosition,
-} from '../data/michiganArtworkCalibration';
+import { projectLatLngToCalibratedMichiganArtworkPosition } from '../data/michiganArtworkCalibration';
 import type { MichiganArtworkVariant } from '../data/michiganArtworkCalibration';
 import {
   getAtlasViewportCapabilities,
@@ -111,10 +112,6 @@ const DEVELOPMENT_MULTI_EVENT_DECK_FIXTURE_NAMES = [
 ] as const;
 
 const EXACT_EVENT_CARD_OPEN_DELAY_MS = 2400;
-// Current interaction policy:
-// - Keep the atlas at a fixed scale for now (no custom pinch/drag/gesture handlers).
-// - This intentionally avoids mobile gesture edge-cases to preserve tap reliability.
-//
 // Active homepage marker path:
 // app/page.tsx renders <AtlasMap />. Marker x/y is computed by
 // projectEventToMichiganArtworkPosition below, which delegates real
@@ -125,8 +122,46 @@ const BASE_SCALE = 1.03;
 const MAP_ZOOM_MIN_SCALE = 1;
 const MAP_ZOOM_MAX_SCALE = 2.5;
 const MAP_PAN_EDGE_FACTOR = 0.5;
-const MAP_GESTURE_MOVE_THRESHOLD_PX = 8;
+const MAP_GESTURE_MOVE_THRESHOLD_PX = 5;
 const MAP_DOUBLE_TAP_RESET_MS = 320;
+const MAP_PAN_INPUT_GAIN = 1.7;
+const MAP_PINCH_ZOOM_SENSITIVITY = 1.65;
+const MAP_WHEEL_ZOOM_SENSITIVITY = 0.0024;
+const PHONE_INITIAL_MAP_SCALE = 1.25;
+const PHONE_INITIAL_MAP_X_FACTOR = -0.03;
+const PHONE_INITIAL_MAP_Y_FACTOR = 0.08;
+const PHONE_MAX_ZOOM_UPWARD_PAN_FACTOR = 0.18;
+const PHONE_MAP_CAMERA_PROFILE_ID = 'michigan-clouds-mobile-camera-v2';
+
+// The reviewed portrait composition is the smallest trustworthy artwork view;
+// the raw 1x canvas exposes the undersized full-state pose and synthetic water.
+const resolveMapMinimumScale = (viewportMode: AtlasViewportMode) =>
+  viewportMode === 'portrait'
+    ? PHONE_INITIAL_MAP_SCALE
+    : MAP_ZOOM_MIN_SCALE;
+
+const resolvePortraitMinimumTranslateY = (
+  scale: number,
+  frameHeight: number,
+  maxTranslateY: number,
+) => {
+  const zoomProgress = clamp(
+    (scale - PHONE_INITIAL_MAP_SCALE)
+      / (MAP_ZOOM_MAX_SCALE - PHONE_INITIAL_MAP_SCALE),
+    0,
+    1,
+  );
+  const restingTranslateY = frameHeight * PHONE_INITIAL_MAP_Y_FACTOR;
+  const maximumZoomTranslateY =
+    -frameHeight * PHONE_MAX_ZOOM_UPWARD_PAN_FACTOR;
+
+  return clamp(
+    restingTranslateY
+      + (maximumZoomTranslateY - restingTranslateY) * zoomProgress,
+    -maxTranslateY,
+    maxTranslateY,
+  );
+};
 
 // Layer order contract (low -> high): map art (1), decorative atmosphere
 // (3-4 in effects), selected constellation lines (4.5), interactive
@@ -140,13 +175,10 @@ const Z_INDEX = {
   constellationLines: 4.5,
   markers: 5,
   card: 15,
-  calibration: 6,
+  verification: 6,
   searchDock: 20,
 } as const;
 
-// Legacy calibration debug mode. Homepage marker placement uses the fixed
-// anchors in data/mapCalibration.ts; keep this off for production.
-const showAtlasCalibration = false;
 const CARD_THEME_BY_CATEGORY: Record<
   AtlasEvent['category'],
   { edge: string; glow: string; wash: string }
@@ -282,19 +314,18 @@ const getDateKeyInTimeZone = (date: Date, timeZone: string) => {
   }
 };
 
-const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
-
 const MARKER_EDGE_INSET_PERCENT = 6;
 const HOME_DISCOVERY_SCROLL_CLASS = 'home-discovery-scroll';
 const HOME_PHONE_LANDSCAPE_SCROLL_CLASS = 'home-phone-landscape-scroll';
 const MOBILE_LANDING_MAP_LOWERING = '3dvh';
 
-// The previous global -7% marker translate is intentionally replaced by the
-// inverse workbench calibration in data/michiganArtworkCalibration.ts. Keeping a
-// second global shift here would double-apply calibration and hide future tuning.
+// Artwork calibration is asset-scoped in data/michiganArtworkCalibration.ts.
+// The starting phone pose below transforms the artwork and marker overlay
+// together, so it never mutates or duplicates geographic calibration.
 
 function EventNavigationControl({
   event,
+  forceButton,
   ariaLabel,
   ariaHidden,
   ariaCurrent,
@@ -306,6 +337,7 @@ function EventNavigationControl({
   children,
 }: {
   event: AtlasEvent;
+  forceButton?: boolean;
   ariaLabel: string;
   ariaHidden?: boolean;
   ariaCurrent?: 'true';
@@ -316,7 +348,7 @@ function EventNavigationControl({
   onLegacyClick: () => void;
   children: ReactNode;
 }) {
-  if (event.eventPageKind === 'manifest') {
+  if (!forceButton && event.eventPageKind === 'manifest') {
     return (
       <Link
         href={`/events/${getCanonicalEventSlug(event)}`}
@@ -612,12 +644,14 @@ function formatMobileEventDate(event: AtlasEvent): string {
 function adaptSearchClusterEventToDeckItem({
   event,
   clusterId,
+  matchCues,
   flyerResolutions,
   now,
   timeZone,
 }: {
   event: AtlasEvent;
   clusterId: string;
+  matchCues?: readonly string[];
   flyerResolutions: EventFlyerResolutionMap;
   now: Date;
   timeZone: string;
@@ -651,7 +685,9 @@ function adaptSearchClusterEventToDeckItem({
           tone: status === 'LIVE' ? 'live' : 'upcoming',
         }
       : undefined,
-    categoryLabel: safeCard.cardTag ?? safeCard.category,
+    categoryLabel: matchCues?.length
+      ? matchCues.join(' \u00b7 ')
+      : safeCard.cardTag ?? safeCard.category,
     clusterId,
     accessibilityLabel: `Open ${safeCard.name}`,
   };
@@ -735,6 +771,14 @@ const MOBILE_TAG_SHORT_CONNECTOR_MAX_DX_PX = 96;
 const MOBILE_TAG_SHORT_CONNECTOR_MAX_DY_PX = 58;
 
 type MapViewportSize = { width: number; height: number };
+type MapArtworkFitLayout = {
+  frameWidth: number;
+  frameHeight: number;
+  renderedWidth: number;
+  renderedHeight: number;
+  offsetX: number;
+  offsetY: number;
+};
 type MobileTagPlacementName =
   | 'west-water'
   | 'east-water'
@@ -1131,28 +1175,49 @@ const EMPTY_FLYER_RESOLUTIONS: EventFlyerResolutionMap = {};
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
+const resolveDefaultMapTransform = (
+  viewportMode: AtlasViewportMode,
+  viewportSize: MapViewportSize,
+): MapTransform => {
+  if (viewportMode !== 'portrait') {
+    return { scale: MAP_ZOOM_MIN_SCALE, translateX: 0, translateY: 0 };
+  }
+
+  return {
+    scale: PHONE_INITIAL_MAP_SCALE,
+    translateX: viewportSize.width * PHONE_INITIAL_MAP_X_FACTOR,
+    translateY: viewportSize.height * PHONE_INITIAL_MAP_Y_FACTOR,
+  };
+};
+
 const clampMapTransform = (
   transform: MapTransform,
   frame: HTMLDivElement | null,
+  viewportMode: AtlasViewportMode,
 ): MapTransform => {
+  const minimumScale = resolveMapMinimumScale(viewportMode);
   const scale = clamp(
     transform.scale,
-    MAP_ZOOM_MIN_SCALE,
+    minimumScale,
     MAP_ZOOM_MAX_SCALE,
   );
 
-  if (!frame || scale <= MAP_ZOOM_MIN_SCALE) {
+  if (!frame || (viewportMode !== 'portrait' && scale <= minimumScale)) {
     return { scale, translateX: 0, translateY: 0 };
   }
 
   const rect = frame.getBoundingClientRect();
-  const maxTranslateX = ((scale - 1) * rect.width * MAP_PAN_EDGE_FACTOR) / scale;
-  const maxTranslateY = ((scale - 1) * rect.height * MAP_PAN_EDGE_FACTOR) / scale;
+  const renderedScale = scale * (viewportMode === 'portrait' ? BASE_SCALE : 1);
+  const maxTranslateX = (renderedScale - 1) * rect.width * MAP_PAN_EDGE_FACTOR;
+  const maxTranslateY = (renderedScale - 1) * rect.height * MAP_PAN_EDGE_FACTOR;
+  const minimumTranslateY = viewportMode === 'portrait'
+    ? resolvePortraitMinimumTranslateY(scale, rect.height, maxTranslateY)
+    : -maxTranslateY;
 
   return {
     scale,
     translateX: clamp(transform.translateX, -maxTranslateX, maxTranslateX),
-    translateY: clamp(transform.translateY, -maxTranslateY, maxTranslateY),
+    translateY: clamp(transform.translateY, minimumTranslateY, maxTranslateY),
   };
 };
 
@@ -1180,36 +1245,92 @@ const projectEventToMichiganArtworkPosition = (
     artworkVariant,
   );
 
-  const baselinePosition = {
+  return {
     x: clampMarkerPercent(artworkPosition.x),
     y: clampMarkerPercent(artworkPosition.y),
   };
+};
 
-  if (artworkVariant !== 'mobile') return baselinePosition;
+const resolveMapArtworkFitLayout = ({
+  viewport,
+  artworkWidth,
+  artworkHeight,
+  fit,
+  alignY,
+}: {
+  viewport: MapViewportSize;
+  artworkWidth: number;
+  artworkHeight: number;
+  fit: 'contain' | 'cover';
+  alignY: 'center' | 'top';
+}): MapArtworkFitLayout | null => {
+  if (
+    viewport.width <= 0 ||
+    viewport.height <= 0 ||
+    artworkWidth <= 0 ||
+    artworkHeight <= 0
+  ) {
+    return null;
+  }
 
-  const upperPeninsulaAnchorPosition =
-    resolveExactMichiganMobileUpperPeninsulaAnchorPosition(
-      event.latitude,
-      event.longitude,
-    );
-
-  if (!upperPeninsulaAnchorPosition) return baselinePosition;
+  const widthScale = viewport.width / artworkWidth;
+  const heightScale = viewport.height / artworkHeight;
+  const renderedScale = fit === 'cover'
+    ? Math.max(widthScale, heightScale)
+    : Math.min(widthScale, heightScale);
+  const renderedWidth = artworkWidth * renderedScale;
+  const renderedHeight = artworkHeight * renderedScale;
 
   return {
-    x: clampMarkerPercent(upperPeninsulaAnchorPosition.x),
-    y: clampMarkerPercent(upperPeninsulaAnchorPosition.y),
+    frameWidth: viewport.width,
+    frameHeight: viewport.height,
+    renderedWidth,
+    renderedHeight,
+    offsetX: (viewport.width - renderedWidth) / 2,
+    offsetY: alignY === 'top'
+      ? 0
+      : (viewport.height - renderedHeight) / 2,
   };
 };
+
+const projectArtworkPositionIntoMapFrame = (
+  position: MarkerPosition,
+  layout: MapArtworkFitLayout,
+): MarkerPosition => ({
+  x: clampMarkerPercent(
+    ((layout.offsetX + (position.x / 100) * layout.renderedWidth)
+      / layout.frameWidth)
+      * 100,
+  ),
+  y: clampMarkerPercent(
+    ((layout.offsetY + (position.y / 100) * layout.renderedHeight)
+      / layout.frameHeight)
+      * 100,
+  ),
+});
 
 const resolveAtlasMarkerLayouts = (
   events: readonly AtlasEvent[],
   artworkVariant: MichiganArtworkVariant,
+  artworkFitLayout: MapArtworkFitLayout | null,
 ): AtlasMarkerLayout[] =>
-  events.map((event, eventIndex) => ({
-    event,
-    eventIndex,
-    position: projectEventToMichiganArtworkPosition(event, artworkVariant),
-  }));
+  events.map((event, eventIndex) => {
+    const artworkPosition = projectEventToMichiganArtworkPosition(
+      event,
+      artworkVariant,
+    );
+
+    return {
+      event,
+      eventIndex,
+      position: artworkFitLayout
+        ? projectArtworkPositionIntoMapFrame(
+            artworkPosition,
+            artworkFitLayout,
+          )
+        : artworkPosition,
+    };
+  });
 
 const isFiniteMarkerPosition = (position: MarkerPosition) =>
   Number.isFinite(position.x) && Number.isFinite(position.y);
@@ -1274,177 +1395,61 @@ function ConstellationLineLayer({ points }: { points: MarkerPosition[] }) {
   );
 }
 
-function VerificationReferenceLayer() {
-  return (
-    <div
-      aria-label="Michigan anchor city reference points"
-      style={styles.verificationReferenceLayer}
-    >
-      {MICHIGAN_MAP_ANCHORS.map((anchor) => (
-        <div
-          key={anchor.name}
-          style={{
-            ...styles.verificationReferenceWrap,
-            left: `${anchor.mapX}%`,
-            top: `${anchor.mapY}%`,
-          }}
-        >
-          <span aria-hidden="true" style={styles.verificationReferencePoint} />
-          <span style={styles.verificationReferenceLabel}>
-            {anchor.name}
-            <br />
-            anchor {anchor.mapX.toFixed(1)}, {anchor.mapY.toFixed(1)}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
+const MICHIGAN_VERIFICATION_REFERENCE_CITIES = [
+  { name: 'Marquette', latitude: 46.5436, longitude: -87.3954 },
+  { name: 'Sault Ste. Marie', latitude: 46.4953, longitude: -84.3453 },
+  { name: 'Traverse City', latitude: 44.7631, longitude: -85.6206 },
+  { name: 'Alpena', latitude: 45.0617, longitude: -83.4328 },
+  { name: 'Grand Rapids', latitude: 42.9634, longitude: -85.6681 },
+  { name: 'Lansing', latitude: 42.7325, longitude: -84.5555 },
+  { name: 'Detroit', latitude: 42.3314, longitude: -83.0458 },
+  { name: 'Port Huron', latitude: 42.9709, longitude: -82.4249 },
+] as const;
 
-const formatCalibrationCoordinate = (value: number) =>
-  Number(value.toFixed(5)).toString();
-const formatCalibrationPercent = (value: number) =>
-  Number(value.toFixed(2)).toString();
-
-const formatCalibrationJson = (
-  anchors: MichiganMapAnchor[],
-) => `export const MICHIGAN_MAP_ANCHORS: MichiganMapAnchor[] = [
-${anchors
-  .map(
-    (anchor) =>
-      `  { name: '${anchor.name}', latitude: ${formatCalibrationCoordinate(anchor.latitude)}, longitude: ${formatCalibrationCoordinate(anchor.longitude)}, mapX: ${formatCalibrationPercent(anchor.mapX)}, mapY: ${formatCalibrationPercent(anchor.mapY)} },`,
-  )
-  .join('\n')}
-];`;
-
-const copyTextToClipboard = async (text: string) => {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.setAttribute('readonly', '');
-  textarea.style.position = 'fixed';
-  textarea.style.left = '-9999px';
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand('copy');
-  document.body.removeChild(textarea);
-};
-
-const createCalibrationAnchors = () =>
-  MICHIGAN_MAP_ANCHORS.map((anchor) => ({ ...anchor }));
-
-function AtlasCalibrationLayer({
-  anchors,
-  draggingAnchorName,
-  onAnchorDragStart,
-  onAnchorDragMove,
-  onAnchorDragEnd,
-  layerRef,
+function VerificationReferenceLayer({
+  artworkVariant,
+  artworkFitLayout,
 }: {
-  anchors: MichiganMapAnchor[];
-  draggingAnchorName: string | null;
-  onAnchorDragStart: (
-    anchorName: string,
-    event: PointerEvent<HTMLButtonElement>,
-  ) => void;
-  onAnchorDragMove: (
-    anchorName: string,
-    event: PointerEvent<HTMLButtonElement>,
-  ) => void;
-  onAnchorDragEnd: (event: PointerEvent<HTMLButtonElement>) => void;
-  layerRef: RefObject<HTMLDivElement | null>;
+  artworkVariant: MichiganArtworkVariant;
+  artworkFitLayout: MapArtworkFitLayout | null;
 }) {
   return (
     <div
-      ref={layerRef}
-      style={styles.calibrationLayer}
-      aria-label="Atlas calibration anchors"
+      aria-label="Michigan projected city reference points"
+      style={styles.verificationReferenceLayer}
     >
-      {/* Invisible map = geographic calibration overlay; visible map = artwork below. */}
-      {anchors.map((anchor) => {
-        const isDragging = draggingAnchorName === anchor.name;
+      {MICHIGAN_VERIFICATION_REFERENCE_CITIES.map((city) => {
+        const artworkPosition = projectLatLngToCalibratedMichiganArtworkPosition(
+          city.latitude,
+          city.longitude,
+          artworkVariant,
+        );
+        const position = artworkFitLayout
+          ? projectArtworkPositionIntoMapFrame(
+              artworkPosition,
+              artworkFitLayout,
+            )
+          : artworkPosition;
 
         return (
-          <span
-            key={anchor.name}
+          <div
+            key={city.name}
             style={{
-              ...styles.calibrationAnchor,
-              left: `${anchor.mapX}%`,
-              top: `${anchor.mapY}%`,
-              zIndex: isDragging
-                ? Z_INDEX.calibration + 2
-                : Z_INDEX.calibration + 1,
+              ...styles.verificationReferenceWrap,
+              left: `${position.x}%`,
+              top: `${position.y}%`,
             }}
           >
-            <button
-              type="button"
-              aria-label={`Drag ${anchor.name} calibration anchor`}
-              onPointerDown={(event) => onAnchorDragStart(anchor.name, event)}
-              onPointerMove={(event) => onAnchorDragMove(anchor.name, event)}
-              onPointerUp={onAnchorDragEnd}
-              onPointerCancel={onAnchorDragEnd}
-              style={{
-                ...styles.calibrationAnchorDot,
-                ...(isDragging ? styles.calibrationAnchorDotDragging : null),
-              }}
-            />
-          </span>
+            <span aria-hidden="true" style={styles.verificationReferencePoint} />
+            <span style={styles.verificationReferenceLabel}>
+              {city.name}
+              <br />
+              projected {position.x.toFixed(1)}, {position.y.toFixed(1)}
+            </span>
+          </div>
         );
       })}
     </div>
-  );
-}
-
-function AtlasCalibrationPanel({
-  anchors,
-  copyStatus,
-  onCopy,
-  onReset,
-}: {
-  anchors: MichiganMapAnchor[];
-  copyStatus: string | null;
-  onCopy: () => void;
-  onReset: () => void;
-}) {
-  return (
-    <details
-      style={styles.calibrationPanel}
-      aria-label="Atlas calibration tools"
-    >
-      <summary style={styles.calibrationPanelSummary}>
-        <span style={styles.calibrationPanelKicker}>Calibration tools</span>
-        <span style={styles.calibrationPanelSummaryHint}>
-          {anchors.length} anchors
-        </span>
-      </summary>
-      <p style={styles.calibrationPanelBody}>
-        Drag anchors only. Event markers, event labels, and grid are hidden in
-        calibration mode.
-      </p>
-      <div style={styles.calibrationPanelActions}>
-        <button
-          type="button"
-          onClick={onReset}
-          style={styles.calibrationResetButton}
-        >
-          Reset Anchors
-        </button>
-        <button
-          type="button"
-          onClick={onCopy}
-          style={styles.calibrationCopyButton}
-        >
-          Copy Calibration JSON
-        </button>
-      </div>
-      {copyStatus ? (
-        <p style={styles.calibrationCopyStatus}>{copyStatus}</p>
-      ) : null}
-    </details>
   );
 }
 
@@ -1504,6 +1509,11 @@ export default function AtlasMap({
     translateX: 0,
     translateY: 0,
   });
+  const [isMapGestureActive, setIsMapGestureActive] = useState(false);
+  const hasUserAdjustedMapRef = useRef(false);
+  const hasRestoredMapTransformRef = useRef(false);
+  const defaultMapViewportModeRef = useRef<AtlasViewportMode | null>(null);
+  const defaultMapViewportSizeKeyRef = useRef<string | null>(null);
   const activeMapPointersRef = useRef<Map<number, ActiveMapPointer>>(new Map());
   const panGestureRef = useRef<{
     startX: number;
@@ -1521,15 +1531,6 @@ export default function AtlasMap({
   } | null>(null);
   const mapGestureMovedRef = useRef(false);
   const lastMapTapTimeRef = useRef(0);
-  const [calibrationAnchors, setCalibrationAnchors] = useState<
-    MichiganMapAnchor[]
-  >(createCalibrationAnchors);
-  const [draggingAnchorName, setDraggingAnchorName] = useState<string | null>(
-    null,
-  );
-  const [calibrationCopyStatus, setCalibrationCopyStatus] = useState<
-    string | null
-  >(null);
   const [failedDisplayedFlyerSrcs, setFailedDisplayedFlyerSrcs] = useState<
     Set<string>
   >(new Set());
@@ -1550,7 +1551,6 @@ export default function AtlasMap({
     process.env.NODE_ENV === 'development' &&
     isAtlasDebugMode &&
     searchParams.get('atlasDeckFixture') === 'multi';
-  const shouldShowCalibration = showAtlasCalibration && !isVerificationMode;
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const [mapViewportSize, setMapViewportSize] = useState<MapViewportSize | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
@@ -1610,6 +1610,9 @@ export default function AtlasMap({
   const [discoveryStatusText, setDiscoveryStatusText] = useState<string | null>(
     null,
   );
+  const [atlasSearchResultSet, setAtlasSearchResultSet] =
+    useState<AtlasSearchResultSet | null>(null);
+  const [isAtlasSearchPending, setIsAtlasSearchPending] = useState(false);
   const [isCardMediaVisible, setIsCardMediaVisible] = useState(false);
   const [loadedLargeCardImageSrc, setLoadedLargeCardImageSrc] = useState<string | null>(null);
   const [atlasDebugComputedStyles, setAtlasDebugComputedStyles] = useState({
@@ -1624,10 +1627,6 @@ export default function AtlasMap({
   const cardMediaFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const calibrationLayerRef = useRef<HTMLDivElement | null>(null);
-  const calibrationCopyStatusTimerRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
   useEffect(() => {
     if (
       !selectedId
@@ -1699,6 +1698,7 @@ export default function AtlasMap({
           openClusterId: openSearchClusterId,
           experienceDeckOpen: isExperienceDeckOpen,
           experienceDeckIndex,
+          mapCameraProfileId: PHONE_MAP_CAMERA_PROFILE_ID,
           mapTransform,
           selectedResultId,
           exactNavigation,
@@ -1740,7 +1740,13 @@ export default function AtlasMap({
     setOpenSearchClusterId(historyEntry.openClusterId);
     setIsExperienceDeckOpen(historyEntry.experienceDeckOpen);
     setExperienceDeckIndex(historyEntry.experienceDeckIndex);
-    setMapTransform(historyEntry.mapTransform);
+    if (
+      historyEntry.mapCameraProfileId === PHONE_MAP_CAMERA_PROFILE_ID
+      && historyEntry.mapTransform.scale >= PHONE_INITIAL_MAP_SCALE
+    ) {
+      hasRestoredMapTransformRef.current = true;
+      setMapTransform(historyEntry.mapTransform);
+    }
     setSelectedDiscoveryResultId(historyEntry.selectedResultId);
     setShouldAutoNavigateExactSearch(
       historyEntry.exactNavigation === 'pending',
@@ -1755,7 +1761,7 @@ export default function AtlasMap({
     () => new Map(eventProfiles.map((profile) => [profile.id, profile])),
     [eventProfiles],
   );
-  const homeAtlasSearch = useMemo(
+  const deterministicHomeAtlasSearch = useMemo(
     () =>
       searchHomeAtlas({
         query: submittedQuery,
@@ -1767,6 +1773,76 @@ export default function AtlasMap({
       }),
     [discoveryNow, eventProfiles, events, searchRules, stateConfig, submittedQuery],
   );
+  const homeAtlasSearch = useMemo(
+    () => applyAtlasSearchResultSet({
+      resultSet: atlasSearchResultSet,
+      fallback: deterministicHomeAtlasSearch,
+      events,
+      profiles: eventProfiles,
+    }),
+    [atlasSearchResultSet, deterministicHomeAtlasSearch, eventProfiles, events],
+  );
+  useEffect(() => {
+    let isCurrentAtlasSearch = true;
+    const trimmedQuery = submittedQuery.trim();
+    if (!trimmedQuery || deterministicHomeAtlasSearch.exactMatch) {
+      queueMicrotask(() => {
+        if (!isCurrentAtlasSearch) return;
+        setAtlasSearchResultSet(null);
+        setIsAtlasSearchPending(false);
+      });
+      return () => {
+        isCurrentAtlasSearch = false;
+      };
+    }
+
+    const controller = new AbortController();
+    const candidateEventIds = events.map((event) => event.id);
+    queueMicrotask(() => {
+      if (!isCurrentAtlasSearch || controller.signal.aborted) return;
+      setIsAtlasSearchPending(true);
+    });
+
+    void fetch('/api/atlas-search', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: trimmedQuery,
+        stateSlug: stateConfig.identity.slug,
+      }),
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const body = await response.json() as unknown;
+        return parseAtlasSearchResultSet(body, {
+          query: trimmedQuery,
+          stateSlug: stateConfig.identity.slug,
+          candidateEventIds: new Set(candidateEventIds),
+        });
+      })
+      .then((resultSet) => {
+        if (!resultSet || !isCurrentAtlasSearch || controller.signal.aborted) return;
+        setAtlasSearchResultSet(resultSet);
+      })
+      .catch(() => {
+        // The deterministic local resolver remains the immediate safe fallback.
+      })
+      .finally(() => {
+        if (isCurrentAtlasSearch && !controller.signal.aborted) {
+          setIsAtlasSearchPending(false);
+        }
+      });
+
+    return () => {
+      isCurrentAtlasSearch = false;
+      controller.abort();
+    };
+  }, [deterministicHomeAtlasSearch.exactMatch, events, stateConfig.identity.slug, submittedQuery]);
   const homeAtlasDiscovery = useMemo(
     () =>
       resolveHomeAtlasDiscovery({
@@ -1820,38 +1896,68 @@ export default function AtlasMap({
   const isQueryOnlyDiscovery = Boolean(
     q && homeAtlasDiscovery.activeFilterCount === 0,
   );
-  const shouldUseMapSearchTitleTags = Boolean(
+  const shouldUseMapSearchClusters = Boolean(
     isQueryOnlyDiscovery && homeAtlasDiscovery.mode === 'results',
   );
-  const hasCanonicalDiscoveryResults =
-    homeAtlasDiscovery.mode === 'results' || homeAtlasDiscovery.mode === 'empty';
   const rankedSubmittedSearchResults = useMemo(() => {
-    if (exactEventIntent || !shouldUseMapSearchTitleTags) return [];
+    if (exactEventIntent || !shouldUseMapSearchClusters) return [];
 
     return [...homeAtlasDiscovery.events];
-  }, [exactEventIntent, homeAtlasDiscovery.events, shouldUseMapSearchTitleTags]);
+  }, [exactEventIntent, homeAtlasDiscovery.events, shouldUseMapSearchClusters]);
   const rankedSubmittedSearchResultIds = useMemo(
     () => rankedSubmittedSearchResults.map((event) => event.id),
     [rankedSubmittedSearchResults],
   );
   const discoveryResultRows = useMemo<HomeDiscoveryResultRow[]>(() => {
-    if (homeAtlasDiscovery.mode !== 'results' || shouldUseMapSearchTitleTags) {
+    if (homeAtlasDiscovery.mode !== 'results') {
       return [];
     }
 
-    return homeAtlasDiscovery.events.map((event) => ({
-      id: event.id,
-      name: event.name,
-      location: event.location,
-      category: event.category,
-      atmosphereLabel: event.atmosphereLabel,
-      blurb: event.blurb,
+    return homeAtlasDiscovery.resultRows.map((result) => ({
+      id: result.event.id,
+      name: result.event.name,
+      location: result.event.location,
+      category: result.event.category,
+      atmosphereLabel: result.event.atmosphereLabel,
+      blurb: result.event.blurb,
+      matchCues: result.matchCues,
     }));
-  }, [homeAtlasDiscovery.events, homeAtlasDiscovery.mode, shouldUseMapSearchTitleTags]);
-  const markerLayouts = useMemo(
-    () => resolveAtlasMarkerLayouts(events, artworkVariant),
-    [artworkVariant, events],
+  }, [homeAtlasDiscovery.mode, homeAtlasDiscovery.resultRows]);
+  const matchCuesByEventId = useMemo(
+    () => new Map(
+      homeAtlasDiscovery.resultRows.map((result) => [
+        result.event.id,
+        result.matchCues,
+      ]),
+    ),
+    [homeAtlasDiscovery.resultRows],
   );
+  const artworkAsset = artworkVariant === 'mobile'
+    ? stateConfig.presentation.mobileArtwork
+    : stateConfig.presentation.desktopArtwork;
+  const artworkFitLayout = useMemo(
+    () => mapViewportSize
+      ? resolveMapArtworkFitLayout({
+          viewport: mapViewportSize,
+          artworkWidth: artworkAsset.width,
+          artworkHeight: artworkAsset.height,
+          fit: artworkVariant === 'mobile' ? 'cover' : 'contain',
+          alignY: artworkVariant === 'mobile' ? 'top' : 'center',
+        })
+      : null,
+    [
+      artworkAsset.height,
+      artworkAsset.width,
+      artworkVariant,
+      mapViewportSize,
+    ],
+  );
+  const markerLayouts = useMemo(() => {
+    return resolveAtlasMarkerLayouts(events,
+      artworkVariant,
+      artworkFitLayout,
+    );
+  }, [artworkFitLayout, artworkVariant, events]);
   const displayMarkerLayouts = markerLayouts;
   const activePresentationPlan = presentationPlan ?? null;
   const fallbackMapPresentationMode = getMapPresentationMode({
@@ -1919,6 +2025,9 @@ export default function AtlasMap({
       }),
     [discoveryNow, events, stateConfig.defaultTimeZone],
   );
+  const displayedRailEvents = isSubmittedSearchActive
+    ? homeAtlasDiscovery.events
+    : liveUpcomingRailEvents;
   useEffect(() => {
     const historyEntry = pendingHistoryRestorationRef.current;
     if (!historyEntry || !hasResolvedResponsiveState) return;
@@ -1938,7 +2047,7 @@ export default function AtlasMap({
       window.cancelAnimationFrame(firstFrame);
       if (secondFrame !== null) window.cancelAnimationFrame(secondFrame);
     };
-  }, [hasResolvedResponsiveState, liveUpcomingRailEvents.length, submittedQuery]);
+  }, [displayedRailEvents.length, hasResolvedResponsiveState, submittedQuery]);
   const isMobileAmbientLayoutReady = Boolean(
     mapViewportSize &&
       mapViewportSize.width > 0 &&
@@ -2028,20 +2137,55 @@ export default function AtlasMap({
       }];
     });
   }, [displayMarkerLayouts, isDesktop, mapViewportSize, mobileSearchTagPlacements, activePresentationPlan]);
-  const visibleMarkerGroups = displayMarkerLayouts
-    .filter((layout) => {
-      if (mapPresentationMode === 'single' && exactEventIntent) return layout.event.id === exactEventIntent.eventId;
-      if (activePresentationPlan) return activePresentationPlan.visibleEventIds.includes(layout.event.id);
-      if (mapPresentationMode === 'results') return highlightedIds.has(layout.event.id);
-
+  const visibleMarkerGroups = useMemo(() => {
+    const sourceLayouts = displayMarkerLayouts.filter((layout) => {
+      if (mapPresentationMode === 'single' && exactEventIntent) {
+        return layout.event.id === exactEventIntent.eventId;
+      }
+      if (activePresentationPlan) {
+        return activePresentationPlan.visibleEventIds.includes(layout.event.id);
+      }
+      if (mapPresentationMode === 'results') {
+        return highlightedIds.has(layout.event.id);
+      }
       return true;
-    })
-    .map((layout) => ({
-      id: mapPresentationMode === 'single' ? `exact-${layout.event.id}` : `event-${layout.event.id}`,
-      events: [layout.event],
-      eventIndices: [layout.eventIndex],
-      position: layout.position,
-    }));
+    });
+    const layoutByEventId = new Map(
+      sourceLayouts.map((layout) => [layout.event.id, layout]),
+    );
+
+    return resolveAtlasGeographicMarkerGroups({
+      events: sourceLayouts.map((layout) => layout.event),
+      mapScale: mapTransform.scale,
+    }).flatMap((group) => {
+      const groupLayouts = group.events.flatMap((event) => {
+        const layout = layoutByEventId.get(event.id);
+        return layout && isFiniteMarkerPosition(layout.position) ? [layout] : [];
+      });
+      if (groupLayouts.length === 0) return [];
+
+      return [{
+        id: mapPresentationMode === 'single'
+          ? `exact-${group.events[0]!.id}`
+          : group.id,
+        events: group.events,
+        eventIndices: groupLayouts.map((layout) => layout.eventIndex),
+        position: {
+          x: groupLayouts.reduce((sum, layout) => sum + layout.position.x, 0)
+            / groupLayouts.length,
+          y: groupLayouts.reduce((sum, layout) => sum + layout.position.y, 0)
+            / groupLayouts.length,
+        },
+      }];
+    });
+  }, [
+    activePresentationPlan,
+    displayMarkerLayouts,
+    exactEventIntent,
+    highlightedIds,
+    mapPresentationMode,
+    mapTransform.scale,
+  ]);
 
   const developmentMultiEventDeckFixtureEvents = useMemo(() => {
     if (!isDevelopmentMultiEventDeckFixture) return [];
@@ -2110,10 +2254,22 @@ export default function AtlasMap({
     isDesktop,
     rankedSubmittedSearchResults,
   ]);
-  const openExperienceDeckCluster = searchResultTextPlacements.find(
-    (placement): placement is ResultLabelClusterPlacement =>
-      placement.kind === 'cluster' && placement.id === openSearchClusterId,
-  );
+  const openExperienceDeckCluster = useMemo(() => {
+    const geographicCluster = visibleMarkerGroups.find(
+      (group) => group.events.length > 1 && group.id === openSearchClusterId,
+    );
+    if (geographicCluster) {
+      return {
+        id: geographicCluster.id,
+        events: geographicCluster.events,
+      };
+    }
+
+    return searchResultTextPlacements.find(
+      (placement): placement is ResultLabelClusterPlacement =>
+        placement.kind === 'cluster' && placement.id === openSearchClusterId,
+    ) ?? null;
+  }, [openSearchClusterId, searchResultTextPlacements, visibleMarkerGroups]);
   const atlasEventById = useMemo(
     () => new Map(events.map((event) => [event.id, event])),
     [events],
@@ -2128,6 +2284,7 @@ export default function AtlasMap({
             adaptSearchClusterEventToDeckItem({
               event,
               clusterId: openExperienceDeckCluster.id,
+              matchCues: matchCuesByEventId.get(event.id),
               flyerResolutions: effectiveFlyerResolutions,
               now: discoveryNow,
               timeZone: stateConfig.defaultTimeZone,
@@ -2139,6 +2296,7 @@ export default function AtlasMap({
     atlasEventById,
     discoveryNow,
     effectiveFlyerResolutions,
+    matchCuesByEventId,
     openExperienceDeckCluster,
     stateConfig.defaultTimeZone,
   ]);
@@ -2154,10 +2312,14 @@ export default function AtlasMap({
         return;
       }
 
-      const cluster = searchResultTextPlacements.find(
+      const geographicCluster = visibleMarkerGroups.find(
+        (group) => group.events.length > 1 && group.id === clusterId,
+      );
+      const labelCluster = searchResultTextPlacements.find(
         (placement): placement is ResultLabelClusterPlacement =>
           placement.kind === 'cluster' && placement.id === clusterId,
       );
+      const cluster = geographicCluster ?? labelCluster;
       if (!cluster) return;
 
       const firstEventId = cluster.events[0]?.id ?? null;
@@ -2175,6 +2337,7 @@ export default function AtlasMap({
       captureHomeDiscoveryHistoryEntry,
       searchResultTextPlacements,
       selectedDiscoveryResultId,
+      visibleMarkerGroups,
     ],
   );
   const handleExperienceDeckIndexChange = useCallback(
@@ -2356,6 +2519,7 @@ export default function AtlasMap({
         openClusterId: null,
         experienceDeckOpen: false,
         experienceDeckIndex: 0,
+        mapCameraProfileId: PHONE_MAP_CAMERA_PROFILE_ID,
         mapTransform,
         selectedResultId: null,
         exactNavigation: 'pending',
@@ -2532,6 +2696,35 @@ export default function AtlasMap({
     return () => observer.disconnect();
   }, []);
 
+  useLayoutEffect(() => {
+    if (!hasResolvedResponsiveState || !mapViewportSize) return;
+    const modeChanged = defaultMapViewportModeRef.current !== viewportMode;
+    if (modeChanged) {
+      defaultMapViewportModeRef.current = viewportMode;
+      defaultMapViewportSizeKeyRef.current = null;
+      hasUserAdjustedMapRef.current = false;
+    }
+
+    if (hasRestoredMapTransformRef.current) {
+      hasRestoredMapTransformRef.current = false;
+      hasUserAdjustedMapRef.current = true;
+      return;
+    }
+
+    if (hasUserAdjustedMapRef.current) return;
+    const viewportSizeKey = `${Math.round(mapViewportSize.width)}x${Math.round(mapViewportSize.height)}`;
+    if (defaultMapViewportSizeKeyRef.current === viewportSizeKey) return;
+    defaultMapViewportSizeKeyRef.current = viewportSizeKey;
+
+    setMapTransform(
+      clampMapTransform(
+        resolveDefaultMapTransform(viewportMode, mapViewportSize),
+        mapFrameRef.current,
+        viewportMode,
+      ),
+    );
+  }, [hasResolvedResponsiveState, mapViewportSize, viewportMode]);
+
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const sync = () => setPrefersReducedMotion(mediaQuery.matches);
@@ -2564,18 +2757,46 @@ export default function AtlasMap({
     panGestureRef.current = null;
     pinchGestureRef.current = null;
     mapGestureMovedRef.current = false;
-    setMapTransform({
-      scale: MAP_ZOOM_MIN_SCALE,
-      translateX: 0,
-      translateY: 0,
-    });
-  }, []);
+    hasUserAdjustedMapRef.current = false;
+    setIsMapGestureActive(false);
+
+    const frame = mapFrameRef.current;
+    if (frame) frame.dataset.mapGestureActive = 'false';
+    if (!frame) {
+      setMapTransform(
+        resolveDefaultMapTransform(viewportMode, { width: 0, height: 0 }),
+      );
+      return;
+    }
+
+    const rect = frame.getBoundingClientRect();
+    setMapTransform(
+      clampMapTransform(
+        resolveDefaultMapTransform(viewportMode, {
+          width: rect.width,
+          height: rect.height,
+        }),
+        frame,
+        viewportMode,
+      ),
+    );
+  }, [viewportMode]);
 
   const handleMapGesturePointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
-      if (shouldShowCalibration || isVerificationMode) return;
-      if (event.pointerType !== 'touch') return;
+      if (isVerificationMode) return;
+      const isSupportedPointer =
+        event.pointerType !== 'mouse' || !isDesktop;
+      if (!isSupportedPointer) return;
       beginMobileExploration();
+      event.currentTarget.dataset.mapGestureActive = 'true';
+      setIsMapGestureActive(true);
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // Some WebKit builds can reject capture during a bubbling pointerdown.
+        // The gesture still remains usable through the frame-level handlers.
+      }
 
       const nextPointers = activeMapPointersRef.current;
       nextPointers.set(event.pointerId, {
@@ -2610,12 +2831,11 @@ export default function AtlasMap({
         panGestureRef.current = null;
       }
     },
-    [beginMobileExploration, isVerificationMode, mapTransform, shouldShowCalibration],
+    [beginMobileExploration, isDesktop, isVerificationMode, mapTransform],
   );
 
   const handleMapGesturePointerMove = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
-      if (event.pointerType !== 'touch') return;
       const activePointer = activeMapPointersRef.current.get(event.pointerId);
       if (!activePointer) return;
 
@@ -2634,8 +2854,12 @@ export default function AtlasMap({
         if (pinch.startDistance <= 0) return;
 
         const center = getPointerCenter(firstPointer, secondPointer);
+        const distanceRatio = nextDistance / pinch.startDistance;
         const nextScale = clamp(
-          pinch.startScale * (nextDistance / pinch.startDistance),
+          pinch.startScale * Math.pow(
+            distanceRatio,
+            MAP_PINCH_ZOOM_SENSITIVITY,
+          ),
           MAP_ZOOM_MIN_SCALE,
           MAP_ZOOM_MAX_SCALE,
         );
@@ -2643,15 +2867,19 @@ export default function AtlasMap({
           {
             scale: nextScale,
             translateX:
-              pinch.startTranslateX + (center.x - pinch.startCenterX) / nextScale,
+              pinch.startTranslateX
+              + (center.x - pinch.startCenterX) * MAP_PAN_INPUT_GAIN,
             translateY:
-              pinch.startTranslateY + (center.y - pinch.startCenterY) / nextScale,
+              pinch.startTranslateY
+              + (center.y - pinch.startCenterY) * MAP_PAN_INPUT_GAIN,
           },
           mapFrameRef.current,
+          viewportMode,
         );
 
         event.preventDefault();
         mapGestureMovedRef.current = true;
+        hasUserAdjustedMapRef.current = true;
         setMapTransform(nextTransform);
         return;
       }
@@ -2672,24 +2900,29 @@ export default function AtlasMap({
         const nextTransform = clampMapTransform(
           {
             scale: mapTransform.scale,
-            translateX: pan.startTranslateX + deltaX / mapTransform.scale,
-            translateY: pan.startTranslateY + deltaY / mapTransform.scale,
+            translateX: pan.startTranslateX + deltaX * MAP_PAN_INPUT_GAIN,
+            translateY: pan.startTranslateY + deltaY * MAP_PAN_INPUT_GAIN,
           },
           mapFrameRef.current,
+          viewportMode,
         );
 
         event.preventDefault();
         mapGestureMovedRef.current = true;
+        hasUserAdjustedMapRef.current = true;
         setMapTransform(nextTransform);
       }
     },
-    [isPhoneLandscape, mapTransform.scale],
+    [isPhoneLandscape, mapTransform.scale, viewportMode],
   );
 
   const handleMapGesturePointerEnd = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
-      if (event.pointerType !== 'touch') return;
+      if (!activeMapPointersRef.current.has(event.pointerId)) return;
       activeMapPointersRef.current.delete(event.pointerId);
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
 
       if (activeMapPointersRef.current.size < 2) {
         pinchGestureRef.current = null;
@@ -2705,6 +2938,8 @@ export default function AtlasMap({
         };
       } else if (activeMapPointersRef.current.size === 0) {
         panGestureRef.current = null;
+        event.currentTarget.dataset.mapGestureActive = 'false';
+        setIsMapGestureActive(false);
       }
     },
     [mapTransform.translateX, mapTransform.translateY],
@@ -2728,111 +2963,27 @@ export default function AtlasMap({
     [resetMapTransform],
   );
 
+  const handleMapWheel = useCallback(
+    (event: WheelEvent<HTMLDivElement>) => {
+      if (isVerificationMode) return;
+      event.preventDefault();
+      beginMobileExploration();
+      hasUserAdjustedMapRef.current = true;
+      const zoomFactor = Math.exp(
+        -event.deltaY * MAP_WHEEL_ZOOM_SENSITIVITY,
+      );
+      setMapTransform((current) => clampMapTransform({
+        ...current,
+        scale: current.scale * zoomFactor,
+      }, mapFrameRef.current, viewportMode));
+    },
+    [beginMobileExploration, isVerificationMode, viewportMode],
+  );
+
   const shouldSuppressMarkerTap = useCallback(() => {
     if (!mapGestureMovedRef.current) return false;
     mapGestureMovedRef.current = false;
     return true;
-  }, []);
-
-  const updateCalibrationAnchorPosition = useCallback(
-    (anchorName: string, event: PointerEvent<HTMLButtonElement>) => {
-      const layer = calibrationLayerRef.current;
-      if (!layer) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      const rect = layer.getBoundingClientRect();
-      const nextMapX = clampPercent(
-        ((event.clientX - rect.left) / rect.width) * 100,
-      );
-      const nextMapY = clampPercent(
-        ((event.clientY - rect.top) / rect.height) * 100,
-      );
-
-      setCalibrationAnchors((currentAnchors) =>
-        currentAnchors.map((anchor) =>
-          anchor.name === anchorName
-            ? {
-                ...anchor,
-                mapX: nextMapX,
-                mapY: nextMapY,
-              }
-            : anchor,
-        ),
-      );
-    },
-    [],
-  );
-
-  const handleCalibrationAnchorDragStart = useCallback(
-    (anchorName: string, event: PointerEvent<HTMLButtonElement>) => {
-      event.currentTarget.setPointerCapture(event.pointerId);
-      setDraggingAnchorName(anchorName);
-      setCalibrationCopyStatus(null);
-      updateCalibrationAnchorPosition(anchorName, event);
-    },
-    [updateCalibrationAnchorPosition],
-  );
-
-  const handleCalibrationAnchorDragMove = useCallback(
-    (anchorName: string, event: PointerEvent<HTMLButtonElement>) => {
-      if (draggingAnchorName !== anchorName) return;
-      updateCalibrationAnchorPosition(anchorName, event);
-    },
-    [draggingAnchorName, updateCalibrationAnchorPosition],
-  );
-
-  const handleCalibrationAnchorDragEnd = useCallback(
-    (event: PointerEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-
-      setDraggingAnchorName(null);
-    },
-    [],
-  );
-
-  const handleCopyCalibrationJson = useCallback(async () => {
-    if (calibrationCopyStatusTimerRef.current) {
-      clearTimeout(calibrationCopyStatusTimerRef.current);
-      calibrationCopyStatusTimerRef.current = null;
-    }
-
-    const calibrationJson = formatCalibrationJson(calibrationAnchors);
-
-    try {
-      await copyTextToClipboard(calibrationJson);
-      setCalibrationCopyStatus('Copied updated anchor array.');
-    } catch {
-      setCalibrationCopyStatus(
-        'Copy failed. Select and copy from console fallback unavailable.',
-      );
-    }
-
-    calibrationCopyStatusTimerRef.current = setTimeout(() => {
-      setCalibrationCopyStatus(null);
-      calibrationCopyStatusTimerRef.current = null;
-    }, 2400);
-  }, [calibrationAnchors]);
-
-  const handleResetCalibrationAnchors = useCallback(() => {
-    setDraggingAnchorName(null);
-    setCalibrationAnchors(createCalibrationAnchors());
-    setCalibrationCopyStatus('Anchors reset to saved defaults.');
-
-    if (calibrationCopyStatusTimerRef.current) {
-      clearTimeout(calibrationCopyStatusTimerRef.current);
-    }
-
-    calibrationCopyStatusTimerRef.current = setTimeout(() => {
-      setCalibrationCopyStatus(null);
-      calibrationCopyStatusTimerRef.current = null;
-    }, 2400);
   }, []);
 
   const handleBackdropPointerDown = (event: PointerEvent<HTMLElement>) => {
@@ -3066,16 +3217,10 @@ export default function AtlasMap({
       setDiscoveryStatusText(null);
     }
     setQuery(trimmedQuery);
-    setDisplayedQuery(trimmedQuery);
-    setIsSubmittedQueryFading(true);
+    setDisplayedQuery('');
+    setIsSubmittedQueryFading(false);
     setSearchPulseTick((prev) => prev + 1);
     searchInputRef.current?.blur();
-    queryFadeTimerRef.current = setTimeout(() => {
-      setDisplayedQuery('');
-      setQuery('');
-      setIsSubmittedQueryFading(false);
-      queryFadeTimerRef.current = null;
-    }, 680);
   }, [
     beginMobileExploration,
     discoveryNow,
@@ -3182,6 +3327,17 @@ export default function AtlasMap({
     setShouldAutoNavigateExactSearch,
     replaceSubmittedDiscoveryQuery,
   ]);
+
+  useEffect(() => {
+    let isCurrentSubmittedQuery = true;
+    queueMicrotask(() => {
+      if (!isCurrentSubmittedQuery || isSearchFocused) return;
+      setQuery(submittedQuery);
+    });
+    return () => {
+      isCurrentSubmittedQuery = false;
+    };
+  }, [isSearchFocused, submittedQuery]);
 
   const openMobileMenu = useCallback(() => {
     beginMobileExploration();
@@ -3426,8 +3582,6 @@ export default function AtlasMap({
         clearTimeout(cardMediaFadeTimerRef.current);
       if (exactEventOpenTimerRef.current)
         clearTimeout(exactEventOpenTimerRef.current);
-      if (calibrationCopyStatusTimerRef.current)
-        clearTimeout(calibrationCopyStatusTimerRef.current);
       if (enterFrameRef.current) cancelAnimationFrame(enterFrameRef.current);
       if (enterFrameInnerRef.current)
         cancelAnimationFrame(enterFrameInnerRef.current);
@@ -3551,7 +3705,8 @@ export default function AtlasMap({
   ]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const isMapAtMinimumZoom = mapTransform.scale <= MAP_ZOOM_MIN_SCALE;
+  const isMapAtMinimumZoom =
+    mapTransform.scale <= resolveMapMinimumScale(viewportMode);
   const shouldAllowPhoneLandscapeNativeScroll =
     isPhoneLandscape && isMapAtMinimumZoom;
   const mobileAmbientMapScale = 1;
@@ -3571,8 +3726,7 @@ export default function AtlasMap({
     mobileAmbientMapLift;
   const mapLayerTransform = `translate3d(${mapLayerTranslateX}px, calc(${mapLayerTranslateY}px + ${mobileLandingMapLowering}), 0) scale(${mapLayerScale})`;
   const shouldShowDiscoveryPanel = Boolean(
-    !shouldShowCalibration &&
-      !isVerificationMode &&
+    !isVerificationMode &&
       !isAtlasPanelOpen &&
       (isDesktop ||
         homeAtlasDiscovery.mode === 'empty' ||
@@ -3605,9 +3759,15 @@ export default function AtlasMap({
       data-artwork-variant={artworkVariant}
       data-search-mode={submittedSearchMode}
       data-search-result-count={isSubmittedSearchActive ? homeAtlasDiscovery.events.length : 0}
+      data-atlas-search-pending={isAtlasSearchPending ? 'true' : 'false'}
+      data-atlas-search-source={
+        atlasSearchResultSet?.normalizedQuery === q
+          ? atlasSearchResultSet.source
+          : 'local-immediate'
+      }
       data-search-presentation={
-        shouldUseMapSearchTitleTags
-          ? 'title-tags'
+        shouldUseMapSearchClusters
+          ? 'geographic-clusters'
           : isQueryOnlyDiscovery
             ? 'query-status'
             : homeAtlasDiscovery.activeFilterCount > 0
@@ -3639,14 +3799,21 @@ export default function AtlasMap({
           handleMapGestureDoubleTap(event);
         }}
         onPointerCancel={handleMapGesturePointerEnd}
+        onWheel={handleMapWheel}
         onPointerLeave={(event) => {
           handleDepthPointerLeave();
-          handleMapGesturePointerEnd(event);
+          if (event.pointerType === 'mouse') {
+            handleMapGesturePointerEnd(event);
+          }
         }}
       >
         <div
+          className="atlas-map-camera-layer"
           style={{
             ...styles.atmosphereMapContent,
+            transition: isMapGestureActive
+              ? 'none'
+              : styles.atmosphereMapContent.transition,
             transform: mapLayerTransform,
           }}
         >
@@ -3665,9 +3832,13 @@ export default function AtlasMap({
         </div>
 
         <div
+          className="atlas-map-camera-layer"
           style={{
             ...styles.mapContent,
             touchAction: shouldAllowPhoneLandscapeNativeScroll ? 'pan-y' : 'none',
+            transition: isMapGestureActive
+              ? 'none'
+              : styles.mapContent.transition,
             transform: mapLayerTransform,
           }}
         >
@@ -3680,6 +3851,7 @@ export default function AtlasMap({
             draggable={false}
             style={{
               ...styles.mapImage,
+              ...(artworkVariant === 'mobile' ? styles.mapImageMobile : null),
               opacity: isMapArtworkCelestialFallback ? 0 : 1,
             }}
             onLoad={handleMapArtworkLoad}
@@ -3693,8 +3865,7 @@ export default function AtlasMap({
             }}
           />
 
-          {!shouldShowCalibration &&
-          !isVerificationMode &&
+          {!isVerificationMode &&
           isDesktop &&
           shouldShowPolishedHomepageUi ? (
             <>
@@ -3716,36 +3887,33 @@ export default function AtlasMap({
             </>
           ) : null}
 
-          {shouldShowCalibration ? (
-            <AtlasCalibrationLayer
-              anchors={calibrationAnchors}
-              draggingAnchorName={draggingAnchorName}
-              onAnchorDragStart={handleCalibrationAnchorDragStart}
-              onAnchorDragMove={handleCalibrationAnchorDragMove}
-              onAnchorDragEnd={handleCalibrationAnchorDragEnd}
-              layerRef={calibrationLayerRef}
-            />
-          ) : null}
-
-          {!shouldShowCalibration &&
-          !isVerificationMode &&
+          {!isVerificationMode &&
           isDesktop &&
           shouldShowPolishedHomepageUi ? (
             <ConstellationLineLayer points={constellationLinePoints} />
           ) : null}
 
-          {isVerificationMode ? <VerificationReferenceLayer /> : null}
+          {isVerificationMode ? (
+            <VerificationReferenceLayer
+              artworkVariant={artworkVariant}
+              artworkFitLayout={artworkFitLayout}
+            />
+          ) : null}
 
           <div style={styles.vignette} />
         </div>
 
-        {!shouldShowCalibration && shouldShowPolishedHomepageUi ? (
+        {shouldShowPolishedHomepageUi ? (
           <div
+            className="atlas-map-camera-layer"
             style={{
               ...styles.markerOverlayLayer,
               touchAction: shouldAllowPhoneLandscapeNativeScroll
                 ? 'pan-y'
                 : 'none',
+              transition: isMapGestureActive
+                ? 'none'
+                : styles.markerOverlayLayer.transition,
               transform: mapLayerTransform,
             }}
           >
@@ -3873,15 +4041,15 @@ export default function AtlasMap({
                 const shouldUseMobileTagPlacement = Boolean(
                   shouldShowMarkerLabel && mobileTagPlacement && !isDesktop,
                 );
-                const shouldEnableMarkerTapTarget = Boolean(
-                  !hasCanonicalDiscoveryResults &&
-                    (isDesktop || shouldShowMarkerLabel),
-                );
+                const shouldEnableMarkerTapTarget = true;
                 const mobileTagDx = mobileTagPlacement?.dx ?? 0;
                 const mobileTagDy = mobileTagPlacement?.dy ?? 0;
                 return (
                   <div
                     key={id}
+                    data-atlas-marker-group={id}
+                    data-atlas-cluster-count={isCluster ? events.length : undefined}
+                    data-atlas-cluster-event-ids={isCluster ? events.map((event) => event.id).join(',') : undefined}
                     style={{
                       ...styles.markerWrap,
                       left: `${position.x}%`,
@@ -3907,6 +4075,7 @@ export default function AtlasMap({
                         <>
                           <EventNavigationControl
                             event={navigationEvent}
+                            forceButton={isCluster}
                             ariaLabel={
                               isCluster
                                 ? `Open ${events.length} events near ${primaryEvent.location}`
@@ -3926,6 +4095,11 @@ export default function AtlasMap({
                                 return;
                               }
 
+                              if (isCluster) {
+                                handleOpenSearchCluster(id);
+                                return;
+                              }
+
                               openAtlasEvent(primaryEvent.id);
                             }}
                             style={{
@@ -3935,7 +4109,6 @@ export default function AtlasMap({
                               pointerEvents: shouldEnableMarkerTapTarget ? 'auto' : 'none',
                             }}
                           >
-                            {isDesktop ? (
                             <span
                               aria-hidden="true"
                               className={`marker-pulse atlas-marker ${markerStateClass}${
@@ -4081,8 +4254,10 @@ export default function AtlasMap({
                                   />
                                 </svg>
                               ) : null}
+                              {isCluster ? (
+                                <span style={styles.clusterCount}>{events.length}</span>
+                              ) : null}
                             </span>
-                            ) : null}
                           </EventNavigationControl>
                           {shouldShowMarkerLabel ? (
                           <EventNavigationControl
@@ -4139,7 +4314,7 @@ export default function AtlasMap({
                   </div>
                 );
               })}
-            {rankedSubmittedSearchResults.length > 0 ? (
+            {developmentMultiEventDeckFixtureEvents.length > 0 ? (
               <SearchResultTextField
                 placements={searchResultTextPlacements}
                 resultCount={rankedSubmittedSearchResults.length}
@@ -4167,13 +4342,16 @@ export default function AtlasMap({
             )) : null}
           </div>
         ) : null}
-        {!shouldShowCalibration &&
-        !shouldShowPolishedHomepageUi &&
-        rankedSubmittedSearchResults.length > 0 ? (
+        {!shouldShowPolishedHomepageUi &&
+        developmentMultiEventDeckFixtureEvents.length > 0 ? (
           <div
+            className="atlas-map-camera-layer"
             style={{
               ...styles.markerOverlayLayer,
               touchAction: shouldAllowPhoneLandscapeNativeScroll ? 'pan-y' : 'none',
+              transition: isMapGestureActive
+                ? 'none'
+                : styles.markerOverlayLayer.transition,
               transform: mapLayerTransform,
             }}
           >
@@ -4190,15 +4368,6 @@ export default function AtlasMap({
           </div>
         ) : null}
       </div>
-
-      {shouldShowCalibration ? (
-        <AtlasCalibrationPanel
-          anchors={calibrationAnchors}
-          copyStatus={calibrationCopyStatus}
-          onCopy={handleCopyCalibrationJson}
-          onReset={handleResetCalibrationAnchors}
-        />
-      ) : null}
 
       {shouldShowMobileChromeControls ? (
         <>
@@ -4443,11 +4612,11 @@ export default function AtlasMap({
         </div>
       ) : null}
 
-      {!shouldShowCalibration && !isVerificationMode && renderedEvent && safeEventCard ? (
+      {!isVerificationMode && renderedEvent && safeEventCard ? (
         <div className="atlas-card-backdrop" aria-hidden="true" />
       ) : null}
 
-      {!shouldShowCalibration && !isVerificationMode && renderedEvent && safeEventCard ? (
+      {!isVerificationMode && renderedEvent && safeEventCard ? (
         <article
           ref={cardRef}
           className={`atlas-card${isFlyerCard ? ' atlas-card--flyer' : ''}`}
@@ -4754,8 +4923,7 @@ export default function AtlasMap({
         </article>
       ) : null}
 
-      {!shouldShowCalibration &&
-      !isVerificationMode &&
+      {!isVerificationMode &&
       shouldShowEssentialHomepageUi ? (
         <>
           <div
@@ -4785,12 +4953,17 @@ export default function AtlasMap({
                   : ''
               }`}
               style={styles.searchInputWrap}
+              aria-busy={isAtlasSearchPending}
               onSubmit={(event) => {
                 event.preventDefault();
                 submitSearch();
               }}
             >
-              <span aria-hidden="true" style={styles.searchCompassMedallion}>
+              <span
+                aria-hidden="true"
+                className={isAtlasSearchPending ? 'atlas-search-compass--searching' : undefined}
+                style={styles.searchCompassMedallion}
+              >
                 <svg viewBox="0 0 48 48" focusable="false" style={styles.searchCompassSvg}>
                   <defs>
                     <radialGradient id="atlasCompassFace" cx="38%" cy="30%" r="72%">
@@ -4882,6 +5055,20 @@ export default function AtlasMap({
                 autoCapitalize="none"
                 spellCheck={false}
               />
+              {query.trim() || submittedQuery ? (
+                <button
+                  type="button"
+                  aria-label="Clear Atlas search"
+                  className="atlas-search-clear"
+                  style={styles.searchClearButton}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={clearDiscoveryQuery}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false" style={styles.searchClearIcon}>
+                    <path d="M7 7l10 10M17 7 7 17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                </button>
+              ) : null}
               <button
                 type="submit"
                 aria-label="Submit Atlas question"
@@ -4908,7 +5095,7 @@ export default function AtlasMap({
                 </svg>
               </button>
             </form>
-            {!isDesktop && liveUpcomingRailEvents.length > 0 ? (
+            {!isDesktop && displayedRailEvents.length > 0 ? (
               <section
                 className={`mobile-live-sheet${areMobileAmbientControlsVisible ? ' mobile-live-sheet--ready' : ''}${isHomeControlsReturning ? ' mobile-live-sheet--returning' : ''}`}
                 style={{
@@ -4917,10 +5104,15 @@ export default function AtlasMap({
                     ? styles.mobileLiveStripReady
                     : styles.mobileLiveStripHidden),
                 }}
-                aria-label={`Live and upcoming ${stateName} events`}
+                aria-label={
+                  isSubmittedSearchActive
+                    ? `${stateName} events matching the active Atlas search`
+                    : `Live and upcoming ${stateName} events`
+                }
                 aria-hidden={areMobileAmbientControlsVisible ? undefined : true}
                 data-layout-ready={areMobileAmbientControlsVisible ? 'true' : 'false'}
                 data-testid="event-rail"
+                data-event-rail-scope={isSubmittedSearchActive ? 'atlas-search' : 'live-upcoming'}
               >
                 <div
                   ref={liveUpcomingRailRef}
@@ -4928,12 +5120,17 @@ export default function AtlasMap({
                   style={styles.mobileLiveStripScroller}
                   onPointerDown={beginMobileExploration}
                 >
-                  {liveUpcomingRailEvents.map((event) => {
-                    const statusBadge = getEventRailStatus(event, {
-                      now: discoveryNow,
-                      timeZone: stateConfig.defaultTimeZone,
-                    });
+                  {displayedRailEvents.map((event) => {
+                    const statusBadge = isSubmittedSearchActive
+                      ? null
+                      : getEventRailStatus(event, {
+                          now: discoveryNow,
+                          timeZone: stateConfig.defaultTimeZone,
+                        });
                     const eventDate = formatMobileEventDate(event);
+                    const matchCues = isSubmittedSearchActive
+                      ? matchCuesByEventId.get(event.id) ?? []
+                      : [];
 
                     const isActiveRailEvent =
                       event.id === selectedId ||
@@ -4951,6 +5148,7 @@ export default function AtlasMap({
                         dataActive={isActiveRailEvent ? 'true' : 'false'}
                         style={{
                           ...styles.mobileLiveCard,
+                          ...(isSubmittedSearchActive ? styles.mobileSearchResultCard : null),
                           ...(isActiveRailEvent ? styles.mobileLiveCardActive : null),
                         }}
                       >
@@ -4969,6 +5167,14 @@ export default function AtlasMap({
                               {statusBadge}
                             </span>
                           ) : null}
+                          {matchCues.length > 0 ? (
+                            <span
+                              style={styles.mobileLiveMatchCue}
+                              data-atlas-match-cues={matchCues.join('|')}
+                            >
+                              {matchCues[0]}
+                            </span>
+                          ) : null}
                         </span>
                         <span style={styles.mobileLiveCardCopy}>
                           <span style={styles.mobileLiveCardTitle}>{event.name}</span>
@@ -4985,6 +5191,16 @@ export default function AtlasMap({
           <style jsx>{`
             .atlas-search-input--pulse {
               animation: searchAcceptPulse 360ms ease-out;
+            }
+
+            .atlas-search-compass--searching svg {
+              animation: atlasSearchCompassSeeking 1.45s cubic-bezier(.45, 0, .55, 1) infinite;
+            }
+
+            @keyframes atlasSearchCompassSeeking {
+              0%, 100% { transform: rotate(-5deg) scale(1); }
+              35% { transform: rotate(8deg) scale(1.035); }
+              68% { transform: rotate(-2deg) scale(1.01); }
             }
 
             .atlas-search-suggestion {
@@ -5163,7 +5379,7 @@ export default function AtlasMap({
             @media (max-width: 767px) {
               .atlas-map-image {
                 object-fit: cover !important;
-                object-position: center 26% !important;
+                object-position: center top !important;
               }
 
               .atlas-map-image--atmosphere {
@@ -5274,6 +5490,7 @@ export default function AtlasMap({
               .atlas-search-query--fade,
               .atlas-search-suggestion,
               .atlas-search-suggestion--fade,
+              .atlas-search-compass--searching svg,
               .atlas-search-submit,
               .atlas-search-dock--returning,
               .mobile-live-sheet--returning,
@@ -5448,6 +5665,7 @@ export default function AtlasMap({
                 box-shadow: none !important;
                 filter: none !important;
                 animation: none !important;
+                transform: translate(-50%, -50%) scale(var(--marker-scale-base, 1)) !important;
               }
 
               .marker-pulse::before,
@@ -5457,13 +5675,21 @@ export default function AtlasMap({
               }
 
               .marker-pulse--inactive {
-                width: 1px !important;
-                height: 1px !important;
+                width: 11px !important;
+                height: 11px !important;
+                opacity: 0.66 !important;
+                border: 1px solid rgba(255, 226, 166, 0.46) !important;
+                background: radial-gradient(circle, #fff4c7 0 13%, #d99b45 25% 42%, rgba(121, 68, 28, 0.22) 64%, rgba(121, 68, 28, 0) 78%) !important;
+                box-shadow: 0 0 8px rgba(255, 218, 146, 0.46), 0 0 17px rgba(205, 135, 49, 0.26) !important;
               }
 
               .marker-pulse--broad-highlighted {
                 width: 22px !important;
                 height: 22px !important;
+                opacity: 0.96 !important;
+                border: 1px solid rgba(255, 230, 176, 0.7) !important;
+                background: radial-gradient(circle, #fff8d8 0 12%, #f2bd62 18% 34%, rgba(190, 111, 38, 0.2) 58%, rgba(190, 111, 38, 0) 76%) !important;
+                box-shadow: 0 0 12px rgba(255, 232, 174, 0.72), 0 0 26px rgba(232, 166, 70, 0.42) !important;
                 --marker-brightness-idle: 1.42;
                 --marker-brightness-peak: 1.62;
                 --marker-saturation-idle: 1.2;
@@ -5497,6 +5723,10 @@ export default function AtlasMap({
               .marker-pulse[data-atlas-marker-state='exact-event'] {
                 width: 34px !important;
                 height: 34px !important;
+                opacity: 1 !important;
+                border: 1px solid rgba(255, 239, 198, 0.86) !important;
+                background: radial-gradient(circle, #fffdf0 0 10%, #ffd982 17% 31%, rgba(224, 145, 48, 0.22) 55%, rgba(224, 145, 48, 0) 76%) !important;
+                box-shadow: 0 0 16px rgba(255, 246, 212, 0.86), 0 0 34px rgba(245, 181, 76, 0.54) !important;
                 outline-width: 0;
                 outline-offset: 0;
                 --marker-brightness-idle: 2.12;
@@ -5530,6 +5760,10 @@ export default function AtlasMap({
               .marker-pulse--selected {
                 width: 32px !important;
                 height: 32px !important;
+                opacity: 1 !important;
+                border: 1px solid rgba(255, 235, 188, 0.82) !important;
+                background: radial-gradient(circle, #fff9df 0 10%, #f6c66e 18% 32%, rgba(218, 137, 45, 0.2) 56%, rgba(218, 137, 45, 0) 76%) !important;
+                box-shadow: 0 0 14px rgba(255, 239, 194, 0.8), 0 0 30px rgba(238, 170, 72, 0.48) !important;
                 outline-width: 0;
                 outline-offset: 0;
                 --marker-brightness-idle: 1.68;
@@ -5562,6 +5796,10 @@ export default function AtlasMap({
               .marker-pulse--cluster {
                 width: 32px !important;
                 height: 32px !important;
+                opacity: 1 !important;
+                border: 1px solid rgba(255, 222, 154, 0.82) !important;
+                background: radial-gradient(circle at 36% 28%, rgba(255, 249, 222, 0.98), rgba(235, 177, 79, 0.96) 36%, rgba(92, 48, 20, 0.94) 74%, rgba(10, 13, 19, 0.96) 100%) !important;
+                box-shadow: 0 0 0 2px rgba(7, 10, 16, 0.62), 0 0 18px rgba(255, 205, 110, 0.62), 0 0 38px rgba(211, 132, 43, 0.34) !important;
               }
             }
 
@@ -5843,7 +6081,7 @@ const styles: Record<string, CSSProperties> = {
     height: '100%',
     transformOrigin: 'center center',
     transition:
-      'filter 260ms ease, transform 520ms cubic-bezier(.22,.61,.36,1)',
+      'filter 220ms ease, transform 180ms cubic-bezier(.2,.8,.2,1)',
     touchAction: 'none',
     filter: 'saturate(0.74) brightness(0.62) contrast(1.08)',
   },
@@ -5852,7 +6090,7 @@ const styles: Record<string, CSSProperties> = {
     inset: '-6% -10%',
     transformOrigin: 'center center',
     filter: 'saturate(0.8) brightness(0.4) contrast(1.08)',
-    transition: 'transform 520ms cubic-bezier(.22,.61,.36,1)',
+    transition: 'transform 180ms cubic-bezier(.2,.8,.2,1)',
     pointerEvents: 'none',
   },
   atmosphereMapImage: {
@@ -5882,6 +6120,10 @@ const styles: Record<string, CSSProperties> = {
     WebkitTouchCallout: 'none',
     pointerEvents: 'none',
   },
+  mapImageMobile: {
+    objectFit: 'cover',
+    objectPosition: 'center top',
+  },
 
 
   baseMapGrade: {
@@ -5892,7 +6134,7 @@ const styles: Record<string, CSSProperties> = {
     background:
       'linear-gradient(180deg, rgba(9,12,18,.05), rgba(9,12,18,.11) 68%, rgba(9,12,18,.19)), radial-gradient(circle at 52% 40%, rgba(255,232,186,.04), rgba(255,232,186,0) 58%)',
     mixBlendMode: 'screen',
-    transition: 'transform 520ms cubic-bezier(.22,.61,.36,1)',
+    transition: 'transform 180ms cubic-bezier(.2,.8,.2,1)',
     willChange: 'transform',
   },
   particleDepthVeil: {
@@ -5915,123 +6157,6 @@ const styles: Record<string, CSSProperties> = {
     userSelect: 'none',
     WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none',
-  },
-  calibrationLayer: {
-    position: 'absolute',
-    inset: 0,
-    zIndex: Z_INDEX.calibration,
-    pointerEvents: 'none',
-    fontFamily:
-      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-  },
-  calibrationAnchor: {
-    position: 'absolute',
-    transform: 'translate(-50%, -50%)',
-  },
-  calibrationAnchorDot: {
-    position: 'absolute',
-    left: -8,
-    top: -8,
-    width: 16,
-    height: 16,
-    padding: 0,
-    borderRadius: 999,
-    background: '#67e8f9',
-    border: '1px solid rgba(255, 255, 255, 0.86)',
-    boxShadow: '0 0 12px rgba(103, 232, 249, 0.9)',
-    pointerEvents: 'auto',
-    cursor: 'grab',
-    touchAction: 'none',
-    appearance: 'none',
-    WebkitAppearance: 'none',
-  },
-  calibrationAnchorDotDragging: {
-    background: '#fef08a',
-    boxShadow:
-      '0 0 16px rgba(254, 240, 138, 0.95), 0 0 28px rgba(103, 232, 249, 0.72)',
-    cursor: 'grabbing',
-    transform: 'scale(1.18)',
-  },
-  calibrationPanel: {
-    position: 'fixed',
-    right: 12,
-    bottom: 'calc(12px + env(safe-area-inset-bottom))',
-    zIndex: 30,
-    width: 'min(300px, calc(100vw - 24px))',
-    padding: '8px 10px',
-    borderRadius: 14,
-    border: '1px solid rgba(103, 232, 249, 0.46)',
-    background:
-      'linear-gradient(180deg, rgba(7, 19, 28, 0.86), rgba(4, 10, 18, 0.76))',
-    boxShadow:
-      '0 10px 26px rgba(0, 0, 0, 0.34), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
-    fontFamily:
-      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-  },
-  calibrationPanelSummary: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    cursor: 'pointer',
-    listStyle: 'none',
-  },
-  calibrationPanelKicker: {
-    color: '#dffbff',
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  calibrationPanelSummaryHint: {
-    color: '#a5f3fc',
-    fontSize: 10,
-    fontWeight: 800,
-  },
-  calibrationPanelBody: {
-    margin: '8px 0 10px',
-    color: '#a5f3fc',
-    fontSize: 10,
-    lineHeight: 1.35,
-  },
-  calibrationPanelActions: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: 8,
-  },
-  calibrationCopyButton: {
-    width: '100%',
-    minHeight: 34,
-    borderRadius: 10,
-    border: '1px solid rgba(254, 240, 138, 0.62)',
-    background:
-      'linear-gradient(180deg, rgba(254, 240, 138, 0.22), rgba(103, 232, 249, 0.12))',
-    color: '#fff7cc',
-    fontSize: 12,
-    fontWeight: 900,
-    cursor: 'pointer',
-    touchAction: 'manipulation',
-  },
-  calibrationResetButton: {
-    width: '100%',
-    minHeight: 34,
-    borderRadius: 10,
-    border: '1px solid rgba(103, 232, 249, 0.58)',
-    background:
-      'linear-gradient(180deg, rgba(103, 232, 249, 0.18), rgba(125, 211, 252, 0.08))',
-    color: '#dffbff',
-    fontSize: 12,
-    fontWeight: 900,
-    cursor: 'pointer',
-    touchAction: 'manipulation',
-  },
-  calibrationCopyStatus: {
-    margin: '8px 0 0',
-    color: '#fef08a',
-    fontSize: 10,
-    lineHeight: 1.25,
   },
   clusterPanel: {
     position: 'absolute',
@@ -6116,12 +6241,12 @@ const styles: Record<string, CSSProperties> = {
     zIndex: Z_INDEX.markers,
     pointerEvents: 'none',
     transformOrigin: 'center center',
-    transition: 'transform 520ms cubic-bezier(.22,.61,.36,1)',
+    transition: 'transform 180ms cubic-bezier(.2,.8,.2,1)',
   },
   verificationReferenceLayer: {
     position: 'absolute',
     inset: 0,
-    zIndex: Z_INDEX.calibration,
+    zIndex: Z_INDEX.verification,
     pointerEvents: 'none',
   },
   verificationReferenceWrap: {
@@ -6690,7 +6815,8 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     minHeight: 34,
     height: 34,
-    padding: 0,
+    padding: '0 38px 0 0',
+    boxSizing: 'border-box',
     borderRadius: 18,
     border: 'none',
     background: 'transparent',
@@ -6709,6 +6835,32 @@ const styles: Record<string, CSSProperties> = {
     textOverflow: 'clip',
     WebkitAppearance: 'none',
     appearance: 'none',
+  },
+  searchClearButton: {
+    position: 'absolute',
+    zIndex: 5,
+    right: 60,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    display: 'grid',
+    placeItems: 'center',
+    width: 34,
+    height: 34,
+    minWidth: 34,
+    minHeight: 34,
+    padding: 0,
+    border: 'none',
+    borderRadius: 999,
+    background: 'rgba(8, 12, 19, 0.36)',
+    color: 'rgba(255, 225, 170, 0.84)',
+    cursor: 'pointer',
+    touchAction: 'manipulation',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+  },
+  searchClearIcon: {
+    width: 18,
+    height: 18,
   },
   searchSubmitButton: {
     position: 'relative',
@@ -7716,6 +7868,31 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid rgba(232, 190, 118, 0.32)',
     background: 'linear-gradient(180deg, rgba(22, 28, 39, 0.82), rgba(9, 13, 21, 0.74))',
     color: 'rgba(255, 232, 177, 0.9)',
+  },
+  mobileSearchResultCard: {
+    flex: '0 0 clamp(108px, 29vw, 122px)',
+  },
+  mobileLiveMatchCue: {
+    position: 'absolute',
+    top: 5,
+    left: 5,
+    right: 5,
+    zIndex: 2,
+    overflow: 'hidden',
+    padding: '2px 4px',
+    borderRadius: 999,
+    border: '1px solid rgba(244, 204, 133, 0.32)',
+    background: 'rgba(8, 12, 19, 0.72)',
+    color: 'rgba(255, 231, 181, 0.94)',
+    fontSize: 6.2,
+    fontWeight: 850,
+    letterSpacing: 0.28,
+    lineHeight: 1,
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    boxShadow: '0 3px 10px rgba(0, 0, 0, 0.3)',
+    backdropFilter: 'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)',
   },
   mobileLiveCardCopy: {
     display: 'grid',

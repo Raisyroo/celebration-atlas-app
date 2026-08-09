@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { AtlasEvent } from '../data/events';
-import { latLngToAtlasPosition } from '../data/mapCalibration';
+import { projectLatLngToCalibratedMichiganArtworkPosition } from '../data/michiganArtworkCalibration';
 import CloudEffect from './effects/CloudEffect';
 import FireworksEffect from './effects/FireworksEffect';
 import GeeseEffect from './effects/GeeseEffect';
@@ -26,7 +26,11 @@ export default function AtmosphereLayer({
   const fireworksPoints = events
     .filter((event) => event.atmosphere?.effects?.includes('fireworks'))
     .map((event) => {
-      const position = latLngToAtlasPosition(event.latitude, event.longitude);
+      const position = projectLatLngToCalibratedMichiganArtworkPosition(
+        event.latitude,
+        event.longitude,
+        'desktop',
+      );
 
       return { id: event.id, x: position.x, y: position.y, intensity: event.atmosphere?.intensity ?? 'subtle' };
     });
@@ -34,7 +38,11 @@ export default function AtmosphereLayer({
   const ferrisGlowPoints = events
     .filter((event) => event.atmosphere?.effects?.includes('ferrisGlow'))
     .map((event) => {
-      const position = latLngToAtlasPosition(event.latitude, event.longitude);
+      const position = projectLatLngToCalibratedMichiganArtworkPosition(
+        event.latitude,
+        event.longitude,
+        'desktop',
+      );
 
       return { id: event.id, x: position.x, y: position.y };
     });

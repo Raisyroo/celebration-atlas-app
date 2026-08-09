@@ -52,6 +52,7 @@ export type HomeAtlasSearchRules = {
 
 export type HomeAtlasSearchReason =
   | 'exact-identity'
+  | 'semantic'
   | 'identity'
   | 'place'
   | 'category'
@@ -66,6 +67,7 @@ export type HomeAtlasSearchResult = {
   profile?: EventProfile;
   score: number;
   reasons: readonly HomeAtlasSearchReason[];
+  matchCues?: readonly string[];
 };
 
 export type HomeAtlasSearchResponse = {
@@ -121,6 +123,7 @@ const SEASON_BY_MONTH: Readonly<Record<HomeAtlasMonth, EventSeason>> = {
 
 const REASON_ORDER: readonly HomeAtlasSearchReason[] = [
   'exact-identity',
+  'semantic',
   'identity',
   'place',
   'category',

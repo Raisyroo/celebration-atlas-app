@@ -22,6 +22,7 @@ export type HomeDiscoveryHistoryEntry = {
   openClusterId: string | null;
   experienceDeckOpen: boolean;
   experienceDeckIndex: number;
+  mapCameraProfileId: string | null;
   mapTransform: HomeDiscoveryMapTransform;
   selectedResultId: string | null;
   exactNavigation: HomeDiscoveryExactNavigationState;
@@ -34,6 +35,7 @@ const DEFAULT_HISTORY_ENTRY: HomeDiscoveryHistoryEntry = {
   openClusterId: null,
   experienceDeckOpen: false,
   experienceDeckIndex: 0,
+  mapCameraProfileId: null,
   mapTransform: {
     scale: 1,
     translateX: 0,
@@ -124,6 +126,7 @@ export function readHomeDiscoveryHistoryEntry(
         ? candidate.experienceDeckOpen
         : Boolean(openClusterId),
     experienceDeckIndex: normalizeDeckIndex(candidate.experienceDeckIndex),
+    mapCameraProfileId: normalizeOptionalId(candidate.mapCameraProfileId),
     mapTransform: normalizeMapTransform(candidate.mapTransform),
     selectedResultId: normalizeOptionalId(candidate.selectedResultId),
     exactNavigation: normalizeExactNavigation(candidate.exactNavigation),
@@ -154,6 +157,10 @@ export function mergeHomeDiscoveryHistoryEntry(
     experienceDeckIndex: normalizeDeckIndex(
       patch.experienceDeckIndex ?? currentEntry.experienceDeckIndex,
     ),
+    mapCameraProfileId:
+      patch.mapCameraProfileId === undefined
+        ? currentEntry.mapCameraProfileId
+        : normalizeOptionalId(patch.mapCameraProfileId),
     mapTransform: normalizeMapTransform(
       patch.mapTransform ?? currentEntry.mapTransform,
     ),

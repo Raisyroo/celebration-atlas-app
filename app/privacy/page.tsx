@@ -20,6 +20,14 @@ export default function PrivacyPage() {
           providers may process standard request information such as the requested URL,
           time, browser or device details, and IP address.
         </p>
+        <p>
+          To monitor ASK search quality, Celebration Atlas records a limited technical
+          outcome made only of broad buckets such as zero, one, or several results, the
+          matching path used, cue availability, candidate-set size, and response-time
+          range. This diagnostic does not contain the search text, event names or IDs,
+          precise timing, IP address, browser details, account or device identity, or a
+          persistent user identifier.
+        </p>
       </section>
 
       <section>
