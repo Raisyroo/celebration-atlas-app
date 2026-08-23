@@ -18,6 +18,7 @@ Synthesis creates an immutable proposal. It does not create an `event_page_versi
 8. Classifies archived official pages as identity, schedule, history, personalities, gallery, or planning evidence.
 9. Separates confirmed current-edition facts, the latest complete historical program, and enduring traditions.
 10. Selects a simple, current-program, reference-rich, or tradition-rich editorial mode before composing modules.
+11. Derives lifecycle from an explicit hashed `lifecycleAsOf` input when supplied, otherwise from the latest retained source-fetch date, so replaying the same immutable evidence cannot change when the wall clock crosses an event date.
 
 Known events can use a published or checked-in manifest as their visual and editorial scaffold while source-backed identity, date, location, and schedule fields are overlaid. A new event receives only source-derived structure plus any explicitly registered Celebration Atlas visual. Required visual, timezone, identity, or provenance gaps remain empty and make the proposal invalid; the engine does not invent them.
 

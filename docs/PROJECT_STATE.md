@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: August 11, 2026
+Last updated: August 23, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -116,6 +116,13 @@ The operating loop is:
 ```text
 Discover -> Verify -> Collect -> Reconcile -> Compose -> Illustrate -> Preview -> Approve -> Publish -> Monitor
 ```
+
+Deterministic synthesis v25 derives a proposal's lifecycle from an explicit
+hashed lifecycle reference when one is supplied, otherwise from the latest
+retained source-fetch date, rather than the process wall clock. The same
+immutable bundle therefore replays to the same lifecycle and navigation after
+its event dates pass; later lifecycle changes require a new hashed input or
+refreshed retained evidence instead of silently changing an existing replay.
 
 An event package freezes the candidate, canonical profile, map record, Event Hub manifest, Scout context, evidence, art workflow, and review state. New event-specific source code should not be required.
 

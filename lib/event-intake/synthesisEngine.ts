@@ -17,7 +17,7 @@ import type {
   SynthesisSourceSnapshot,
 } from './synthesisTypes.ts';
 
-export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v24-detroit-jazz-golden-master';
+export const DETERMINISTIC_SYNTHESIS_ENGINE_VERSION = 'deterministic-v25-evidence-time-lifecycle';
 
 const CONFIDENCE_RANK: Record<SourceClaimConfidence, number> = {
   unknown: 0,
@@ -375,15 +375,15 @@ function preferredVenue(input: EventSourceSynthesisInput, fallback: string | und
   return undefined;
 }
 
-function lifecycleForDates(startsOn: string, endsOn: string) {
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Detroit',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date());
-  if (endsOn && endsOn < today) return 'completed';
-  if (startsOn && startsOn <= today && (!endsOn || endsOn >= today)) return 'live';
+function lifecycleForDates(startsOn: string, endsOn: string, referenceOn: string) {
+  const referenceDate = dateOnly(referenceOn);
+  if (endsOn && referenceDate && endsOn < referenceDate) return 'completed';
+  if (
+    startsOn
+    && referenceDate
+    && startsOn <= referenceDate
+    && (!endsOn || endsOn >= referenceDate)
+  ) return 'live';
   return 'upcoming';
 }
 
@@ -1674,6 +1674,7 @@ function buildNewManifest(
     .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
     .sort()
     .at(-1) ?? '1970-01-01';
+  const lifecycleReferenceDate = dateOnly(input.lifecycleAsOf) || sourceDate;
   const visitorLinks = planLinks(input.snapshots);
   const sourceIds = sources.length ? [sources[0].id] : [];
   const locationSourceIds = sourceIdsForSnapshots(
@@ -1693,7 +1694,7 @@ function buildNewManifest(
     eventId: eventKey,
     slug: eventKey,
     recipe: startsOn && endsOn !== startsOn ? 'multiDayFestival' : 'simpleEvent',
-    lifecycle: lifecycleForDates(startsOn, endsOn),
+    lifecycle: lifecycleForDates(startsOn, endsOn, lifecycleReferenceDate),
     identity: {
       name,
       shortName: name,

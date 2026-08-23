@@ -561,6 +561,7 @@ assert.deepEqual(
 );
 
 const countyFairInput: EventSourceSynthesisInput = {
+  lifecycleAsOf: '2026-07-26',
   bundle: {
     id: 'bundle-county-fair',
     name: 'St. Clair County 4-H & Youth Fair',
@@ -1213,7 +1214,12 @@ const shelbyContent = validateEventPageContentReadiness(shelbyManifest);
 const shelbyBoundedEditorial = buildBoundedEditorialRewriteTargets(
   shelbyManifest,
 );
-assert.equal(shelbySynthesis.engineVersion, 'deterministic-v24-detroit-jazz-golden-master');
+assert.equal(shelbySynthesis.engineVersion, 'deterministic-v25-evidence-time-lifecycle');
+assert.equal(
+  shelbyManifest.lifecycle,
+  'upcoming',
+  'Lifecycle must replay from the retained evidence date instead of changing with the wall clock.',
+);
 assert.equal(shelbyManifest.navigation.length, 4, 'A new art-fair manifest must contain all four primary topics.');
 assert.equal(shelbyManifest.scheduleItems.length, 2, 'Official event-day hours must appear as useful Schedule rows.');
 assert.equal(

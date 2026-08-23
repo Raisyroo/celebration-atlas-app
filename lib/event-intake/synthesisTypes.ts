@@ -208,6 +208,7 @@ export type EventSourceSynthesisInput = {
   claims: SynthesisSourceClaim[];
   scheduleCandidates: SynthesisScheduleCandidate[];
   approvedVisual?: SynthesisApprovedVisual;
+  lifecycleAsOf?: string;
 };
 
 export type ReconciledAlternative = {
