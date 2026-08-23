@@ -109,6 +109,15 @@ Art from another event may be a rendering-quality or layout exemplar, but it mus
 
 Package synthesis and preparation prefer an approved cloud asset and retain the complete visual brief and review record. Missing art alone is not a publication blocker after every identity, evidence, verification, location, date, content, map, and package safeguard passes. The published Event Hub then uses its intentional image-free hero.
 
+If an approved base visual exists before publication, Atlas Control requires it
+to be frozen into the base package before the separate publish action remains
+available. If an image-free package was already published first, the approved
+base visual can create a service-role-only immutable first-hero package
+revision. That revision retains the exact published non-art fields and the
+independent page review, records that publication is still unauthorized, and
+must cross the normal separate publication action before it can replace the
+public Event Hub version.
+
 A finished externally supplied image uses the exact contract in `docs/EVENT_IMAGE_SPECIFICATION.md`. Atlas Control validates and stores it, creates a review-ready record in the existing visual workflow, and requires explicit approval before an immutable package revision can attach it. This manual path performs no image search, generation, enhancement, or crop.
 
 Migration 017 adds immutable same-edition corrections. A visual workflow retained by a released package is never reopened or overwritten. Instead, `Correct approved hero` creates a linked visual revision, copies the retained event research and generation brief, clears the selected asset, and resets every QA gate. After the corrected cloud asset is uploaded, checked, and explicitly approved, package preparation creates a linked package revision rather than rebuilding the released package. The normal private preview and human `Approve and publish` decision then promote a new immutable Event Hub version while the prior visual workflow, package, media object, and page version remain in the audit history.

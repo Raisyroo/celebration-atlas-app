@@ -18,11 +18,11 @@ function migrationFunction(source: string, name: string) {
   const match = source.match(
     new RegExp(`create or replace function public\\.${name}\\([\\s\\S]*?\\n\\$\\$;`),
   );
-  assert(match, `migration 027 must define ${name}`);
+  assert(match, `migration must define ${name}`);
   return match[0];
 }
 
-async function validateMigrationServices(migration: string) {
+async function validateMigrationServices(migration: string, firstHeroMigration: string) {
   const db = new PGlite();
   const id = (value: number) => `00000000-0000-4000-8000-${String(value).padStart(12, "0")}`;
   try {
@@ -73,7 +73,12 @@ async function validateMigrationServices(migration: string) {
         ready_at timestamptz,
         reviewed_at timestamptz,
         published_at timestamptz,
-        supersedes_package_id uuid
+        supersedes_package_id uuid,
+        page_review_status text not null default 'pending',
+        page_review_manifest jsonb,
+        page_reviewed_by text,
+        page_review_notes text,
+        page_reviewed_at timestamptz
       );
       create table public.event_factory_package_actions (
         id uuid primary key default gen_random_uuid(),
@@ -130,6 +135,7 @@ async function validateMigrationServices(migration: string) {
     await db.exec(migrationFunction(migration, "atlas_finalize_art_optional_event_factory_package"));
     await db.exec(migrationFunction(migration, "atlas_create_manual_event_visual_workflow"));
     await db.exec(migrationFunction(migration, "atlas_create_event_factory_art_revision"));
+    await db.exec(migrationFunction(firstHeroMigration, "atlas_create_event_factory_first_hero_revision"));
 
     const candidateId = id(1);
     const caseId = id(2);
@@ -304,6 +310,99 @@ async function validateMigrationServices(migration: string) {
     assert.equal(removed.rows[0]?.event_id, eventId);
     assert.equal(removed.rows[0]?.image_src, "");
     assert.equal(removed.rows[0]?.art_ready, false);
+
+    const firstHeroCandidateId = id(20);
+    const firstHeroCaseId = id(21);
+    const firstHeroEventId = id(22);
+    const firstHeroPackageId = id(23);
+    const firstHeroWorkflowId = id(24);
+    const firstHeroAsset = {
+      publicUrl: "https://example.test/generated-first-hero.webp",
+      altText: "A generated, approved first hero for the fixture event",
+      credit: "Celebration Atlas artwork",
+      sourceKind: "supabase",
+      storageBucket: "celebration-atlas-media",
+      storagePath: "events/generated-first-hero.webp",
+    };
+    const completeQa = {
+      visualElementsVerified: true,
+      independentComposition: true,
+      noInventedTextOrMarks: true,
+      mobileCropVerified: true,
+      publicAssetVerified: true,
+    };
+    await db.query(`insert into public.event_candidates values ($1::uuid, 'unique_candidate', false)`, [firstHeroCandidateId]);
+    await db.query(`insert into public.event_verification_cases values ($1::uuid, 'verified')`, [firstHeroCaseId]);
+    await db.query(`
+      insert into public.event_factory_packages (
+        id, verification_case_id, candidate_id, event_id, target_year, event_key,
+        slug, status, package_version, page_manifest, art_brief, art_asset,
+        readiness_checks, readiness_score, content_hash, created_by, published_at,
+        page_review_status, page_review_manifest, page_reviewed_by, page_reviewed_at
+      ) values (
+        $1::uuid, $2::uuid, $3::uuid, $4::uuid, 2026, 'generated-first-hero',
+        'generated-first-hero', 'published', 1, $5::jsonb,
+        '{"provenanceCategory":"generated"}'::jsonb, '{}'::jsonb,
+        $6::jsonb, 1, $7::text, 'fixture', now(), 'approved',
+        $5::jsonb #- '{hero,imageSrc}' #- '{hero,imageAlt}',
+        'reviewer@example.test', now()
+      )
+    `, [
+      firstHeroPackageId,
+      firstHeroCaseId,
+      firstHeroCandidateId,
+      firstHeroEventId,
+      JSON.stringify({ ...manifest, eventId: "generated-first-hero", slug: "generated-first-hero" }),
+      JSON.stringify(checks),
+      "7".padStart(64, "0"),
+    ]);
+    await db.query(`
+      insert into public.event_visual_workflows (
+        id, candidate_id, event_id, target_year, event_key, event_name,
+        location_label, lane, status, search_query, reviewed_thumbnail_count,
+        reference_sources, visual_signature, generation_brief, asset, qa_checks,
+        content_hash, created_by, reviewed_by, reviewed_at, revision_number
+      ) values (
+        $1::uuid, $2::uuid, $3::uuid, 2026, 'generated-first-hero',
+        'Generated First Hero', 'Fixture, Michigan', 'fast_visual', 'approved',
+        'generated first hero fixture', 15, '[]'::jsonb,
+        '{"motifs":["fixture"],"heroMoment":"Fixture moment"}'::jsonb,
+        '{"style":"Celebration Atlas generated artwork"}'::jsonb,
+        $4::jsonb, $5::jsonb, $6::text, 'fixture', 'reviewer@example.test',
+        now(), 1
+      )
+    `, [
+      firstHeroWorkflowId,
+      firstHeroCandidateId,
+      null,
+      JSON.stringify(firstHeroAsset),
+      JSON.stringify(completeQa),
+      "8".padStart(64, "0"),
+    ]);
+    const firstHeroRevision = await db.query<{ package_id: string }>(`
+      select * from public.atlas_create_event_factory_first_hero_revision(
+        $1::uuid, $2::uuid, $3::text, 'operator@example.test', 'attach approved first hero'
+      )
+    `, [firstHeroPackageId, firstHeroWorkflowId, "9".padStart(64, "0")]);
+    const firstHeroPackage = await db.query<{
+      image_src: string;
+      page_review_status: string;
+      supersedes_package_id: string;
+      publication_authorized: boolean;
+    }>(`
+      select package.page_manifest#>>'{hero,imageSrc}' as image_src,
+             package.page_review_status,
+             package.supersedes_package_id::text,
+             (action.metadata->>'publication_authorized')::boolean as publication_authorized
+      from public.event_factory_packages as package
+      join public.event_factory_package_actions as action on action.package_id = package.id
+      where package.id = $1::uuid
+        and action.action_type = 'created'
+    `, [firstHeroRevision.rows[0]?.package_id]);
+    assert.equal(firstHeroPackage.rows[0]?.image_src, firstHeroAsset.publicUrl);
+    assert.equal(firstHeroPackage.rows[0]?.page_review_status, "approved");
+    assert.equal(firstHeroPackage.rows[0]?.supersedes_package_id, firstHeroPackageId);
+    assert.equal(firstHeroPackage.rows[0]?.publication_authorized, false);
   } finally {
     await db.close();
   }
@@ -494,6 +593,7 @@ async function main() {
     stages,
     countyOperator,
     migration,
+    firstHeroMigration,
     contentGuardMigration,
     specification,
   ] = await Promise.all([
@@ -511,6 +611,7 @@ async function main() {
     read("lib/michigan-completion/stageRegistry.ts"),
     read("lib/michigan-completion/countyOperator.ts"),
     read("supabase/migrations/027_art_optional_event_hubs.sql"),
+    read("supabase/migrations/039_attach_approved_first_hero.sql"),
     read("supabase/migrations/030_enforce_new_event_content_readiness.sql"),
     read("docs/EVENT_IMAGE_SPECIFICATION.md"),
   ]);
@@ -573,6 +674,14 @@ async function main() {
   assert(!/\binsert\s+into\s+public\.events\b/i.test(migration));
   assert(!migration.includes("atlas_materialize_event_factory_package("));
   assert(!migration.includes("atlas_review_event_factory_package("));
+  assert(firstHeroMigration.includes("atlas_create_event_factory_first_hero_revision"));
+  assert(firstHeroMigration.includes("v_visual.status <> 'approved'"));
+  assert(firstHeroMigration.includes("v_visual.supersedes_workflow_id is not null"));
+  assert(firstHeroMigration.includes("v_source.page_review_status"));
+  assert(firstHeroMigration.includes("'publication_authorized', false"));
+  assert(firstHeroMigration.includes("from public, anon, authenticated"));
+  assert(!firstHeroMigration.includes("atlas_review_event_factory_package("));
+  assert(!firstHeroMigration.includes("atlas_activate_event_factory_publication("));
   assert(contentGuardMigration.includes("atlas_event_factory_content_ready_v2"));
   assert(contentGuardMigration.includes("atlas_guard_new_event_factory_content_trigger"));
   assert(contentGuardMigration.includes("perform public.atlas_assert_service_role();"));
@@ -588,7 +697,7 @@ async function main() {
   for (const source of [uploadRoute, visualRoute, manualControl, migration]) {
     assert(!/image_gen\.|imagegen\(|generateImage\(/i.test(source), "manual art pathway must not invoke generation tools");
   }
-  await validateMigrationServices(migration);
+  await validateMigrationServices(migration, firstHeroMigration);
   await validateContentGuardMigration(contentGuardMigration);
 
   console.log(

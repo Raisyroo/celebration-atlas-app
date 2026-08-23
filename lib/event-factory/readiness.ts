@@ -375,6 +375,13 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
       if (eventPackage?.readiness_checks[gate]) gates[gate] = "ready";
     }
     const stage = stageFor(gates, Boolean(event), verificationCase?.status ?? null, excluded, hasPublishedPage, eventPackage?.status ?? null);
+    const packageArtAttached = Boolean(
+      typeof eventPackage?.art_asset?.publicUrl === "string"
+        ? eventPackage.art_asset.publicUrl.trim()
+        : typeof eventPackage?.art_asset?.src === "string"
+          ? eventPackage.art_asset.src.trim()
+          : "",
+    );
     const publishedHasArt = Boolean(
       typeof publishedPackage?.art_asset?.publicUrl === "string"
         ? publishedPackage.art_asset.publicUrl.trim()
@@ -387,7 +394,6 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
       && ["ready_for_review", "approved"].includes(visualWorkflow.status)
       && typeof visualWorkflow.asset?.publicUrl === "string"
       && visualWorkflow.asset.publicUrl.trim()
-      && visualWorkflow.generation_brief?.style === "Externally supplied finished asset"
       && publishedPackage?.art_asset?.visualWorkflowId !== visualWorkflow.id,
     );
     const nonArtReady = (["exists", "annual", "dates", "location", "sources", "map", "page"] as EventFactoryGateKey[])
@@ -413,6 +419,7 @@ export async function getEventFactoryOverview(): Promise<EventFactoryOverview> {
       publishedPackageId: publishedPackage?.id ?? null,
       packageStatus: eventPackage?.status ?? null,
       pageReviewStatus: eventPackage?.page_review_status ?? null,
+      packageArtAttached,
       publicationArtState,
       visualWorkflowId: visualWorkflow?.id ?? null,
       visualWorkflowStatus: visualWorkflow?.status ?? null,

@@ -281,10 +281,10 @@ export async function prepareEventFactoryPackage(args: {
   if (!ART_PROVENANCE_CATEGORIES.includes(artProvenance)) {
     throw new Error("A supported image provenance category is required.");
   }
-  if (approvedVisual?.asset && approvedVisual.supersedesWorkflowId) {
+  if (approvedVisual?.asset) {
     const sourcePackageResult = await supabase
       .from("event_factory_packages")
-      .select("id,content_hash")
+      .select("id,content_hash,art_asset")
       .eq("candidate_id", candidate.id)
       .eq("target_year", verificationResult.data.target_year)
       .eq("status", "published")
@@ -293,25 +293,54 @@ export async function prepareEventFactoryPackage(args: {
       .limit(1)
       .maybeSingle();
     if (sourcePackageResult.error) throw new Error(sourcePackageResult.error.message);
-    if (!sourcePackageResult.data) {
+    if (approvedVisual.supersedesWorkflowId && !sourcePackageResult.data) {
       throw new Error("The approved visual correction does not match the current released Event Factory package.");
     }
-    const correctionHash = contentHash({
-      sourcePackageId: sourcePackageResult.data.id,
-      sourcePackageHash: sourcePackageResult.data.content_hash,
-      visualWorkflowId: approvedVisual.id,
-      visualWorkflowHash: approvedVisual.contentHash,
-      scope: "hero_only",
-    });
-    const correction = await supabase.rpc("atlas_create_event_factory_hero_correction", {
-      p_source_package_id: sourcePackageResult.data.id,
-      p_visual_workflow_id: approvedVisual.id,
-      p_content_hash: correctionHash,
-      p_actor_identity: args.actorIdentity,
-      p_notes: "Prepared from an approved same-edition hero correction.",
-    });
-    if (correction.error) throw new Error(correction.error.message);
-    return firstRpcRow(correction.data);
+    const sourcePackage = sourcePackageResult.data;
+    const sourcePackageArt = record(sourcePackage?.art_asset);
+    const sourcePackageHasArt = Boolean(
+      typeof sourcePackageArt?.publicUrl === "string"
+        ? sourcePackageArt.publicUrl.trim()
+        : typeof sourcePackageArt?.src === "string"
+          ? sourcePackageArt.src.trim()
+          : "",
+    );
+    if (sourcePackage && !sourcePackageHasArt && !approvedVisual.supersedesWorkflowId) {
+      const firstHeroHash = contentHash({
+        sourcePackageId: sourcePackage.id,
+        sourcePackageHash: sourcePackage.content_hash,
+        visualWorkflowId: approvedVisual.id,
+        visualWorkflowHash: approvedVisual.contentHash,
+        scope: "first_approved_hero",
+      });
+      const firstHero = await supabase.rpc("atlas_create_event_factory_first_hero_revision", {
+        p_source_package_id: sourcePackage.id,
+        p_visual_workflow_id: approvedVisual.id,
+        p_content_hash: firstHeroHash,
+        p_actor_identity: args.actorIdentity,
+        p_notes: "Prepared from the approved first hero after an image-free release.",
+      });
+      if (firstHero.error) throw new Error(firstHero.error.message);
+      return firstRpcRow(firstHero.data);
+    }
+    if (approvedVisual.supersedesWorkflowId) {
+      const correctionHash = contentHash({
+        sourcePackageId: sourcePackage!.id,
+        sourcePackageHash: sourcePackage!.content_hash,
+        visualWorkflowId: approvedVisual.id,
+        visualWorkflowHash: approvedVisual.contentHash,
+        scope: "hero_only",
+      });
+      const correction = await supabase.rpc("atlas_create_event_factory_hero_correction", {
+        p_source_package_id: sourcePackage!.id,
+        p_visual_workflow_id: approvedVisual.id,
+        p_content_hash: correctionHash,
+        p_actor_identity: args.actorIdentity,
+        p_notes: "Prepared from an approved same-edition hero correction.",
+      });
+      if (correction.error) throw new Error(correction.error.message);
+      return firstRpcRow(correction.data);
+    }
   }
 
   const localEvent = ATLAS_EVENTS.find(
@@ -953,6 +982,19 @@ export async function publishReviewedEventFactoryPackage(args: {
   const packageRow = await getPackage(args.packageId);
   if (packageRow.page_review_status !== "approved") {
     throw new Error("Approve the Event Hub content and layout before publication.");
+  }
+  const validation = validateEventPageContentReadiness(packageRow.page_manifest);
+  if (!validation.ok) {
+    throw new Error(`Reviewed Event Hub manifest is invalid: ${validation.errors.join(" ")}`);
+  }
+  if (!packageRow.supersedes_package_id && validation.artPending) {
+    const approvedVisual = await getApprovedEventVisualWorkflow({
+      candidateId: packageRow.candidate_id,
+      eventKey: packageRow.event_key,
+    });
+    if (approvedVisual?.asset) {
+      throw new Error("Attach the approved hero to the private package before publication.");
+    }
   }
   return approveAndPublishEventFactoryPackage(args);
 }

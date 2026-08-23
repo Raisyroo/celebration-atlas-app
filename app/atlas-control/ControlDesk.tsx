@@ -769,21 +769,45 @@ export default function ControlDesk({ initialReadiness, initialFactory, initialV
                       </button>
                     )}
                     {item.verificationStatus === "verified"
-                      && (item.packageStatus === "published" || item.packageStatus === "assembling" || item.packageStatus === "rejected")
                       && item.visualWorkflowStatus === "approved"
-                      && (item.visualWorkflowRevisionNumber ?? 1) > 1 && (
+                      && (
+                        item.packageStatus === "published"
+                          ? item.publicationArtState === "image_uploaded_awaiting_approval"
+                            || (item.visualWorkflowRevisionNumber ?? 1) > 1
+                          : (item.packageStatus === "assembling" || item.packageStatus === "rejected")
+                            && (item.visualWorkflowRevisionNumber ?? 1) > 1
+                      ) && (
                         <button
                           type="button"
                           disabled={Boolean(factoryPending)}
                           onClick={() => eventFactoryAction({ action: "prepare", candidateId: item.candidateId ?? "", verificationCaseId: item.verificationCaseId ?? "" }, `prepare-correction:${item.key}`)}
                         >
                           <Sparkles size={14} aria-hidden="true" />
-                          {factoryPending === `prepare-correction:${item.key}` ? "Assembling..." : "Assemble corrected hero"}
+                          {factoryPending === `prepare-correction:${item.key}`
+                            ? "Assembling..."
+                            : item.publicationArtState === "image_uploaded_awaiting_approval"
+                              ? "Assemble approved hero"
+                              : "Assemble corrected hero"}
+                        </button>
+                      )}
+                    {item.packageId
+                      && item.packageStatus === "ready_for_review"
+                      && item.pageReviewStatus === "approved"
+                      && item.visualWorkflowStatus === "approved"
+                      && !item.packageArtAttached && (
+                        <button
+                          type="button"
+                          disabled={Boolean(factoryPending)}
+                          onClick={() => eventFactoryAction({ action: "prepare", candidateId: item.candidateId ?? "", verificationCaseId: item.verificationCaseId ?? "" }, `attach-hero:${item.key}`)}
+                        >
+                          <Sparkles size={14} aria-hidden="true" />
+                          {factoryPending === `attach-hero:${item.key}` ? "Attaching..." : "Attach approved hero"}
                         </button>
                       )}
                     {item.packageId && item.packageStatus === "ready_for_review" && (
                       <>
-                        {item.pageReviewStatus === "approved" && (
+                        {item.pageReviewStatus === "approved"
+                          && !(item.visualWorkflowStatus === "approved" && !item.packageArtAttached) && (
                           <button
                             type="button"
                             disabled={Boolean(factoryPending)}
