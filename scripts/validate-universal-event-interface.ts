@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { ATLAS_EVENTS } from '../data/events.ts';
 import {
   DEFAULT_EVENT_HUB_HOME_LINK,
@@ -117,6 +118,19 @@ assert.deepEqual(
   resolveEventHubHomeLink({ href: '/atlas-control', label: 'Atlas Control' }),
   { href: '/atlas-control', label: 'Atlas Control' },
   'private previews can supply an explicit authoring destination',
+);
+
+const eventHubSource = readFileSync(new URL('../components/EventHub.tsx', import.meta.url), 'utf8');
+const eventHubStyles = readFileSync(new URL('../components/EventHub.module.css', import.meta.url), 'utf8');
+assert.ok(
+  eventHubSource.includes('data-metric-count={module.metrics.length}'),
+  'Event Hub metric rows do not expose their item count to the shared layout',
+);
+assert.ok(
+  eventHubStyles.includes(".metricGrid[data-metric-count='2']")
+    && eventHubStyles.includes('grid-template-columns: repeat(2, minmax(0, calc(100% / 3)))')
+    && eventHubStyles.includes('justify-content: center'),
+  'two-item Event Hub metric rows do not retain three-column sizing while centering the group',
 );
 
 console.log('Universal event interface validation passed.');
