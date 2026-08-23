@@ -655,6 +655,35 @@ have zero horizontal overflow, and emit no browser warnings or errors. Partial
 delivery requests confirmed `image/webp`, the expected full byte size, and
 `max-age=31536000` for every active asset.
 
+Marine City Maritime Days is public at
+`https://celebration-atlas-app.vercel.app/events/marine-city-maritime-days-marine-city-michigan`.
+Ray independently approved the exact completed-edition page and generated boat
+hero, then explicitly authorized publication. Base package v1
+`49a261a2-dc11-4903-a7d2-04d5a0474868` was initially published image-free
+because the already-approved base visual had not been frozen into that package.
+The public route correctly exposed the inconsistency during the immediate live
+check instead of substituting unreviewed media.
+
+PR #735 and deployed forward-only migration
+`039_attach_approved_first_hero.sql` close that lifecycle gap. A base package
+can no longer publish past an approved but unattached hero. An image-free
+release may create only a service-role-only, private, immutable first-hero
+revision from the exact approved base workflow; the revision retains the
+independent page review, records that publication is still unauthorized, and
+must cross the existing separate human publication action. Migration history
+is aligned locally and remotely through 039.
+
+Marine City's audited first-hero package v2
+`d44aed56-12a9-4bcd-bccd-83a391b1b10c` supersedes v1 and retains Ray's page
+approval. The explicit reviewed publication activated immutable Event Hub
+version `2fb47513-4bc6-462e-9823-1948fc9959af` and approved hero media
+`212d4aa8-f551-4d43-9ded-339eb34de156` on the same stable URL. Production
+confirmed the 1024 x 1536 Supabase WebP, correct alt text, four exact tabs, and
+zero horizontal overflow. The exact private phone route rendered at 374 x 828;
+its two Why Go metrics had equal 56.34375-pixel side margins. The post-repair
+package audit contained actions only for Marine City Maritime Days; no other
+event was prepared, approved, or published.
+
 ## Current Next Milestone
 
 The first five-event Ray-approved Fast Track list is complete and published.
