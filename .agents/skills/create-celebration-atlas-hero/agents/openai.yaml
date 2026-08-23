@@ -1,8 +1,7 @@
 interface:
   display_name: Celebration Atlas Hero Images
-  short_description: Research and create accurate event hero images
-  default_prompt: Use $create-celebration-atlas-hero to create a truthful, text-free
-    hero image for this event.
+  short_description: Create one-shot, iconic golden-hour event heroes
+  default_prompt: "Use an event’s top-rated image-search results to create a cool and entertaining 2:3 aspect-ratio hero image. Outdoor locations should reflect golden hour."
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg
 policy:

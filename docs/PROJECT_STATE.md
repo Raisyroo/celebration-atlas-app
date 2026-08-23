@@ -1,6 +1,6 @@
 # Celebration Atlas Project State
 
-Last updated: August 9, 2026
+Last updated: August 11, 2026
 
 This file is the current operational handoff for new Codex tasks. Read `MASTER_ATLAS_CONTEXT.md` first for the durable vision, then use this file when older notes conflict with the running application.
 
@@ -527,10 +527,14 @@ and explicit package approval remain protected.
 
 The repository-local `$create-celebration-atlas-hero` skill is installed at
 `.agents/skills/create-celebration-atlas-hero/`. Every Fast Track event that
-reaches the hero stage must use GPT-5.6 Luna at Max reasoning, generate one
-primary image, and create a focused alternative only after rejection or low
-confidence. A local image is not approval; the existing specification and
-Supabase visual workflow remain authoritative.
+reaches the hero stage must use GPT-5.6 Luna at Max reasoning, pass the
+iconic-moment preflight, and make exactly one paid image-generation call.
+Outdoor scenes require unmistakable physical golden-hour light unless a narrow
+documented exception applies. The skill fails closed after a rejected or
+low-confidence result and never makes an automatic edit, variant, or retry;
+another attempt requires Ray's explicit authorization. A local image is not
+approval; the existing specification and Supabase visual workflow remain
+authoritative.
 
 The first Ray-approved Fast Track list is now prepared through private review
 for Yale Bologna Festival, Algonac Lions Pickerel Tournament & Festival, Blue

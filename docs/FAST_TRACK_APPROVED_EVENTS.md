@@ -127,9 +127,11 @@ authoring stage.
    and a generic official-homepage call to action never appears in the hero.
    Permit one targeted Ultra repair only after a concrete validation failure.
 6. At the hero-image stage, invoke
-   `$create-celebration-atlas-hero` with GPT-5.6 Luna at Max reasoning. Generate
-   one image. Create at most one focused alternative only after rejection or a
-   low-confidence result, reusing the original motif brief.
+   `$create-celebration-atlas-hero` with GPT-5.6 Luna at Max reasoning. Pass the
+   iconic-moment preflight, then make exactly one image-generation call. Never
+   create an automatic edit, variant, or retry. A rejected or low-confidence
+   result stops only that event at private review until Ray explicitly
+   authorizes another paid attempt; reuse the original motif brief if he does.
 7. Validate the 1024 x 1536 asset and use the existing Supabase visual workflow.
    A local image is never approval. Hero failure may leave this event art
    pending, but it does not hold content preparation or other events.
