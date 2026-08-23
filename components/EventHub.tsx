@@ -355,7 +355,7 @@ function WhyGoModule({
         <span>{module.summary}</span>
       </header>
 
-      <div className={styles.metricGrid}>
+      <div className={styles.metricGrid} data-metric-count={module.metrics.length}>
         {module.metrics.map((metric) => {
           const MetricIcon = METRIC_ICONS[metric.icon];
           return (
