@@ -109,7 +109,7 @@ assert(eventFactoryReadiness.includes('event_visual_workflows') && eventFactoryR
 assert(eventFactoryReadiness.includes('event_page_versions_event_page_id_fkey'), 'event factory readiness does not disambiguate the Event Page version relationship');
 
 const eventFactoryPackages = read('lib/event-factory/packages.ts');
-for (const rpc of ['atlas_upsert_event_factory_package', 'atlas_finalize_art_optional_event_factory_package', 'atlas_create_event_factory_hero_correction', 'atlas_create_event_factory_art_revision', 'atlas_review_event_factory_package', 'atlas_materialize_event_factory_package', 'atlas_activate_event_factory_publication', 'atlas_finish_event_factory_publication', 'atlas_list_event_factory_packages']) {
+for (const rpc of ['atlas_upsert_event_factory_package', 'atlas_finalize_art_optional_event_factory_package', 'atlas_create_event_factory_hero_correction', 'atlas_create_event_factory_first_hero_revision', 'atlas_create_event_factory_art_revision', 'atlas_review_event_factory_package', 'atlas_materialize_event_factory_package', 'atlas_activate_event_factory_publication', 'atlas_finish_event_factory_publication', 'atlas_list_event_factory_packages']) {
   assert(eventFactoryPackages.includes(`"${rpc}"`), `event package service does not call fixed RPC ${rpc}`);
 }
 assert(eventFactoryPackages.includes('validateEventPageManifest'), 'event package publication does not revalidate the reviewed Event Hub manifest');
@@ -119,6 +119,7 @@ assert(eventFactoryPackages.includes('item.status === "generated"') && eventFact
 assert(eventFactoryPackages.includes('manifest_proposal'), 'event package preparation cannot consume a retained synthesis manifest');
 assert(eventFactoryPackages.includes('location_verified'), 'event package preparation cannot consume verified canonical coordinates');
 assert(eventFactoryPackages.includes('getApprovedEventVisualWorkflow'), 'event package preparation does not consume approved visual workflows');
+assert(eventFactoryPackages.includes('Attach the approved hero to the private package before publication.'), 'base packages can publish while an approved hero remains unattached');
 assert(eventFactoryPackages.includes('visual-signature-v1') && eventFactoryPackages.includes('assertReviewedVisualAsset'), 'event package publication does not retain and recheck the approved visual workflow');
 assert(!eventFactoryPackages.includes('publishEventPageVersion'), 'event package service still activates the Event Hub before atomic package finalization');
 assert(
@@ -246,6 +247,13 @@ assert(eventFactoryRevisionMigration.includes("set search_path = ''"), 'event fa
 assert(eventFactoryRevisionMigration.includes('from public, anon, authenticated'), 'event factory revision RPCs are not revoked from browser roles');
 assert(visualWorkflowMigration.includes('revoke all on function public.atlas_review_event_visual_workflow'), 'visual workflow review RPC is not revoked from public roles');
 
+const firstHeroRevisionMigration = read('supabase/migrations/039_attach_approved_first_hero.sql');
+assert(firstHeroRevisionMigration.includes('atlas_create_event_factory_first_hero_revision'), 'image-free publications cannot create an immutable first-hero revision');
+assert(firstHeroRevisionMigration.includes("v_visual.status <> 'approved'") && firstHeroRevisionMigration.includes('v_visual.supersedes_workflow_id is not null'), 'first-hero revisions do not require an approved base visual');
+assert(firstHeroRevisionMigration.includes('v_source.page_review_status') && firstHeroRevisionMigration.includes('page_review_preserved'), 'first-hero revisions discard the independent page review');
+assert(firstHeroRevisionMigration.includes("'publication_authorized', false"), 'first-hero revision creation crosses the publication boundary');
+assert(firstHeroRevisionMigration.includes('from public, anon, authenticated') && firstHeroRevisionMigration.includes('to service_role'), 'first-hero revision RPC is not service-role-only');
+
 const visualWorkflowService = read('lib/event-factory/visuals.ts');
 for (const rpc of ['atlas_upsert_event_visual_workflow', 'atlas_create_event_visual_workflow_revision', 'atlas_attach_event_visual_revision_asset', 'atlas_update_event_visual_revision_qa', 'atlas_review_event_visual_workflow', 'atlas_list_event_visual_workflows']) {
   assert(visualWorkflowService.includes(`"${rpc}"`), `visual workflow service does not call fixed RPC ${rpc}`);
@@ -349,6 +357,7 @@ const controlDesk = read('app/atlas-control/ControlDesk.tsx');
 assert(controlDesk.includes('/atlas-control/synthesis-preview/${synthesis.id}'), 'Atlas Control does not link valid synthesis proposals to their private Event Hub preview');
 assert(controlDesk.includes('/atlas-control/event-preview/${item.packageId}'), 'Atlas Control does not link packages to the combined private review surface');
 assert(controlDesk.includes('publish_reviewed') && !controlDesk.includes('Approve and publish'), 'Atlas Control still couples review approval to publication');
+assert(controlDesk.includes('Assemble approved hero') && controlDesk.includes('Attach approved hero'), 'Atlas Control can publish past an approved but unattached first hero');
 assert(controlDesk.includes('Visual signature workflow') && controlDesk.includes('Save visual brief') && controlDesk.includes('Approve visual'), 'Atlas Control does not expose the visual-signature review workflow');
 
 const publicPackagePreview = read('app/event-preview/[packageId]/page.tsx');

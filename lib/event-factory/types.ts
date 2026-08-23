@@ -41,6 +41,7 @@ export type EventFactoryItem = {
   publishedPackageId: string | null;
   packageStatus: EventFactoryPackageStatus | null;
   pageReviewStatus: EventFactoryPageReviewStatus | null;
+  packageArtAttached: boolean;
   publicationArtState:
     | "published_with_approved_art"
     | "published_without_art"
