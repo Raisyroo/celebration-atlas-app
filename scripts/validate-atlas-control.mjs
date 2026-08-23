@@ -341,6 +341,9 @@ assert(combinedEventReview.includes('Approve content + layout'), 'combined revie
 assert(combinedEventReview.includes('Approve hero'), 'combined review does not expose an independent hero decision');
 assert(combinedEventReview.includes('No publication on this screen') || combinedEventReview.includes('nothing was published'), 'combined review does not preserve the publication boundary');
 assert(combinedEventReview.includes("action: 'prepare'"), 'approved hero is not attached back to the private package');
+assert(combinedEventReview.includes("EVENT_REVIEW_SCROLL_CLASS = 'event-review-scroll'"), 'combined review does not unlock route-scoped page scrolling');
+const globalCss = read('app/globals.css');
+assert(globalCss.includes('html.event-review-scroll') && globalCss.includes('body.event-review-scroll'), 'combined review scroll boundary is missing from global CSS');
 
 const controlDesk = read('app/atlas-control/ControlDesk.tsx');
 assert(controlDesk.includes('/atlas-control/synthesis-preview/${synthesis.id}'), 'Atlas Control does not link valid synthesis proposals to their private Event Hub preview');

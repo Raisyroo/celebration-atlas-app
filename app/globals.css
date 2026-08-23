@@ -139,6 +139,24 @@ body.event-detail-scroll::-webkit-scrollbar {
   display: block;
 }
 
+html.event-review-scroll,
+body.event-review-scroll {
+  height: auto;
+  min-height: 100dvh;
+  background: #050812;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: auto;
+  scrollbar-width: auto;
+}
+
+body.event-review-scroll::-webkit-scrollbar {
+  display: block;
+}
+
 .atlas-event-shell {
   isolation: isolate;
   position: relative;
