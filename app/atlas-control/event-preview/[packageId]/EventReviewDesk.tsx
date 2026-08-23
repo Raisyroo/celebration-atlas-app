@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { EventFactoryCombinedReview } from '@/lib/event-factory/packages';
 import styles from './EventReviewDesk.module.css';
 
 type ReviewDecision = 'approve' | 'reject' | 'reopen';
+
+const EVENT_REVIEW_SCROLL_CLASS = 'event-review-scroll';
 
 async function postJson(path: string, payload: Record<string, unknown>) {
   const response = await fetch(path, {
@@ -29,6 +31,16 @@ export default function EventReviewDesk({ review }: { review: EventFactoryCombin
   const [pageNotes, setPageNotes] = useState(review.package.pageReviewNotes ?? '');
   const [heroNotes, setHeroNotes] = useState(review.visualWorkflow?.reviewNotes ?? '');
   const workflow = review.visualWorkflow;
+
+  useEffect(() => {
+    document.documentElement.classList.add(EVENT_REVIEW_SCROLL_CLASS);
+    document.body.classList.add(EVENT_REVIEW_SCROLL_CLASS);
+
+    return () => {
+      document.documentElement.classList.remove(EVENT_REVIEW_SCROLL_CLASS);
+      document.body.classList.remove(EVENT_REVIEW_SCROLL_CLASS);
+    };
+  }, []);
 
   async function reviewPage(decision: ReviewDecision) {
     setPending(`page:${decision}`);
